@@ -41,7 +41,7 @@ header {
   padding:0 16px;
   height:38px;
   flex-shrink:0;
-  display:flex; align-items:center; justify-content:space-between;
+  display:flex; align-items:center; gap:10px;
 }
 .logo-area { display:flex; align-items:center; gap:12px; }
 .logo { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:400; color:#fff; letter-spacing:0.05em; }
@@ -49,7 +49,7 @@ header {
 .logo-sub { font-size:8px; color:#6a82a0; font-weight:400; letter-spacing:0.05em; text-transform:uppercase; line-height:1.2; }
 .hdr-div { width:1px; height:18px; background:#243a5c; }
 .report-title { font-size:11.5px; font-weight:500; color:#b8ccec; letter-spacing:0.03em; }
-.header-right { display:flex; align-items:center; gap:12px; }
+.header-right { display:flex; align-items:center; gap:12px; margin-left:auto; }
 .conn-badge { display:flex; align-items:center; gap:4px; font-size:9px; color:#6a82a0; }
 .conn-dot { width:5px; height:5px; border-radius:50%; background:#c97a06; }
 .conn-dot.live { background:var(--up); }
@@ -327,15 +327,15 @@ main {
 
 /* ── WARM CACHE PROGRESS BAR ── */
 #warm-progress-container {
-  height:3px; width:100%; flex-shrink:0;
-  background:rgba(255,255,255,0.08);
-  display:none;
+  height:5px; width:100%; flex-shrink:0;
+  background:#162d52;
+  display:block;          /* always visible as a thin navy stripe */
 }
 #warm-progress-bar {
   height:100%; width:0%;
-  background:#4a8eff;
-  transition:width 0.4s ease;
-  box-shadow:0 0 6px rgba(74,142,255,0.7);
+  background:linear-gradient(90deg,#1a56db,#4a8eff);
+  transition:width 0.35s ease;
+  box-shadow:0 0 8px rgba(74,142,255,0.9);
 }
 </style>
 </head>
@@ -371,7 +371,7 @@ main {
     </div>
   </div>
   <div class="header-right">
-    <span id="warm-status" style="font-size:10px;font-weight:500;color:#f59e0b;margin-right:6px;min-width:28px;display:inline-block;"></span>
+    <span id="warm-status" style="font-size:9px;font-weight:500;background:#1a3360;border:1px solid #4a8eff;color:#4a8eff;padding:2px 7px;border-radius:10px;margin-right:4px;display:none;white-space:nowrap;"></span>
     <div class="conn-badge"><div class="conn-dot" id="connDot"></div><span id="connLabel">Demo mode</span></div>
     <div class="week-badge">
       <div class="wk" id="weekLabel">WEEK 17 / 2026</div>
@@ -941,31 +941,26 @@ async function fetchBiz(biz, dateCol){
 }
 
 async function warmCache() {
-  const st      = document.getElementById('warm-status');
-  const barCon  = document.getElementById('warm-progress-container');
-  const bar     = document.getElementById('warm-progress-bar');
-  const connLbl = document.getElementById('connLabel');
-  const connDot = document.getElementById('connDot');
+  const st  = document.getElementById('warm-status');
+  const bar = document.getElementById('warm-progress-bar');
   const ALL = ALL_BIZ_LIST;
-  const dc = 'FlightDate';
+  const dc  = 'FlightDate';
   const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'];
   const total = ALL.length + mercBiz.length;
   let done = 0;
 
-  // Show progress bar + status
-  if (barCon) barCon.style.display = 'block';
-  if (bar)    bar.style.width = '2%';
-  if (st)     { st.textContent = '⚡ 0/' + ALL.length; st.style.color = '#f59e0b'; }
-  if (connLbl && connLbl.textContent !== 'Demo mode') connLbl.textContent = 'Warming…';
+  // Show pill badge immediately
+  if (st) { st.textContent = '⚡ 0 / ' + ALL.length; st.style.display = 'inline'; }
+  if (bar) bar.style.width = '1%';
 
   const tick = () => {
     done++;
-    const pct = Math.min(98, Math.round(done / total * 100));
+    const pct = Math.min(97, Math.round(done / total * 100));
     if (bar) bar.style.width = pct + '%';
-    if (done <= ALL.length && st) st.textContent = '⚡ ' + done + '/' + ALL.length;
+    if (done <= ALL.length && st) st.textContent = '⚡ ' + done + ' / ' + ALL.length;
   };
 
-  // ── Flown: 4 businesses at a time ──────────────────────────────────────────
+  // ── Flown: 4 businesses in parallel per batch ──
   const BATCH = 4;
   for (let i = 0; i < ALL.length; i += BATCH) {
     await Promise.all(ALL.slice(i, i + BATCH).map(async biz => {
@@ -980,7 +975,7 @@ async function warmCache() {
     }));
   }
 
-  // ── Booked: Mercury 3 in parallel ──────────────────────────────────────────
+  // ── Booked: 3 Mercury in parallel ──
   await Promise.all(mercBiz.map(async biz => {
     if (!ALL_DATA['Bkg_CreaDate'] || !ALL_DATA['Bkg_CreaDate'][biz]) {
       const data = await fetchBiz(biz, 'Bkg_CreaDate');
@@ -992,20 +987,27 @@ async function warmCache() {
     tick();
   }));
 
-  // ── Done ───────────────────────────────────────────────────────────────────
+  // ── Done: full bar, green pill, fade out ──
   if (bar) bar.style.width = '100%';
-  if (connLbl && connLbl.textContent === 'Warming…') {
-    if (connDot) connDot.classList.add('live');
-    connLbl.textContent = 'Live · MySQL';
+  if (st) {
+    st.textContent = '✅ Ready';
+    st.style.background = '#0f3d1f';
+    st.style.borderColor = '#15803d';
+    st.style.color = '#4ade80';
   }
-  if (st) { st.textContent = '✅'; st.style.color = '#15803d'; setTimeout(() => { st.textContent = ''; }, 3000); }
-  setTimeout(() => { if (barCon) { barCon.style.display = 'none'; if (bar) bar.style.width = '0%'; } }, 800);
+  setTimeout(() => {
+    if (bar) { bar.style.transition = 'width 0.6s ease'; bar.style.width = '0%'; }
+    if (st) st.style.display = 'none';
+  }, 2500);
 }
 
 async function initDashboard(){
   if(!API_BASE){ applyData(DEMO); document.getElementById('connLabel').textContent='Demo mode'; return; }
-  warmCache();      // fire in background immediately — don't wait
-  await loadData(); // load current biz (runs in parallel with warmCache)
+  // Show pill immediately so user knows warming is happening
+  const st = document.getElementById('warm-status');
+  if (st) { st.textContent = '⚡ Starting…'; st.style.display = 'inline'; }
+  warmCache();      // runs in background — don't await
+  await loadData(); // load current business
 }
 
 const MERCURY_BIZ = new Set(["MERC_LOCAL", "MERC_GSA", "MERC_ALL"]);
