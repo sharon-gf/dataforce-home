@@ -251,6 +251,68 @@ main {
 .dtbl tbody tr:nth-child(odd)  td { background:var(--surface); }
 .dtbl tbody tr:last-child td { border-bottom:none; }
 .dtbl tbody tr:hover td { background:#e8edf7 !important; }
+
+/* ── KPI GROUP WRAPPERS — desktop: transparent in grid ── */
+.kpi-group      { display:contents; }
+.kpi-group-hdr  { display:none; }
+.kpi-group-body { display:contents; }
+
+/* ── RESPONSIVE — MOBILE ── */
+@media (max-width:768px) {
+  html,body { overflow:auto; height:auto; }
+  .screen   { height:auto; overflow:visible; }
+  main      { overflow:visible; height:auto; flex:none; padding:10px; }
+
+  /* KPI: collapsible period sections */
+  .kpi-row  { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .kpi-sep  { display:none; }
+
+  .kpi-group {
+    display:block;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .kpi-group-hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 12px;
+    background:var(--navy-hdr);
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .kpi-ghdr-lbl { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; }
+  .lw-col  { color:var(--blue-lw); }
+  .tm-col  { color:var(--amber-tm); }
+  .ytd-col { color:var(--teal-ytd); }
+  .kpi-chev { font-size:10px; color:#c8d8f0; display:inline-block; transition:transform .2s; }
+
+  .kpi-group-body { display:flex; gap:4px; padding:8px; }
+  .kpi-group-body.collapsed { display:none; }
+
+  .kpi-card { flex:1; min-width:0; }
+  .kpi-val  { font-size:15px; }
+  .kpi-inner { padding:5px 6px 6px; }
+
+  /* Center row: 2 charts side by side, no donut */
+  .center-row {
+    grid-template-columns:1fr 1fr;
+    height:auto;
+    margin-bottom:10px;
+  }
+  .center-row .card       { height:180px; }
+  .center-row .card:nth-child(3) { display:none; }
+
+  /* Bottom row: stack tables */
+  .bottom-row { grid-template-columns:1fr; gap:8px; }
+  .bottom-row .card { height:auto; }
+
+  /* Table overflow on narrow screens */
+  .card-body.np { overflow-x:auto; }
+  .dtbl th, .dtbl td { font-size:9px; padding:3px 5px; white-space:nowrap; }
+  .wtbl th, .wtbl td { font-size:9px; padding:3px 7px; }
+}
 </style>
 </head>
 <body>
@@ -302,91 +364,108 @@ main {
   <!-- KPI ROW -->
   <div class="kpi-row">
 
-    <div class="kpi-card lw"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">Last Week</span><span class="kpi-metric">Tons</span></div>
-      <div class="kpi-val" id="v-lw-t">90</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-lw-t-25" class="kpi-cv dn">▼ 31.3%</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-lw-t-b" class="kpi-cv dn">▼ 32.5%</span></div>
+    <div class="kpi-group">
+      <div class="kpi-group-hdr" onclick="toggleKpiGroup(this,'kpibody-lw')">
+        <span class="kpi-ghdr-lbl lw-col">Last Week</span>
+        <span class="kpi-chev">▼</span>
       </div>
-    </div></div>
-
-    <div class="kpi-card lw"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">Last Week</span><span class="kpi-metric">Profit</span></div>
-      <div class="kpi-val" id="v-lw-p">42,173</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-lw-p-25" class="kpi-cv dn">▼ 40.6%</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-lw-p-b" class="kpi-cv up">▲ 16.0%</span></div>
+      <div class="kpi-group-body" id="kpibody-lw">
+        <div class="kpi-card lw"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">Last Week</span><span class="kpi-metric">Tons</span></div>
+          <div class="kpi-val" id="v-lw-t">90</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-lw-t-25" class="kpi-cv dn">▼ 31.3%</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-lw-t-b" class="kpi-cv dn">▼ 32.5%</span></div>
+          </div>
+        </div></div>
+        <div class="kpi-card lw"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">Last Week</span><span class="kpi-metric">Profit</span></div>
+          <div class="kpi-val" id="v-lw-p">42,173</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-lw-p-25" class="kpi-cv dn">▼ 40.6%</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-lw-p-b" class="kpi-cv up">▲ 16.0%</span></div>
+          </div>
+        </div></div>
+        <div class="kpi-card lw"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">Last Week</span><span class="kpi-metric">P/kg</span></div>
+          <div class="kpi-val" id="v-lw-k">0.47</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-lw-k-25" class="kpi-cv dn">▼ 13.6%</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span class="kpi-cv none">—</span></div>
+          </div>
+        </div></div>
       </div>
-    </div></div>
-
-    <div class="kpi-card lw"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">Last Week</span><span class="kpi-metric">P/kg</span></div>
-      <div class="kpi-val" id="v-lw-k">0.47</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-lw-k-25" class="kpi-cv dn">▼ 13.6%</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span class="kpi-cv none">—</span></div>
-      </div>
-    </div></div>
+    </div>
 
     <div class="kpi-sep"></div>
 
-       <div class="kpi-card tm"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">This Month</span><span class="kpi-metric">Tons</span></div>
-      <div class="kpi-val" id="v-tm-t">0</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-tm-t-25" class="kpi-cv none">—</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-tm-t-b" class="kpi-cv none">—</span></div>
+    <div class="kpi-group">
+      <div class="kpi-group-hdr" onclick="toggleKpiGroup(this,'kpibody-tm')">
+        <span class="kpi-ghdr-lbl tm-col">This Month</span>
+        <span class="kpi-chev">▼</span>
       </div>
-    </div></div>
-
-    <div class="kpi-card tm"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">This Month</span><span class="kpi-metric">Profit</span></div>
-      <div class="kpi-val" id="v-tm-p">0</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-tm-p-25" class="kpi-cv none">—</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-tm-p-b" class="kpi-cv none">—</span></div>
+      <div class="kpi-group-body" id="kpibody-tm">
+        <div class="kpi-card tm"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">This Month</span><span class="kpi-metric">Tons</span></div>
+          <div class="kpi-val" id="v-tm-t">0</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-tm-t-25" class="kpi-cv none">—</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-tm-t-b" class="kpi-cv none">—</span></div>
+          </div>
+        </div></div>
+        <div class="kpi-card tm"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">This Month</span><span class="kpi-metric">Profit</span></div>
+          <div class="kpi-val" id="v-tm-p">0</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-tm-p-25" class="kpi-cv none">—</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-tm-p-b" class="kpi-cv none">—</span></div>
+          </div>
+        </div></div>
+        <div class="kpi-card tm"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">This Month</span><span class="kpi-metric">P/kg</span></div>
+          <div class="kpi-val" id="v-tm-k">0</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-tm-k-25" class="kpi-cv none">—</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-tm-k-b" class="kpi-cv none">—</span></div>
+          </div>
+        </div></div>
       </div>
-    </div></div>
-
-    <div class="kpi-card tm"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">This Month</span><span class="kpi-metric">P/kg</span></div>
-      <div class="kpi-val" id="v-tm-k">0</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-tm-k-25" class="kpi-cv none">—</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-tm-k-b" class="kpi-cv none">—</span></div>
-      </div>
-    </div></div>
-
+    </div>
 
     <div class="kpi-sep"></div>
 
-    <div class="kpi-card ytd"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">YTD</span><span class="kpi-metric">Tons</span></div>
-      <div class="kpi-val" id="v-ytd-t">1,106</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-ytd-t-25" class="kpi-cv dn">▼ 7.1%</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-ytd-t-b" class="kpi-cv dn">▼ 57.9%</span></div>
+    <div class="kpi-group">
+      <div class="kpi-group-hdr" onclick="toggleKpiGroup(this,'kpibody-ytd')">
+        <span class="kpi-ghdr-lbl ytd-col">YTD</span>
+        <span class="kpi-chev">▼</span>
       </div>
-    </div></div>
-
-    <div class="kpi-card ytd"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">YTD</span><span class="kpi-metric">Profit</span></div>
-      <div class="kpi-val" id="v-ytd-p">594,818</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-ytd-p-25" class="kpi-cv up">▲ 0.1%</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-ytd-p-b" class="kpi-cv dn">▼ 54.1%</span></div>
+      <div class="kpi-group-body" id="kpibody-ytd">
+        <div class="kpi-card ytd"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">YTD</span><span class="kpi-metric">Tons</span></div>
+          <div class="kpi-val" id="v-ytd-t">1,106</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-ytd-t-25" class="kpi-cv dn">▼ 7.1%</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-ytd-t-b" class="kpi-cv dn">▼ 57.9%</span></div>
+          </div>
+        </div></div>
+        <div class="kpi-card ytd"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">YTD</span><span class="kpi-metric">Profit</span></div>
+          <div class="kpi-val" id="v-ytd-p">594,818</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-ytd-p-25" class="kpi-cv up">▲ 0.1%</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span id="c-ytd-p-b" class="kpi-cv dn">▼ 54.1%</span></div>
+          </div>
+        </div></div>
+        <div class="kpi-card ytd"><div class="kpi-inner">
+          <div class="kpi-top"><span class="kpi-period">YTD</span><span class="kpi-metric">P/kg</span></div>
+          <div class="kpi-val" id="v-ytd-k">0.54</div>
+          <div class="kpi-comps">
+            <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-ytd-k-25" class="kpi-cv dn">▼ 0.4%</span></div>
+            <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span class="kpi-cv none">—</span></div>
+          </div>
+        </div></div>
       </div>
-    </div></div>
-
-    <div class="kpi-card ytd"><div class="kpi-inner">
-      <div class="kpi-top"><span class="kpi-period">YTD</span><span class="kpi-metric">P/kg</span></div>
-      <div class="kpi-val" id="v-ytd-k">0.54</div>
-      <div class="kpi-comps">
-        <div class="kpi-comp"><span class="kpi-cl">VS 2025</span><span id="c-ytd-k-25" class="kpi-cv dn">▼ 0.4%</span></div>
-        <div class="kpi-comp"><span class="kpi-cl">VS BUD</span><span class="kpi-cv none">—</span></div>
-      </div>
-    </div></div>
+    </div>
 
   </div>
 
@@ -948,6 +1027,18 @@ function onBizChange(){
 })();
 
 loadData();
+
+function toggleKpiGroup(hdr, targetId) {
+  var body = document.getElementById(targetId);
+  var chev = hdr.querySelector('.kpi-chev');
+  if (body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    chev.style.transform = '';
+  } else {
+    body.classList.add('collapsed');
+    chev.style.transform = 'rotate(180deg)';
+  }
+}
 </script>
 
 <!-- AWB Detail Modal -->
