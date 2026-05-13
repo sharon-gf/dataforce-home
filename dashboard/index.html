@@ -358,7 +358,7 @@ main {
     </div>
   </div>
   <div class="header-right">
-    <span id="warm-status" style="font-size:9px;margin-right:4px;"></span>
+    <span id="warm-status" style="font-size:10px;font-weight:500;color:#f59e0b;margin-right:6px;min-width:28px;display:inline-block;"></span>
     <div class="conn-badge"><div class="conn-dot" id="connDot"></div><span id="connLabel">Demo mode</span></div>
     <div class="week-badge">
       <div class="wk" id="weekLabel">WEEK 17 / 2026</div>
@@ -929,25 +929,30 @@ async function fetchBiz(biz, dateCol){
 async function warmCache() {
   const st = document.getElementById('warm-status');
   const ALL = ALL_BIZ_LIST;
+  const dc = 'FlightDate';
   let done = 0;
-  if (st) { st.textContent = '⚡ Loading…'; st.style.color = '#f59e0b'; }
+  if (st) { st.textContent = '⚡ 0/' + ALL.length; st.style.color = '#f59e0b'; }
 
-  for (const biz of ALL) {
-    if (st) st.textContent = `⚡ ${done+1}/${ALL.length}`;
-    const dc = 'FlightDate';
-    if (!ALL_DATA[dc] || !ALL_DATA[dc][biz]) {
-      const data = await fetchBiz(biz, dc);
-      if (data) {
-        if (!ALL_DATA[dc]) ALL_DATA[dc] = {};
-        ALL_DATA[dc][biz] = data;
+  // Fetch Flown data in parallel batches of 4 (much faster than sequential)
+  const BATCH = 4;
+  for (let i = 0; i < ALL.length; i += BATCH) {
+    const batch = ALL.slice(i, i + BATCH);
+    await Promise.all(batch.map(async biz => {
+      if (!ALL_DATA[dc] || !ALL_DATA[dc][biz]) {
+        const data = await fetchBiz(biz, dc);
+        if (data) {
+          if (!ALL_DATA[dc]) ALL_DATA[dc] = {};
+          ALL_DATA[dc][biz] = data;
+        }
       }
-    }
-    done++;
+      done++;
+      if (st) st.textContent = '⚡ ' + done + '/' + ALL.length;
+    }));
   }
 
+  // Booked — parallel for the 3 Mercury businesses
   const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'];
-  for (const biz of mercBiz) {
-    if (st) st.textContent = `⚡ Bkg ${mercBiz.indexOf(biz)+1}/3`;
+  await Promise.all(mercBiz.map(async biz => {
     if (!ALL_DATA['Bkg_CreaDate'] || !ALL_DATA['Bkg_CreaDate'][biz]) {
       const data = await fetchBiz(biz, 'Bkg_CreaDate');
       if (data) {
@@ -955,7 +960,7 @@ async function warmCache() {
         ALL_DATA['Bkg_CreaDate'][biz] = data;
       }
     }
-  }
+  }));
 
   if (st) {
     st.textContent = '✅'; st.style.color = '#15803d';
@@ -965,8 +970,8 @@ async function warmCache() {
 
 async function initDashboard(){
   if(!API_BASE){ applyData(DEMO); document.getElementById('connLabel').textContent='Demo mode'; return; }
-  await loadData();
-  warmCache();
+  warmCache();      // fire in background immediately — don't wait
+  await loadData(); // load current biz (runs in parallel with warmCache)
 }
 
 const MERCURY_BIZ = new Set(["MERC_LOCAL", "MERC_GSA", "MERC_ALL"]);
