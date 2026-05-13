@@ -912,8 +912,11 @@ async function loadData(){
     if(!ALL_DATA[DATE_COL]) ALL_DATA[DATE_COL] = {};
     ALL_DATA[DATE_COL][biz] = data;
     applyData(data);
-    document.getElementById('connDot').classList.add('live');
-    document.getElementById('connLabel').textContent='Live · MySQL';
+    // Only update status badge if warmCache isn't still running
+    if (!_isWarming) {
+      document.getElementById('connDot').classList.add('live');
+      document.getElementById('connLabel').textContent='Live · MySQL';
+    }
   }catch(e){
     document.getElementById('connLabel').textContent='Connection failed - refresh to retry';
     applyData(DEMO);
@@ -940,24 +943,28 @@ async function fetchBiz(biz, dateCol){
   } catch(e) { return null; }
 }
 
+let _isWarming = false;
+
 async function warmCache() {
-  const st  = document.getElementById('warm-status');
-  const bar = document.getElementById('warm-progress-bar');
+  const bar     = document.getElementById('warm-progress-bar');
+  const connLbl = document.getElementById('connLabel');
+  const connDot = document.getElementById('connDot');
   const ALL = ALL_BIZ_LIST;
   const dc  = 'FlightDate';
   const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'];
   const total = ALL.length + mercBiz.length;
   let done = 0;
 
-  // Show pill badge immediately
-  if (st) { st.textContent = '⚡ 0 / ' + ALL.length; st.style.display = 'inline'; }
+  _isWarming = true;
   if (bar) bar.style.width = '1%';
+  if (connDot) connDot.style.background = '#c97a06'; // amber dot while warming
+  if (connLbl) connLbl.textContent = '⚡ 0 / ' + ALL.length;
 
   const tick = () => {
     done++;
     const pct = Math.min(97, Math.round(done / total * 100));
     if (bar) bar.style.width = pct + '%';
-    if (done <= ALL.length && st) st.textContent = '⚡ ' + done + ' / ' + ALL.length;
+    if (connLbl) connLbl.textContent = '⚡ ' + done + ' / ' + total;
   };
 
   // ── Flown: 4 businesses in parallel per batch ──
@@ -987,25 +994,21 @@ async function warmCache() {
     tick();
   }));
 
-  // ── Done: full bar, green pill, fade out ──
+  // ── Done ──
   if (bar) bar.style.width = '100%';
-  if (st) {
-    st.textContent = '✅ Ready';
-    st.style.background = '#0f3d1f';
-    st.style.borderColor = '#15803d';
-    st.style.color = '#4ade80';
-  }
-  setTimeout(() => {
-    if (bar) { bar.style.transition = 'width 0.6s ease'; bar.style.width = '0%'; }
-    if (st) st.style.display = 'none';
-  }, 2500);
+  _isWarming = false;
+  if (connDot) { connDot.style.background = ''; connDot.classList.add('live'); }
+  if (connLbl) connLbl.textContent = 'Live · MySQL';
+  setTimeout(() => { if (bar) { bar.style.width = '0%'; } }, 1500);
 }
 
 async function initDashboard(){
   if(!API_BASE){ applyData(DEMO); document.getElementById('connLabel').textContent='Demo mode'; return; }
-  // Show pill immediately so user knows warming is happening
-  const st = document.getElementById('warm-status');
-  if (st) { st.textContent = '⚡ Starting…'; st.style.display = 'inline'; }
+  // Show warming state immediately (synchronous — user sees this before any network call)
+  const connLbl = document.getElementById('connLabel');
+  const connDot = document.getElementById('connDot');
+  if (connLbl) connLbl.textContent = '⚡ Warming…';
+  if (connDot) connDot.style.background = '#c97a06';
   warmCache();      // runs in background — don't await
   await loadData(); // load current business
 }
