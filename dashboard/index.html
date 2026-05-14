@@ -327,9 +327,9 @@ main {
 
 /* ── WARM CACHE PROGRESS BAR ── */
 #warm-progress-container {
-  height:5px; width:100%; flex-shrink:0;
-  background:#162d52;
-  display:block;          /* always visible as a thin navy stripe */
+  height:6px; width:100%; flex-shrink:0;
+  background:#1a3360;     /* brighter track — visible even at 0% */
+  display:block;
 }
 #warm-progress-bar {
   height:100%; width:0%;
@@ -976,13 +976,23 @@ async function warmCache() {
   _isWarming = true;
   if (bar) bar.style.width = '1%';
   if (connDot) connDot.style.background = '#c97a06'; // amber dot while warming
-  if (connLbl) connLbl.textContent = '⚡ 0 / ' + ALL.length;
+  if (connLbl) connLbl.textContent = '⚡ Warming…';
+  // Drive the status badge — the primary visible indicator
+  const statusBadge = document.getElementById('warm-status');
+  if (statusBadge) {
+    statusBadge.textContent = '⚡ 0 / ' + total;
+    statusBadge.style.display = 'inline-block';
+    statusBadge.style.background = '#1a3360';
+    statusBadge.style.borderColor = '#4a8eff';
+    statusBadge.style.color = '#4a8eff';
+  }
 
   const tick = () => {
     done++;
     const pct = Math.min(97, Math.round(done / total * 100));
     if (bar) bar.style.width = pct + '%';
-    if (connLbl) connLbl.textContent = '⚡ ' + done + ' / ' + total;
+    if (connLbl) connLbl.textContent = '⚡ Warming…';
+    if (statusBadge) statusBadge.textContent = '⚡ ' + done + ' / ' + total;
   };
 
   // ── Flown: 4 businesses in parallel per batch ──
@@ -1017,13 +1027,21 @@ async function warmCache() {
   _isWarming = false;
   if (connDot) { connDot.style.background = ''; connDot.classList.add('live'); }
   if (connLbl) connLbl.textContent = 'Live · MySQL';
-  setTimeout(() => { if (bar) bar.style.width = '0%'; }, 1500);
-  // Show toast so user knows switching is now instant
+  // Badge flips to green "✅ Ready" — stays visible for 20s so user knows when to switch
+  if (statusBadge) {
+    statusBadge.textContent = '✅ Ready — switch freely';
+    statusBadge.style.background = '#0d2e1a';
+    statusBadge.style.borderColor = '#15803d';
+    statusBadge.style.color = '#4ade80';
+    setTimeout(() => { statusBadge.style.display = 'none'; }, 20000);
+  }
+  setTimeout(() => { if (bar) bar.style.width = '0%'; }, 2000);
+  // Toast — 15s so it's hard to miss
   const toast = document.getElementById('warm-toast');
   if (toast) {
-    toast.textContent = '✅  All ' + ALL_BIZ_LIST.length + ' businesses cached — switching is now instant';
+    toast.textContent = '✅  All ' + total + ' combos cached — switching is now instant';
     toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 5000);
+    setTimeout(() => { toast.style.display = 'none'; }, 15000);
   }
 }
 
