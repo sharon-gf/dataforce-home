@@ -337,6 +337,23 @@ main {
   transition:width 0.35s ease;
   box-shadow:0 0 8px rgba(74,142,255,0.9);
 }
+
+/* ── WARM CACHE TOAST ── */
+#warm-toast {
+  position:fixed;
+  top:48px; right:14px;
+  background:#0d2e1a;
+  border:1px solid #15803d;
+  color:#4ade80;
+  padding:8px 14px 8px 10px;
+  border-radius:8px;
+  font-size:11px;
+  font-family:'Inter',sans-serif;
+  z-index:9999;
+  display:none;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  pointer-events:none;
+}
 </style>
 </head>
 <body>
@@ -380,6 +397,7 @@ main {
   </div>
 </header>
 <div id="warm-progress-container"><div id="warm-progress-bar"></div></div>
+<div id="warm-toast"></div>
 
 <!-- MAIN -->
 <main>
@@ -999,7 +1017,14 @@ async function warmCache() {
   _isWarming = false;
   if (connDot) { connDot.style.background = ''; connDot.classList.add('live'); }
   if (connLbl) connLbl.textContent = 'Live · MySQL';
-  setTimeout(() => { if (bar) { bar.style.width = '0%'; } }, 1500);
+  setTimeout(() => { if (bar) bar.style.width = '0%'; }, 1500);
+  // Show toast so user knows switching is now instant
+  const toast = document.getElementById('warm-toast');
+  if (toast) {
+    toast.textContent = '✅  All ' + ALL_BIZ_LIST.length + ' businesses cached — switching is now instant';
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 5000);
+  }
 }
 
 async function initDashboard(){
