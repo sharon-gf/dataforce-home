@@ -218,14 +218,7 @@ main {
 .wtbl tr.grand td { font-weight:400; color:var(--navy2); background:var(--surface2) !important; border-top:1px solid var(--border); border-bottom:none; }
 .wtbl tbody tr:hover td { background:#e8edf7 !important; }
 
-/* ── DONUT ── */
-.donut-inner { display:flex; flex-direction:column; height:100%; overflow:hidden; }
-.donut-wrap  { flex-shrink:0; height:110px; position:relative; }
-.d-legend    { margin-top:4px; display:flex; flex-direction:column; gap:2px; overflow:auto; flex:1; }
-.d-row  { display:flex; align-items:center; gap:5px; font-size:9.5px; }
-.d-dot  { width:7px; height:7px; border-radius:2px; flex-shrink:0; }
-.d-name { flex:1; color:var(--text2); }
-.d-val  { font-weight:400; color:var(--text1); }
+
 
 /* ── BOTTOM ROW ── */
 .bottom-row {
@@ -520,14 +513,11 @@ main {
 
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Tons by Sales Person</span>
-        <span class="card-sub">Last week</span>
+        <span class="card-title">Weekly Tons — Last 7 Weeks</span>
+        <span class="card-sub">Trend</span>
       </div>
-      <div class="card-body">
-        <div class="donut-inner">
-          <div class="donut-wrap"><canvas id="donutChart"></canvas></div>
-          <div class="d-legend" id="donutLegend"></div>
-        </div>
+      <div class="card-body" style="padding:8px 10px 6px;">
+        <div style="position:relative;width:100%;height:100%;"><canvas id="weeklyBarChart"></canvas></div>
       </div>
     </div>
 
@@ -630,7 +620,7 @@ const DEMO = {
   ],
 };
 
-let lc=null, dc=null;
+let lc=null;
 const n=(v,d=0)=>v==null?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 
 function renderWeekly(data){
@@ -754,24 +744,51 @@ function renderLine(data){
   });
 }
 
-function renderDonut(data){
-  const ctx=document.getElementById('donutChart').getContext('2d');
-  if(dc)dc.destroy();
-  dc=new Chart(ctx,{
-    type:'doughnut',
-    data:{labels:data.labels,datasets:[{data:data.values,backgroundColor:data.colors,borderColor:'#fff',borderWidth:2,hoverOffset:4}]},
-    options:{
-      responsive:true,maintainAspectRatio:false,cutout:'60%',
-      plugins:{
-        legend:{display:false},
-        tooltip:{backgroundColor:'#0d1f3c',borderColor:'#243a5c',borderWidth:1,titleColor:'#7aaae8',bodyColor:'#d8e4f4',
-          callbacks:{label:c=>` ${c.label}: ${c.parsed.toFixed(1)}%`}}
+let wbc = null;
+function renderWeeklyBar(data){
+  const rows = (data || []).filter(r => !r.grand);
+  const labels = rows.map(r => r.week);
+  const tons   = rows.map(r => r.tons || 0);
+  const ctx = document.getElementById('weeklyBarChart');
+  if (!ctx) return;
+  if (wbc) wbc.destroy();
+  wbc = new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: tons,
+        backgroundColor: tons.map((v,i) => i === tons.length-1 ? '#1a56db' : 'rgba(74,142,255,0.55)'),
+        borderColor:     tons.map((v,i) => i === tons.length-1 ? '#4a8eff' : '#1a56db'),
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0d1f3c', borderColor: '#243a5c', borderWidth: 1,
+          titleColor: '#7aaae8', bodyColor: '#d8e4f4',
+          callbacks: { label: c => ` ${c.parsed.y.toFixed(2)} tons` }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#6a82a0', font: { size: 9 } }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: '#6a82a0', font: { size: 9 },
+            callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v
+          },
+          beginAtZero: true
+        }
       }
     }
   });
-  document.getElementById('donutLegend').innerHTML = data.labels.map((l,i)=>
-    `<div class="d-row"><div class="d-dot" style="background:${data.colors[i]}"></div><span class="d-name">${l}</span><span class="d-val">${data.values[i].toFixed(1)}%</span></div>`
-  ).join('');
 }
 
 function fmt(v, dec=0) {
@@ -851,7 +868,7 @@ function applyData(d){
   renderDTable('salesBody',d.salesTable);
   renderDTable('oriBody',d.oriTable);
   renderLine(d.lineChart);
-  renderDonut(d.donut);
+  renderWeeklyBar(d.weeklyBreakdown);
 }
 
 // Title for each selector value
@@ -945,17 +962,19 @@ const ALL_BIZ_LIST = [
 ];
 
 async function fetchBiz(biz, dateCol){
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
-    const r = await fetch(
-      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}`,
-      {headers: {"x-api-key": API_KEY}, signal: controller.signal}
-    );
-    clearTimeout(timeout);
-    if(!r.ok) return null;
-    return await r.json();
-  } catch(e) { return null; }
+  // Race the fetch against a 12s timeout — returns null on any failure
+  const timeout = new Promise(res => setTimeout(() => res(null), 12000));
+  const fetcher = (async () => {
+    try {
+      const r = await fetch(
+        `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}`,
+        {headers: {"x-api-key": API_KEY}}
+      );
+      if (!r.ok) return null;
+      return await r.json();
+    } catch(e) { return null; }
+  })();
+  return Promise.race([fetcher, timeout]);
 }
 
 let _isWarming = false;
@@ -974,10 +993,8 @@ async function warmCache() {
   let done = 0;
 
   _isWarming = true;
-  // Amber dot + label
   if (connDot) connDot.style.background = '#c97a06';
   if (connLbl) connLbl.textContent = '⚡ Warming…';
-  // Banner visible immediately
   if (bar) bar.style.width = '1%';
   if (bannerPct) bannerPct.textContent = '0 / ' + total;
   if (bannerText) bannerText.textContent = 'Loading all businesses in background…';
@@ -989,32 +1006,33 @@ async function warmCache() {
     if (bannerPct) bannerPct.textContent = done + ' / ' + total;
   };
 
-  // Flown: 4 businesses in parallel per batch
-  const BATCH = 4;
-  for (let i = 0; i < ALL.length; i += BATCH) {
-    await Promise.all(ALL.slice(i, i + BATCH).map(async biz => {
-      if (!ALL_DATA[dc] || !ALL_DATA[dc][biz]) {
-        const data = await fetchBiz(biz, dc);
+  // Helper: fetch one biz, tick() no matter what — never throws
+  const fetchAndTick = async (biz, dateCol, key) => {
+    try {
+      if (!ALL_DATA[key] || !ALL_DATA[key][biz]) {
+        const data = await fetchBiz(biz, dateCol);
         if (data) {
-          if (!ALL_DATA[dc]) ALL_DATA[dc] = {};
-          ALL_DATA[dc][biz] = data;
+          if (!ALL_DATA[key]) ALL_DATA[key] = {};
+          ALL_DATA[key][biz] = data;
         }
       }
-      tick();
-    }));
-  }
+    } catch(e) { /* ignore */ }
+    tick(); // always advance counter
+  };
 
-  // Booked: 3 Mercury in parallel
-  await Promise.all(mercBiz.map(async biz => {
-    if (!ALL_DATA['Bkg_CreaDate'] || !ALL_DATA['Bkg_CreaDate'][biz]) {
-      const data = await fetchBiz(biz, 'Bkg_CreaDate');
-      if (data) {
-        if (!ALL_DATA['Bkg_CreaDate']) ALL_DATA['Bkg_CreaDate'] = {};
-        ALL_DATA['Bkg_CreaDate'][biz] = data;
-      }
+  try {
+    // Flown: 4 businesses in parallel per batch
+    const BATCH = 4;
+    for (let i = 0; i < ALL.length; i += BATCH) {
+      await Promise.allSettled(ALL.slice(i, i + BATCH).map(biz => fetchAndTick(biz, dc, dc)));
     }
-    tick();
-  }));
+
+    // Booked: 3 Mercury in parallel
+    await Promise.allSettled(mercBiz.map(biz => fetchAndTick(biz, 'Bkg_CreaDate', 'Bkg_CreaDate')));
+  } catch(e) {
+    // Should never reach here, but just in case
+    console.error('warmCache error:', e);
+  }
 
   // Done
   if (bar) bar.style.width = '100%';
