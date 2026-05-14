@@ -50,7 +50,7 @@ header {
 .hdr-div { width:1px; height:18px; background:#243a5c; }
 .report-title { font-size:11.5px; font-weight:500; color:#b8ccec; letter-spacing:0.03em; }
 .header-right { display:flex; align-items:center; gap:12px; margin-left:auto; }
-.conn-badge { display:flex; align-items:center; gap:4px; font-size:9px; color:#6a82a0; }
+.conn-badge { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:500; color:#6a82a0; }
 .conn-dot { width:5px; height:5px; border-radius:50%; background:#c97a06; }
 .conn-dot.live { background:var(--up); }
 .week-badge { text-align:right; line-height:1.3; }
@@ -362,24 +362,6 @@ main {
     </div>
   </div>
 </header>
-<div id="cache-banner" style="
-  background:#0f2040;
-  border-bottom:2px solid #1a56db;
-  padding:8px 18px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-family:Inter,sans-serif;
-  font-size:12px;
-  color:#7aaed5;
-">
-  <span id="cache-banner-icon" style="font-size:16px;">⚡</span>
-  <span id="cache-banner-text" style="font-weight:500;color:#fff;">Loading all businesses in background…</span>
-  <div style="flex:1;background:#162d52;border-radius:4px;height:6px;margin:0 8px;">
-    <div id="warm-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#1a56db,#4a8eff);border-radius:4px;transition:width 0.35s ease;box-shadow:0 0 8px rgba(74,142,255,0.7);"></div>
-  </div>
-  <span id="cache-banner-pct" style="font-size:11px;color:#4a8eff;font-weight:600;min-width:44px;text-align:right;">0 / 17</span>
-</div>
 
 <!-- MAIN -->
 <main>
@@ -920,19 +902,11 @@ async function loadData(){
   const connDot = document.getElementById('connDot');
   if(!API_BASE){ applyData(DEMO); connLbl.textContent='Demo mode'; return; }
 
-  // If we already have this biz+mode cached locally, apply instantly
+  // If already cached locally, apply instantly
   if(ALL_DATA[DATE_COL] && ALL_DATA[DATE_COL][biz]){
     applyData(ALL_DATA[DATE_COL][biz]);
-    // Only show Live if warming is fully done
-    if (!_isWarming) {
-      connDot.classList.add('live');
-      connLbl.textContent = 'Live · MySQL';
-    }
     return;
   }
-
-  // Otherwise fetch single business — don't clobber warming label
-  if (!_isWarming) connLbl.textContent = 'Loading...';
 
   try{
     const r = await fetchWithRetry(
@@ -944,13 +918,8 @@ async function loadData(){
     if(!ALL_DATA[DATE_COL]) ALL_DATA[DATE_COL] = {};
     ALL_DATA[DATE_COL][biz] = data;
     applyData(data);
-    // Only show Live once warming is fully done
-    if (!_isWarming) {
-      connDot.classList.add('live');
-      connLbl.textContent = 'Live · MySQL';
-    }
   }catch(e){
-    connLbl.textContent = 'Connection failed - refresh to retry';
+    if (!_isWarming) connLbl.textContent = 'Connection failed';
     applyData(DEMO);
   }
 }
@@ -980,12 +949,8 @@ async function fetchBiz(biz, dateCol){
 let _isWarming = false;
 
 async function warmCache() {
-  const bar     = document.getElementById('warm-progress-bar');
   const connLbl = document.getElementById('connLabel');
   const connDot = document.getElementById('connDot');
-  const banner      = document.getElementById('cache-banner');
-  const bannerText  = document.getElementById('cache-banner-text');
-  const bannerPct   = document.getElementById('cache-banner-pct');
   const ALL = ALL_BIZ_LIST;
   const dc  = 'FlightDate';
   const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'];
@@ -993,20 +958,15 @@ async function warmCache() {
   let done = 0;
 
   _isWarming = true;
-  if (connDot) connDot.style.background = '#c97a06';
-  if (connLbl) connLbl.textContent = '⚡ Warming…';
-  if (bar) bar.style.width = '1%';
-  if (bannerPct) bannerPct.textContent = '0 / ' + total;
-  if (bannerText) bannerText.textContent = 'Loading all businesses in background…';
+  if (connDot) { connDot.classList.remove('live'); connDot.style.background = '#c97a06'; }
+  if (connLbl) connLbl.textContent = 'Loading 0 / ' + total;
 
   const tick = () => {
     done++;
-    const pct = Math.min(97, Math.round(done / total * 100));
-    if (bar) bar.style.width = pct + '%';
-    if (bannerPct) bannerPct.textContent = done + ' / ' + total;
+    if (connLbl) connLbl.textContent = 'Loading ' + done + ' / ' + total;
   };
 
-  // Helper: fetch one biz, tick() no matter what — never throws
+  // Fetch one biz, tick() no matter what — never throws
   const fetchAndTick = async (biz, dateCol, key) => {
     try {
       if (!ALL_DATA[key] || !ALL_DATA[key][biz]) {
@@ -1017,54 +977,27 @@ async function warmCache() {
         }
       }
     } catch(e) { /* ignore */ }
-    tick(); // always advance counter
+    tick();
   };
 
   try {
-    // Flown: 4 businesses in parallel per batch
     const BATCH = 4;
     for (let i = 0; i < ALL.length; i += BATCH) {
       await Promise.allSettled(ALL.slice(i, i + BATCH).map(biz => fetchAndTick(biz, dc, dc)));
     }
-
-    // Booked: 3 Mercury in parallel
     await Promise.allSettled(mercBiz.map(biz => fetchAndTick(biz, 'Bkg_CreaDate', 'Bkg_CreaDate')));
   } catch(e) {
-    // Should never reach here, but just in case
     console.error('warmCache error:', e);
   }
 
-  // Done
-  if (bar) bar.style.width = '100%';
   _isWarming = false;
   if (connDot) { connDot.style.background = ''; connDot.classList.add('live'); }
-  if (connLbl) connLbl.textContent = 'Live · MySQL';
-
-  // Banner flips green for 12s then hides
-  if (banner) {
-    banner.style.borderBottomColor = '#15803d';
-    banner.style.background = '#0d2e1a';
-  }
-  if (bannerText) {
-    bannerText.style.color = '#4ade80';
-    bannerText.textContent = '✅  All ' + total + ' businesses loaded — you can now switch freely!';
-  }
-  if (bannerPct) bannerPct.style.display = 'none';
-  if (bar) { bar.style.width = '100%'; bar.style.background = '#15803d'; }
-
-  setTimeout(() => {
-    if (banner) banner.style.display = 'none';
-  }, 12000);
+  if (connLbl) connLbl.textContent = 'Ready';
 }
 
 async function initDashboard(){
   if(!API_BASE){ applyData(DEMO); document.getElementById('connLabel').textContent='Demo mode'; return; }
-  // Show warming state immediately (synchronous — user sees this before any network call)
-  const connLbl = document.getElementById('connLabel');
-  const connDot = document.getElementById('connDot');
-  if (connLbl) connLbl.textContent = '⚡ Warming…';
-  if (connDot) connDot.style.background = '#c97a06';
-  warmCache();      // runs in background — don't await
+  warmCache();      // runs in background — sets dot amber + "Loading X/17" immediately
   await loadData(); // load current business
 }
 
@@ -1122,7 +1055,7 @@ function onBizChange(){
   document.getElementById('datesLabel').textContent = `${f(lastMonday)} – ${f(lastSunday)}`;
 })();
 
-loadData();
+initDashboard();
 
 function toggleKpiGroup(hdr, targetId) {
   var body = document.getElementById(targetId);
