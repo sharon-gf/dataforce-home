@@ -336,6 +336,13 @@ async function loadSummary() {
   }
 }
 
+// Logo click → go home (reload page)
+const logo = document.getElementById('hdr-logo');
+if (logo) {
+  logo.style.cursor = 'pointer';
+  logo.title = 'Go to Home';
+  logo.addEventListener('click', () => location.reload());
+}
 loadSummary();
 </script>
 </body>
