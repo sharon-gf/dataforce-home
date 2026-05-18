@@ -196,14 +196,16 @@ window.addEventListener('load', () => {
 async function loadLastUpdate() {
   const label = document.getElementById('lastUpdateLabel');
   try {
-    const r = await fetch(`${API_BASE}/api/dashboard?biz=ALL&date_col=FlightDate`, { headers: { "x-api-key": API_KEY } });
+    const r = await fetch(`${API_BASE}/api/status`, { headers: { "x-api-key": API_KEY } });
     if (!r.ok) throw new Error();
     const data = await r.json();
-    const ts = data.last_updated || data.updated_at || data.as_of || null;
-    const d  = ts ? new Date(ts) : new Date();
-    label.textContent = d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+    const ts = data.last_upload_at || null;
+    const d  = ts ? new Date(ts) : null;
+    label.textContent = d
+      ? d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true })
+      : 'N/A';
   } catch(e) {
-    label.textContent = new Date().toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+    label.textContent = 'N/A';
   }
 }
 </script>
