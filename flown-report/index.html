@@ -288,8 +288,8 @@ function buildCard(cfg, data) {
   else if (cfg.dbCol === 'Bkg_Ori') rows = oriRows;
 
   const tableRows = rows.length > 0
-    ? rows.map(r => `<tr><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(r.pkg)}</td></tr>`).join('')
-    : `<tr><td colspan="3" class="nodata-cell">No data this week</td></tr>`;
+    ? rows.map(r => `<tr><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(Math.round(r.tons*1000*r.pkg),0)}</td><td>${n(r.pkg)}</td></tr>`).join('')
+    : `<tr><td colspan="4" class="nodata-cell">No data this week</td></tr>`;
 
   return `
   <div class="card ${hasData ? '' : 'nodata'}" id="card-${cfg.key}">
@@ -318,7 +318,7 @@ function buildCard(cfg, data) {
       </div>
     </div>
     <table>
-      <thead><tr><th>${cfg.col}</th><th>Tons</th><th>P/KG</th></tr></thead>
+      <thead><tr><th>${cfg.col}</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
       <tbody>${tableRows}</tbody>
     </table>
   </div>`;
