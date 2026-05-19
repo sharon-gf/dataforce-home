@@ -730,7 +730,7 @@ function renderLine(data){
 
 let wbc = null;
 function renderWeeklyBar(data){
-  const rows = (data || []).filter(r => !r.grand);
+  const rows = (data || []).filter(r => !r.grand).reverse();
   const labels = rows.map(r => r.week);
   const tons   = rows.map(r => r.tons || 0);
   const ctx = document.getElementById('weeklyBarChart');
