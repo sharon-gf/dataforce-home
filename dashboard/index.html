@@ -350,6 +350,10 @@ main {
       <option value="08_AVCHI">AV-CHILE</option>
       <option value="10_VIRGIN">VIRGIN</option>
     </select>
+    <div class="date-toggle" id="toggle-805" style="margin-right:4px;">
+      <button id="btn-pure" class="active" onclick="set805Mode(false)">Pure</button>
+      <button id="btn-w805" onclick="set805Mode(true)" disabled style="opacity:0.35;cursor:not-allowed;">w/805</button>
+    </div>
     <div class="date-toggle">
       <button id="btn-flown" class="active" onclick="setDateMode('FlightDate')">Flown</button>
       <button id="btn-booked" onclick="setDateMode('Bkg_CreaDate')">Booked</button>
@@ -548,13 +552,10 @@ function setDateMode(col) {
   DATE_COL = col;
   document.getElementById("btn-flown").classList.toggle("active", col === "FlightDate");
   document.getElementById("btn-booked").classList.toggle("active", col === "Bkg_CreaDate");
-  // If we already have data for this mode, switch instantly
-  const biz = document.getElementById('bizSelect').value;
-  const key = `${biz}_${col}`;
+  const biz = getEffectiveBiz();
   if (ALL_DATA[col] && ALL_DATA[col][biz]) {
     applyData(ALL_DATA[col][biz]);
   } else {
-    // Need to load this mode (Booked for non-Mercury won't be pre-loaded)
     loadData();
   }
 }
@@ -899,7 +900,7 @@ async function loadAllData(dateCol) {
 }
 
 async function loadData(){
-  const biz = document.getElementById('bizSelect').value;
+  const biz = getEffectiveBiz();
   const connLbl = document.getElementById('connLabel');
   const connDot = document.getElementById('connDot');
   if(!API_BASE){ applyData(DEMO); connLbl.textContent='Demo mode'; return; }
@@ -928,9 +929,27 @@ async function loadData(){
 
 const ALL_BIZ_LIST = [
   "MERC_ALL","MERC_LOCAL","MERC_GSA","CXMEX",
-  "01_CXSUD","01_CXOFF","02_ET","03_UPS","04_ELAL",
-  "07_JPN","05_AVASIA","09_AVOTHER","08_AVCHI","10_VIRGIN"
+  "01_CXSUD","01_CXOFF","02_ET",
+  "03_UPS","03_UPS_805","04_ELAL","04_ELAL_805",
+  "07_JPN","05_AVASIA","09_AVOTHER","08_AVCHI",
+  "10_VIRGIN","10_VIRGIN_805"
 ];
+
+// Businesses that have a Pure vs w/805 toggle
+const HAS_805_BIZ = new Set(["03_UPS","04_ELAL","10_VIRGIN"]);
+let IS_805 = false;
+
+function getEffectiveBiz() {
+  const biz = document.getElementById('bizSelect').value;
+  return (IS_805 && HAS_805_BIZ.has(biz)) ? biz + '_805' : biz;
+}
+
+function set805Mode(is805) {
+  IS_805 = is805;
+  document.getElementById('btn-pure').classList.toggle('active', !is805);
+  document.getElementById('btn-w805').classList.toggle('active', is805);
+  loadData();
+}
 
 async function fetchBiz(biz, dateCol){
   // Race the fetch against a 12s timeout — returns null on any failure
@@ -1008,6 +1027,20 @@ const MERCURY_BIZ = new Set(["MERC_LOCAL", "MERC_GSA", "MERC_ALL"]);
 function onBizChange(){
   const biz = document.getElementById('bizSelect').value;
   const btnBooked = document.getElementById('btn-booked');
+  const btnPure   = document.getElementById('btn-pure');
+  const btn805    = document.getElementById('btn-w805');
+
+  // Reset 805 mode whenever business changes
+  IS_805 = false;
+  btnPure.classList.add('active');
+  btn805.classList.remove('active');
+
+  // Enable/disable 805 toggle
+  const has805 = HAS_805_BIZ.has(biz);
+  btn805.disabled = !has805;
+  btn805.style.opacity  = has805 ? '1'           : '0.35';
+  btn805.style.cursor   = has805 ? 'pointer'      : 'not-allowed';
+
   if (!MERCURY_BIZ.has(biz)) {
     // Force Flown and disable Booked
     DATE_COL = "FlightDate";
