@@ -349,6 +349,7 @@ main {
       <option value="09_AVOTHER">AV-OTHER</option>
       <option value="08_AVCHI">AV-CHILE</option>
       <option value="10_VIRGIN">VIRGIN</option>
+      <option value="11_ULTRACN">ULTRA CN</option>
     </select>
     <div class="date-toggle" id="toggle-805" style="margin-right:4px;">
       <button id="btn-pure" class="active" onclick="set805Mode(false)">Pure</button>
@@ -873,6 +874,7 @@ const TITLES = {
   '08_AVCHI':   'AVIANCA-CHI',
   '09_AVOTHER': 'AV-OTHER',
   '10_VIRGIN':  'VIRGIN',
+  '11_ULTRACN': 'ULTRA CN',
 };
 
 async function fetchWithRetry(url, options, retries=5, delay=5000){
@@ -932,7 +934,7 @@ const ALL_BIZ_LIST = [
   "01_CXSUD","01_CXOFF","02_ET",
   "03_UPS","03_UPS_805","04_ELAL","04_ELAL_805",
   "07_JPN","05_AVASIA","09_AVOTHER","08_AVCHI",
-  "10_VIRGIN","10_VIRGIN_805"
+  "10_VIRGIN","10_VIRGIN_805","11_ULTRACN"
 ];
 
 // Businesses that have a Pure vs w/805 toggle
