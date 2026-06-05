@@ -232,6 +232,11 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
     </div>
   </div>
 
+  <!-- DOWNLOAD BUTTON -->
+  <div style="padding:8px 12px 0; display:flex; justify-content:flex-end;">
+    <button id="downloadAwbBtn" style="padding:8px 16px; background:#1a56db; color:white; border:none; border-radius:4px; font-size:12px; cursor:pointer; font-weight:500;">⬇ Download AWBs</button>
+  </div>
+
   <!-- TABLES ROW -->
   <div class="tables-row">
 
@@ -332,13 +337,68 @@ function esc(s){ if(!s)return'—'; return String(s).replace(/&/g,'&amp;').repla
 // ─── CHART INSTANCES ─────────────────────────────────────────────────────────
 let chartTonsInst=null, chartRevInst=null;
 
-// ─── MAIN LOAD ───────────────────────────────────────────────────────────────
+// ─── DOWNLOAD AWBs ───────────────────────────────────────────────────────────
+async function downloadAWBs() {
+  const flightDate = nextFriday();
+  const flightISO  = toISO(flightDate);
+  
+  try {
+    // Try to fetch AWB details from API
+    const res = await fetch(`${API}/api/vvi_awbs?flight_date=${flightISO}`);
+    let awbData = [];
+    
+    if (res.ok) {
+      const data = await res.json();
+      awbData = data.awbs || [];
+    }
+    
+    // If no AWB data from API, create CSV with available data structure
+    if (awbData.length === 0) {
+      alert('No AWB data available for this flight date.');
+      return;
+    }
+    
+    // Create CSV content
+    const headers = ['Pfx', 'AWB', 'Sales Person', 'Customer', 'KG', 'REV', '$/KG', 'P/KG'];
+    let csv = headers.join(',') + '\n';
+    
+    awbData.forEach(row => {
+      const pfx = row.pfx || '';
+      const awb = row.awb || '';
+      const salesperson = (row.sales_person || row.salesperson || '').replace(/,/g, ';');
+      const customer = (row.customer || '').replace(/,/g, ';');
+      const kg = row.kg || row.weight_kg || '';
+      const rev = row.revenue || '';
+      const pkkg = row.price_per_kg || '';
+      const ppkg = row.profit_per_kg || '';
+      
+      csv += `${pfx},${awb},"${salesperson}","${customer}",${kg},${rev},${pkkg},${ppkg}\n`;
+    });
+    
+    // Trigger download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `VVI_AWBs_${toISO(flightDate)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch(err) {
+    console.error('Download error:', err);
+    alert('Error downloading AWB data');
+  }
+}
+
+
 async function load() {
   const flightDate = nextFriday();
   const flightISO  = toISO(flightDate);
   const flightLabel = fmtDate(flightDate);
 
   document.getElementById('nextFlightDate').textContent = flightLabel;
+  document.getElementById('downloadAwbBtn').addEventListener('click', downloadAWBs);
 
   try {
     const res  = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}`);
