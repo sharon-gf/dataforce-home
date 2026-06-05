@@ -159,6 +159,35 @@
     td { padding: 4px 8px; }
     td:first-child { max-width: none; } /* show full names on mobile */
   }
+
+  /* TABLE SCROLL CONTAINER */
+  .table-scroll { 
+    max-height: calc(9.5px * 1.4 * 7); /* ~6 rows + header + padding */
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  .table-scroll::-webkit-scrollbar {
+    width: 5px;
+  }
+  .table-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 3px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb:hover {
+    background: #888;
+  }
+
+  @media (max-width: 768px) {
+    .table-scroll {
+      max-height: none;
+      overflow-y: visible;
+    }
+  }
 </style>
 </head>
 <body>
@@ -318,10 +347,12 @@ function buildCard(cfg, data) {
         <div class="kpi-var"><span class="kpi-comp-lbl">BUD</span><span class="na">—</span></div>
       </div>
     </div>
-    <table>
-      <thead><tr><th>${cfg.col}</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
-      <tbody>${tableRows}</tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>${cfg.col}</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
   </div>`;
 }
 
