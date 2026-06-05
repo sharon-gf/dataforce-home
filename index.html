@@ -68,7 +68,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .hub-title { font-size:22px; font-weight:300; color:var(--navy); letter-spacing:0.01em; margin-bottom:6px; text-align:center; }
 .hub-title span { font-weight:600; }
 .hub-sub { font-size:12px; color:var(--text3); margin-bottom:28px; text-align:center; }
-.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; width:100%; max-width:900px; }
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; width:100%; max-width:1100px; }
 @media (max-width:720px) { .cards { grid-template-columns:repeat(2,1fr); } .hub-title { font-size:20px; } }
 @media (max-width:400px) { .cards { grid-template-columns:1fr; } .login-card { width:90%; } }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 16px 40px; cursor:pointer; text-decoration:none; color:inherit; display:flex; flex-direction:column; align-items:flex-start; gap:10px; position:relative; overflow:hidden; -webkit-tap-highlight-color:transparent; transition:transform .15s ease, box-shadow .15s ease; min-height:120px; }
@@ -85,6 +85,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-summary   { --card-accent:#0c9080; --card-icon-bg:#e8f7f5; }
 .card-booked    { --card-accent:#c97a06; --card-icon-bg:#fef6e8; }
 .card-upload    { --card-accent:#6d3fc7; --card-icon-bg:#f2eefa; }
+.card-vvi       { --card-accent:#b91c1c; --card-icon-bg:#fef2f2; }
 .hub-footer { margin-top:28px; font-size:9px; color:var(--text3); letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
 .hub-footer span { width:16px; height:1px; background:var(--border); display:inline-block; }
 </style>
@@ -151,6 +152,11 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#6d3fc7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
         <div><div class="card-name">Upload Data</div><div class="card-desc">Manual data upload and database refresh tools</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#6d3fc7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+      <a class="card card-vvi" href="https://dataforce.gsaforce.com/vvi-charters/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.8 19.8 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+        <div><div class="card-name">VVI Charters</div><div class="card-desc">Next charter flight KPIs, tonnage and revenue</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#b91c1c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
     </div>
     <div class="hub-footer"><span></span>DATAFORCE · GSA Cargo Intelligence Platform<span></span></div>
