@@ -232,11 +232,6 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
     </div>
   </div>
 
-  <!-- DOWNLOAD BUTTON -->
-  <div style="padding:8px 12px 0; display:flex; justify-content:flex-end;">
-    <button id="downloadAwbBtn" style="padding:8px 16px; background:#1a56db; color:white; border:none; border-radius:4px; font-size:12px; cursor:pointer; font-weight:500;">⬇ Download AWBs</button>
-  </div>
-
   <!-- TABLES ROW -->
   <div class="tables-row">
 
@@ -299,6 +294,11 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
   </div><!-- /charts-row -->
 
+  <!-- DOWNLOAD BUTTON -->
+  <div style="padding:16px 12px; display:flex; justify-content:center;">
+    <button id="downloadAwbBtn" style="padding:10px 24px; background:#1a56db; color:white; border:none; border-radius:4px; font-size:13px; cursor:pointer; font-weight:500; transition:background 0.3s;" onmouseover="this.style.background='#1444bf'" onmouseout="this.style.background='#1a56db'">⬇ Download AWBs</button>
+  </div>
+
 </main>
 
 <script>
@@ -336,6 +336,7 @@ function esc(s){ if(!s)return'—'; return String(s).replace(/&/g,'&amp;').repla
 
 // ─── CHART INSTANCES ─────────────────────────────────────────────────────────
 let chartTonsInst=null, chartRevInst=null;
+let currentFlightData = null;
 
 // ─── DOWNLOAD AWBs ───────────────────────────────────────────────────────────
 async function downloadAWBs() {
@@ -343,16 +344,22 @@ async function downloadAWBs() {
   const flightISO  = toISO(flightDate);
   
   try {
-    // Try to fetch AWB details from API
-    const res = await fetch(`${API}/api/vvi_awbs?flight_date=${flightISO}`);
     let awbData = [];
     
-    if (res.ok) {
-      const data = await res.json();
-      awbData = data.awbs || [];
+    // Try to fetch detailed AWB records
+    try {
+      const res = await fetch(`${API}/api/vvi_awbs?flight_date=${flightISO}`);
+      if (res.ok) {
+        const data = await res.json();
+        awbData = data.awbs || [];
+      }
+    } catch(e) {
+      // If detailed endpoint fails, try main endpoint for detailed records
+      if (currentFlightData && currentFlightData.awbs) {
+        awbData = currentFlightData.awbs;
+      }
     }
     
-    // If no AWB data from API, create CSV with available data structure
     if (awbData.length === 0) {
       alert('No AWB data available for this flight date.');
       return;
@@ -363,31 +370,31 @@ async function downloadAWBs() {
     let csv = headers.join(',') + '\n';
     
     awbData.forEach(row => {
-      const pfx = row.pfx || '';
-      const awb = row.awb || '';
-      const salesperson = (row.sales_person || row.salesperson || '').replace(/,/g, ';');
-      const customer = (row.customer || '').replace(/,/g, ';');
-      const kg = row.kg || row.weight_kg || '';
-      const rev = row.revenue || '';
-      const pkkg = row.price_per_kg || '';
-      const ppkg = row.profit_per_kg || '';
+      const pfx = String(row.pfx || row.prefix || '').replace(/,/g, '');
+      const awb = String(row.awb || row.awb_number || '').replace(/,/g, '');
+      const salesperson = String(row.sales_person || row.salesperson || row.agent || '').replace(/,/g, ';');
+      const customer = String(row.customer || '').replace(/,/g, ';');
+      const kg = Number(row.kg || row.weight_kg || 0).toLocaleString('en-US', {maximumFractionDigits: 2});
+      const rev = Number(row.revenue || row.rev || 0).toLocaleString('en-US', {maximumFractionDigits: 2});
+      const pkkg = Number(row.price_per_kg || row.pkg || 0).toFixed(3);
+      const ppkg = Number(row.profit_per_kg || row.ppkg || 0).toFixed(3);
       
       csv += `${pfx},${awb},"${salesperson}","${customer}",${kg},${rev},${pkkg},${ppkg}\n`;
     });
     
     // Trigger download
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `VVI_AWBs_${toISO(flightDate)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `VVI_AWBs_${flightISO}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   } catch(err) {
     console.error('Download error:', err);
-    alert('Error downloading AWB data');
+    alert('Error downloading AWB data: ' + err.message);
   }
 }
 
@@ -403,6 +410,7 @@ async function load() {
   try {
     const res  = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}`);
     const data = await res.json();
+    currentFlightData = data;
     renderKPIs(data.kpis);
     renderSalesTable(data.byAgent    || []);
     renderCustTable (data.byCustomer || []);
