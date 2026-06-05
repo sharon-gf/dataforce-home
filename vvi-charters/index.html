@@ -43,18 +43,18 @@ header {
 /* Bloque central: título grande */
 .hdr-mid { flex:1; text-align:center; }
 .hdr-module-name {
-  font-size:15px; font-weight:500; color:#c8d8f0;
-  letter-spacing:0.05em; line-height:1.2;
+  font-size:18px; font-weight:500; color:#7aaed5;
+  letter-spacing:0.05em; line-height:1.2; margin:0; padding:0;
 }
 .hdr-module-sub {
-  font-size:13px; font-weight:400; color:#c8d8f0;
-  letter-spacing:0.05em; line-height:1.2;
+  font-size:11px; font-weight:300; color:#7aaed5;
+  letter-spacing:0.05em; line-height:1.2; margin:0; padding:0;
 }
 
 /* Derecha: vuelo + sub */
-.header-right { text-align:right; flex-shrink:0; }
-.next-flight-label { font-size:9px; font-weight:400; color:#7aaae8; letter-spacing:0.04em; line-height:1.2; }
-.next-flight-date { font-size:13px; font-weight:500; color:#ffffff; letter-spacing:0.04em; line-height:1.3; }
+.header-right { text-align:right; flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; }
+.next-flight-label { font-size:9px; font-weight:400; color:#7aaed5; letter-spacing:0.04em; line-height:1.2; margin:0; padding:0; }
+.next-flight-date { font-size:13px; font-weight:400; color:#ffffff; letter-spacing:0.04em; line-height:1.3; margin:0; padding:0; }
 .next-flight-sub  { font-size:9px; color:#ffffff; letter-spacing:0.04em; line-height:1.2; }
 
 /* ── MAIN ── */
@@ -129,13 +129,47 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
 /* ══ MOBILE ══ */
 @media (max-width:600px) {
-  /* Header: centered layout with title in center, date on right */
-  header { height:auto; padding:10px 12px; display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:8px; border-radius:6px; margin:8px; }
-  .logo-area  { flex-shrink:0; }
-  .hdr-div    { display:none; }
-  .hdr-mid    { flex:1; text-align:center; }
-  .hdr-module-name { font-size:13px; }
-  .header-right { flex-shrink:0; text-align:right; }
+  /* Header: flex-wrap so logo+right stay on row 1, mid-section spans row 2 */
+  header { 
+    flex-wrap:wrap;
+    padding:10px 12px;
+    gap:0;
+    border-radius:6px;
+    margin:8px;
+  }
+  
+  /* Row 1 left: logo */
+  .logo-area {
+    order:1;
+    flex:1 1 50%;
+    align-items:center;
+  }
+  .logo-img { height:30px; }
+  
+  /* Row 1 right: date */
+  .header-right {
+    order:2;
+    flex:1 1 50%;
+    text-align:right;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .next-flight-label { font-size:9px; }
+  .next-flight-date { font-size:13px; }
+  
+  /* Row 2: title — full width, centred */
+  .hdr-mid {
+    order:3;
+    flex:1 1 100%;
+    text-align:center;
+    margin-top:10px;
+  }
+  .hdr-module-name { font-size:16px; }
+  .hdr-module-sub { font-size:11px; }
+  
+  .hdr-div { display:none; }
 
   main { padding:8px 8px 20px; gap:8px; }
 
