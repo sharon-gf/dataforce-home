@@ -343,8 +343,8 @@ async function downloadAWBs() {
   const flightISO  = toISO(flightDate);
   
   try {
-    // Fetch AWB data with include_awbs=true (lazy-loaded)
-    const res = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}&include_awbs=true`);
+    // Fetch fresh AWB data from API
+    const res = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}`);
     
     if (!res.ok) {
       alert('Error fetching AWB data');
