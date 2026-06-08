@@ -330,7 +330,7 @@ const fmtMoneyK = v => {
   if(a>=1e3) return '$'+(v/1e3).toFixed(0)+'K';
   return '$'+Math.round(v).toLocaleString('en-US');
 };
-const fmtPkg   = v => v==null?'—':'$'+Number(v).toFixed(3);
+const fmtPkg   = v => v==null?'—':'$'+Number(v).toFixed(2);
 const fmtPkgSm = v => v==null?'—':'$'+Number(v).toFixed(2);
 function esc(s){ if(!s)return'—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -368,10 +368,10 @@ async function downloadAWBs() {
       const awb = String(row.awb || '').replace(/,/g, '');
       const salesperson = String(row.salesperson || '').replace(/,/g, ';');
       const customer = String(row.customer || '').replace(/,/g, ';');
-      const kg = Number(row.kg || 0).toLocaleString('en-US', {maximumFractionDigits: 2});
-      const rev = Number(row.revenue || 0).toLocaleString('en-US', {maximumFractionDigits: 2});
-      const pkkg = Number(row.price_per_kg || 0).toFixed(3);
-      const ppkg = Number(row.profit_per_kg || 0).toFixed(3);
+      const kg = Number(row.kg || 0).toFixed(2);
+      const rev = Number(row.revenue || 0).toFixed(2);
+      const pkkg = Number(row.price_per_kg || 0).toFixed(2);
+      const ppkg = Number(row.profit_per_kg || 0).toFixed(2);
       
       csv += `${pfx},${awb},"${salesperson}","${customer}",${kg},${rev},${pkkg},${ppkg}\n`;
     });
