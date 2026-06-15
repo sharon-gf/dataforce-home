@@ -362,7 +362,7 @@ async function loadSummary() {
     // Load all businesses in parallel
     const results = await Promise.all(
       BIZ_CONFIG.map(cfg =>
-        fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=FlightDate`, {headers:{"x-api-key":API_KEY}})
+        apiCall('/api/dashboard?biz=${cfg.key}&date_col=FlightDate', {headers:{"x-api-key":API_KEY}})
           .then(r => r.ok ? r.json() : null)
           .catch(() => null)
       )
@@ -379,6 +379,43 @@ async function loadSummary() {
 }
 
 loadSummary();
+
+// ─── HELPER PARA AUTORIZACIÓN ─────────────────────────────────────
+function getAuthHeaders() {
+  const saved = sessionStorage.getItem('df_user');
+  if (!saved) return {};
+  
+  const { email } = JSON.parse(saved);
+  return {
+    'Authorization': `Bearer ${email}`,
+    'x-api-key': API_KEY
+  };
+}
+
+async function apiCall(endpoint, options = {}) {
+  const headers = {
+    ...getAuthHeaders(),
+    ...options.headers || {}
+  };
+  
+  const response = await apiCall('${endpoint}', {
+    ...options,
+    headers
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    if (response.status === 403) {
+      console.error('Access denied:', error.detail);
+      alert(`Access denied: ${error.detail || 'No permission'}`);
+      return null;
+    }
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
 </script>
 </body>
 </html>
