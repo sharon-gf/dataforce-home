@@ -644,7 +644,6 @@ async function showWeekDetail(week, year) {
 
   try {
     const data = await apiCall('${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}');
-    const data = await r.json();
     const rows = data.rows || [];
 
     if (rows.length === 0) {
@@ -918,7 +917,6 @@ async function loadData(){
       {headers: {"x-api-key": API_KEY}},
       3, 4000
     );
-    const data = await r.json();
     if(!ALL_DATA[DATE_COL]) ALL_DATA[DATE_COL] = {};
     ALL_DATA[DATE_COL][biz] = data;
     applyData(data);
@@ -1155,7 +1153,6 @@ async function showAwbDetail(groupCol, groupVal, label) {
 
   try {
     const data = await apiCall('${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}');
-    const data = await r.json();
     const rows = data.rows || [];
 
     if (rows.length === 0) {
