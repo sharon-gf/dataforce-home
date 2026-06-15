@@ -296,7 +296,7 @@
     form.append('file', file);
 
     try {
-      const resp = await fetch(`${API_BASE}/api/upload_cargo`, {
+      const resp = await apiCall('/api/upload_cargo', {
         method: 'POST',
         headers: { 'x-upload-key': key },
         body: form
@@ -321,6 +321,43 @@
     uploadBtn.disabled = false;
     uploadBtn.textContent = 'Upload';
   }
+
+// ─── HELPER PARA AUTORIZACIÓN ─────────────────────────────────────
+function getAuthHeaders() {
+  const saved = sessionStorage.getItem('df_user');
+  if (!saved) return {};
+  
+  const { email } = JSON.parse(saved);
+  return {
+    'Authorization': `Bearer ${email}`,
+    'x-api-key': API_KEY
+  };
+}
+
+async function apiCall(endpoint, options = {}) {
+  const headers = {
+    ...getAuthHeaders(),
+    ...options.headers || {}
+  };
+  
+  const response = await apiCall('${endpoint}', {
+    ...options,
+    headers
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    if (response.status === 403) {
+      console.error('Access denied:', error.detail);
+      alert(`Access denied: ${error.detail || 'No permission'}`);
+      return null;
+    }
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
 </script>
 </body>
 </html>
