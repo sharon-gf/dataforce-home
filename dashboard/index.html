@@ -893,10 +893,8 @@ async function fetchWithRetry(url, options, retries=5, delay=5000){
 async function loadAllData(dateCol) {
   const r = await fetchWithRetry(
     `${API_BASE}/api/all?date_col=${dateCol}`,
-    {headers: {"x-api-key": API_KEY}},
     3, 4000
   );
-  return await r.json();
 }
 
 async function loadData(){
@@ -914,7 +912,6 @@ async function loadData(){
   try{
     const r = await fetchWithRetry(
       `${API_BASE}/api/dashboard?biz=${biz}&date_col=${DATE_COL}`,
-      {headers: {"x-api-key": API_KEY}},
       3, 4000
     );
     if(!ALL_DATA[DATE_COL]) ALL_DATA[DATE_COL] = {};
@@ -1199,13 +1196,12 @@ async function apiCall(endpoint, options = {}) {
     ...options.headers || {}
   };
   
-  const response = await apiCall('${endpoint}', {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers
   });
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
     if (response.status === 403) {
       console.error('Access denied:', error.detail);
       alert(`Access denied: ${error.detail || 'No permission'}`);
