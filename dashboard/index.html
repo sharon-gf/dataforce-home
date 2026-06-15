@@ -643,7 +643,7 @@ async function showWeekDetail(week, year) {
   modal.style.display = 'flex';
 
   try {
-    const data = await apiCall(\'${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}\'); {headers: {"x-api-key": API_KEY}});
+    const data = await apiCall('${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}');
     const data = await r.json();
     const rows = data.rows || [];
 
@@ -1154,7 +1154,7 @@ async function showAwbDetail(groupCol, groupVal, label) {
   modal.style.display = 'flex';
 
   try {
-    const data = await apiCall(\'${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}\'); {headers: {"x-api-key": API_KEY}});
+    const data = await apiCall('${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}');
     const data = await r.json();
     const rows = data.rows || [];
 
