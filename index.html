@@ -211,6 +211,42 @@ function signOut() {
   document.getElementById('login-error').style.display = 'none';
 }
 
+// ─── HELPER PARA AUTORIZACIÓN ─────────────────────────────────────
+function getAuthHeaders() {
+  const saved = sessionStorage.getItem('df_user');
+  if (!saved) return {};
+  
+  const { email } = JSON.parse(saved);
+  return {
+    'Authorization': `Bearer ${email}`,
+    'x-api-key': API_KEY
+  };
+}
+
+async function apiCall(endpoint, options = {}) {
+  const headers = {
+    ...getAuthHeaders(),
+    ...options.headers || {}
+  };
+  
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    if (response.status === 403) {
+      console.error('Access denied:', error.detail);
+      alert(`Access denied: ${error.detail || 'No permission'}`);
+      return null;
+    }
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
 window.addEventListener('load', () => {
   const saved = sessionStorage.getItem('df_user');
   if (saved) { const { name } = JSON.parse(saved); showApp(name); }
@@ -219,9 +255,8 @@ window.addEventListener('load', () => {
 async function loadLastUpdate() {
   const label = document.getElementById('lastUpdateLabel');
   try {
-    const r = await fetch(`${API_BASE}/api/status`, { headers: { "x-api-key": API_KEY } });
-    if (!r.ok) throw new Error();
-    const data = await r.json();
+    const data = await apiCall('/api/status');
+    if (!data) { label.textContent = 'N/A'; return; }
     const ts = data.last_upload_at || null;
     const d  = ts ? new Date(ts) : null;
     label.textContent = d
