@@ -643,7 +643,9 @@ async function showWeekDetail(week, year) {
   modal.style.display = 'flex';
 
   try {
-    const data = await apiCall('${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}');
+    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}`;
+    const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
+    const data = await r.json();
     const rows = data.rows || [];
 
     if (rows.length === 0) {
@@ -878,7 +880,7 @@ const TITLES = {
 async function fetchWithRetry(url, options, retries=5, delay=5000){
   for(let i=0; i<retries; i++){
     try{
-      const data = await apiCall(url, options);
+      const r = await fetch(url, options);
       if(r.ok) return r;
       throw new Error(`HTTP ${r.status}`);
     }catch(e){
@@ -893,8 +895,10 @@ async function fetchWithRetry(url, options, retries=5, delay=5000){
 async function loadAllData(dateCol) {
   const r = await fetchWithRetry(
     `${API_BASE}/api/all?date_col=${dateCol}`,
+    {headers: {"x-api-key": API_KEY}},
     3, 4000
   );
+  return await r.json();
 }
 
 async function loadData(){
@@ -912,8 +916,10 @@ async function loadData(){
   try{
     const r = await fetchWithRetry(
       `${API_BASE}/api/dashboard?biz=${biz}&date_col=${DATE_COL}`,
+      {headers: {"x-api-key": API_KEY}},
       3, 4000
     );
+    const data = await r.json();
     if(!ALL_DATA[DATE_COL]) ALL_DATA[DATE_COL] = {};
     ALL_DATA[DATE_COL][biz] = data;
     applyData(data);
@@ -952,11 +958,12 @@ async function fetchBiz(biz, dateCol){
   const timeout = new Promise(res => setTimeout(() => res(null), 12000));
   const fetcher = (async () => {
     try {
-      const data = await apiCall(
-        `/api/dashboard?biz=${biz}&date_col=${dateCol}`
+      const r = await fetch(
+        `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}`,
+        {headers: {"x-api-key": API_KEY}}
       );
-      if (!data) return null;
-      return data;
+      if (!r.ok) return null;
+      return await r.json();
     } catch(e) { return null; }
   })();
   return Promise.race([fetcher, timeout]);
@@ -1149,7 +1156,9 @@ async function showAwbDetail(groupCol, groupVal, label) {
   modal.style.display = 'flex';
 
   try {
-    const data = await apiCall('${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}');
+    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}`;
+    const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
+    const data = await r.json();
     const rows = data.rows || [];
 
     if (rows.length === 0) {
@@ -1177,42 +1186,6 @@ async function showAwbDetail(groupCol, groupVal, label) {
     body.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:red;">Error loading data</td></tr>';
   }
 }
-
-// ─── HELPER PARA AUTORIZACIÓN ─────────────────────────────────────
-function getAuthHeaders() {
-  const saved = sessionStorage.getItem('df_user');
-  if (!saved) return {};
-  
-  const { email } = JSON.parse(saved);
-  return {
-    'Authorization': `Bearer ${email}`,
-    'x-api-key': API_KEY
-  };
-}
-
-async function apiCall(endpoint, options = {}) {
-  const headers = {
-    ...getAuthHeaders(),
-    ...options.headers || {}
-  };
-  
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers
-  });
-  
-  if (!response.ok) {
-    if (response.status === 403) {
-      console.error('Access denied:', error.detail);
-      alert(`Access denied: ${error.detail || 'No permission'}`);
-      return null;
-    }
-    throw new Error(`API error: ${response.status}`);
-  }
-  
-  return response.json();
-}
-
 </script>
 </body>
 </html>
