@@ -299,7 +299,7 @@ function buildCard(cfg, data) {
   const q1  = k?.q1;
   const period = MODE === 'ytd' ? ytd : MODE === 'q1' ? q1 : lw;
   const hasData = period && period.tons != null;
-  // Comparison label: 'LW' (vs last week) for THIS WEEK mode, '25\'' for YTD/Q1
+  // Comparison label: 'LW' (vs last week) for THIS WEEK mode, '25'' for YTD/Q1
   const compLbl = MODE === 'lw' ? 'LW' : "25'";
 
   const suffix = MODE === 'ytd' ? '_ytd' : MODE === 'q1' ? '_q1' : '';
