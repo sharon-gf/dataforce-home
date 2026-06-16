@@ -1,129 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DATAFORCE — User Administration</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; overflow-x: hidden; background: #e8eaee; font-family: 'Inter', sans-serif; }
+:root {
+  --bg:       #e8eaee;
+  --surface:  #ffffff;
+  --surface2: #f4f5f8;
+  --border:   #dde0e8;
+  --navy:     #0d1f3c;
+  --navy2:    #162d52;
+  --navy-hdr: #1a3360;
+  --text1:    #0d1f3c;
+  --text2:    #3d4f68;
+  --text3:    #8896aa;
+  --blue:     #1a56db;
+  --stripe:   #f0f2f6;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { width:100%; min-height:100%; font-family:'Inter',sans-serif; background:var(--bg); color:var(--text1); font-size:11px; }
 
-  .dash { padding: 8px; min-height: 100vh; }
+/* LOGO */
+.logo-svg { height:28px; width:auto; object-fit:contain; }
 
-  /* HEADER */
-  .header {
-    background: #0d1f3c;
-    border-radius: 6px;
-    padding: 12px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-  .logo { display: flex; align-items: center; gap: 8px; }
-  .logo-text { color: #7aaed5; font-size: 13px; font-weight: 300; letter-spacing: 2px; }
-  .hdr-mid { color: #7aaed5; font-size: 12px; font-weight: 300; letter-spacing: 1px; text-align: center; flex: 1; }
-  .hdr-right { text-align: right; }
-  .user-name { color: #fff; font-size: 12px; font-weight: 400; }
-  .logout-btn { background: transparent; border: 1px solid #7aaed5; color: #7aaed5; padding: 5px 12px; border-radius: 3px; font-size: 10px; cursor: pointer; margin-left: 10px; transition: all 0.2s; }
-  .logout-btn:hover { background: #7aaed5; color: #0d1f3c; }
+/* ── HEADER ── */
+header {
+  background:var(--navy);
+  padding:10px 16px;
+  height:auto;
+  display:flex; align-items:center; gap:10px;
+  flex-shrink:0;
+  border-radius:6px;
+  margin:8px;
+}
+.logo-area { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.hdr-div   { width:1px; height:20px; background:#243a5c; flex-shrink:0; }
 
-  /* LOGIN */
-  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0d1f3c; }
-  .login-box { background: #1a2a45; padding: 2rem; border-radius: 6px; text-align: center; width: 100%; max-width: 360px; border: 1px solid #7aaed5; }
-  .login-title { color: #7aaed5; font-size: 16px; font-weight: 400; letter-spacing: 1px; margin-bottom: 1rem; }
-  .login-desc { color: #7aaed5; font-size: 11px; font-weight: 300; margin-bottom: 1.5rem; }
-  #login-error { display: none; background: #8b3a3a; color: #ffcccc; padding: 10px; border-radius: 4px; font-size: 11px; margin-bottom: 1rem; }
+/* Bloque central */
+.hdr-mid { flex:1; text-align:center; }
+.hdr-module-name {
+  font-size:18px; font-weight:500; color:#7aaed5;
+  letter-spacing:0.05em; line-height:1.2; margin:0; padding:0;
+}
 
-  /* MAIN */
-  #app { display: none; flex-direction: column; min-height: 100vh; background: #e8eaee; }
+/* Derecha */
+.header-right { text-align:right; flex-shrink:0; }
+.user-info { font-size:11px; color:#fff; }
+.logout-btn { background:transparent; border:1px solid #7aaed5; color:#7aaed5; padding:4px 10px; border-radius:3px; font-size:9px; cursor:pointer; margin-left:10px; transition:all 0.2s; }
+.logout-btn:hover { background:#7aaed5; color:var(--navy); }
 
-  /* CONTENT */
-  .content { padding: 20px 120px; }
-  .page-title { color: #0d1f3c; font-size: 18px; font-weight: 500; letter-spacing: 0.3px; margin-bottom: 6px; }
-  .page-desc { color: #7aaed5; font-size: 10px; font-weight: 300; margin-bottom: 16px; }
+/* ── LOGIN ── */
+#login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--navy); }
+.login-box { background:#1a2a45; padding:2rem; border-radius:6px; text-align:center; width:100%; max-width:360px; border:1px solid #7aaed5; }
+.login-title { color:#7aaed5; font-size:16px; font-weight:400; letter-spacing:1px; margin-bottom:1rem; }
+.login-desc { color:#7aaed5; font-size:10px; font-weight:300; margin-bottom:1.5rem; }
+#login-error { display:none; background:#8b3a3a; color:#ffcccc; padding:10px; border-radius:4px; font-size:10px; margin-bottom:1rem; }
 
-  /* CONTROLS */
-  .controls { background: #fff; border-radius: 5px; padding: 10px; margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; border: 1px solid #d0d4dc; }
-  .controls input, .controls select { padding: 6px 8px; border: 1px solid #d0d4dc; border-radius: 4px; font-size: 11px; font-family: inherit; background: #fff; color: #444; }
-  .controls input { flex: 1; min-width: 180px; }
-  .controls input:focus, .controls select:focus { outline: none; border-color: #093c71; box-shadow: 0 0 0 2px rgba(9, 60, 113, 0.1); }
+/* ── MAIN ── */
+#app { display:none; flex-direction:column; min-height:100vh; background:var(--bg); }
+main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
-  /* ADD USER BUTTON */
-  .add-btn { background: #093c71; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 10px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-  .add-btn:hover { background: #0d1f3c; }
+/* ── PAGE TITLE ── */
+.page-title { color:var(--text1); font-size:14px; font-weight:500; margin:0; }
+.page-desc { color:var(--text3); font-size:9px; font-weight:300; margin:0; }
 
-  /* STATS */
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-  .stat { background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #d0d4dc; text-align: center; }
-  .stat-label { font-size: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
-  .stat-value { font-size: 18px; font-weight: 500; color: #093c71; }
+/* ── CONTROLS ── */
+.controls-row { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
+.search-box { flex:1; min-width:200px; }
+.search-box input { width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); }
+.search-box input:focus { outline:none; border-color:var(--blue); }
+.filter-select { padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); }
+.add-btn { background:var(--blue); color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:10px; font-weight:500; cursor:pointer; white-space:nowrap; }
+.add-btn:hover { background:#0d47a1; }
 
-  /* TABLE */
-  .table-wrapper { background: #fff; border-radius: 5px; border: 1px solid #d0d4dc; overflow: hidden; }
-  table { width: 100%; border-collapse: collapse; font-size: 10px; }
-  thead { background: #f8f9fc; border-bottom: 1.5px solid #093c71; }
-  th { color: #093c71; padding: 6px 8px; text-align: left; font-weight: 500; font-size: 9px; }
-  th:nth-child(3) { text-align: center; }
-  th:nth-child(n+4) { text-align: right; }
-  tbody tr { border-bottom: 1px solid #f5f5f5; }
-  tbody tr:hover { background: #f5f8ff; }
-  td { padding: 6px 8px; color: #444; text-align: left; }
-  td:nth-child(3) { text-align: center; }
-  td:nth-child(n+4) { text-align: right; }
-  .email-col { color: #999; font-size: 9px; }
-  .modules-col { font-size: 9px; color: #666; }
-  .status-badge { display: inline-block; padding: 3px 6px; border-radius: 3px; font-size: 8px; font-weight: 500; }
-  .status-active { background: #c7e9c0; color: #093c71; }
+/* ── STATS ── */
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px; }
+.stat { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 10px; text-align:center; }
+.stat-label { font-size:8px; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
+.stat-value { font-size:18px; font-weight:500; color:var(--blue); }
 
-  /* BUTTONS */
-  .btn-edit, .btn-delete { background: transparent; border: 1px solid #d0d4dc; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 8px; color: #444; transition: all 0.2s; }
-  .btn-edit:hover { background: #093c71; color: #fff; border-color: #093c71; }
-  .btn-delete:hover { background: #8b3a3a; color: #fff; border-color: #8b3a3a; }
+/* ── TABLE ── */
+.tbl-wrap { overflow-x:auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; }
+.dtbl { width:100%; border-collapse:collapse; }
+.dtbl th {
+  text-align:left; color:#c8d8f0; font-weight:500; font-size:8px; letter-spacing:0.05em; text-transform:uppercase;
+  padding:6px 8px; background:var(--navy-hdr); white-space:nowrap;
+}
+.dtbl th:nth-child(3) { text-align:center; }
+.dtbl th:nth-child(n+4) { text-align:right; }
+.dtbl td {
+  text-align:left; padding:6px 8px; color:var(--text1); font-size:9.5px; border-bottom:1px solid var(--border); white-space:nowrap;
+}
+.dtbl td:nth-child(3) { text-align:center; }
+.dtbl td:nth-child(n+4) { text-align:right; }
+.dtbl tbody tr:nth-child(even) td { background:var(--stripe); }
+.dtbl tbody tr:nth-child(odd)  td { background:var(--surface); }
+.dtbl tbody tr:hover td { background:#e8edf7 !important; }
 
-  /* LOADING */
-  .loading { text-align: center; color: #7aaed5; padding: 40px; font-size: 11px; }
+.status-badge { display:inline-block; padding:3px 6px; border-radius:3px; font-size:8px; font-weight:500; }
+.status-active { background:#c8d8f0; color:var(--navy); }
+.status-inactive { background:#e8c4c4; color:#8b3a3a; }
 
-  /* EMPTY STATE */
-  .empty-state { display: none; text-align: center; padding: 30px; color: #999; font-size: 11px; background: #fff; border-radius: 5px; border: 1px solid #d0d4dc; }
+.btn-edit, .btn-delete { background:transparent; border:1px solid var(--border); padding:4px 8px; border-radius:3px; cursor:pointer; font-size:8px; color:var(--text1); transition:all 0.2s; }
+.btn-edit:hover { background:var(--blue); color:#fff; border-color:var(--blue); }
+.btn-delete:hover { background:#8b3a3a; color:#fff; border-color:#8b3a3a; }
 
-  /* MODAL */
-  #editModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-  #editModal.active { display: flex; }
-  .modal { background: #fff; border-radius: 6px; padding: 16px; max-width: 450px; width: 100%; max-height: 90vh; overflow-y: auto; border: 1px solid #d0d4dc; }
-  .modal h3 { color: #0d1f3c; font-size: 14px; font-weight: 500; margin-bottom: 12px; }
-  
-  .form-group { margin-bottom: 12px; }
-  .form-group label { display: block; font-size: 9px; font-weight: 500; color: #0d1f3c; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
-  .form-group input, .form-group select { width: 100%; padding: 6px 8px; border: 1px solid #d0d4dc; border-radius: 4px; font-size: 11px; font-family: inherit; background: #fff; color: #444; }
-  .form-group input:focus, .form-group select:focus { outline: none; border-color: #093c71; box-shadow: 0 0 0 2px rgba(9, 60, 113, 0.1); }
+/* ── LOADING ── */
+.loading { text-align:center; color:var(--text3); padding:40px; font-size:11px; }
+.empty-state { display:none; text-align:center; padding:30px; color:var(--text3); font-size:11px; background:var(--surface); border-radius:6px; border:1px solid var(--border); }
 
-  .checkbox-group { border: 1px solid #d0d4dc; border-radius: 4px; padding: 8px; max-height: 140px; overflow-y: auto; background: #f8f9fc; }
-  .checkbox-item { display: flex; align-items: center; gap: 6px; padding: 4px 0; font-size: 10px; }
-  .checkbox-item input { margin: 0; }
-  .checkbox-item label { margin: 0; font-weight: 400; cursor: pointer; }
-  .select-all-btn { font-size: 9px; color: #093c71; background: none; border: none; padding: 4px 0; cursor: pointer; font-weight: 500; margin-bottom: 6px; display: block; }
+/* ── MODAL ── */
+#editModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
+#editModal.active { display:flex; }
+.modal { background:var(--surface); border-radius:6px; padding:16px; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; }
+.modal h3 { color:var(--text1); font-size:14px; font-weight:500; margin-bottom:12px; }
 
-  .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; border-top: 1px solid #d0d4dc; padding-top: 12px; }
-  .btn-cancel { background: transparent; border: 1px solid #d0d4dc; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; color: #444; transition: all 0.2s; }
-  .btn-cancel:hover { background: #f5f5f5; }
-  .btn-save { background: #093c71; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 500; transition: all 0.2s; }
-  .btn-save:hover { background: #0d1f3c; }
-  .btn-save:disabled { background: #ccc; cursor: not-allowed; }
+.form-group { margin-bottom:12px; }
+.form-group label { display:block; font-size:9px; font-weight:500; color:var(--text1); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.05em; }
+.form-group input, .form-group select { width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); color:var(--text1); }
+.form-group input:focus, .form-group select:focus { outline:none; border-color:var(--blue); }
 
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    .header { flex-wrap: wrap; }
-    .hdr-mid { order: 3; flex: 1 1 100%; margin-top: 8px; }
-    .stats { grid-template-columns: 1fr; }
-    .controls { flex-direction: column; }
-    .controls input { min-width: auto; }
-    table { font-size: 9px; }
-    th, td { padding: 4px 6px; }
-  }
+.checkbox-group { border:1px solid var(--border); border-radius:4px; padding:8px; max-height:160px; overflow-y:auto; background:var(--surface2); }
+.checkbox-item { display:flex; align-items:center; gap:6px; padding:4px 0; font-size:9px; }
+.checkbox-item input { margin:0; }
+.checkbox-item label { margin:0; font-weight:400; cursor:pointer; }
+.select-all-btn { font-size:9px; color:var(--blue); background:none; border:none; padding:4px 0 8px 0; cursor:pointer; font-weight:500; display:block; }
+
+.modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px; }
+.btn-cancel { background:transparent; border:1px solid var(--border); padding:6px 12px; border-radius:4px; cursor:pointer; font-size:10px; color:var(--text1); }
+.btn-cancel:hover { background:var(--surface2); }
+.btn-save { background:var(--blue); color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:500; }
+.btn-save:hover { background:#0d47a1; }
+.btn-save:disabled { background:#ccc; cursor:not-allowed; }
+
+/* ── RESPONSIVE ── */
+@media (max-width:600px) {
+  header { flex-wrap:wrap; gap:8px; }
+  .hdr-mid { order:3; flex:1 1 100%; margin-top:8px; }
+  .stats { grid-template-columns:1fr; }
+  .controls-row { flex-direction:column; }
+  .search-box { min-width:auto; }
+}
 </style>
 </head>
 <body>
@@ -141,74 +164,81 @@
 
 <!-- APP -->
 <div id="app">
-  <div class="header">
-    <div class="logo">
-      <div class="logo-text">DATAFORCE</div>
+  <header>
+    <div class="logo-area">
+      <svg class="logo-svg" viewBox="0 0 24 24" fill="currentColor" color="#7aaed5" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M12 14c-5 0-8 3-8 3v5h16v-5s-3-3-8-3z"/>
+      </svg>
     </div>
-    <div class="hdr-mid">USER ADMINISTRATION</div>
-    <div class="hdr-right">
-      <span class="user-name" id="userName"></span>
-      <button class="logout-btn" onclick="signOut()">Sign out</button>
+    <div class="hdr-div"></div>
+    <div class="hdr-mid">
+      <h1 class="hdr-module-name">USER ADMINISTRATION</h1>
     </div>
-  </div>
-
-  <div class="dash">
-    <div class="content">
-      <div class="page-title">Manage Users</div>
-      <div class="page-desc">Add, edit, or remove user access and permissions</div>
-
-      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
-        <div class="controls" style="flex: 1; margin-bottom: 0;">
-          <input type="text" id="searchInput" placeholder="Search by name or email…" onkeyup="filterTable()" />
-          <select id="moduleFilter" onchange="filterTable()">
-            <option value="">All modules</option>
-            <option value="booked">Booked</option>
-            <option value="flown">Flown</option>
-            <option value="dashboard">Dashboard</option>
-            <option value="vvi_charters">VVI Charters</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-        <button class="add-btn" onclick="openNewUserModal()">+ Add User</button>
-      </div>
-
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-label">Total</div>
-          <div class="stat-value" id="totalUsers">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Active</div>
-          <div class="stat-value" id="activeUsers">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Inactive</div>
-          <div class="stat-value" id="inactiveUsers">0</div>
-        </div>
-      </div>
-
-      <div id="loadingSpinner" class="loading">Loading users…</div>
-
-      <div class="table-wrapper" id="tableContainer" style="display: none;">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Modules</th>
-              <th>Sales Person</th>
-              <th>Status</th>
-              <th style="text-align: right;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody">
-          </tbody>
-        </table>
-      </div>
-
-      <div id="emptyState" class="empty-state">No users found</div>
+    <div class="header-right">
+      <div class="user-info"><span id="userName"></span> <button class="logout-btn" onclick="signOut()">Sign out</button></div>
     </div>
-  </div>
+  </header>
+
+  <main>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+      <div>
+        <p class="page-title">Manage Users</p>
+        <p class="page-desc">Add, edit, or remove user access and permissions</p>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by name or email…" onkeyup="filterTable()" />
+      </div>
+      <select id="moduleFilter" class="filter-select" onchange="filterTable()">
+        <option value="">All modules</option>
+        <option value="booked">Booked</option>
+        <option value="flown">Flown</option>
+        <option value="dashboard">Dashboard</option>
+        <option value="vvi_charters">VVI Charters</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button class="add-btn" onclick="openNewUserModal()">+ Add User</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Total</div>
+        <div class="stat-value" id="totalUsers">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Active</div>
+        <div class="stat-value" id="activeUsers">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Inactive</div>
+        <div class="stat-value" id="inactiveUsers">0</div>
+      </div>
+    </div>
+
+    <div id="loadingSpinner" class="loading">Loading users…</div>
+
+    <div class="tbl-wrap" id="tableContainer" style="display:none;">
+      <table class="dtbl">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Modules</th>
+            <th>Sales Person</th>
+            <th>Status</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+
+    <div id="emptyState" class="empty-state">No users found</div>
+  </main>
 </div>
 
 <!-- MODAL -->
@@ -228,7 +258,7 @@
 
     <div class="form-group">
       <label>Module access</label>
-      <button type="button" class="select-all-btn" onclick="toggleSelectAllModules(this)">Select All</button>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllModules()">Select All</button>
       <div class="checkbox-group" id="modulesCheckboxes">
         <div class="checkbox-item">
           <input type="checkbox" id="mod-booked" value="booked" onchange="updateSelectAllModules()" />
@@ -255,7 +285,7 @@
 
     <div class="form-group">
       <label>Allowed businesses</label>
-      <button type="button" class="select-all-btn" onclick="toggleSelectAllBusinesses(this)">Select All</button>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllBusinesses()">Select All</button>
       <div class="checkbox-group" id="businessesCheckboxes"></div>
     </div>
 
@@ -263,6 +293,14 @@
       <label>Sales person</label>
       <select id="formSalesPerson">
         <option value="">— All sales persons</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Status</label>
+      <select id="formStatus">
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
       </select>
     </div>
 
@@ -371,6 +409,7 @@
 
   function populateSalesPersonSelect() {
     const select = document.getElementById('formSalesPerson');
+    // Keep the default option, then add all sales persons
     allSalesPersons.forEach(person => {
       const option = document.createElement('option');
       option.value = person;
@@ -379,7 +418,7 @@
     });
   }
 
-  function toggleSelectAllModules(btn) {
+  function toggleSelectAllModules() {
     const checkboxes = document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]');
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     checkboxes.forEach(cb => cb.checked = !allChecked);
@@ -393,7 +432,7 @@
     btn.textContent = allChecked ? 'Deselect All' : 'Select All';
   }
 
-  function toggleSelectAllBusinesses(btn) {
+  function toggleSelectAllBusinesses() {
     const checkboxes = document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]');
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     checkboxes.forEach(cb => cb.checked = !allChecked);
@@ -422,14 +461,15 @@
       const row = document.createElement('tr');
       const modules = (user.modules || []).join(', ') || '—';
       const salesPerson = user.sales_person || '—';
+      const status = user.status || 'active';
 
       row.innerHTML = `
         <td><strong>${user.name || '—'}</strong></td>
-        <td class="email-col">${user.email}</td>
-        <td class="modules-col">${modules}</td>
+        <td>${user.email}</td>
+        <td>${modules}</td>
         <td>${salesPerson}</td>
-        <td><span class="status-badge status-active">Active</span></td>
-        <td style="text-align: right;">
+        <td><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${status === 'active' ? 'Active' : 'Inactive'}</span></td>
+        <td style="text-align:right;">
           <button class="btn-edit" onclick="editUser(${user.id})">Edit</button>
           <button class="btn-delete" onclick="deleteUser(${user.id})">Del</button>
         </td>
@@ -444,8 +484,10 @@
 
   function updateStats() {
     document.getElementById('totalUsers').textContent = allUsers.length;
-    document.getElementById('activeUsers').textContent = allUsers.length;
-    document.getElementById('inactiveUsers').textContent = 0;
+    const active = allUsers.filter(u => u.status !== 'inactive').length;
+    const inactive = allUsers.filter(u => u.status === 'inactive').length;
+    document.getElementById('activeUsers').textContent = active;
+    document.getElementById('inactiveUsers').textContent = inactive;
   }
 
   function filterTable() {
@@ -471,9 +513,12 @@
     document.getElementById('formName').value = '';
     document.getElementById('formEmail').value = '';
     document.getElementById('formSalesPerson').value = '';
+    document.getElementById('formStatus').value = 'active';
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Create';
+    updateSelectAllModules();
+    updateSelectAllBusinesses();
   }
 
   function editUser(userId) {
@@ -485,6 +530,7 @@
     document.getElementById('formName').value = user.name || '';
     document.getElementById('formEmail').value = user.email || '';
     document.getElementById('formSalesPerson').value = user.sales_person || '';
+    document.getElementById('formStatus').value = user.status || 'active';
 
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => {
       cb.checked = (user.modules || []).includes(cb.value);
@@ -496,6 +542,8 @@
 
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Save';
+    updateSelectAllModules();
+    updateSelectAllBusinesses();
   }
 
   function closeEditModal() {
@@ -508,9 +556,10 @@
     const modules = Array.from(document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     const businesses = Array.from(document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     const salesPerson = document.getElementById('formSalesPerson').value || null;
+    const status = document.getElementById('formStatus').value;
 
     if (!name || !email) {
-      alert('Please fill in all required fields');
+      alert('Please fill in name and email');
       return;
     }
 
@@ -567,7 +616,7 @@
       await loadUsers();
       alert('User deleted successfully');
     } catch (e) {
-      alert('Error deleting user: ' + e.message);
+      alert('Error: ' + e.message);
     }
   }
 
