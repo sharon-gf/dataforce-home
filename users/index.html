@@ -104,7 +104,8 @@
   .checkbox-group { border: 1px solid #d0d4dc; border-radius: 4px; padding: 8px; max-height: 140px; overflow-y: auto; background: #f8f9fc; }
   .checkbox-item { display: flex; align-items: center; gap: 6px; padding: 4px 0; font-size: 10px; }
   .checkbox-item input { margin: 0; }
-  .checkbox-item label { margin: 0; font-weight: 400; }
+  .checkbox-item label { margin: 0; font-weight: 400; cursor: pointer; }
+  .select-all-btn { font-size: 9px; color: #093c71; background: none; border: none; padding: 4px 0; cursor: pointer; font-weight: 500; margin-bottom: 6px; display: block; }
 
   .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; border-top: 1px solid #d0d4dc; padding-top: 12px; }
   .btn-cancel { background: transparent; border: 1px solid #d0d4dc; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; color: #444; transition: all 0.2s; }
@@ -227,25 +228,26 @@
 
     <div class="form-group">
       <label>Module access</label>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllModules(this)">Select All</button>
       <div class="checkbox-group" id="modulesCheckboxes">
         <div class="checkbox-item">
-          <input type="checkbox" id="mod-booked" value="booked" />
+          <input type="checkbox" id="mod-booked" value="booked" onchange="updateSelectAllModules()" />
           <label for="mod-booked">Booked</label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="mod-flown" value="flown" />
+          <input type="checkbox" id="mod-flown" value="flown" onchange="updateSelectAllModules()" />
           <label for="mod-flown">Flown</label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="mod-dashboard" value="dashboard" />
+          <input type="checkbox" id="mod-dashboard" value="dashboard" onchange="updateSelectAllModules()" />
           <label for="mod-dashboard">Dashboard</label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="mod-vvi" value="vvi_charters" />
+          <input type="checkbox" id="mod-vvi" value="vvi_charters" onchange="updateSelectAllModules()" />
           <label for="mod-vvi">VVI Charters</label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="mod-admin" value="admin" />
+          <input type="checkbox" id="mod-admin" value="admin" onchange="updateSelectAllModules()" />
           <label for="mod-admin">Admin</label>
         </div>
       </div>
@@ -253,6 +255,7 @@
 
     <div class="form-group">
       <label>Allowed businesses</label>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllBusinesses(this)">Select All</button>
       <div class="checkbox-group" id="businessesCheckboxes"></div>
     </div>
 
@@ -359,7 +362,7 @@
       const div = document.createElement('div');
       div.className = 'checkbox-item';
       div.innerHTML = `
-        <input type="checkbox" id="biz-${biz}" value="${biz}" />
+        <input type="checkbox" id="biz-${biz}" value="${biz}" onchange="updateSelectAllBusinesses()" />
         <label for="biz-${biz}">${biz}</label>
       `;
       container.appendChild(div);
@@ -374,6 +377,34 @@
       option.textContent = person;
       select.appendChild(option);
     });
+  }
+
+  function toggleSelectAllModules(btn) {
+    const checkboxes = document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateSelectAllModules();
+  }
+
+  function updateSelectAllModules() {
+    const checkboxes = document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    const btn = document.querySelector('#modulesCheckboxes').previousElementSibling;
+    btn.textContent = allChecked ? 'Deselect All' : 'Select All';
+  }
+
+  function toggleSelectAllBusinesses(btn) {
+    const checkboxes = document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateSelectAllBusinesses();
+  }
+
+  function updateSelectAllBusinesses() {
+    const checkboxes = document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    const btn = document.querySelector('#businessesCheckboxes').previousElementSibling;
+    btn.textContent = allChecked ? 'Deselect All' : 'Select All';
   }
 
   function renderTable() {
