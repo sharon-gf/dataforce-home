@@ -226,6 +226,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
         <option value="flown">Flown</option>
         <option value="dashboard">Dashboard</option>
         <option value="vvi_charters">VVI Charters</option>
+        <option value="upload">Upload</option>
         <option value="admin">Admin</option>
       </select>
       <button class="add-btn" onclick="openNewUserModal()">+ Add User</button>
@@ -302,6 +303,10 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
         <div class="checkbox-item">
           <input type="checkbox" id="mod-vvi" value="vvi_charters" onchange="updateSelectAllModules()" />
           <label for="mod-vvi">VVI Charters</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="mod-upload" value="upload" onchange="updateSelectAllModules()" />
+          <label for="mod-upload">Upload</label>
         </div>
         <div class="checkbox-item">
           <input type="checkbox" id="mod-admin" value="admin" onchange="updateSelectAllModules()" />
