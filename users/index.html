@@ -126,10 +126,10 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 .form-group input, .form-group select { width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); color:var(--text1); }
 .form-group input:focus, .form-group select:focus { outline:none; border-color:var(--blue); }
 
-.checkbox-group { border:1px solid var(--border); border-radius:4px; padding:8px; max-height:180px; overflow-y:auto; background:var(--surface2); display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.checkbox-item { display:flex; align-items:center; gap:6px; padding:2px; font-size:9px; }
-.checkbox-item input { margin:0; flex-shrink:0; order:1; }
-.checkbox-item label { margin:0; font-weight:400; cursor:pointer; text-align:left; order:2; }
+.checkbox-group { border:1px solid var(--border); border-radius:4px; padding:8px; max-height:200px; overflow-y:auto; background:var(--surface2); display:flex; flex-direction:column; gap:6px; }
+.checkbox-item { display:flex; align-items:center; gap:8px; padding:2px 4px; font-size:9px; justify-content:flex-start; }
+.checkbox-item input { margin:0; flex-shrink:0; }
+.checkbox-item label { margin:0; font-weight:400; cursor:pointer; text-align:left; }
 .select-all-btn { font-size:9px; color:var(--blue); background:none; border:none; padding:4px 0 8px 0; cursor:pointer; font-weight:500; display:block; }
 
 .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px; }
