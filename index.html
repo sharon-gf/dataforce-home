@@ -270,6 +270,8 @@ async function applyModulePermissions() {
       const grid = app.querySelector('[class*="grid"]') || app.querySelector('[class*="card"]');
       if (grid) grid.parentNode.insertBefore(msg, grid);
     }
+    // ADD THIS LINE AT THE END:
+    document.querySelector('.cards').classList.add('ready');
     
   } catch(e) {
     console.error('Failed to fetch permissions:', e);
