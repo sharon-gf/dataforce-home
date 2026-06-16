@@ -6,7 +6,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DATAFORCE — GSA Performance Report</title>
-
+<script>
+// Permission check - inline, no external dependencies
+async function checkModuleAccess(moduleName, initFunction) {
+  try {
+    const email = localStorage.getItem('userEmail');
+    if (!email) {
+      window.location.href = './index.html';
+      return;
+    }
+    
+    if (typeof API_BASE === 'undefined' || !API_BASE) {
+      if (initFunction) initFunction();
+      return;
+    }
+    
+    const resp = await fetch(`${API_BASE}/api/user_modules?email=${encodeURIComponent(email)}`);
+    const data = await resp.json();
+    const modules = data.modules || [];
+    
+    if (!modules.includes(moduleName)) {
+      window.location.href = './index.html';
+      return;
+    }
+    
+    if (initFunction) initFunction();
+  } catch (e) {
+    console.error(`Error checking access:`, e);
+    if (initFunction) initFunction();
+  }
+}
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -1108,7 +1138,7 @@ function onBizChange(){
   document.getElementById('datesLabel').textContent = `${f(lastMonday)} – ${f(lastSunday)}`;
 })();
 
-initDashboard();
+checkModuleAccess('dashboard', initDashboard);
 
 function toggleKpiGroup(hdr, targetId) {
   var body = document.getElementById(targetId);
