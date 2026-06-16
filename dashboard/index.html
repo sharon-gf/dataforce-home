@@ -564,6 +564,17 @@ function setDateMode(col) {
 const API_BASE = "https://dataforce-api-production.up.railway.app";
 const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 
+function getUserEmail() {
+  try {
+    const saved = sessionStorage.getItem('df_user');
+    if (saved) {
+      const user = JSON.parse(saved);
+      return user.email || '';
+    }
+  } catch(e) {}
+  return '';
+}
+
 const DEMO = {
   weeklyBreakdown:[
     {week:'W 12',tons:49.34, dkg:2.68,pkg:0.40},
@@ -643,7 +654,8 @@ async function showWeekDetail(week, year) {
   modal.style.display = 'flex';
 
   try {
-    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}`;
+    const userEmail = getUserEmail();
+    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}`;
     const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
     const data = await r.json();
     const rows = data.rows || [];
@@ -893,8 +905,9 @@ async function fetchWithRetry(url, options, retries=5, delay=5000){
 }
 
 async function loadAllData(dateCol) {
+  const userEmail = getUserEmail();
   const r = await fetchWithRetry(
-    `${API_BASE}/api/all?date_col=${dateCol}`,
+    `${API_BASE}/api/all?date_col=${dateCol}&email=${encodeURIComponent(userEmail)}`,
     {headers: {"x-api-key": API_KEY}},
     3, 4000
   );
@@ -903,6 +916,8 @@ async function loadAllData(dateCol) {
 
 async function loadData(){
   const biz = getEffectiveBiz();
+  const userEmail = getUserEmail();
+  console.log('User email:', userEmail);
   const connLbl = document.getElementById('connLabel');
   const connDot = document.getElementById('connDot');
   if(!API_BASE){ applyData(DEMO); connLbl.textContent='Demo mode'; return; }
@@ -915,7 +930,7 @@ async function loadData(){
 
   try{
     const r = await fetchWithRetry(
-      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${DATE_COL}`,
+      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${DATE_COL}&email=${encodeURIComponent(userEmail)}`,
       {headers: {"x-api-key": API_KEY}},
       3, 4000
     );
