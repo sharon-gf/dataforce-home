@@ -300,7 +300,7 @@ async function applyModulePermissions() {
               throw new Error();
             }
           } catch (err) {
-            alert('Failed to send request automatically. Please try again later.');
+            alert('Error details: ' + err.message);
             btn.disabled = false;
             btn.textContent = 'Request Access';
             btn.style.opacity = '1';
