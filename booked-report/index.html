@@ -365,21 +365,20 @@ function buildCard(cfg, data) {
 
 async function loadSummary() {
   const grid = document.getElementById('grid');
+  const userEmail = getUserEmail();  // ← GET EMAIL ONCE, OUTSIDE THE LOOP
+  console.log('User email:', userEmail);
+  
   try {
     // Load all businesses in parallel
     const results = await Promise.all(
       BIZ_CONFIG.map(cfg =>
-        const userEmail = getUserEmail();
-        console.log('Fetching with email:', userEmail);
-        fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=current&email=${encodeURIComponent(getUserEmail())}`, {headers:{"x-api-key":API_KEY}})
+        fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=current&email=${encodeURIComponent(userEmail)}`, {headers:{"x-api-key":API_KEY}})
           .then(r => r.ok ? r.json() : null)
           .catch(() => null)
       )
     );
-
     window._allData = results;
     grid.innerHTML = BIZ_CONFIG.map((cfg, i) => buildCard(cfg, results[i])).join('');
-
     document.getElementById('connDot').classList.add('live');
     document.getElementById('connLabel').textContent = 'Live · MySQL';
   } catch(e) {
