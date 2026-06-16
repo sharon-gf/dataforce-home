@@ -264,18 +264,55 @@ async function applyModulePermissions() {
       const msg = document.createElement('div');
       msg.id = 'access-request-msg';
       msg.style.cssText = 'grid-column: 1 / -1; width: 100%; padding: 32px 20px; color: var(--text3); text-align: center; font-size: 14px; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px;';
-      msg.innerHTML = `No modules assigned to this account.<br><br><a href="mailto:contact@gsaforce.com?subject=Access%20Request%20for%20DATAFORCE&body=I%20would%20like%20to%20request%20access%20to%20DATAFORCE.%0A%0AEmail:%20${encodeURIComponent(currentUserEmail)}" style="color: var(--blue); text-decoration: none; font-weight: 600; border: 1px solid var(--blue); padding: 8px 16px; border-radius: 6px; display: inline-block; margin-top: 10px;">Request access via Email</a>`;
+      
+      msg.innerHTML = `
+        <p>No modules assigned to this account.</p>
+        <button id="btnRequestAccess" style="color: #ffffff; background-color: var(--blue); border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 15px; font-family: inherit; font-size: 13px;">
+          Request Access
+        </button>
+      `;
       
       if (cardsContainer) {
         cardsContainer.appendChild(msg);
+        
+        // Button click event listener
+        document.getElementById('btnRequestAccess').addEventListener('click', async function() {
+          const btn = this;
+          btn.disabled = true;
+          btn.textContent = 'Sending request...';
+          btn.style.opacity = '0.7';
+          
+          try {
+            const response = await fetch(`${API_BASE}/api/request_access`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': API_KEY
+              },
+              body: JSON.stringify({ email: currentUserEmail })
+            });
+            
+            if (response.ok) {
+              alert('Access request sent successfully!');
+              btn.textContent = 'Request Sent';
+              btn.style.backgroundColor = 'var(--up)';
+            } else {
+              throw new Error();
+            }
+          } catch (err) {
+            alert('Failed to send request automatically. Please try again later.');
+            btn.disabled = false;
+            btn.textContent = 'Request Access';
+            btn.style.opacity = '1';
+          }
+        });
       }
     }
-    // ADD THIS LINE AT THE END:
+    
     document.querySelector('.cards').classList.add('ready');
     
   } catch(e) {
     console.error('Failed to fetch permissions:', e);
-    // If fetch fails, show all modules (fail-open)
     document.querySelectorAll('.card').forEach(card => {
       card.style.display = 'block';
     });
