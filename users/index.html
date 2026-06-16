@@ -64,7 +64,7 @@ header {
 
 /* ── MAIN ── */
 #app { display:none; flex-direction:column; min-height:100vh; background:var(--bg); }
-main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
+main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
 /* ── PAGE TITLE ── */
 .page-title { color:var(--text1); font-size:14px; font-weight:500; margin:0; }
@@ -126,10 +126,10 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 .form-group input, .form-group select { width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); color:var(--text1); }
 .form-group input:focus, .form-group select:focus { outline:none; border-color:var(--blue); }
 
-.checkbox-group { border:1px solid var(--border); border-radius:4px; padding:8px; max-height:160px; overflow-y:auto; background:var(--surface2); }
+.checkbox-group { border:1px solid var(--border); border-radius:4px; padding:8px; max-height:160px; overflow-y:auto; background:var(--surface2); display:flex; flex-direction:column; }
 .checkbox-item { display:flex; align-items:center; gap:6px; padding:4px 0; font-size:9px; }
-.checkbox-item input { margin:0; }
-.checkbox-item label { margin:0; font-weight:400; cursor:pointer; }
+.checkbox-item input { margin:0; flex-shrink:0; }
+.checkbox-item label { margin:0; font-weight:400; cursor:pointer; text-align:left; }
 .select-all-btn { font-size:9px; color:var(--blue); background:none; border:none; padding:4px 0 8px 0; cursor:pointer; font-weight:500; display:block; }
 
 .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px; }
@@ -166,9 +166,11 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 <div id="app">
   <header>
     <div class="logo-area">
-      <svg class="logo-svg" viewBox="0 0 24 24" fill="currentColor" color="#7aaed5" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="8" r="4"/>
-        <path d="M12 14c-5 0-8 3-8 3v5h16v-5s-3-3-8-3z"/>
+      <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="10" width="35" height="35" rx="4" fill="#7aaed5"/>
+        <rect x="10" y="50" width="35" height="35" rx="4" fill="#7aaed5"/>
+        <rect x="50" y="10" width="35" height="35" rx="4" fill="#7aaed5"/>
+        <rect x="50" y="50" width="35" height="35" rx="4" fill="#7aaed5"/>
       </svg>
     </div>
     <div class="hdr-div"></div>
@@ -585,7 +587,9 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
       const r = await fetch(url, {
         method,
-        headers: { "x-api-key": API_KEY }
+        headers: { "x-api-key": API_KEY },
+        mode: 'cors',
+        credentials: 'include'
       });
 
       if (!r.ok) {
@@ -597,6 +601,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
       await loadUsers();
       alert(isNew ? 'User created successfully' : 'User updated successfully');
     } catch (e) {
+      console.error('Save error:', e);
       alert('Error: ' + e.message);
     } finally {
       btn.disabled = false;
@@ -609,13 +614,16 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
     try {
       const r = await fetch(`${API_BASE}/api/users/${userId}`, {
         method: 'DELETE',
-        headers: { "x-api-key": API_KEY }
+        headers: { "x-api-key": API_KEY },
+        mode: 'cors',
+        credentials: 'include'
       });
 
       if (!r.ok) throw new Error(`Delete failed: ${r.status}`);
       await loadUsers();
       alert('User deleted successfully');
     } catch (e) {
+      console.error('Delete error:', e);
       alert('Error: ' + e.message);
     }
   }
