@@ -215,6 +215,16 @@
 </div>
 
 <script>
+
+function getUserEmail() {
+  try {
+    const saved = sessionStorage.getItem('df_user');
+    return saved ? JSON.parse(saved).email : '';
+  } catch(e) {
+    return '';
+  }
+} 
+ 
 const API_BASE = "https://dataforce-api-production.up.railway.app";
 const API_KEY  = "";
 
@@ -354,7 +364,7 @@ async function loadSummary() {
     // Load all businesses in parallel
     const results = await Promise.all(
       BIZ_CONFIG.map(cfg =>
-        fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=current`, {headers:{"x-api-key":API_KEY}})
+        fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=current&email=${encodeURIComponent(getUserEmail())}`, {headers:{"x-api-key":API_KEY}})
           .then(r => r.ok ? r.json() : null)
           .catch(() => null)
       )
