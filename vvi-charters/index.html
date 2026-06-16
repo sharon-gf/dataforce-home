@@ -29,10 +29,12 @@ html,body { width:100%; min-height:100%; font-family:'Inter',sans-serif; backgro
 /* ── HEADER (igual que booked report) ── */
 header {
   background:var(--navy);
-  padding:0 16px;
-  height:52px;
+  padding:8px 16px;
+  height:auto;
   display:flex; align-items:center; gap:10px;
   flex-shrink:0;
+  border-radius:6px;
+  margin:8px;
 }
 .logo-area { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .logo-img  { height:28px; width:auto; object-fit:contain; flex-shrink:0; }
@@ -41,17 +43,22 @@ header {
 /* Bloque central: título grande */
 .hdr-mid { flex:1; text-align:center; }
 .hdr-module-name {
-  font-size:15px; font-weight:500; color:#c8d8f0;
-  letter-spacing:0.05em; line-height:1.2;
+  font-size:18px; font-weight:500; color:#7aaed5;
+  letter-spacing:0.05em; line-height:1.2; margin:0; padding:0;
+}
+.hdr-module-sub {
+  font-size:11px; font-weight:300; color:#7aaed5;
+  letter-spacing:0.05em; line-height:1.2; margin:0; padding:0;
 }
 
 /* Derecha: vuelo + sub */
-.header-right { text-align:right; flex-shrink:0; }
-.next-flight-date { font-size:12px; font-weight:500; color:#ffffff; letter-spacing:0.04em; line-height:1.3; }
+.header-right { text-align:right; flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; }
+.next-flight-label { font-size:9px; font-weight:400; color:#7aaed5; letter-spacing:0.04em; line-height:1.2; margin:0; padding:0; }
+.next-flight-date { font-size:13px; font-weight:400; color:#ffffff; letter-spacing:0.04em; line-height:1.3; margin:0; padding:0; }
 .next-flight-sub  { font-size:9px; color:#ffffff; letter-spacing:0.04em; line-height:1.2; }
 
 /* ── MAIN ── */
-main { padding:10px 12px 24px; display:flex; flex-direction:column; gap:8px; }
+main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
 /* ── KPI ROW ── */
 .kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
@@ -122,13 +129,47 @@ main { padding:10px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
 /* ══ MOBILE ══ */
 @media (max-width:600px) {
-  /* Header: centered layout with title in center, date on right */
-  header { height:auto; padding:7px 12px; display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:8px; }
-  .logo-area  { flex-shrink:0; }
-  .hdr-div    { display:none; }
-  .hdr-mid    { flex:1; text-align:center; }
-  .hdr-module-name { font-size:13px; }
-  .header-right { flex-shrink:0; text-align:right; }
+  /* Header: flex-wrap so logo+right stay on row 1, mid-section spans row 2 */
+  header { 
+    flex-wrap:wrap;
+    padding:10px 12px;
+    gap:0;
+    border-radius:6px;
+    margin:8px;
+  }
+  
+  /* Row 1 left: logo */
+  .logo-area {
+    order:1;
+    flex:1 1 50%;
+    align-items:center;
+  }
+  .logo-img { height:30px; }
+  
+  /* Row 1 right: date */
+  .header-right {
+    order:2;
+    flex:1 1 50%;
+    text-align:right;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .next-flight-label { font-size:9px; }
+  .next-flight-date { font-size:13px; }
+  
+  /* Row 2: title — full width, centred */
+  .hdr-mid {
+    order:3;
+    flex:1 1 100%;
+    text-align:center;
+    margin-top:10px;
+  }
+  .hdr-module-name { font-size:16px; }
+  .hdr-module-sub { font-size:11px; }
+  
+  .hdr-div { display:none; }
 
   main { padding:8px 8px 20px; gap:8px; }
 
@@ -161,10 +202,11 @@ main { padding:10px 12px 24px; display:flex; flex-direction:column; gap:8px; }
   </div>
   <div class="hdr-mid">
     <div class="hdr-module-name">VVI CHARTERS</div>
+    <div class="hdr-module-sub">REPORT</div>
   </div>
   <div class="header-right">
+    <div class="next-flight-label">Next Flight</div>
     <div class="next-flight-date" id="nextFlightDate">—</div>
-    <div class="next-flight-sub">DEST: VVI &middot; PDT: CHARTER</div>
   </div>
 </header>
 
@@ -176,7 +218,7 @@ main { padding:10px 12px 24px; display:flex; flex-direction:column; gap:8px; }
     <div class="kpi-card">
       <div class="kpi-metric">Tons</div>
       <div class="kpi-val" id="kpi-tons">—</div>
-      <div class="kpi-unit">metric tons</div>
+      <div class="kpi-unit"> tons</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-metric">Profit</div>
@@ -252,6 +294,11 @@ main { padding:10px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
   </div><!-- /charts-row -->
 
+  <!-- DOWNLOAD BUTTON -->
+  <div style="padding:16px 12px; display:flex; justify-content:center;">
+    <button id="downloadAwbBtn" style="padding:10px 24px; background:#1a56db; color:white; border:none; border-radius:4px; font-size:13px; cursor:pointer; font-weight:500; transition:background 0.3s;" onmouseover="this.style.background='#1444bf'" onmouseout="this.style.background='#1a56db'">⬇ Download AWBs</button>
+  </div>
+
 </main>
 
 <script>
@@ -283,20 +330,76 @@ const fmtMoneyK = v => {
   if(a>=1e3) return '$'+(v/1e3).toFixed(0)+'K';
   return '$'+Math.round(v).toLocaleString('en-US');
 };
-const fmtPkg   = v => v==null?'—':'$'+Number(v).toFixed(3);
+const fmtPkg   = v => v==null?'—':'$'+Number(v).toFixed(2);
 const fmtPkgSm = v => v==null?'—':'$'+Number(v).toFixed(2);
 function esc(s){ if(!s)return'—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ─── CHART INSTANCES ─────────────────────────────────────────────────────────
 let chartTonsInst=null, chartRevInst=null;
 
-// ─── MAIN LOAD ───────────────────────────────────────────────────────────────
+// ─── DOWNLOAD AWBs ───────────────────────────────────────────────────────────
+async function downloadAWBs() {
+  const flightDate = nextFriday();
+  const flightISO  = toISO(flightDate);
+  
+  try {
+    // Fetch fresh AWB data from API
+    const res = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}`);
+    
+    if (!res.ok) {
+      alert('Error fetching AWB data');
+      return;
+    }
+    
+    const data = await res.json();
+    const awbData = data.awbs || [];
+    
+    if (awbData.length === 0) {
+      alert('No AWB data available for this flight date.');
+      return;
+    }
+    
+    // Create CSV content
+    const headers = ['Pfx', 'AWB', 'Sales Person', 'Customer', 'KG', 'REV', '$/KG', 'P/KG'];
+    let csv = headers.join(',') + '\n';
+    
+    awbData.forEach(row => {
+      const pfx = String(row.pfx || '').replace(/,/g, '');
+      const awb = String(row.awb || '').replace(/,/g, '');
+      const salesperson = String(row.salesperson || '').replace(/,/g, ';');
+      const customer = String(row.customer || '').replace(/,/g, ';');
+      const kg = Number(row.kg || 0).toFixed(2);
+      const rev = Number(row.revenue || 0).toFixed(2);
+      const pkkg = Number(row.price_per_kg || 0).toFixed(2);
+      const ppkg = Number(row.profit_per_kg || 0).toFixed(2);
+      
+      csv += `${pfx},${awb},"${salesperson}","${customer}",${kg},${rev},${pkkg},${ppkg}\n`;
+    });
+    
+    // Trigger download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `VVI_AWBs_${flightISO}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch(err) {
+    console.error('Download error:', err);
+    alert('Error downloading AWB data: ' + err.message);
+  }
+}
+
+
 async function load() {
   const flightDate = nextFriday();
   const flightISO  = toISO(flightDate);
   const flightLabel = fmtDate(flightDate);
 
   document.getElementById('nextFlightDate').textContent = flightLabel;
+  document.getElementById('downloadAwbBtn').addEventListener('click', downloadAWBs);
 
   try {
     const res  = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}`);
