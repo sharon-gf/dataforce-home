@@ -356,13 +356,27 @@ function buildCard(cfg, data) {
   </div>`;
 }
 
+function getUserEmail() {
+  try {
+    const saved = sessionStorage.getItem('df_user');
+    if (saved) {
+      const user = JSON.parse(saved);
+      return user.email || '';
+    }
+  } catch(e) {}
+  return '';
+}
+
 async function loadSummary() {
   const grid = document.getElementById('grid');
+  const userEmail = getUserEmail();
+  console.log('User email:', userEmail);
+  
   try {
     // Load all businesses in parallel
     const results = await Promise.all(
       BIZ_CONFIG.map(cfg =>
-        fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=FlightDate`, {headers:{"x-api-key":API_KEY}})
+        fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=FlightDate&email=${encodeURIComponent(userEmail)}`, {headers:{"x-api-key":API_KEY}})
           .then(r => r.ok ? r.json() : null)
           .catch(() => null)
       )
