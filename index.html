@@ -253,11 +253,12 @@ async function applyModulePermissions() {
     });
     
     // If no modules allowed, show message
+    // If no modules allowed, show message with request link
     if (!allowedModules.length) {
       const app = document.getElementById('app');
       const msg = document.createElement('div');
       msg.style.cssText = 'padding: 20px; color: #999; text-align: center; font-size: 14px;';
-      msg.textContent = 'No modules assigned. Contact your administrator.';
+      msg.innerHTML = `No modules assigned. <a href="mailto:contact@gsaforce.com?subject=Access%20Request%20for%20DATAFORCE&body=I%20would%20like%20to%20request%20access%20to%20DATAFORCE.%0A%0AEmail:%20${encodeURIComponent(currentUserEmail)}" style="color: #1a56db; text-decoration: none; font-weight: 500;">Request access</a>`;
       const grid = app.querySelector('[class*="grid"]') || app.querySelector('[class*="card"]');
       if (grid) grid.parentNode.insertBefore(msg, grid);
     }
