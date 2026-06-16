@@ -184,6 +184,8 @@ const ALLOWED_DOMAIN = "gsaforce.com";
 const API_BASE = "https://dataforce-api-production.up.railway.app";
 const API_KEY  = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 
+let currentUserEmail = '';
+
 function handleCredentialResponse(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
   const email   = payload.email || '';
@@ -193,6 +195,10 @@ function handleCredentialResponse(response) {
     document.getElementById('login-error').style.display = 'block';
     return;
   }
+  
+  // Store email for later use
+  currentUserEmail = email;
+  
   sessionStorage.setItem('df_user', JSON.stringify({ email, name }));
   showApp(name);
 }
@@ -201,10 +207,70 @@ function showApp(name) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('user-name').textContent = name;
+  
+  // NEW: Fetch user's allowed modules and show/hide cards
+  applyModulePermissions();
+  
   loadLastUpdate();
 }
 
+async function applyModulePermissions() {
+  if (!currentUserEmail) return;
+  
+  try {
+    const r = await fetch(
+      `${API_BASE}/api/user_modules?email=${encodeURIComponent(currentUserEmail)}`,
+      { headers: { "x-api-key": API_KEY } }
+    );
+    if (!r.ok) throw new Error();
+    
+    const data = await r.json();
+    const allowedModules = data.modules || [];
+    
+    console.log('Allowed modules:', allowedModules);
+    
+    // Hide all module cards first
+    document.querySelectorAll('.card').forEach(card => {
+      card.style.display = 'none';
+    });
+    
+    // Show only allowed modules based on their class name
+    const classMap = {
+      'booked': '.card-booked',
+      'flown': '.card-flown',
+      'vvi_charters': '.card-vvi',
+      'upload': '.card-upload'
+    };
+    
+    allowedModules.forEach(module => {
+      const selector = classMap[module];
+      if (selector) {
+        const els = document.querySelectorAll(selector);
+        els.forEach(el => el.style.display = 'block');
+      }
+    });
+    
+    // If no modules allowed, show message
+    if (!allowedModules.length) {
+      const app = document.getElementById('app');
+      const msg = document.createElement('div');
+      msg.style.cssText = 'padding: 20px; color: #999; text-align: center; font-size: 14px;';
+      msg.textContent = 'No modules assigned. Contact your administrator.';
+      const grid = app.querySelector('[class*="grid"]') || app.querySelector('[class*="card"]');
+      if (grid) grid.parentNode.insertBefore(msg, grid);
+    }
+    
+  } catch(e) {
+    console.error('Failed to fetch permissions:', e);
+    // If fetch fails, show all modules (fail-open)
+    document.querySelectorAll('.card').forEach(card => {
+      card.style.display = 'block';
+    });
+  }
+}
+
 function signOut() {
+  currentUserEmail = '';
   sessionStorage.removeItem('df_user');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
@@ -213,7 +279,11 @@ function signOut() {
 
 window.addEventListener('load', () => {
   const saved = sessionStorage.getItem('df_user');
-  if (saved) { const { name } = JSON.parse(saved); showApp(name); }
+  if (saved) { 
+    const { name, email } = JSON.parse(saved); 
+    currentUserEmail = email;
+    showApp(name); 
+  }
 });
 
 async function loadLastUpdate() {
