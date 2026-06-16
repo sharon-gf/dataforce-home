@@ -88,6 +88,17 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-vvi       { --card-accent:#b91c1c; --card-icon-bg:#fef2f2; }
 .hub-footer { margin-top:28px; font-size:9px; color:var(--text3); letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
 .hub-footer span { width:16px; height:1px; background:var(--border); display:inline-block; }
+
+/* Hide cards until permissions are checked */
+.cards {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cards.ready {
+  opacity: 1;
+}
+  
 </style>
 </head>
 <body>
