@@ -214,6 +214,7 @@
   </div>
 </div>
 
+<script src="../permission-guard.js"></script>
 <script>
 
 function getUserEmail() {
@@ -386,7 +387,9 @@ async function loadSummary() {
     
     // If we got here, user has access - show data
     window._allData = results;
-    grid.innerHTML = BIZ_CONFIG.map((cfg, i) => buildCard(cfg, results[i])).join('');
+    grid.innerHTML = BIZ_CONFIG
+      .map((cfg, i) => results[i] ? buildCard(cfg, results[i]) : '')
+      .join('');
     document.getElementById('connDot').classList.add('live');
     document.getElementById('connLabel').textContent = 'Live · MySQL';
   } catch(e) {
@@ -396,7 +399,7 @@ async function loadSummary() {
 }
 
 
-loadSummary();
+checkModuleAccess('booked', loadSummary);
 </script>
 </body>
 </html>
