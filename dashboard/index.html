@@ -990,6 +990,7 @@ let _isWarming = false;
 async function warmCache() {
   const connLbl = document.getElementById('connLabel');
   const connDot = document.getElementById('connDot');
+  const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'];
 
   _isWarming = true;
   if (connDot) { connDot.classList.remove('live'); connDot.style.background = '#c97a06'; }
@@ -1001,17 +1002,20 @@ async function warmCache() {
       ALL_DATA.FlightDate = { ...(ALL_DATA.FlightDate || {}), ...flown };
     }
 
-    const booked = await loadAllData('Bkg_CreaDate');
-    if (booked && typeof booked === 'object') {
-      ALL_DATA.Bkg_CreaDate = { ...(ALL_DATA.Bkg_CreaDate || {}), ...booked };
-    }
+    await Promise.allSettled(mercBiz.map(async (biz) => {
+      const data = await fetchBiz(biz, 'Bkg_CreaDate');
+      if (data) {
+        if (!ALL_DATA.Bkg_CreaDate) ALL_DATA.Bkg_CreaDate = {};
+        ALL_DATA.Bkg_CreaDate[biz] = data;
+      }
+    }));
   } catch(e) {
     console.error('warmCache error:', e);
+  } finally {
+    _isWarming = false;
+    if (connDot) { connDot.style.background = ''; connDot.classList.add('live'); }
+    if (connLbl) connLbl.textContent = 'Ready';
   }
-
-  _isWarming = false;
-  if (connDot) { connDot.style.background = ''; connDot.classList.add('live'); }
-  if (connLbl) connLbl.textContent = 'Ready';
 }
 
 async function initDashboard(){
