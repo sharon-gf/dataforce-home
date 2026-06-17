@@ -208,6 +208,7 @@
   </div>
 </main>
 
+<script src="../permission-guard.js"></script>
 <script>
   const API_BASE = "https://dataforce-api-production.up.railway.app";
 
@@ -216,6 +217,11 @@
   const uploadBtn  = document.getElementById('uploadBtn');
   const dropZone   = document.getElementById('dropZone');
   const result     = document.getElementById('result');
+
+  function getUserEmail() {
+    const user = getDataforceUser();
+    return user && user.email ? user.email : '';
+  }
 
   function checkReady() {
     const hasFile = fileInput.files.length > 0;
@@ -296,7 +302,7 @@
     form.append('file', file);
 
     try {
-      const resp = await fetch(`${API_BASE}/api/upload_cargo`, {
+      const resp = await fetch(`${API_BASE}/api/upload_cargo?email=${encodeURIComponent(getUserEmail())}`, {
         method: 'POST',
         headers: { 'x-upload-key': key },
         body: form
@@ -321,6 +327,8 @@
     uploadBtn.disabled = false;
     uploadBtn.textContent = 'Upload';
   }
+
+  checkModuleAccess('upload');
 </script>
 </body>
 </html>
