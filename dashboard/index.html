@@ -545,6 +545,7 @@ main {
 </main>
 </div>
 
+<script src="../permission-guard.js"></script>
 <script>
 let DATE_COL = "FlightDate";
 let ALL_DATA = {}; // Stores all business data locally for instant switching
@@ -655,7 +656,7 @@ async function showWeekDetail(week, year) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}`;
+    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}&module=dashboard`;
     const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
     const data = await r.json();
     const rows = data.rows || [];
@@ -930,7 +931,7 @@ async function loadData(){
 
   try{
     const r = await fetchWithRetry(
-      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${DATE_COL}&email=${encodeURIComponent(userEmail)}`,
+      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${DATE_COL}&email=${encodeURIComponent(userEmail)}&module=dashboard`,
       {headers: {"x-api-key": API_KEY}},
       3, 4000
     );
@@ -974,7 +975,7 @@ async function fetchBiz(biz, dateCol){
   const fetcher = (async () => {
     try {
       const r = await fetch(
-        `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}`,
+        `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard`,
         {headers: {"x-api-key": API_KEY}}
       );
       if (!r.ok) return null;
@@ -1107,7 +1108,7 @@ function onBizChange(){
   document.getElementById('datesLabel').textContent = `${f(lastMonday)} – ${f(lastSunday)}`;
 })();
 
-initDashboard();
+checkModuleAccess('dashboard', initDashboard);
 
 function toggleKpiGroup(hdr, targetId) {
   var body = document.getElementById(targetId);
@@ -1171,7 +1172,8 @@ async function showAwbDetail(groupCol, groupVal, label) {
   modal.style.display = 'flex';
 
   try {
-    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}`;
+    const userEmail = getUserEmail();
+    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=dashboard`;
     const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
     const data = await r.json();
     const rows = data.rows || [];
