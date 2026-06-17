@@ -301,6 +301,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
 </main>
 
+<script src="../permission-guard.js"></script>
 <script>
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
 const API = "https://dataforce-api-production.up.railway.app";
@@ -516,7 +517,7 @@ function renderCharts(flights) {
 }
 
 // ─── BOOT ────────────────────────────────────────────────────────────────────
-load();
+checkModuleAccess('vvi_charters', load);
 </script>
 </body>
 </html>
