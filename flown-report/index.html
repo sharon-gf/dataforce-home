@@ -218,6 +218,7 @@
   </div>
 </div>
 
+<script src="../permission-guard.js"></script>
 <script>
 const API_BASE = "https://dataforce-api-production.up.railway.app";
 const API_KEY  = "";
@@ -383,7 +384,9 @@ async function loadSummary() {
     );
 
     window._allData = results;
-    grid.innerHTML = BIZ_CONFIG.map((cfg, i) => buildCard(cfg, results[i])).join('');
+    grid.innerHTML = BIZ_CONFIG
+      .map((cfg, i) => results[i] ? buildCard(cfg, results[i]) : '')
+      .join('');
 
     document.getElementById('connDot').classList.add('live');
     document.getElementById('connLabel').textContent = 'Live · MySQL';
@@ -392,7 +395,7 @@ async function loadSummary() {
   }
 }
 
-loadSummary();
+checkModuleAccess('flown', loadSummary);
 </script>
 </body>
 </html>
