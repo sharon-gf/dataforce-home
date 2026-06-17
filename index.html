@@ -297,10 +297,11 @@ async function applyModulePermissions() {
               btn.textContent = 'Request Sent';
               btn.style.backgroundColor = 'var(--up)';
             } else {
-              throw new Error();
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.detail || 'Could not send request');
             }
           } catch (err) {
-            alert('Error details: ' + err.message);
+            alert('Could not send access request: ' + err.message);
             btn.disabled = false;
             btn.textContent = 'Request Access';
             btn.style.opacity = '1';
