@@ -343,6 +343,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   </div>
 </div>
 
+<script src="../permission-guard.js"></script>
 <script>
   const API_BASE = "https://dataforce-api-production.up.railway.app";
   const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
@@ -361,6 +362,21 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     "11_ULTRACN"
   ];
 
+  function adminHeaders() {
+    return {
+      "x-api-key": API_KEY,
+      "x-user-email": currentUserEmail
+    };
+  }
+
+  function startAdminApp() {
+    checkModuleAccess('admin', () => {
+      showApp();
+      loadUsers();
+      loadSalesPersons();
+    });
+  }
+
   function handleCredentialResponse(response) {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     const email = payload.email || '';
@@ -376,10 +392,8 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     currentUserEmail = email;
     document.getElementById('userName').textContent = name;
     sessionStorage.setItem('df_user', JSON.stringify({ email, name }));
-    
-    showApp();
-    loadUsers();
-    loadSalesPersons();
+
+    startAdminApp();
   }
 
   function showApp() {
@@ -397,7 +411,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   async function loadUsers() {
     try {
       const r = await fetch(`${API_BASE}/api/users?limit=500`, {
-        headers: { "x-api-key": API_KEY }
+        headers: adminHeaders()
       });
       if (!r.ok) throw new Error(`API error: ${r.status}`);
       const data = await r.json();
@@ -414,7 +428,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   async function loadSalesPersons() {
     try {
       const r = await fetch(`${API_BASE}/api/users/sales-persons`, {
-        headers: { "x-api-key": API_KEY }
+        headers: adminHeaders()
       });
       if (!r.ok) throw new Error(`API error: ${r.status}`);
       const data = await r.json();
@@ -616,7 +630,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
       const r = await fetch(url, {
         method,
-        headers: { "x-api-key": API_KEY }
+        headers: adminHeaders()
       });
 
       if (!r.ok) {
@@ -641,7 +655,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     try {
       const r = await fetch(`${API_BASE}/api/users/${userId}`, {
         method: 'DELETE',
-        headers: { "x-api-key": API_KEY }
+        headers: adminHeaders()
       });
 
       if (!r.ok) throw new Error(`Delete failed: ${r.status}`);
@@ -659,9 +673,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
       const { name, email } = JSON.parse(saved);
       currentUserEmail = email;
       document.getElementById('userName').textContent = name;
-      showApp();
-      loadUsers();
-      loadSalesPersons();
+      startAdminApp();
     }
   });
 </script>
