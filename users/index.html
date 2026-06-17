@@ -363,9 +363,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
     <div class="form-group">
       <label>Sales Person</label>
-      <select id="formSalesPerson">
-        <option value="">— None (ALL)</option>
-      </select>
+      <input type="text" id="formSalesPerson" placeholder="Leave blank for ALL" />
     </div>
 
     <div class="form-group">
@@ -437,6 +435,15 @@ async function loadUsers() {
     });
     if (r.ok) {
       allUsers = await r.json();
+      // Extract unique businesses from all users
+      const allBiz = new Set();
+      allUsers.forEach(u => {
+        if (u.allowed_businesses && Array.isArray(u.allowed_businesses)) {
+          u.allowed_businesses.forEach(b => allBiz.add(b));
+        }
+      });
+      allBusinesses = Array.from(allBiz).sort();
+      populateBusinessCheckboxes();
       renderTable();
       updateStats();
     }
@@ -444,31 +451,6 @@ async function loadUsers() {
     console.error('Load error:', e);
     document.getElementById('loadingSpinner').textContent = 'Error loading users';
   }
-}
-
-async function loadSalesPersons() {
-  try {
-    const r = await fetch(`${API_BASE}/api/sales_persons`, {
-      headers: { "x-api-key": API_KEY }
-    });
-    if (r.ok) {
-      allSalesPersons = await r.json();
-      populateSalesPersonSelect();
-    }
-  } catch (e) {
-    console.error('Load sales persons error:', e);
-  }
-}
-
-function populateSalesPersonSelect() {
-  const sel = document.getElementById('formSalesPerson');
-  sel.innerHTML = '<option value="">— None (ALL)</option>';
-  allSalesPersons.forEach(sp => {
-    const opt = document.createElement('option');
-    opt.value = sp.name;
-    opt.textContent = sp.name;
-    sel.appendChild(opt);
-  });
 }
 
 function renderTable() {
@@ -639,20 +621,6 @@ function updateSelectAllBusinesses() {
   else btn.textContent = 'Select All';
 }
 
-async function loadBusinesses() {
-  try {
-    const r = await fetch(`${API_BASE}/api/businesses`, {
-      headers: { "x-api-key": API_KEY }
-    });
-    if (r.ok) {
-      allBusinesses = await r.json();
-      populateBusinessCheckboxes();
-    }
-  } catch (e) {
-    console.error('Load businesses error:', e);
-  }
-}
-
 function populateBusinessCheckboxes() {
   const container = document.getElementById('businessesCheckboxes');
   container.innerHTML = '';
@@ -748,8 +716,6 @@ window.addEventListener('load', () => {
     document.getElementById('userName').textContent = name;
     showApp();
     loadUsers();
-    loadSalesPersons();
-    loadBusinesses();
   }
 });
 </script>
