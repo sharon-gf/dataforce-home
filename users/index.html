@@ -96,16 +96,25 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   text-align:left; color:#c8d8f0; font-weight:500; font-size:8px; letter-spacing:0.05em; text-transform:uppercase;
   padding:6px 8px; background:var(--navy-hdr); white-space:nowrap;
 }
-.dtbl th:nth-child(3) { text-align:center; }
-.dtbl th:nth-child(n+4) { text-align:right; }
+.dtbl th.module-col, .dtbl th.summary-col { text-align:center; }
+.dtbl th.actions-col { text-align:right; }
 .dtbl td {
   text-align:left; padding:6px 8px; color:var(--text1); font-size:9.5px; border-bottom:1px solid var(--border); white-space:nowrap;
 }
-.dtbl td:nth-child(3) { text-align:center; }
-.dtbl td:nth-child(n+4) { text-align:right; }
+.dtbl td.module-cell, .dtbl td.summary-cell { text-align:center; }
+.dtbl td.actions-cell { text-align:right; }
 .dtbl tbody tr:nth-child(even) td { background:var(--stripe); }
 .dtbl tbody tr:nth-child(odd)  td { background:var(--surface); }
 .dtbl tbody tr:hover td { background:#e8edf7 !important; }
+.module-check {
+  display:inline-block;
+  min-width:18px;
+  color:#000;
+  font-size:18px;
+  line-height:1;
+  font-weight:500;
+}
+.summary-value { font-weight:500; color:var(--text1); }
 
 .status-badge { display:inline-block; padding:3px 6px; border-radius:3px; font-size:8px; font-weight:500; }
 .status-active { background:#c8d8f0; color:var(--navy); }
@@ -259,10 +268,16 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th>Modules</th>
-            <th>Sales Person</th>
+            <th class="module-col">BKD</th>
+            <th class="module-col">FLWN</th>
+            <th class="module-col">DASHB</th>
+            <th class="module-col">UP</th>
+            <th class="module-col">VVI</th>
+            <th class="module-col">ADMIN</th>
+            <th class="summary-col">Biz</th>
+            <th class="summary-col">Sales Person</th>
             <th>Status</th>
-            <th style="text-align:right;">Actions</th>
+            <th class="actions-col">Actions</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -364,6 +379,15 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     "04_ELAL", "04_ELAL_805", "05_AVASIA", "07_JPN",
     "08_AVCHI", "09_AVOTHER", "10_VIRGIN", "10_VIRGIN_805",
     "11_ULTRACN"
+  ];
+
+  const MODULE_COLUMNS = [
+    { key: 'booked', label: 'BKD' },
+    { key: 'flown', label: 'FLWN' },
+    { key: 'dashboard', label: 'DASHB' },
+    { key: 'upload', label: 'UP' },
+    { key: 'vvi_charters', label: 'VVI' },
+    { key: 'admin', label: 'ADMIN' }
   ];
 
   function adminHeaders() {
@@ -497,6 +521,22 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     btn.textContent = allChecked ? 'Deselect All' : 'Select All';
   }
 
+  function asList(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function formatBizSummary(value) {
+    const businesses = asList(value);
+    if (businesses.length === 0 || businesses.includes('ALL') || businesses.length >= BUSINESSES.length) {
+      return 'ALL';
+    }
+    return String(businesses.length);
+  }
+
+  function formatSalesPerson(value) {
+    return value && value !== 'ALL' ? value : 'ALL';
+  }
+
   function renderTable() {
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
@@ -510,17 +550,23 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
     allUsers.forEach(user => {
       const row = document.createElement('tr');
-      const modules = (user.modules || []).join(', ') || '—';
-      const salesPerson = user.sales_person || '—';
+      const modules = asList(user.modules);
+      const moduleCells = MODULE_COLUMNS.map(module =>
+        `<td class="module-cell">${modules.includes(module.key) ? '<span class="module-check">✓</span>' : ''}</td>`
+      ).join('');
+      const bizSummary = formatBizSummary(user.allowed_businesses);
+      const salesPerson = formatSalesPerson(user.sales_person);
       const status = user.status || 'active';
+      row.dataset.modules = modules.join(' ').toLowerCase();
 
       row.innerHTML = `
         <td><strong>${user.name || '—'}</strong></td>
         <td>${user.email}</td>
-        <td>${modules}</td>
-        <td>${salesPerson}</td>
+        ${moduleCells}
+        <td class="summary-cell"><span class="summary-value">${bizSummary}</span></td>
+        <td class="summary-cell"><span class="summary-value">${salesPerson}</span></td>
         <td><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${status === 'active' ? 'Active' : 'Inactive'}</span></td>
-        <td style="text-align:right;">
+        <td class="actions-cell">
           <button class="btn-edit" onclick="editUser(${user.id})">Edit</button>
           <button class="btn-delete" onclick="deleteUser(${user.id})">Del</button>
         </td>
@@ -549,7 +595,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     rows.forEach(row => {
       const name = row.cells[0].textContent.toLowerCase();
       const email = row.cells[1].textContent.toLowerCase();
-      const modules = row.cells[2].textContent.toLowerCase();
+      const modules = row.dataset.modules || '';
 
       const matchesSearch = name.includes(search) || email.includes(search);
       const matchesModule = !module || modules.includes(module);
