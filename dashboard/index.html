@@ -990,41 +990,21 @@ let _isWarming = false;
 async function warmCache() {
   const connLbl = document.getElementById('connLabel');
   const connDot = document.getElementById('connDot');
-  const ALL = ALL_BIZ_LIST;
-  const dc  = 'FlightDate';
-  const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'];
-  const total = ALL.length + mercBiz.length;
-  let done = 0;
 
   _isWarming = true;
   if (connDot) { connDot.classList.remove('live'); connDot.style.background = '#c97a06'; }
-  if (connLbl) connLbl.textContent = 'Loading 0 / ' + total;
-
-  const tick = () => {
-    done++;
-    if (connLbl) connLbl.textContent = 'Loading ' + done + ' / ' + total;
-  };
-
-  // Fetch one biz, tick() no matter what — never throws
-  const fetchAndTick = async (biz, dateCol, key) => {
-    try {
-      if (!ALL_DATA[key] || !ALL_DATA[key][biz]) {
-        const data = await fetchBiz(biz, dateCol);
-        if (data) {
-          if (!ALL_DATA[key]) ALL_DATA[key] = {};
-          ALL_DATA[key][biz] = data;
-        }
-      }
-    } catch(e) { /* ignore */ }
-    tick();
-  };
+  if (connLbl) connLbl.textContent = 'Loading reports';
 
   try {
-    const BATCH = 4;
-    for (let i = 0; i < ALL.length; i += BATCH) {
-      await Promise.allSettled(ALL.slice(i, i + BATCH).map(biz => fetchAndTick(biz, dc, dc)));
+    const flown = await loadAllData('FlightDate');
+    if (flown && typeof flown === 'object') {
+      ALL_DATA.FlightDate = { ...(ALL_DATA.FlightDate || {}), ...flown };
     }
-    await Promise.allSettled(mercBiz.map(biz => fetchAndTick(biz, 'Bkg_CreaDate', 'Bkg_CreaDate')));
+
+    const booked = await loadAllData('Bkg_CreaDate');
+    if (booked && typeof booked === 'object') {
+      ALL_DATA.Bkg_CreaDate = { ...(ALL_DATA.Bkg_CreaDate || {}), ...booked };
+    }
   } catch(e) {
     console.error('warmCache error:', e);
   }
