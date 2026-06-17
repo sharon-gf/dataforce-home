@@ -22,7 +22,6 @@
   --text3:    #8896aa;
   --blue:     #1a56db;
   --stripe:   #f0f2f6;
-  --teal:     #00C9B8;
 }
 * { box-sizing:border-box; margin:0; padding:0; }
 html,body { width:100%; min-height:100%; font-family:'Inter',sans-serif; background:var(--bg); color:var(--text1); font-size:11px; }
@@ -42,28 +41,6 @@ header {
 }
 .logo-area { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .hdr-div   { width:1px; height:20px; background:#243a5c; flex-shrink:0; }
-
-/* Logo with icon and text */
-.logo-wrapper {
-  display:flex;
-  align-items:center;
-  gap:6px;
-  flex-shrink:0;
-}
-
-.logo-icon-svg {
-  width:24px;
-  height:24px;
-  flex-shrink:0;
-}
-
-.logo-text {
-  color:#7aaed5;
-  font-size:13px;
-  font-weight:500;
-  letter-spacing:1px;
-  white-space:nowrap;
-}
 
 /* Bloque central */
 .hdr-mid { flex:1; text-align:center; }
@@ -116,22 +93,15 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   padding:6px 8px; background:var(--navy-hdr); white-space:nowrap;
 }
 .dtbl th:nth-child(3) { text-align:center; }
-.dtbl th:nth-child(n+4) { text-align:center; }
+.dtbl th:nth-child(n+4) { text-align:right; }
 .dtbl td {
   text-align:left; padding:6px 8px; color:var(--text1); font-size:9.5px; border-bottom:1px solid var(--border); white-space:nowrap;
 }
 .dtbl td:nth-child(3) { text-align:center; }
-.dtbl td:nth-child(n+4) { text-align:center; }
+.dtbl td:nth-child(n+4) { text-align:right; }
 .dtbl tbody tr:nth-child(even) td { background:var(--stripe); }
 .dtbl tbody tr:nth-child(odd)  td { background:var(--surface); }
 .dtbl tbody tr:hover td { background:#e8edf7 !important; }
-
-/* Module checkmarks */
-.module-check {
-  color:var(--navy);
-  font-weight:bold;
-  font-size:14px;
-}
 
 .status-badge { display:inline-block; padding:3px 6px; border-radius:3px; font-size:8px; font-weight:500; }
 .status-active { background:#c8d8f0; color:var(--navy); }
@@ -227,10 +197,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 <div id="app">
   <header>
     <div class="logo-area">
-      <div class="logo-wrapper">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABicAAAG9CAYAAAB+nKXnAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAADmlElEQVR4nOzdd3wc1b3///fMbFOxwdSEG4ppl+5C6GBKHCAQIAQSqm2wMZ1AKAECgQuk3F8IufRLsQFjU4NDAqGEmBI6OGAb23QbuISEQAAXSdtm5vz+0PeMZ+Wila1t0uv5ePiBJFbSWe3szJzP55zPxzHGCAAAAAAAAAAAoFrcWg8AAAAAAAAAAAD0LyQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckJAAAAAAAAAABQVSQnAAAAAAAAAABAVZGcAAAAAAAAAAAAVUVyAgAAAAAAAAAAVBXJCQAAAAAAAAAAUFUkJwAAAAAAAAAAQFWRnAAAAAAAAAAAAFVFcgIAAAAAAAAAAFQVyQkAAAAAAAAAAFBVJCcAAAAAAAAAAEBVkZwAAAAAAAAAAABVRXICAAAAAAAAAABUFckcxQgk" class="logo-icon-svg" alt="Dataforce"/>
-        <div class="logo-text">DATAFORCE</div>
-      </div>
+      <span style="color:#7aaed5; font-size:13px; font-weight:300; letter-spacing:2px;">DATAFORCE</span>
     </div>
     <div class="hdr-div"></div>
     <div class="hdr-mid">
@@ -288,16 +255,10 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th>BKD</th>
-            <th>FLWN</th>
-            <th>DASH</th>
-            <th>UP</th>
-            <th>VVI</th>
-            <th>ADMIN</th>
-            <th>BIZ</th>
+            <th>Modules</th>
             <th>Sales Person</th>
             <th>Status</th>
-            <th style="text-align:center;">Actions</th>
+            <th style="text-align:right;">Actions</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -355,15 +316,16 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     </div>
 
     <div class="form-group">
-      <label>Business access</label>
+      <label>Allowed businesses</label>
       <button type="button" class="select-all-btn" onclick="toggleSelectAllBusinesses()">Select All</button>
-      <div class="checkbox-group" id="businessesCheckboxes">
-      </div>
+      <div class="checkbox-group" id="businessesCheckboxes"></div>
     </div>
 
     <div class="form-group">
-      <label>Sales Person</label>
-      <input type="text" id="formSalesPerson" placeholder="Leave blank for ALL" />
+      <label>Sales person</label>
+      <select id="formSalesPerson">
+        <option value="">— All sales persons</option>
+      </select>
     </div>
 
     <div class="form-group">
@@ -376,348 +338,332 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
-      <button class="btn-save" id="saveBtn" onclick="saveUser()">Save</button>
+      <button class="btn-save" onclick="saveUser()" id="saveBtn">Save</button>
     </div>
   </div>
 </div>
 
 <script>
-const API_BASE = 'https://dataforce-api-production.up.railway.app';
-const API_KEY = 'gsa_dataforce_secret_key_2024';
+  const API_BASE = "https://dataforce-api-production.up.railway.app";
+  const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+  const ALLOWED_DOMAIN = "gsaforce.com";
 
-let allUsers = [];
-let allBusinesses = [];
-let allSalesPersons = [];
-let currentUserEmail = '';
-let currentEditingUser = null;
+  let currentUserEmail = '';
+  let allUsers = [];
+  let currentEditingUser = null;
+  let allSalesPersons = [];
 
-const MODULE_NAMES = {
-  'booked': 'BKD',
-  'flown': 'FLWN',
-  'dashboard': 'DASH',
-  'upload': 'UP',
-  'vvi_charters': 'VVI',
-  'admin': 'ADMIN'
-};
+  const BUSINESSES = [
+    "MERC_LOCAL", "MERC_GSA", "MERC_ALL", "CXMEX",
+    "01_CXOFF", "01_CXSUD", "02_ET", "03_UPS", "03_UPS_805",
+    "04_ELAL", "04_ELAL_805", "05_AVASIA", "07_JPN",
+    "08_AVCHI", "09_AVOTHER", "10_VIRGIN", "10_VIRGIN_805",
+    "11_ULTRACN"
+  ];
 
-const MODULE_KEYS = ['booked', 'flown', 'dashboard', 'upload', 'vvi_charters', 'admin'];
-
-function handleCredentialResponse(response) {
-  const token = response.credential;
-  const payload = JSON.parse(atob(token.split('.')[1]));
-  const email = payload.email;
-  const name = payload.name;
-  
-  sessionStorage.setItem('df_user', JSON.stringify({ name, email }));
-  currentUserEmail = email;
-  document.getElementById('userName').textContent = name;
-  showApp();
-  loadUsers();
-  loadSalesPersons();
-}
-
-function signOut() {
-  sessionStorage.removeItem('df_user');
-  currentUserEmail = '';
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-}
-
-function showApp() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-}
-
-async function loadUsers() {
-  try {
-    const r = await fetch(`${API_BASE}/api/users`, {
-      headers: { "x-api-key": API_KEY }
-    });
-    if (r.ok) {
-      allUsers = await r.json();
-      // Extract unique businesses from all users
-      const allBiz = new Set();
-      allUsers.forEach(u => {
-        if (u.allowed_businesses && Array.isArray(u.allowed_businesses)) {
-          u.allowed_businesses.forEach(b => allBiz.add(b));
-        }
-      });
-      allBusinesses = Array.from(allBiz).sort();
-      populateBusinessCheckboxes();
-      renderTable();
-      updateStats();
-    }
-  } catch (e) {
-    console.error('Load error:', e);
-    document.getElementById('loadingSpinner').textContent = 'Error loading users';
-  }
-}
-
-function renderTable() {
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = '';
-
-  if (allUsers.length === 0) {
-    document.getElementById('loadingSpinner').style.display = 'none';
-    document.getElementById('tableContainer').style.display = 'none';
-    document.getElementById('emptyState').style.display = 'block';
-    return;
-  }
-
-  allUsers.forEach(user => {
-    const row = document.createElement('tr');
-    const modules = user.modules || [];
-    const businesses = user.allowed_businesses || [];
-    const salesPerson = user.sales_person || null;
-    const status = user.status || 'active';
-
-    // Build module checkbox cells
-    let moduleCells = '';
-    MODULE_KEYS.forEach(mod => {
-      const hasAccess = modules.includes(mod);
-      moduleCells += `<td><span class="module-check">${hasAccess ? '✓' : '—'}</span></td>`;
-    });
-
-    // Business display
-    let bizDisplay = '';
-    if (businesses.length === 0) {
-      bizDisplay = '—';
-    } else if (businesses.length === allBusinesses.length) {
-      bizDisplay = 'ALL';
-    } else {
-      bizDisplay = businesses.length.toString();
-    }
-
-    // Sales person display
-    const spDisplay = salesPerson ? salesPerson : 'ALL';
-
-    row.innerHTML = `
-      <td><strong>${user.name || '—'}</strong></td>
-      <td>${user.email}</td>
-      ${moduleCells}
-      <td>${bizDisplay}</td>
-      <td>${spDisplay}</td>
-      <td><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${status === 'active' ? 'Active' : 'Inactive'}</span></td>
-      <td style="text-align:center;">
-        <button class="btn-edit" onclick="editUser(${user.id})">Edit</button>
-        <button class="btn-delete" onclick="deleteUser(${user.id})">Del</button>
-      </td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  document.getElementById('loadingSpinner').style.display = 'none';
-  document.getElementById('tableContainer').style.display = 'block';
-  document.getElementById('emptyState').style.display = 'none';
-}
-
-function updateStats() {
-  document.getElementById('totalUsers').textContent = allUsers.length;
-  const active = allUsers.filter(u => u.status !== 'inactive').length;
-  const inactive = allUsers.filter(u => u.status === 'inactive').length;
-  document.getElementById('activeUsers').textContent = active;
-  document.getElementById('inactiveUsers').textContent = inactive;
-}
-
-function filterTable() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const module = document.getElementById('moduleFilter').value;
-
-  const rows = document.querySelectorAll('#tableBody tr');
-  rows.forEach(row => {
-    const name = row.cells[0].textContent.toLowerCase();
-    const email = row.cells[1].textContent.toLowerCase();
+  function handleCredentialResponse(response) {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email = payload.email || '';
+    const name = payload.given_name || email.split('@')[0];
+    const domain = email.split('@')[1] || '';
     
-    const matchesSearch = name.includes(search) || email.includes(search);
-    let matchesModule = !module;
-    
-    if (module && !matchesModule) {
-      const moduleIdx = MODULE_KEYS.indexOf(module);
-      if (moduleIdx >= 0) {
-        const moduleCell = row.cells[2 + moduleIdx];
-        if (moduleCell) {
-          matchesModule = moduleCell.textContent.includes('✓');
-        }
-      }
+    if (domain !== ALLOWED_DOMAIN) {
+      document.getElementById('login-error').textContent = 'Access denied. Please use a GSA Force email.';
+      document.getElementById('login-error').style.display = 'block';
+      return;
     }
 
-    row.style.display = matchesSearch && matchesModule ? '' : 'none';
-  });
-}
-
-function openNewUserModal() {
-  currentEditingUser = null;
-  document.getElementById('modalTitle').textContent = 'Create new user';
-  document.getElementById('formName').value = '';
-  document.getElementById('formEmail').value = '';
-  document.getElementById('formSalesPerson').value = '';
-  document.getElementById('formStatus').value = 'active';
-  document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
-  document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
-  document.getElementById('editModal').classList.add('active');
-  document.getElementById('saveBtn').textContent = 'Create';
-  updateSelectAllModules();
-  updateSelectAllBusinesses();
-}
-
-function editUser(userId) {
-  const user = allUsers.find(u => u.id === userId);
-  if (!user) return;
-
-  currentEditingUser = user;
-  document.getElementById('modalTitle').textContent = 'Edit user';
-  document.getElementById('formName').value = user.name || '';
-  document.getElementById('formEmail').value = user.email || '';
-  document.getElementById('formSalesPerson').value = user.sales_person || '';
-  document.getElementById('formStatus').value = user.status || 'active';
-
-  document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]').forEach(cb => {
-    cb.checked = (user.modules || []).includes(cb.value);
-  });
-
-  document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]').forEach(cb => {
-    cb.checked = (user.allowed_businesses || []).includes(cb.value);
-  });
-
-  document.getElementById('editModal').classList.add('active');
-  document.getElementById('saveBtn').textContent = 'Save';
-  updateSelectAllModules();
-  updateSelectAllBusinesses();
-}
-
-function closeEditModal() {
-  document.getElementById('editModal').classList.remove('active');
-}
-
-function toggleSelectAllModules() {
-  const checkboxes = document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]');
-  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-  checkboxes.forEach(cb => cb.checked = !allChecked);
-  updateSelectAllModules();
-}
-
-function updateSelectAllModules() {
-  const checkboxes = document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]');
-  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-  const noneChecked = Array.from(checkboxes).every(cb => !cb.checked);
-  const btn = document.querySelector('#modulesCheckboxes').previousElementSibling;
-  if (allChecked) btn.textContent = 'Deselect All';
-  else if (noneChecked) btn.textContent = 'Select All';
-  else btn.textContent = 'Select All';
-}
-
-function toggleSelectAllBusinesses() {
-  const checkboxes = document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]');
-  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-  checkboxes.forEach(cb => cb.checked = !allChecked);
-  updateSelectAllBusinesses();
-}
-
-function updateSelectAllBusinesses() {
-  const checkboxes = document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]');
-  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-  const btn = Array.from(document.querySelectorAll('button.select-all-btn'))[1];
-  if (allChecked) btn.textContent = 'Deselect All';
-  else btn.textContent = 'Select All';
-}
-
-function populateBusinessCheckboxes() {
-  const container = document.getElementById('businessesCheckboxes');
-  container.innerHTML = '';
-  allBusinesses.forEach((biz, idx) => {
-    const div = document.createElement('div');
-    div.className = 'checkbox-item';
-    div.innerHTML = `
-      <input type="checkbox" id="biz-${idx}" value="${biz.id}" onchange="updateSelectAllBusinesses()" />
-      <label for="biz-${idx}">${biz.name}</label>
-    `;
-    container.appendChild(div);
-  });
-  updateSelectAllBusinesses();
-}
-
-async function saveUser() {
-  const name = document.getElementById('formName').value.trim();
-  const email = document.getElementById('formEmail').value.trim();
-  const modules = Array.from(document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
-  const businesses = Array.from(document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
-  const salesPerson = document.getElementById('formSalesPerson').value || null;
-  const status = document.getElementById('formStatus').value;
-
-  if (!name || !email) {
-    alert('Please fill in name and email');
-    return;
-  }
-
-  if (modules.length === 0) {
-    alert('Please select at least one module');
-    return;
-  }
-
-  if (businesses.length === 0) {
-    alert('Please select at least one business');
-    return;
-  }
-
-  const btn = document.getElementById('saveBtn');
-  btn.disabled = true;
-
-  try {
-    const isNew = !currentEditingUser;
-    const method = isNew ? 'POST' : 'PUT';
-    const url = isNew 
-      ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&sales_person=${encodeURIComponent(salesPerson || '')}`
-      : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&sales_person=${encodeURIComponent(salesPerson || '')}`;
-
-    const r = await fetch(url, {
-      method,
-      headers: { "x-api-key": API_KEY }
-    });
-
-    if (!r.ok) {
-      const err = await r.json();
-      throw new Error(err.detail || `API error: ${r.status}`);
-    }
-
-    closeEditModal();
-    await loadUsers();
-    alert(isNew ? 'User created successfully' : 'User updated successfully');
-  } catch (e) {
-    console.error('Save error:', e);
-    alert('Error: ' + e.message);
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-async function deleteUser(userId) {
-  if (!confirm('Are you sure? This cannot be undone.')) return;
-
-  try {
-    const r = await fetch(`${API_BASE}/api/users/${userId}`, {
-      method: 'DELETE',
-      headers: { "x-api-key": API_KEY }
-    });
-
-    if (!r.ok) throw new Error(`Delete failed: ${r.status}`);
-    await loadUsers();
-    alert('User deleted successfully');
-  } catch (e) {
-    console.error('Delete error:', e);
-    alert('Error: ' + e.message);
-  }
-}
-
-window.addEventListener('load', () => {
-  const saved = sessionStorage.getItem('df_user');
-  if (saved) {
-    const { name, email } = JSON.parse(saved);
     currentUserEmail = email;
     document.getElementById('userName').textContent = name;
+    sessionStorage.setItem('df_user', JSON.stringify({ email, name }));
+    
     showApp();
     loadUsers();
+    loadSalesPersons();
   }
-});
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+  }
+
+  function signOut() {
+    currentUserEmail = '';
+    sessionStorage.removeItem('df_user');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+
+  async function loadUsers() {
+    try {
+      const r = await fetch(`${API_BASE}/api/users?limit=500`, {
+        headers: { "x-api-key": API_KEY }
+      });
+      if (!r.ok) throw new Error(`API error: ${r.status}`);
+      const data = await r.json();
+      allUsers = data.users || [];
+      renderTable();
+      updateStats();
+      populateBusinessCheckboxes();
+    } catch (e) {
+      console.error('Failed to load users:', e);
+      document.getElementById('loadingSpinner').textContent = 'Error loading users. Please refresh.';
+    }
+  }
+
+  async function loadSalesPersons() {
+    try {
+      const r = await fetch(`${API_BASE}/api/users/sales-persons`, {
+        headers: { "x-api-key": API_KEY }
+      });
+      if (!r.ok) throw new Error(`API error: ${r.status}`);
+      const data = await r.json();
+      allSalesPersons = data.sales_persons || [];
+      populateSalesPersonSelect();
+    } catch (e) {
+      console.error('Failed to load sales persons:', e);
+    }
+  }
+
+  function populateBusinessCheckboxes() {
+    const container = document.getElementById('businessesCheckboxes');
+    container.innerHTML = '';
+    BUSINESSES.forEach(biz => {
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = `
+        <input type="checkbox" id="biz-${biz}" value="${biz}" onchange="updateSelectAllBusinesses()" />
+        <label for="biz-${biz}">${biz}</label>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function populateSalesPersonSelect() {
+    const select = document.getElementById('formSalesPerson');
+    allSalesPersons.forEach(person => {
+      const option = document.createElement('option');
+      option.value = person;
+      option.textContent = person;
+      select.appendChild(option);
+    });
+  }
+
+  function toggleSelectAllModules() {
+    const checkboxes = document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateSelectAllModules();
+  }
+
+  function updateSelectAllModules() {
+    const checkboxes = document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    const btn = document.querySelector('#modulesCheckboxes').previousElementSibling;
+    btn.textContent = allChecked ? 'Deselect All' : 'Select All';
+  }
+
+  function toggleSelectAllBusinesses() {
+    const checkboxes = document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateSelectAllBusinesses();
+  }
+
+  function updateSelectAllBusinesses() {
+    const checkboxes = document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    const btn = document.querySelector('#businessesCheckboxes').previousElementSibling;
+    btn.textContent = allChecked ? 'Deselect All' : 'Select All';
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    if (allUsers.length === 0) {
+      document.getElementById('loadingSpinner').style.display = 'none';
+      document.getElementById('tableContainer').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'block';
+      return;
+    }
+
+    allUsers.forEach(user => {
+      const row = document.createElement('tr');
+      const modules = (user.modules || []).join(', ') || '—';
+      const salesPerson = user.sales_person || '—';
+      const status = user.status || 'active';
+
+      row.innerHTML = `
+        <td><strong>${user.name || '—'}</strong></td>
+        <td>${user.email}</td>
+        <td>${modules}</td>
+        <td>${salesPerson}</td>
+        <td><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${status === 'active' ? 'Active' : 'Inactive'}</span></td>
+        <td style="text-align:right;">
+          <button class="btn-edit" onclick="editUser(${user.id})">Edit</button>
+          <button class="btn-delete" onclick="deleteUser(${user.id})">Del</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    document.getElementById('loadingSpinner').style.display = 'none';
+    document.getElementById('tableContainer').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+  }
+
+  function updateStats() {
+    document.getElementById('totalUsers').textContent = allUsers.length;
+    const active = allUsers.filter(u => u.status !== 'inactive').length;
+    const inactive = allUsers.filter(u => u.status === 'inactive').length;
+    document.getElementById('activeUsers').textContent = active;
+    document.getElementById('inactiveUsers').textContent = inactive;
+  }
+
+  function filterTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const module = document.getElementById('moduleFilter').value;
+
+    const rows = document.querySelectorAll('#tableBody tr');
+    rows.forEach(row => {
+      const name = row.cells[0].textContent.toLowerCase();
+      const email = row.cells[1].textContent.toLowerCase();
+      const modules = row.cells[2].textContent.toLowerCase();
+
+      const matchesSearch = name.includes(search) || email.includes(search);
+      const matchesModule = !module || modules.includes(module);
+
+      row.style.display = matchesSearch && matchesModule ? '' : 'none';
+    });
+  }
+
+  function openNewUserModal() {
+    currentEditingUser = null;
+    document.getElementById('modalTitle').textContent = 'Create new user';
+    document.getElementById('formName').value = '';
+    document.getElementById('formEmail').value = '';
+    document.getElementById('formSalesPerson').value = '';
+    document.getElementById('formStatus').value = 'active';
+    document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.getElementById('editModal').classList.add('active');
+    document.getElementById('saveBtn').textContent = 'Create';
+    updateSelectAllModules();
+    updateSelectAllBusinesses();
+  }
+
+  function editUser(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    currentEditingUser = user;
+    document.getElementById('modalTitle').textContent = 'Edit user';
+    document.getElementById('formName').value = user.name || '';
+    document.getElementById('formEmail').value = user.email || '';
+    document.getElementById('formSalesPerson').value = user.sales_person || '';
+    document.getElementById('formStatus').value = user.status || 'active';
+
+    document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => {
+      cb.checked = (user.modules || []).includes(cb.value);
+    });
+
+    document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]').forEach(cb => {
+      cb.checked = (user.allowed_businesses || []).includes(cb.value);
+    });
+
+    document.getElementById('editModal').classList.add('active');
+    document.getElementById('saveBtn').textContent = 'Save';
+    updateSelectAllModules();
+    updateSelectAllBusinesses();
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+  }
+
+  async function saveUser() {
+    const name = document.getElementById('formName').value.trim();
+    const email = document.getElementById('formEmail').value.trim();
+    const modules = Array.from(document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
+    const businesses = Array.from(document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
+    const salesPerson = document.getElementById('formSalesPerson').value || null;
+    const status = document.getElementById('formStatus').value;
+
+    if (!name || !email) {
+      alert('Please fill in name and email');
+      return;
+    }
+
+    if (modules.length === 0) {
+      alert('Please select at least one module');
+      return;
+    }
+
+    if (businesses.length === 0) {
+      alert('Please select at least one business');
+      return;
+    }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+
+    try {
+      const isNew = !currentEditingUser;
+      const method = isNew ? 'POST' : 'PUT';
+      const url = isNew 
+        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&sales_person=${encodeURIComponent(salesPerson || '')}`
+        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&sales_person=${encodeURIComponent(salesPerson || '')}`;
+
+      const r = await fetch(url, {
+        method,
+        headers: { "x-api-key": API_KEY }
+      });
+
+      if (!r.ok) {
+        const err = await r.json();
+        throw new Error(err.detail || `API error: ${r.status}`);
+      }
+
+      closeEditModal();
+      await loadUsers();
+      alert(isNew ? 'User created successfully' : 'User updated successfully');
+    } catch (e) {
+      console.error('Save error:', e);
+      alert('Error: ' + e.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function deleteUser(userId) {
+    if (!confirm('Are you sure? This cannot be undone.')) return;
+
+    try {
+      const r = await fetch(`${API_BASE}/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: { "x-api-key": API_KEY }
+      });
+
+      if (!r.ok) throw new Error(`Delete failed: ${r.status}`);
+      await loadUsers();
+      alert('User deleted successfully');
+    } catch (e) {
+      console.error('Delete error:', e);
+      alert('Error: ' + e.message);
+    }
+  }
+
+  window.addEventListener('load', () => {
+    const saved = sessionStorage.getItem('df_user');
+    if (saved) {
+      const { name, email } = JSON.parse(saved);
+      currentUserEmail = email;
+      document.getElementById('userName').textContent = name;
+      showApp();
+      loadUsers();
+      loadSalesPersons();
+    }
+  });
 </script>
 </body>
 </html>
