@@ -184,6 +184,16 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 .btn-save { background:var(--blue); color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:500; }
 .btn-save:hover { background:#0d47a1; }
 .btn-save:disabled { background:#ccc; cursor:not-allowed; }
+.requests-panel { display:none; margin:0 0 18px; border:1px solid var(--border); background:var(--surface); border-radius:6px; overflow:hidden; }
+.requests-head { display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#fff; border-bottom:1px solid var(--border); }
+.requests-title { font-size:11px; font-weight:700; color:var(--text1); text-transform:uppercase; letter-spacing:.06em; }
+.requests-count { font-size:10px; color:var(--text3); }
+.request-row { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; padding:9px 12px; border-bottom:1px solid var(--border); font-size:11px; }
+.request-row:last-child { border-bottom:none; }
+.request-email { font-weight:600; color:var(--text1); }
+.request-date { color:var(--text3); font-size:10px; }
+.btn-request-add, .btn-request-dismiss { border:1px solid var(--border); background:#fff; color:var(--text1); padding:5px 9px; border-radius:4px; cursor:pointer; font-size:10px; }
+.btn-request-add { background:var(--blue); border-color:var(--blue); color:#fff; }
 
 /* ── RESPONSIVE ── */
 @media (max-width:600px) {
@@ -258,6 +268,14 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
         <div class="stat-label">Inactive</div>
         <div class="stat-value" id="inactiveUsers">0</div>
       </div>
+    </div>
+
+    <div class="requests-panel" id="accessRequestsPanel">
+      <div class="requests-head">
+        <div class="requests-title">Pending access requests</div>
+        <div class="requests-count" id="accessRequestsCount">0 pending</div>
+      </div>
+      <div id="accessRequestsList"></div>
     </div>
 
     <div id="loadingSpinner" class="loading">Loading users…</div>
@@ -370,7 +388,9 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
   let currentUserEmail = '';
   let allUsers = [];
+  let allAccessRequests = [];
   let currentEditingUser = null;
+  let currentAccessRequestId = null;
   let allSalesPersons = [];
 
   const BUSINESSES = [
@@ -404,6 +424,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
       showApp();
       loadUsers();
       loadSalesPersons();
+      loadAccessRequests();
     });
   }
 
@@ -467,6 +488,44 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     } catch (e) {
       console.error('Failed to load sales persons:', e);
     }
+  }
+
+  async function loadAccessRequests() {
+    try {
+      const r = await fetch(`${API_BASE}/api/access_requests`, {
+        headers: adminHeaders()
+      });
+      if (!r.ok) throw new Error(`API error: ${r.status}`);
+      const data = await r.json();
+      allAccessRequests = data.requests || [];
+      renderAccessRequests();
+    } catch (e) {
+      console.error('Failed to load access requests:', e);
+    }
+  }
+
+  function renderAccessRequests() {
+    const panel = document.getElementById('accessRequestsPanel');
+    const list = document.getElementById('accessRequestsList');
+    const count = document.getElementById('accessRequestsCount');
+    list.innerHTML = '';
+    count.textContent = `${allAccessRequests.length} pending`;
+    panel.style.display = allAccessRequests.length ? 'block' : 'none';
+
+    allAccessRequests.forEach(req => {
+      const row = document.createElement('div');
+      row.className = 'request-row';
+      const requestedAt = req.requested_at ? new Date(req.requested_at).toLocaleString() : '';
+      row.innerHTML = `
+        <div>
+          <div class="request-email">${req.email}</div>
+          <div class="request-date">${requestedAt}</div>
+        </div>
+        <button class="btn-request-add" onclick="openRequestUserModal(${req.id}, '${req.email}')">Add user</button>
+        <button class="btn-request-dismiss" onclick="dismissAccessRequest(${req.id})">Dismiss</button>
+      `;
+      list.appendChild(row);
+    });
   }
 
   function populateBusinessCheckboxes() {
@@ -606,6 +665,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
   function openNewUserModal() {
     currentEditingUser = null;
+    currentAccessRequestId = null;
     document.getElementById('modalTitle').textContent = 'Create new user';
     document.getElementById('formName').value = '';
     document.getElementById('formEmail').value = '';
@@ -616,6 +676,13 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     document.getElementById('saveBtn').textContent = 'Create';
     updateSelectAllModules();
     updateSelectAllBusinesses();
+  }
+
+  function openRequestUserModal(requestId, email) {
+    openNewUserModal();
+    currentAccessRequestId = requestId;
+    document.getElementById('formEmail').value = email || '';
+    document.getElementById('formName').value = email ? email.split('@')[0] : '';
   }
 
   function editUser(userId) {
@@ -691,7 +758,12 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
       }
 
       closeEditModal();
+      if (isNew && currentAccessRequestId) {
+        await dismissAccessRequest(currentAccessRequestId, false);
+        currentAccessRequestId = null;
+      }
       await loadUsers();
+      await loadAccessRequests();
       alert(isNew ? 'User created successfully' : 'User updated successfully');
     } catch (e) {
       console.error('Save error:', e);
@@ -716,6 +788,21 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     } catch (e) {
       console.error('Delete error:', e);
       alert('Error: ' + e.message);
+    }
+  }
+
+  async function dismissAccessRequest(requestId, showAlert = true) {
+    try {
+      const r = await fetch(`${API_BASE}/api/access_requests/${requestId}`, {
+        method: 'DELETE',
+        headers: adminHeaders()
+      });
+      if (!r.ok) throw new Error(`Dismiss failed: ${r.status}`);
+      await loadAccessRequests();
+      if (showAlert) alert('Access request dismissed');
+    } catch (e) {
+      console.error('Dismiss request error:', e);
+      if (showAlert) alert('Error: ' + e.message);
     }
   }
 
