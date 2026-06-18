@@ -42,8 +42,8 @@
   .logo img { height:28px; width:auto; object-fit:contain; display:block; }
   .hdr-mid-section { flex:1; text-align:center; min-width:0; }
   .header-title { text-align:center; color:#7aaed5; letter-spacing:.12em; font-size:18px; font-weight:500; white-space:nowrap; margin-bottom:7px; }
-  .header-controls { display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; }
-  .header-right { min-width:180px; display:flex; justify-content:flex-end; align-items:center; gap:12px; color:#fff; font-size:11px; }
+  .header-controls { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; }
+  .header-right { min-width:280px; display:flex; justify-content:flex-end; align-items:center; gap:12px; color:#fff; font-size:11px; }
   .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
   .dot { width:7px; height:7px; border-radius:999px; background:#c97a06; }
   .dot.ready { background:#22c55e; }
@@ -63,7 +63,7 @@
     white-space:nowrap;
   }
   .period-btn.active { background:var(--blue); color:#fff; border-color:#5e9bff; }
-  .range { color:#8fb5d7; text-align:center; line-height:1.35; min-width:130px; }
+  .range { color:#8fb5d7; text-align:right; line-height:1.35; min-width:152px; }
   .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:none; }
   .filters { display:flex; align-items:center; gap:8px; }
   .filters label { color:#8fb5d7; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
@@ -89,10 +89,10 @@
     border:1px solid var(--border);
     border-radius:6px;
     overflow:hidden;
-    min-height:118px;
+    min-height:92px;
   }
   .kpi-head {
-    height:30px;
+    height:28px;
     border-top:4px solid var(--teal);
     padding:5px 10px 0;
     display:flex;
@@ -101,10 +101,10 @@
   }
   .kpi-card.total .kpi-head { border-top-color:var(--blue); }
   .kpi-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.04em; }
-  .kpi-sub { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.08em; }
-  .kpi-body { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:10px; }
+  .kpi-sub { display:none; }
+  .kpi-body { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; padding:8px 10px 10px; }
   .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px; }
-  .metric-value { color:var(--text1); font-size:16px; font-weight:500; line-height:1.15; white-space:nowrap; }
+  .metric-value { color:var(--text1); font-size:15px; font-weight:500; line-height:1.15; white-space:nowrap; }
 
   .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
   .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
@@ -143,19 +143,8 @@
   td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:right; color:var(--text1); font-size:11px; white-space:nowrap; }
   tbody tr:nth-child(even) td { background:#f0f2f6; }
   .table-scroll { max-height:270px; overflow:auto; }
-  .customers { min-height:360px; }
-  .tabs { display:flex; gap:6px; }
-  .tab {
-    border:1px solid rgba(200,216,240,.35);
-    background:rgba(255,255,255,.06);
-    color:#c8d8f0;
-    border-radius:4px;
-    padding:4px 9px;
-    cursor:pointer;
-    font:inherit;
-    font-size:10px;
-  }
-  .tab.active { background:#fff; color:var(--navy); }
+  .customer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .customer-panel { min-height:320px; }
   .empty { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
   .loading { padding:42px 16px; text-align:center; color:var(--text3); }
   .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
@@ -169,10 +158,13 @@
     .periods, .filters { justify-content:center; }
     .fixed-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .content-grid { grid-template-columns:1fr; }
+    .customer-grid { grid-template-columns:1fr; }
   }
   @media (max-width:560px) {
     .fixed-grid, .selected-summary { grid-template-columns:1fr; }
     .header-controls, .periods, .filters { width:100%; justify-content:center; flex-wrap:wrap; }
+    .header-right { justify-content:center; flex-wrap:wrap; }
+    .range { text-align:center; }
     select { width:100%; }
     .bar-row { grid-template-columns:54px 1fr 62px; }
     .header-title { font-size:15px; }
@@ -194,10 +186,6 @@
           <button class="period-btn active" data-mode="ytd_flown">YTD FLOWN</button>
           <button class="period-btn" data-mode="this_week_booked">THIS WEEK BOOKED</button>
         </div>
-        <div class="range">
-          <div class="range-main" id="rangeTitle">-</div>
-          <div id="rangeDates">-</div>
-        </div>
         <div class="filters">
           <label for="bizSelect">Business</label>
           <select id="bizSelect"></select>
@@ -205,6 +193,10 @@
       </div>
     </div>
     <div class="header-right">
+      <div class="range">
+        <div class="range-main" id="rangeTitle">-</div>
+        <div id="rangeDates">-</div>
+      </div>
       <span id="userLabel"></span>
       <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading</span></span>
       <button class="logout" onclick="signOut()">Sign out</button>
@@ -240,17 +232,33 @@
     </div>
   </section>
 
-  <section class="panel customers">
-    <div class="panel-head">
-      <div class="panel-title">Customers</div>
-      <div class="tabs">
-        <button class="tab active" data-tab="top">Top</button>
-        <button class="tab" data-tab="growing">Growing</button>
-        <button class="tab" data-tab="dropping">Dropping</button>
+  <section class="customer-grid">
+    <div class="panel customer-panel">
+      <div class="panel-head">
+        <div class="panel-title">Top Customers</div>
+        <div class="panel-note">Share</div>
+      </div>
+      <div class="table-scroll">
+        <table id="topCustomersTable"></table>
       </div>
     </div>
-    <div class="table-scroll">
-      <table id="customersTable"></table>
+    <div class="panel customer-panel">
+      <div class="panel-head">
+        <div class="panel-title">Growing</div>
+        <div class="panel-note">10 weeks</div>
+      </div>
+      <div class="table-scroll">
+        <table id="growingCustomersTable"></table>
+      </div>
+    </div>
+    <div class="panel customer-panel">
+      <div class="panel-head">
+        <div class="panel-title">Dropping</div>
+        <div class="panel-note">10 weeks</div>
+      </div>
+      <div class="table-scroll">
+        <table id="droppingCustomersTable"></table>
+      </div>
     </div>
   </section>
 </div>
@@ -269,7 +277,6 @@ const BUSINESS_OPTIONS = [
 ];
 
 let currentMode = "ytd_flown";
-let currentTab = "top";
 let currentData = null;
 
 function user() {
@@ -298,6 +305,14 @@ function money(value) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
+function shortMoney(value) {
+  const n = Number(value || 0);
+  const abs = Math.abs(n);
+  if (abs >= 1000000) return `${(n / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
+  if (abs >= 1000) return `${Math.round(n / 1000)}K`;
+  return money(n);
+}
+
 function pkg(value) {
   const n = Number(value || 0);
   return n ? n.toFixed(2) : "-";
@@ -305,7 +320,7 @@ function pkg(value) {
 
 function shortCustomer(value) {
   const text = String(value || "-");
-  return text.length > 34 ? `${text.slice(0, 31)}...` : text;
+  return text.length > 24 ? `${text.slice(0, 21)}...` : text;
 }
 
 function formatDate(value) {
@@ -321,13 +336,12 @@ function cardMetric(metric, label) {
       <div class="kpi-head">
         <div>
           <div class="kpi-title">${label || metric.label || metric.key}</div>
-          <div class="kpi-sub">${metric.key === "ALL" ? "Allowed total" : "Business"}</div>
         </div>
       </div>
       <div class="kpi-body">
         <div><div class="metric-label"># Bkgs</div><div class="metric-value">${num(metric.bookings)}</div></div>
         <div><div class="metric-label">Tons</div><div class="metric-value">${num(metric.tons, 2)}</div></div>
-        <div><div class="metric-label">Rev</div><div class="metric-value">${money(metric.revenue)}</div></div>
+        <div><div class="metric-label">Rev</div><div class="metric-value">${shortMoney(metric.revenue)}</div></div>
         <div><div class="metric-label">P/KG</div><div class="metric-value">${pkg(metric.profit_per_kg)}</div></div>
       </div>
     </div>
@@ -343,7 +357,7 @@ function renderSelectedSummary() {
   document.getElementById("selectedSummary").innerHTML = `
     <div class="mini"><div class="metric-label"># Bkgs</div><div class="metric-value">${num(m.bookings)}</div></div>
     <div class="mini"><div class="metric-label">Tons</div><div class="metric-value">${num(m.tons, 2)}</div></div>
-    <div class="mini"><div class="metric-label">Revenue</div><div class="metric-value">${money(m.revenue)}</div></div>
+    <div class="mini"><div class="metric-label">Revenue</div><div class="metric-value">${shortMoney(m.revenue)}</div></div>
     <div class="mini"><div class="metric-label">Profit/KG</div><div class="metric-value">${pkg(m.profit_per_kg)}</div></div>
   `;
 }
@@ -378,47 +392,49 @@ function renderDetail() {
   }
   body.innerHTML = rows.map(r => `
     <tr>
-      <td>${r.name || r.week || "-"}</td>
+      <td>${r.name || r.period_label || r.week || "-"}</td>
       <td>${num(r.bookings)}</td>
       <td>${num(r.tons, 2)}</td>
-      <td>${money(r.revenue || r.rev)}</td>
+      <td>${shortMoney(r.revenue || r.rev)}</td>
       <td>${pkg(r.profit_per_kg || r.pkg)}</td>
     </tr>
   `).join("");
 }
 
 function renderCustomers() {
-  const table = document.getElementById("customersTable");
-  const customers = (currentData.customers && currentData.customers[currentTab]) || [];
-  if (currentTab === "top") {
-    table.innerHTML = `
-      <thead><tr><th>Customer</th><th>#Bkgs</th><th>Tons</th><th>Rev</th><th>Share</th><th>P/KG</th></tr></thead>
-      <tbody>${customers.length ? customers.map(c => `
-        <tr>
-          <td title="${c.customer || ""}">${shortCustomer(c.customer)}</td>
-          <td>${num(c.bookings)}</td>
-          <td>${num(c.tons, 2)}</td>
-          <td>${money(c.revenue)}</td>
-          <td>${num(c.share, 1)}%</td>
-          <td>${pkg(c.profit_per_kg)}</td>
-        </tr>
-      `).join("") : '<tr><td colspan="6" class="empty">No customer data for this selection.</td></tr>'}</tbody>
-    `;
-    return;
-  }
+  const top = (currentData.customers && currentData.customers.top) || [];
+  const growing = (currentData.customers && currentData.customers.growing) || [];
+  const dropping = (currentData.customers && currentData.customers.dropping) || [];
 
-  table.innerHTML = `
-    <thead><tr><th>Customer</th><th>Prior Avg</th><th>Recent Avg</th><th>Change</th><th>Recent Tons</th><th>Last Activity</th></tr></thead>
-    <tbody>${customers.length ? customers.map(c => `
+  document.getElementById("topCustomersTable").innerHTML = `
+    <thead><tr><th>Customer</th><th>Tons</th><th>Rev</th><th>Share</th></tr></thead>
+    <tbody>${top.length ? top.map(c => `
       <tr>
         <td title="${c.customer || ""}">${shortCustomer(c.customer)}</td>
-        <td>${num(c.prior_avg_tons, 2)}</td>
-        <td>${num(c.recent_avg_tons, 2)}</td>
-        <td>${num(c.change_tons, 2)}</td>
-        <td>${num(c.recent_tons, 2)}</td>
-        <td>${formatDate(c.last_activity)}</td>
+        <td>${num(c.tons, 2)}</td>
+        <td>${shortMoney(c.revenue)}</td>
+        <td>${num(c.share, 1)}%</td>
       </tr>
-    `).join("") : `<tr><td colspan="6" class="empty">No ${currentTab} customers found.</td></tr>`}</tbody>
+    `).join("") : '<tr><td colspan="4" class="empty">No customer data.</td></tr>'}</tbody>
+  `;
+
+  const movementRows = rows => rows.map(c => `
+    <tr>
+      <td title="${c.customer || ""}">${shortCustomer(c.customer)}</td>
+      <td>${num(c.prior_avg_tons, 2)}</td>
+      <td>${num(c.recent_avg_tons, 2)}</td>
+      <td>${num(c.change_tons, 2)}</td>
+    </tr>
+  `).join("");
+
+  document.getElementById("growingCustomersTable").innerHTML = `
+    <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
+    <tbody>${growing.length ? movementRows(growing) : '<tr><td colspan="4" class="empty">No growing customers.</td></tr>'}</tbody>
+  `;
+
+  document.getElementById("droppingCustomersTable").innerHTML = `
+    <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
+    <tbody>${dropping.length ? movementRows(dropping) : '<tr><td colspan="4" class="empty">No dropping customers.</td></tr>'}</tbody>
   `;
 }
 
@@ -496,13 +512,6 @@ function bindEvents() {
     });
   });
   document.getElementById("bizSelect").addEventListener("change", loadReport);
-  document.querySelectorAll(".tab").forEach(btn => {
-    btn.addEventListener("click", () => {
-      currentTab = btn.dataset.tab;
-      document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b === btn));
-      renderCustomers();
-    });
-  });
 }
 
 function initMyBookings() {
