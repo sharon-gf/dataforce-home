@@ -139,6 +139,8 @@
   td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:right; color:var(--text1); font-size:11px; white-space:nowrap; }
   tbody tr:nth-child(even) td { background:#f0f2f6; }
   .table-scroll { max-height:270px; overflow:auto; }
+  .recent-panel { min-height:360px; }
+  .recent-panel .table-scroll { max-height:322px; overflow:hidden; }
   .customer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
   .customer-panel { min-height:368px; }
   .customer-panel .table-scroll { max-height:330px; }
@@ -216,7 +218,7 @@
       <div class="trend" id="trendBox"></div>
     </div>
 
-    <div class="panel">
+    <div class="panel recent-panel">
       <div class="panel-head">
         <div class="panel-title">Recent Weeks</div>
         <div class="panel-note">Selected business</div>
