@@ -1,2113 +1,542 @@
-import os
-import io
-import json
-import time
-import threading
-from datetime import date, timedelta
-from collections import defaultdict
-
-from fastapi import FastAPI, Query, UploadFile, File, Header, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import pymysql
-import pandas as pd
-from google.oauth2 import service_account
-from google.cloud.sql.connector import Connector, IPTypes
-from sqlalchemy import create_engine
-import smtplib
-import urllib.error
-import urllib.request
-from email.mime.text import MIMEText
-from email.header import Header as EmailHeader
-from pydantic import BaseModel
-
-# Load local .env if it exists
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
-from datetime import timezone
-import zoneinfo
-
-def today_eastern():
-    """Return today's date in US Eastern time (where the data lives)."""
-    try:
-        tz = zoneinfo.ZoneInfo("America/New_York")
-        return date.today() # fallback
-    except Exception:
-        return date.today()
-
-# Use a fixed timezone offset: EST = UTC-5, EDT = UTC-4
-# We'll use UTC-5 as conservative (shows earlier week if in doubt)
-def today_local():
-    """Today's date in UTC-5 (US Eastern approx)."""
-    from datetime import datetime, timezone, timedelta as td
-    eastern = datetime.now(timezone(td(hours=-5)))
-    return eastern.date()
-
-app = FastAPI(title="DATAFORCE Dashboard API")
-
-# --- DATABASE CONNECTION (SECURE VIA IAM) ---
-
-# ── GLOBAL CONNECTOR (created once, reused for all queries) ──────────────────
-_connector = None
-_creds = None
-_engine = None
-
-def get_connector():
-    global _connector, _creds
-    if _connector is None:
-        creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
-        if not creds_json:
-            raise ValueError("GOOGLE_CREDENTIALS_JSON missing!")
-        creds_info = json.loads(creds_json)
-        _creds = service_account.Credentials.from_service_account_info(creds_info)
-        _connector = Connector(credentials=_creds)
-    return _connector
-
-def get_engine():
-    """SQLAlchemy connection pool — keeps 5 connections alive and reuses them."""
-    global _engine
-    if _engine is None:
-        connector = get_connector()
-        _engine = create_engine(
-            "mysql+pymysql://",
-            creator=lambda: connector.connect(
-                os.environ["INSTANCE_CONNECTION_NAME"],
-                "pymysql",
-                user=os.environ["DB_USER"],
-                password=os.environ["DB_PASS"],
-                db=os.environ["DB_NAME"],
-                ip_type=IPTypes.PUBLIC,
-            ),
-            pool_size=5,
-            max_overflow=2,
-            pool_timeout=30,
-            pool_recycle=1800,
-            pool_pre_ping=True,
-        )
-    return _engine
-
-def get_db_connection():
-    """Returns a pooled connection. Calling .close() returns it to the pool."""
-    return get_engine().raw_connection()
-
-def query(sql, params=None):
-    """Utility to execute SQL and return results as a list of dictionaries."""
-    conn = get_db_connection()
-    try:
-        with conn.cursor(pymysql.cursors.DictCursor) as cur:
-            cur.execute(sql, params or ())
-            return cur.fetchall()
-    finally:
-        conn.close()
-
-# --- META TABLE ----------------------------------------------------------------
-# Tiny key/value table used to record "when did data last refresh".
-# Written to by upload_cargo (both manual + GitHub bot). Read by /api/status.
-
-def ensure_meta_table():
-    """Create dataforce_meta if it doesn't exist. Safe to call repeatedly."""
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS dataforce_meta (
-                    meta_key   VARCHAR(64) PRIMARY KEY,
-                    meta_value TEXT,
-                    updated_at DATETIME NOT NULL
-                )
-            """)
-        conn.commit()
-    finally:
-        conn.close()
-
-def ensure_access_requests_table():
-    """Create pending access request table if it doesn't exist."""
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS dataforce_access_requests (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    email VARCHAR(255) NOT NULL UNIQUE,
-                    status VARCHAR(32) NOT NULL DEFAULT 'pending',
-                    requested_at DATETIME NOT NULL,
-                    resolved_at DATETIME NULL,
-                    resolved_by VARCHAR(255) NULL,
-                    INDEX idx_status_requested (status, requested_at)
-                )
-            """)
-        conn.commit()
-    finally:
-        conn.close()
-
-def set_meta(key, value):
-    """INSERT-or-UPDATE a row in dataforce_meta."""
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO dataforce_meta (meta_key, meta_value, updated_at)
-                VALUES (%s, %s, NOW())
-                ON DUPLICATE KEY UPDATE
-                    meta_value = VALUES(meta_value),
-                    updated_at = VALUES(updated_at)
-            """, (key, str(value)))
-        conn.commit()
-    finally:
-        conn.close()
-
-def get_meta(key):
-    """Fetch a single meta row as {meta_value, updated_at} or None."""
-    rows = query(
-        "SELECT meta_value, updated_at FROM dataforce_meta WHERE meta_key = %s",
-        (key,)
-    )
-    return rows[0] if rows else None
-
-def _parse_json_list(value):
-    """Return a clean list from a JSON/text/list DB value."""
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return [str(v).strip() for v in value if str(v).strip()]
-    if isinstance(value, str):
-        value = value.strip()
-        if not value:
-            return []
-        try:
-            parsed = json.loads(value)
-            if isinstance(parsed, list):
-                return [str(v).strip() for v in parsed if str(v).strip()]
-        except Exception:
-            return [value]
-    return []
-
-def _normalize_email(email: str) -> str:
-    return (email or "").strip().lower()
-
-def _normalize_module(module_name: str) -> str:
-    return (module_name or "").strip().lower().replace("-", "_")
-
-def check_module_access(email: str, module_name: str) -> bool:
-    """Check if a user has access to a specific module."""
-    perms = get_user_permissions(email)
-    module = _normalize_module(module_name)
-    modules = {_normalize_module(m) for m in perms.get("modules", [])}
-    return module in modules
-
-def require_module_access(email: str, module_name: str):
-    """Return permissions or raise an HTTP error."""
-    email = _normalize_email(email)
-    if not email:
-        raise HTTPException(status_code=401, detail="Login required")
-    if not email.endswith("@gsaforce.com"):
-        raise HTTPException(status_code=403, detail="Only GSA Force accounts are allowed")
-
-    perms = get_user_permissions(email)
-    module = _normalize_module(module_name)
-    modules = {_normalize_module(m) for m in perms.get("modules", [])}
-    if module not in modules:
-        raise HTTPException(status_code=403, detail=f"No access to {module}")
-    return perms
-
-def build_authorized_where(biz, permissions=None):
-    """
-    Apply business/sales-person scoping on top of the business WHERE clause.
-    Empty allowed_businesses is treated as unrestricted for backwards compatibility.
-    """
-    if not permissions:
-        where, params = build_where(biz)
-        return where, params
-
-    allowed = {str(b).strip() for b in permissions.get("allowed_businesses", []) if str(b).strip()}
-    unrestricted = not allowed or "ALL" in allowed
-
-    if not unrestricted and biz == "ALL":
-        conditions = []
-        params = []
-        for allowed_biz in sorted(allowed):
-            allowed_where, allowed_params = build_where(allowed_biz)
-            if not allowed_where:
-                continue
-            conditions.append(f"({allowed_where.removeprefix('WHERE ').strip()})")
-            params.extend(allowed_params)
-        if not conditions:
-            raise HTTPException(status_code=403, detail="No businesses assigned")
-        where = "WHERE (" + " OR ".join(conditions) + ")"
-    else:
-        if not unrestricted and biz not in allowed:
-            raise HTTPException(status_code=403, detail=f"No access to business {biz}")
-        where, params = build_where(biz)
-
-    sales_person = (permissions.get("sales_person") or "").strip()
-    if sales_person:
-        condition = "Bkg_SalesPerson = %s"
-        where = f"{where} AND {condition}" if where else f"WHERE {condition}"
-        params = list(params) + [sales_person]
-
-    return where, params
-
-# --- MIDDLEWARE ---
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_origin_regex=".*",
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    allow_credentials=True,
-)
-
-# --- CACHE ---
-_cache = {}
-CACHE_TTL = 7200  # 2 hours — data only refreshes every 3-6h via GitHub Actions
-
-def cache_get(key):
-    if key in _cache:
-        val, ts = _cache[key]
-        if time.time() - ts < CACHE_TTL:
-            return val
-        del _cache[key]  # Delete expired entry
-    return None
-
-def cache_set(key, val):
-    _cache[key] = (val, time.time())
-
-# --- USER PERMISSIONS ---
-
-def get_user_permissions(email: str):
-    """Fetch user's permissions from GSAFORCE_Users table."""
-    email = _normalize_email(email)
-    if not email:
-        return {"modules": [], "allowed_businesses": [], "sales_person": None}
-    
-    try:
-        rows = query(
-            "SELECT modules, allowed_businesses, sales_person FROM GSAFORCE_Users WHERE LOWER(email) = %s LIMIT 1",
-            (email,)
-        )
-        if not rows:
-            return {"modules": [], "allowed_businesses": [], "sales_person": None}
-        
-        row = rows[0]
-        return {
-            "modules": _parse_json_list(row.get("modules")),
-            "allowed_businesses": _parse_json_list(row.get("allowed_businesses")),
-            "sales_person": row.get("sales_person"),
-        }
-    
-    except Exception as e:
-        print(f"Error fetching permissions for {email}: {e}")
-        return {"modules": [], "allowed_businesses": [], "sales_person": None}
-
-
-@app.get("/api/user_modules")
-def user_modules(email: str = Query("")):
-    """
-    Get which modules a user is allowed to access.
-    Called by frontend to show/hide dashboard cards.
-    
-    Usage: GET /api/user_modules?email=sharon@gsaforce.com
-    Response: {"modules": ["booked", "flown", "vvi_charters"]}
-    """
-    return get_user_permissions(email)
-
-
-# --- BUSINESS LOGIC ---
-#
-# Each business is a direct WHERE clause. Some businesses (UPS, EL-AL, VIRGIN)
-# combine TWO conditions with OR — Case A (their own GSAs with Seg_corr=1) plus
-# Case B (805 AWBs flown on the carrier's metal). Case-B 805 AWBs ALSO appear in
-# Mercury-GSAs under their natural GSA name — that duplication is intentional.
-#
-# Mercury-GSAs is exclusion-based: any row with Seg_corr=1 whose GSA_SName isn't
-# claimed by another carrier business and isn't 'MA' (= Mercury-Local).
-
-# Every GSA_SName that belongs to a specific carrier business (1–11).
-# Used by Mercury-GSAs / Mercury-ALL as an exclusion list.
-CARRIER_GSAS = (
-    "'GF-CXOFF',"                                                               # CX-OFF
-    "'CX-CHILE','CX-BRA','CX-ARG','CX-COL','CX-ECU','CX-PERU',"                 # CX-SUD
-    "'CX-MEX',"                                                                 # CX-MEX
-    "'ET-USA',"                                                                 # ET-USA
-    "'UPS-PR','UPS-MEX','UPS-CHILE',"                                           # UPS
-    "'GF-ELAL-DJDOM','GF-ELAL-USA','GF-ELAL-CL','GF-ELAL-USATL','GF-ELAL-ARG'," # EL-AL
-    "'GF-AV-CHINA','GF-AV-HKG','GF-AV-MFM','GF-6R-CHINA','GF-6R-TW',"           # AV-ASIA
-    "'LAN-JAPAN','MASAIR-JAPAN',"                                               # JPN
-    "'GF-AV-CHILE',"                                                            # AV-CHILE
-    "'GF-AV-TW','GF-AV-JP','GF-AV-PK','GF-AV-VN','GF-AV-KR','GF-AV-ID','GF-AV-REPDOM'," # AV-OTHER
-    "'GF-VIRGIN-MX',"                                                           # VIRGIN
-    "'GF-ULTRACHINA',"                                                          # ULTRA CN
-    "'MA-JUPITER','ET-CHILE'"                                                   # Excluded (no business)
-)
-
-def build_where(biz):
-    # ── Single-condition carrier businesses ──────────────────────────────────
-    if biz == "01_CXOFF":
-        return "WHERE GSA_SName = 'GF-CXOFF' AND Seg_corr = 1", []
-    elif biz == "01_CXSUD":
-        return ("WHERE GSA_SName IN ('CX-CHILE','CX-BRA','CX-ARG','CX-COL',"
-                "'CX-ECU','CX-PERU') AND Seg_corr = 1"), []
-    elif biz == "CXMEX":
-        return "WHERE GSA_SName = 'CX-MEX' AND Seg_corr = 1", []
-    elif biz == "02_ET":
-        return ("WHERE GSA_SName = 'ET-USA' AND Seg_Dnm = 'ET' "
-            "AND (Seg_Ori <> 'LGG' OR Seg_Ori IS NULL) "
-            "AND Bkg_Prdt NOT IN ('CHARTER','CHARTER-AFR')"), []
-    elif biz == "05_AVASIA":
-        return ("WHERE GSA_SName IN ('GF-AV-CHINA','GF-AV-HKG','GF-AV-MFM',"
-                "'GF-6R-CHINA','GF-6R-TW') AND Seg_corr = 1"), []
-    elif biz == "07_JPN":
-        return "WHERE GSA_SName IN ('LAN-JAPAN','MASAIR-JAPAN') AND Seg_corr = 1", []
-    elif biz == "08_AVCHI":
-        return "WHERE GSA_SName = 'GF-AV-CHILE' AND Seg_corr = 1", []
-    elif biz == "09_AVOTHER":
-        return ("WHERE GSA_SName IN ('GF-AV-TW','GF-AV-JP','GF-AV-PK','GF-AV-VN',"
-                "'GF-AV-KR','GF-AV-ID','GF-AV-REPDOM') AND Seg_corr = 1"), []
-
-    # ── Two-condition carrier businesses (Case A OR Case B) ──────────────────
-    elif biz == "03_UPS":
-        # Pure: GSA shipments only (no 805 AWBs)
-        return ("WHERE ("
-                "GSA_SName IN ('UPS-PR','UPS-MEX','UPS-CHILE') "
-                "AND Seg_corr = 1 AND Bkg_Pfx <> 502"
-                ")"), []
-    elif biz == "03_UPS_805":
-        # w/805: GSA + 805 AWBs flown on 5X metal
-        return ("WHERE ("
-                "(GSA_SName IN ('UPS-PR','UPS-MEX','UPS-CHILE') "
-                  "AND Seg_corr = 1 AND Bkg_Pfx <> 502)"
-                " OR "
-                "(Bkg_Pfx = 805 AND Seg_Dnm = '5X' "
-                  "AND Seg_Ori IN ('MTY','QRO','MEX','NLU','GDL'))"
-                ")"), []
-    elif biz == "04_ELAL":
-        # Pure: GSA shipments only (no 805 AWBs)
-        return ("WHERE GSA_SName IN ('GF-ELAL-DJDOM','GF-ELAL-USA','GF-ELAL-CL',"
-                "'GF-ELAL-USATL','GF-ELAL-ARG') AND Seg_corr = 1"), []
-    elif biz == "04_ELAL_805":
-        # w/805: GSA + 805 AWBs flown on LY metal
-        return ("WHERE ("
-                "(GSA_SName IN ('GF-ELAL-DJDOM','GF-ELAL-USA','GF-ELAL-CL',"
-                  "'GF-ELAL-USATL','GF-ELAL-ARG') AND Seg_corr = 1)"
-                " OR "
-                "(Bkg_Pfx = 805 AND Seg_Dnm = 'LY' "
-                  "AND GSA_SName NOT IN ('MA-ROMTOP','ALG-TLV'))"
-                ")"), []
-    elif biz == "10_VIRGIN":
-        # Pure: GSA shipments only (no 805 AWBs)
-        return ("WHERE GSA_SName = 'GF-VIRGIN-MX' AND Seg_corr = 1"), []
-    elif biz == "10_VIRGIN_805":
-        # w/805: GSA + 805 AWBs flown on VS metal
-        return ("WHERE ("
-                "(GSA_SName = 'GF-VIRGIN-MX' AND Seg_corr = 1)"
-                " OR "
-                "(Bkg_Pfx = 805 AND Seg_Dnm = 'VS' "
-                  "AND Seg_Ori IN ('CUN','MTY','QRO','MEX','NLU','GDL'))"
-                ")"), []
-    elif biz == "11_ULTRACN":
-        return "WHERE GSA_SName = 'GF-ULTRACHINA' AND Seg_corr = 1", []
-
-    # ── Mercury ──────────────────────────────────────────────────────────────
-    elif biz == "MERC_LOCAL":
-        return "WHERE GSA_SName = 'MA' AND Seg_corr = 1", []
-    elif biz == "MERC_GSA":
-        # Every other GSA not claimed by a carrier business, excluding 'MA' (Local).
-        return (f"WHERE Seg_corr = 1 AND GSA_SName <> 'MA' "
-                f"AND GSA_SName NOT IN ({CARRIER_GSAS})"), []
-    elif biz == "MERC_ALL":
-        # Mercury-Local + Mercury-GSAs.
-        return (f"WHERE Seg_corr = 1 "
-                f"AND (GSA_SName = 'MA' OR GSA_SName NOT IN ({CARRIER_GSAS}))"), []
-
-    # ── Catch-all (no filter) ────────────────────────────────────────────────
-    else:
-        return "", []
-
-def add_date(where, params, date_col, start, end, exclude_budget=True):
-    cond = f"{date_col} BETWEEN %s AND %s"
-    budget_excl = " AND Bkg_Prdt != 'Budget'" if exclude_budget else ""
-    if where:
-        return where + f" AND {cond}{budget_excl}", params + [start, end]
-    else:
-        return f"WHERE {cond}{budget_excl}", params + [start, end]
-
-# --- UTILS ---
-def current_week_start():
-    """Monday of the current ISO week."""
-    today = today_local()
-    return today - timedelta(days=today.weekday())  # Monday
-
-def last_week_range():
-    """Show last completed week. Numbers uploaded Mondays.
-    Sunday: show 2 weeks ago (no data yet for last week)
-    Mon-Sat: show last completed week (ended last Sunday)
-    """
-    today = today_local()
-    dow = today.weekday()  # 0=Mon, 6=Sun
-    if dow == 6:  # Sunday: data not uploaded yet, show week before last
-        last_sunday = today - timedelta(days=7)
-    else:  # Mon-Sat: show last completed week
-        last_sunday = today - timedelta(days=dow + 1)
-    last_monday = last_sunday - timedelta(days=6)
-    return last_monday, last_sunday
-
-def this_month_range(end_date=None):
-    today = today_local()
-    end = end_date or today
-    return end.replace(day=1), end
-
-def ytd_range(end_date=None):
-    today = today_local()
-    end = end_date or today
-    return end.replace(month=1, day=1), end
-
-def prev_year(start, end):
-    """Same ISO week number in previous year."""
-    wk = start.isocalendar()[1]
-    yr = start.year - 1
-    jan4 = date(yr, 1, 4)
-    week1_monday = jan4 - timedelta(days=jan4.weekday())
-    prev_monday = week1_monday + timedelta(weeks=wk-1)
-    prev_sunday = prev_monday + timedelta(days=(end - start).days)
-    return prev_monday, prev_sunday
-
-def pct(cur, prev):
-    if not cur or not prev or prev == 0: return None
-    return round((cur - prev) / abs(prev) * 100, 1)
-
-def pkg(profit, chw):
-    return round(profit / chw, 4) if chw and chw > 0 else None
-
-# --- MAIN ENDPOINT ---
-def dashboard_data(
-    biz: str = "ALL",
-    date_col: str = "FlightDate",
-    week_mode: str = "last",
-    module_name: str = None,
-    permissions=None,
-    cache_scope: str = "global",
-):
-    module_name = module_name or ("booked" if date_col == "Bkg_CreaDate" else "flown")
-
-    if date_col not in ("FlightDate", "Bkg_CreaDate"):
-        date_col = "FlightDate"
-    if week_mode not in ("last", "current"):
-        week_mode = "last"
-
-    cache_key = f"{cache_scope}_{biz}_{date_col}_{week_mode}"
-    cached = cache_get(cache_key)
-    if cached: return cached
-
-    today = today_local()
-    dow = today.weekday()
-    if dow == 6:
-        last_sunday = today - timedelta(days=7)
-    else:
-        last_sunday = today - timedelta(days=dow + 1)
-    cur_yr = last_sunday.year
-    cur_wk = last_sunday.isocalendar()[1]
-
-    if week_mode == "current":
-        # Current week (Mon → Sun) vs previous week (Mon → Sun).
-        # Future days inside the current week simply have no rows.
-        lw_s  = current_week_start()                     # this Monday
-        lw_e  = lw_s + timedelta(days=6)                 # this Sunday
-        lw2_s = lw_s - timedelta(days=7)                 # previous Monday
-        lw2_e = lw_s - timedelta(days=1)                 # previous Sunday
-    else:
-        lw_s,  lw_e  = last_week_range()
-        lw2_s, lw2_e = prev_year(lw_s, lw_e)
-    # For BOOKED (Bkg_CreaDate), bookings update daily — use today as end.
-    # For FLOWN (FlightDate), use last_sunday (last completed flight week).
-    tm_end = today if date_col == "Bkg_CreaDate" else last_sunday
-    tm_s,  tm_e  = this_month_range(tm_end)
-    # This month comparison: same month last year
-    tm2_s = tm_s.replace(year=tm_s.year - 1)
-    tm2_e = tm_e.replace(year=tm_e.year - 1)
-    yt_s,  yt_e  = ytd_range(tm_end)
-    # YTD comparison: Jan 1 to same calendar date last year
-    yt2_s = date(yt_e.year - 1, 1, 1)
-    yt2_e = yt_e.replace(year=yt_e.year - 1)
-    # Q1: Jan 1 – Mar 31 current year vs same period prior year (always FlightDate)
-    q1_s   = date(cur_yr, 1, 1)
-    q1_e   = date(cur_yr, 3, 31)
-    q1_2_s = date(cur_yr - 1, 1, 1)
-    q1_2_e = date(cur_yr - 1, 3, 31)
-
-    # Single query for all KPIs using conditional aggregation (6x faster)
-    biz_where_k, biz_params_k = build_authorized_where(biz, permissions)
-    kpi_where = biz_where_k if biz_where_k else ""
-    kpi_rows = query(f"""
-        SELECT
-            -- Actuals: only non-budget rows (Bkg_Prdt != 'Budget')
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END)/1000,2) AS lw_tons,
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END),0) AS lw_profit,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END) AS lw_chw,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END) AS lw_cia,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt = 'Budget' THEN B_Kgs ELSE 0 END)/1000 AS lw_btons,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt = 'Budget' THEN B_Rev ELSE 0 END) AS lw_bprofit,
-
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END)/1000,2) AS lw2_tons,
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END),0) AS lw2_profit,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END) AS lw2_chw,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END) AS lw2_cia,
-
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END)/1000,2) AS tm_tons,
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END),0) AS tm_profit,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END) AS tm_chw,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END) AS tm_cia,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt = 'Budget' THEN B_Kgs ELSE 0 END)/1000 AS tm_btons,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt = 'Budget' THEN B_Rev ELSE 0 END) AS tm_bprofit,
-
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END)/1000,2) AS tm2_tons,
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END),0) AS tm2_profit,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END) AS tm2_chw,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END) AS tm2_cia,
-
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END)/1000,2) AS yt_tons,
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END),0) AS yt_profit,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END) AS yt_chw,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END) AS yt_cia,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt = 'Budget' THEN B_Kgs ELSE 0 END)/1000 AS yt_btons,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt = 'Budget' THEN B_Rev ELSE 0 END) AS yt_bprofit,
-
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END)/1000,2) AS yt2_tons,
-            ROUND(SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END),0) AS yt2_profit,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END) AS yt2_chw,
-            SUM(CASE WHEN {date_col} BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END) AS yt2_cia,
-
-            ROUND(SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END)/1000,2) AS q1_tons,
-            ROUND(SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END),0) AS q1_profit,
-            SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END) AS q1_chw,
-            SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END) AS q1_cia,
-            SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt = 'Budget' THEN B_Kgs ELSE 0 END)/1000 AS q1_btons,
-            SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt = 'Budget' THEN B_Rev ELSE 0 END) AS q1_bprofit,
-
-            ROUND(SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END)/1000,2) AS q1_2_tons,
-            ROUND(SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END),0) AS q1_2_profit,
-            SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CHW ELSE 0 END) AS q1_2_chw,
-            SUM(CASE WHEN FlightDate BETWEEN %s AND %s AND Bkg_Prdt != 'Budget' THEN CV_CiaProfit ELSE 0 END) AS q1_2_cia
-        FROM GSAFORCE_CargoSystem_2015_20XX {kpi_where}
-    """, [
-        lw_s, lw_e, lw_s, lw_e, lw_s, lw_e, lw_s, lw_e, lw_s, lw_e, lw_s, lw_e,
-        lw2_s, lw2_e, lw2_s, lw2_e, lw2_s, lw2_e, lw2_s, lw2_e,
-        tm_s, tm_e, tm_s, tm_e, tm_s, tm_e, tm_s, tm_e, tm_s, tm_e, tm_s, tm_e,
-        tm2_s, tm2_e, tm2_s, tm2_e, tm2_s, tm2_e, tm2_s, tm2_e,
-        yt_s, yt_e, yt_s, yt_e, yt_s, yt_e, yt_s, yt_e, yt_s, yt_e, yt_s, yt_e,
-        yt2_s, yt2_e, yt2_s, yt2_e, yt2_s, yt2_e, yt2_s, yt2_e,
-        q1_s, q1_e, q1_s, q1_e, q1_s, q1_e, q1_s, q1_e, q1_s, q1_e, q1_s, q1_e,
-        q1_2_s, q1_2_e, q1_2_s, q1_2_e, q1_2_s, q1_2_e, q1_2_s, q1_2_e,
-    ] + biz_params_k)
-
-    k = kpi_rows[0] if kpi_rows else {}
-
-    def r(v): return float(v) if v else 0
-    lw  = {"tons": r(k["lw_tons"]),  "profit": r(k["lw_profit"]),  "chw": r(k["lw_chw"]),  "cia": r(k["lw_cia"]),  "b_tons": r(k["lw_btons"]),  "b_profit": r(k["lw_bprofit"])}
-    lw2 = {"tons": r(k["lw2_tons"]), "profit": r(k["lw2_profit"]), "chw": r(k["lw2_chw"]), "cia": r(k["lw2_cia"])}
-    tm  = {"tons": r(k["tm_tons"]),  "profit": r(k["tm_profit"]),  "chw": r(k["tm_chw"]),  "cia": r(k["tm_cia"]),  "b_tons": r(k["tm_btons"]),  "b_profit": r(k["tm_bprofit"])}
-    tm2 = {"tons": r(k["tm2_tons"]), "profit": r(k["tm2_profit"]), "chw": r(k["tm2_chw"]), "cia": r(k["tm2_cia"])}
-    yt  = {"tons": r(k["yt_tons"]),  "profit": r(k["yt_profit"]),  "chw": r(k["yt_chw"]),  "cia": r(k["yt_cia"]),  "b_tons": r(k["yt_btons"]),  "b_profit": r(k["yt_bprofit"])}
-    yt2 = {"tons": r(k["yt2_tons"]), "profit": r(k["yt2_profit"]), "chw": r(k["yt2_chw"]), "cia": r(k["yt2_cia"])}
-    q1  = {"tons": r(k["q1_tons"]),  "profit": r(k["q1_profit"]),  "chw": r(k["q1_chw"]),  "cia": r(k["q1_cia"]),  "b_tons": r(k["q1_btons"]),  "b_profit": r(k["q1_bprofit"])}
-    q1_2= {"tons": r(k["q1_2_tons"]),"profit": r(k["q1_2_profit"]),"chw": r(k["q1_2_chw"]),"cia": r(k["q1_2_cia"])}
-
-    def nodata(v): return None if not v or v == 0 else v
-
-    kpis = {
-        "lw": {
-            "tons": nodata(lw.get("tons")), "profit": nodata(lw.get("profit")),
-            "pkg": pkg(lw.get("cia"), lw.get("chw")),
-            "tons_vs25": pct(lw.get("tons"), lw2.get("tons")),
-            "profit_vs25": pct(lw.get("profit"), lw2.get("profit")),
-            "pkg_vs25": pct(pkg(lw.get("cia"), lw.get("chw")), pkg(lw2.get("cia"), lw2.get("chw"))),
-            "tons_vsbud": pct(lw.get("tons"), lw.get("b_tons")),
-            "profit_vsbud": pct(lw.get("profit"), lw.get("b_profit")),
-            "pkg_vsbud": None,
-        },
-        "tm": {
-            "tons": nodata(tm.get("tons")), "profit": nodata(tm.get("profit")),
-            "pkg": pkg(tm.get("cia"), tm.get("chw")),
-            "tons_vs25": pct(tm.get("tons"), tm2.get("tons")),
-            "profit_vs25": pct(tm.get("profit"), tm2.get("profit")),
-            "pkg_vs25": pct(pkg(tm.get("cia"), tm.get("chw")), pkg(tm2.get("cia"), tm2.get("chw"))),
-            "tons_vsbud": pct(tm.get("tons"), tm.get("b_tons")),
-            "profit_vsbud": pct(tm.get("profit"), tm.get("b_profit")),
-            "pkg_vsbud": None,
-        },
-        "ytd": {
-            "tons": nodata(yt.get("tons")), "profit": nodata(yt.get("profit")),
-            "pkg": pkg(yt.get("cia"), yt.get("chw")),
-            "tons_vs25": pct(yt.get("tons"), yt2.get("tons")),
-            "profit_vs25": pct(yt.get("profit"), yt2.get("profit")),
-            "pkg_vs25": pct(pkg(yt.get("cia"), yt.get("chw")), pkg(yt2.get("cia"), yt2.get("chw"))),
-            "tons_vsbud": pct(yt.get("tons"), yt.get("b_tons")),
-            "profit_vsbud": pct(yt.get("profit"), yt.get("b_profit")),
-            "pkg_vsbud": None,
-        },
-        "q1": {
-            "tons": nodata(q1.get("tons")), "profit": nodata(q1.get("profit")),
-            "pkg": pkg(q1.get("cia"), q1.get("chw")),
-            "tons_vs25": pct(q1.get("tons"), q1_2.get("tons")),
-            "profit_vs25": pct(q1.get("profit"), q1_2.get("profit")),
-            "pkg_vs25": pct(pkg(q1.get("cia"), q1.get("chw")), pkg(q1_2.get("cia"), q1_2.get("chw"))),
-            "tons_vsbud": pct(q1.get("tons"), q1.get("b_tons")),
-            "profit_vsbud": pct(q1.get("profit"), q1.get("b_profit")),
-            "pkg_vsbud": None,
-        },
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - My Bookings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e8eaee;
+    --surface:#fff;
+    --surface2:#f5f7fb;
+    --border:#d8dde8;
+    --navy:#0d1f3c;
+    --navy2:#1a3360;
+    --text1:#0d1f3c;
+    --text2:#41536c;
+    --text3:#8391a8;
+    --blue:#1a56db;
+    --teal:#0c9080;
+    --amber:#c97a06;
+    --red:#b91c1c;
+    --green:#15803d;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  body { overflow-x:hidden; }
+  .app { min-height:100vh; padding:8px; }
+  .header {
+    background:var(--navy);
+    border-radius:6px;
+    padding:8px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .logo { display:flex; align-items:center; gap:8px; min-width:180px; }
+  .logo a { display:flex; align-items:center; cursor:pointer; }
+  .logo img { height:28px; width:auto; object-fit:contain; display:block; }
+  .hdr-mid-section { flex:1; text-align:center; min-width:0; }
+  .header-title { text-align:center; color:#7aaed5; letter-spacing:.12em; font-size:17px; font-weight:500; white-space:nowrap; margin-bottom:6px; }
+  .header-controls { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:7px; }
+  .header-right { min-width:260px; display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:5px; color:#fff; font-size:11px; }
+  .header-actions { display:flex; justify-content:flex-end; align-items:center; gap:12px; }
+  .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:7px; height:7px; border-radius:999px; background:#c97a06; }
+  .dot.ready { background:#22c55e; }
+  .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font:inherit; font-size:10px; }
+
+  .periods { display:flex; gap:8px; justify-content:center; }
+  .period-btn {
+    border:1px solid rgba(122,174,213,.45);
+    background:#102847;
+    color:#9abfe0;
+    border-radius:4px;
+    padding:4px 15px;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.08em;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .period-btn.active { background:var(--blue); color:#fff; border-color:#5e9bff; }
+  .range { color:#8fb5d7; text-align:right; line-height:1.35; min-width:152px; font-size:10px; }
+  .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:block; }
+  .filters { display:flex; align-items:center; gap:8px; }
+  .filters label { color:#8fb5d7; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+  select {
+    min-width:150px;
+    border:1px solid #45658d;
+    background:#102847;
+    color:#fff;
+    border-radius:5px;
+    padding:6px 9px;
+    font:inherit;
+    outline:none;
+  }
+
+  .fixed-grid {
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .kpi-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:6px;
+    overflow:hidden;
+    min-height:86px;
+  }
+  .kpi-head {
+    height:30px;
+    border-top:4px solid var(--teal);
+    padding:5px 10px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+  }
+  .kpi-card.total .kpi-head { border-top-color:var(--blue); }
+  .kpi-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.04em; }
+  .kpi-sub { display:none; }
+  .kpi-body { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:8px 8px 10px; }
+  .kpi-body > div { text-align:center; min-width:0; }
+  .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; text-align:center; }
+  .metric-value { color:var(--text1); font-size:14px; font-weight:500; line-height:1.15; white-space:nowrap; text-align:center; }
+
+  .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
+  .panel-head {
+    background:var(--navy2);
+    color:#c8d8f0;
+    padding:8px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    min-height:38px;
+  }
+  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+  .trend { padding:12px; min-height:250px; }
+  .trend svg { width:100%; height:226px; display:block; }
+  .trend-axis { stroke:#d8dde8; stroke-width:1; }
+  .trend-grid { stroke:#eef2f8; stroke-width:1; }
+  .trend-line-current { fill:none; stroke:#1a56db; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  .trend-line-prev { fill:none; stroke:#ef4444; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .trend-dot-current { fill:#1a56db; }
+  .trend-dot-prev { fill:#ef4444; }
+  .trend-label { fill:#6b7f99; font-size:10px; }
+  .trend-legend { display:flex; justify-content:flex-end; align-items:center; gap:14px; color:var(--text2); font-size:10px; margin-bottom:4px; }
+  .legend-item { display:flex; align-items:center; gap:5px; }
+  .legend-swatch { width:18px; height:3px; border-radius:99px; background:#1a56db; }
+  .legend-swatch.prev { background:#ef4444; }
+
+  table { width:100%; border-collapse:collapse; }
+  th { background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:7px 8px; text-align:right; white-space:nowrap; }
+  th:first-child, td:first-child { text-align:left; }
+  td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:right; color:var(--text1); font-size:11px; white-space:nowrap; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  .table-scroll { max-height:270px; overflow:auto; }
+  .customer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .customer-panel { min-height:320px; }
+  .empty { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
+  .loading { padding:42px 16px; text-align:center; color:var(--text3); }
+  .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
+
+  @media (max-width:980px) {
+    .header { flex-wrap:wrap; padding:10px 12px; }
+    .logo { order:1; flex:1 1 45%; min-width:0; }
+    .logo img { height:30px; }
+    .header-right { order:2; flex:1 1 45%; min-width:0; }
+    .header-actions { flex-wrap:wrap; row-gap:5px; }
+    .hdr-mid-section { order:3; flex:1 1 100%; margin-top:10px; }
+    .periods, .filters { justify-content:center; }
+    .fixed-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .content-grid { grid-template-columns:1fr; }
+    .customer-grid { grid-template-columns:1fr; }
+  }
+  @media (max-width:560px) {
+    .fixed-grid { grid-template-columns:1fr; }
+    .header-controls, .periods, .filters { width:100%; justify-content:center; flex-wrap:wrap; }
+    .header-right { justify-content:center; align-items:center; flex-wrap:wrap; }
+    .header-actions { justify-content:center; }
+    .range { text-align:center; }
+    select { width:100%; }
+    .bar-row { grid-template-columns:54px 1fr 62px; }
+    .header-title { font-size:15px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="header">
+    <div class="logo" id="hdr-logo">
+      <a href="/" aria-label="Back to DATAFORCE home">
+        <img class="logo-img" src="data:image/png;base64,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ALkTAhNS+648mz59unn99dfNrFmzNHHixKr6Tfa8tHUFLPucZoMWNvgQRZGMMcpms3GaHPv/dvslf44dKHQcJ/53+7ttbnipevAxCAIFQRCnObGDiPZnJGe8J4OZ9nPY49gOONr/s5+hdmZ9Pp/XxIkTdcstt+iWW25pz4MAI7KBLnvPscfaZpttpgsvvFAvv/yy2XHHHTk+xtjFF19sfN83//7v/x4HJmpT6432HmSvNXbllL2e2cCovSbYAKa9Rln22jhckMHeG6XlwYPa99l6OPY6l6ytZSVXfkmKr4fJz5r8ufZ32sBLNptt2dUKyWu/TVU1Uk2yVv8DoH7WXXdd5/XXX48D1nZMKVm/JwiCeAXTscceqwULFnBioukR1h4HtbMykx3GTCajd77zndpvv/00depUzZ8/3zz33HNauHChzj//fC4ibeg73/mOSc7gXFPGmPjhftKkSfre975njj/+eI4doM7222+/eKaitLwTPZpB39r32p81e/ZsffOb3xy7xmIFdoaRHSRODjoHQTAudQUaKbnSp13ce++95pOf/KR6enrif+vv74+/rlQqVYWDh0uVZNml8MlnttoVF/YYsrNka2cC2wLVyWPMdd04VYm04ox4+9r+bMdx4uLlNgBhByCHm9k83Ovk73YcJ17iv+eee2rx4sXmwAMP1M9+9jOeGzqIPR6SNY9835fneSoUCtp0001133336corrzRz5szh2FhDO+64o7n11lvjIKcdaE/Wq5JGFzS2AYhsNlu1ErD2umCLqtsAZ3LwuFwuKwiCOMBQLBZVKpX0l7/8RW+99ZYGBgbi7ymVSlW5zHt7e7XllltqwoQJ6u7uVm9vr95++2319vbG11x7X02mykuuSKtUKsrn8/FgmqSq+1LyGt1KKQg9z4tT7Vn2cyev/+2KtE5AfW244YbxCgp7nbEZDOzzfSaT0fTp0wlMoGUQnKiz2rQRtbMya9OAZDIZbb311tp666313e9+1/z+97/XTTfdpO9///tcVNrEjBkzxqxYqy16KQ09CObzee277746/vjj1/hnA1i5k046ydgc0ckUCqOd3WeX3dpZ+7bA/TrrrKOpU6eahQsXcu2vk+R+skEJuy9trv52lsyf3eo+85nPmDvuuEO9vb3xAJYd3J84cWL8Pjs4ZldTJAfsa9l7q023YgfZkoNN9tmuXC7rlVde0f/93//p2WefVaVSUblc1h//+EctXrxYruvqgQcecHbeeWfz3ve+VxtttJGiKNKmm26qD33oQ3r3u9+ttdZaKz7+XNetKoidfF4olUrxaztoV5tqZbjUqLUzl6Wha9bEiRN166236kc/+pE54ogjuN50CBtMl5YH4uwgd7lcju9Ns2fP1qc+9SnzwQ9+kGNjNV1zzTVmr732qkr1YwMCyaBo7X1oVWprNSQD6jYFXKlUimvQdHd3KwgCLVmyRG+//bYef/xx/e///q+efPJJ3XXXXWO+b3fddVez3Xbb6XOf+5ze/e53K5fLyfO8+Diz1+fk9TSZEs9+Nnt9tsGTVlIbLLIrNX3fH5M+YDNba621Gt0EoO2tu+66zpIlS8ykSZMkDV1z7HiQRI0JYEw89NBDJooi027CMDRBEJgwDE0YhlWfMYqiqv9Pfo8xxgwMDJibb77ZfO5zn2vv0ZI2t8cee5hSqTRmx9TKzpNddtmlbY6TU089teqztuO1oZUlr1dJjT5u6u3ll182lUol/vy11/WVbZfhtp3v+8aY6mPb933zwAMPtP12rJe0x28QBKZUKsX7Iooi4/t+qv3X6uwzx7333tvSx9lpp50Wf6ZyuWwGBweH/by159dwgiAwQRAMex4nf+4zzzxj5s+fbw488MAx3Xaf/exnzXe+8x1z8803m2XLllW1ub+/f9jPEkVRVZttu2vfk7yHBkFQ9bkrlYpZtmyZefbZZ1v6WFhTnXDeJ1UqlVU+UxWLxfhcef31182uu+7a0cfH6liyZEm8Pe22LhaLw57DteflSAYGBqquS/Y5xAqCwAwMDJinnnrKHHvssQ3fdzvvvLO56qqrzIsvvmhKpVLcdt/3TblcjttsjInvy8ltMnny5IZ8htrrQpp+SG1fvrbvZ6/J7frnnnvuafjxtjomT56c9vRruNNOO60ltzHG3uLFi6uOjb6+PjNz5kyOD2AstFNwojbYYEVRZCqViqlUKit0kn3fX2WH4Q9/+IM5/PDDueC0oFtvvTXe/2PFDqYlf+4dd9zRNscHwYnm1onBiR122MEYMzSwY/+uHcxMM8hlO93J8zfZQS8Wi229HespzbFrJwXU7hP7b3awqF3/WA8//HDLHmcPPfRQ1bloFYtFY8zQAJcd5FrVOZkcvK89HsrlsgnD0DzzzDPmqKOOGvdtdfbZZ5tXX321ql21n7c2GGGDFSv73GEYGt/3h/3Mb775ptl5551b9phYE50WnBgYGKj6OgzDuG+SPMaSAx9Tp07tyGNjtC688ELT19dnBgcH43t87fa2agPiKwueJiWv4ckAxcDAgHnhhRfMCSec0PT7aerUqebRRx+tCsTaa3fymLSftVET9FYnOGHPn9pnirGcoNbMfvnLXzb98TccghNoVW+99ZYxZuh+cOihh3JsAGOlnYITlu0I1s5us4YLYtQOnBSLxaqHnVdeeaUpZsIgPbsvx+rh1D6wJwc57YN8oz/rWCE40dw6MThx/fXXV31WG1AYaZsMt+1q31s76HjmmWe29basl1Q7YBX7onY/tKsgCMx9993XksfY7373O1Mul+P7X19fnzFm1edfMthQO8M4aWBgwPi+b/7+97+bZipOP3fuXGNnYg8ODq4w+9pKrgQaaWZ87c8aHBw0lUrFfPWrX22azz1eOi04YT/v4ODgCvcxew1MDqjb17Nmzeq4Y2M0fvOb3xhjjEmumli6dGn82gYsaoOKtdt+JPb87e/vN3/5y19afuLabbfdVnV9s4IgML7vmx122KFlghPJAFNyhUjttbld/9x9990teSwSnEAr++tf/2oOOeQQjgu0LGpO1Jn5Z37f4QqUScvrBNjihsk8m9JQfkqbo9Tmh47+mZv8Xe96l8455xwdccQR5owzztDVV19NTrkmdu655xpbDC2ZY3VN2Lzo9piwRdY8z9PXvvY1c+GFF3JMAGNs3333jQsbRv8sDiktL3Y4XP764TiOE793cHBQ3d3dymazVfeB/fffXyeddFJ9PkiHsznXo3/WH3BdV5VKRb/61a/0yCOPtFTxzdVhP/ebb77Z6KaM2pIlS8zEiRPj5yrf99Xb21tVxDpK5HO3hUmTRauT52ny9bJly7Ro0SKdeeaZTVdEcObMmY4kHXnkkebEE0+U4zjxs6H5Z0w4WeestvB38pk0DEMVCoW4poUxpioX+g033KB//dd/NWeccUZTbQOMDXv+S6oqEp+sPyFJ3d3dcV/Fvr7qqqv0j3/8w9x5550cGzWWLVtment75fu+1lprLRWLReXzeU2cODEuTG2LYieFYRhfs9L0EaJ/1sv5+c9/ri9/+cttsR923333+HM89thj5n3ve5/WX3/9qr5Oq7D3nl//+tf61re+Jcdx9MADDzhf+MIXzB133OE0KtAyXh588MG2OCaBVvLOd76T8w4Ya6u7csLOUrCrEMZy5uNws1tq80muavl87Yy2laV7MmZ0M8OTqUReeumltqo10G7sTMzkDM3aVDDlcrkqxUvyvXZWm+/7Kyz5Hm6VzaJFi9riWPjOd74T59q2M15bRXJlS3Kf1c5QbFXJa2zyulWpVNri2BvOaaedNur9l0xTYFP6pWGPmS984Qttuz3rZTT7p3ZV1qmnnsr2bmJLlixJnZs9DMP4/EumB4miKF7BaM/HKIrMK6+8Yvbdd9+W2f8HHXSQeemll4wxy1d7GLPiSpDkvWik1RS13zN//vyW2R5rarTPF8l7QW2avjVV+3yYtKp7SPLZMQiCFd47VqtPSTtY7TOf+Ux8TUlzfUruB3vM2OOpth5VchVBpVIxS5cuNSeeeGJHbP9jjjnG9Pf3myAIzI477tgyKyfs+x566KGO2E/tgpUTANA4Lb9yws7mKZVKcWV613XjmWFrOsvCziSyfydnGrmuG89wTa6KsL/TcRwZY1ZYMZH82q6KSL62P9/Owk3TPtd1tdlmm+n222/Xz3/+c7P33nsTOW0is2bNMl1dXVWzM+2sJ2n5rEY769oeC/bYMP+c7Sgtn41TqVTiY692pradpdUOfvnLXyoMQ+XzeRWLxfgzl8vleMZ6s9puu+00efLkeD9KQ/syuTpqVU477bR6NW3MJI9jx3FUqVTimbzt6IgjjohXug23Gi4pCAK5rqtCoaBKpaJcLifHcZTNZuOvV8UeJ9OnT9cdd9wxZp8BaEUHHHCAWbhwocrlctU1dWVKpZIKhYIKhYL6+vo0YcKEqv/P5/Pxvy9atEinnnqqLrvsspZ6drr88sudyy+/XCeeeKI55ZRTlMlktGTJEq299trx6hHXdeV5XqprTpK9zu27776aNGmS+dKXvtRS22Y8JI9D+xzmeV6q5/e07M+1M+vt6lv7XGiMURiG8Wogu0LIGFP1HBlF0bB9ktVVKBT01ltvmXXXXbfjj4tjjz3WnHHGGcrn81q2bFmq52+7X5MrJXO5XLyKUlr+DGBXM7322mu66KKL9F//9V8ds81/8IMfOD/4wQ905JFHmvvvv79jPjcAAJ2mKW/yDz30kPnMZz6TOjXGb37zG51yyim66667nM9+9rPG8zyVSiU9+uijzprOsvjIRz6iiRMnqru7W77vq1wuq6enR5tttpne+c53KgxDrbvuutp444211lprrfKhPwzDqoHJ2hROVppBr6Thfk6pVNJRRx3Vch3tdvX444+bj3/848MOqNj9l9zvNugmVQewgiCIA1i2o5kMYNR2PG+++Wbts88+HAMNctZZZ5mvf/3r8b6URnd+O2kvghgXX/7yl82tt946qu9JDghWKhV5njdsQHE4dvBpcHBQPT09HAujYEz6uifJQT7HcfSd73xHp512Gtu7ydh9mgzWr4q9t9ogRRiGCoIgnghgz8N2Sovy05/+1HzlK1+JnyFqB8ltyp60gYrkZJsrrrhCBx98cFtsp5UJw9CM5vk7eSzW3ttHcQkaVjIl13AD2SMFQOz9ZrjnzuRz5eqyn/eee+7RLrvs0tbHxaqcfvrp5utf/7p6enrif0sbnLKBCBtgSvbl7LlaLBbl+74uuOACnXLKKR27nRup9rqQ9h5kjNEjjzyiyZMns99axOTJk82DDz7Y6Gakcvrpp+vUU0/l2AKAehptWqf777+/qZa1bbfddubAAw80J510krnuuuvMb37zmxUKew23XDsIgqol92lTf9ifbVMXJAtnP/jgg021bTrV4OBgvNw7iqKqZf+1y79tiiZbuDN57BhTXUw7efzYpfy1506jP3snO/HEE+N9U7tf0iz7b3T7Ue2JJ56Ir61p039UKpW4iGht6sGRJI+Z4447juNhFFLtnJrtTFqn5mWLpNr74mjZ56PkvbdUKpmdd9657fb1nnvuaYrFYlyA1/f9quvQaFKS2G1u71eXXnpp222vpNGmdaq9licLFI8F3/erngHt8ZtMRWZTyib7DrWpBNPec0YjeRy143mUxkUXXRTvi8HBwdTp5qxkCuLkdc2eu8uWLTO33357R27bZkJap85BWicAaJyWT+s02mXq4+HRRx91Hn300WH/75BDDjE77LCD/uM//kObbbZZXJBTUtUMeEmpZt34vh+nUEn+XalUFEWRJk+erLfeesscddRRWrhwIdH1BrjsssuMXZJthpltk5yNY2dKJdMDWAMDA+rp6YmP92SKseTPsjOAbWHsI444wlxyySXs+waw+yoIgjFL8YDG+fjHPx7PJE6zAsbOnrT73s6KtAV5R2LPZWOMDjzwQJ177rlr+AmA1rN06VJji8kmVw6OdP4ZY+Jrb6FQ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TpZK+xlturKlS5dq2bJleuCBB5r6c6K5ZDIZZbPZlu4PAwAwnghOYERLly6VpHgQR9KwS/dd140Hsm1dg1a0xx57SFo+i3okvu/L930dc8wxTd9xefDBB50///nPktJ9PttptTPGDjjggPo1DhhDCxYsMHZw3h7HdjWUHUwbrgjoNddcM46tXH1XXnnliO9JBo9t4DiKIm266aaaMWNGxwcakysmMpmM8vl8/Aer77Of/eyoji17nCZrw7z22mtj3zCMqVdffbVq9Zndd7XFh1cmCAJtuOGGdW1jJ5gxY4a59tprzaJFi0wQBOakk07Shz70IWWz2Tgw39XVpSiKVC6XZYxZIYhk0zuNltMCBXo22GCDqq/TNtmu6po0aVKqlSRArUqlwmQHAABSYnoaRvTWW28pl8upq6srTg1iBxGSgwq2g2o7Q3vuuadptZzRxx9/vJk4cWKch34kURQpm83queeeG4fWjY2LL75Y5513XqrPZ3MKFwoFRVGk9dZbT7vvvru57bbbWmq/ovPsv//+cl1XxWIxHpiRlhfxtNewIAiUzWYVBIEymYwOPvjglji2zzrrLOe73/3uKkcAbZHnZMFa+7lnzJihefPmjUtbm5ndLslr3X777af/+I//MGlT+7Uyx3H0xBNP6Jvf/OaYHff5fD4+7kaSfJ+971YqFdkgOprXokWL4oHu2gHvNAPA2WyWlRMpbL/99mbChAnaYIMN9G//9m/60Ic+pI022kgf+chH4mt8EARVQVW7GkxaHpSvVCrK5XJyHKfq3mDfn2Tvh6syffr0sfyYdZPJZBQEQdxnSfZXVsUew2mvZUBSFEXKZDLaZpttdNxxx5l1111XAwMDcUC3BeJ6a+SFF17Q9ddf394fEgAwpghOYESvvPKK3v3ud6tcLiufz6+Qp90OdtmOjy04u8UWW+inP/1pA1s+ekceeWTcKbOdbft1EAQKw7CqA2i3wznnnNOoJo/a+eef75x33nnGptBIPiCXy2Vls9m4UGw+n68ayC2VSjrssMN02223NfATAKt2xhlnxIP2dkl97eCLHbyxx7/nefrDH/4wjq1ccwsWLNC+++6rXC4n3/eVzWZXqANkr1F2oMn+vcMOOzSm0U0meS+zBSzf85736D3veU+jmjSuams+jIVPfOITqQdebGqYcrmsQqEQ1zhC88tkMnG6T8/z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AEarNUaPgTq55JJLjFTdiXNdNx6cyuVyCoJAuVxOURSpVCopCAL9+c9/bkyD68CmhLGfVUo/QPeud72rrm0D0vrwhz+sbDarbDYbp6mQVhworS0cffnll497W+vhzDPPdKShz1ssFlN/n90O1157bceNEtoUdo7jxIHZ0aalaWW2ntJYD7yVSqVUg9P2PTb4bQOG0vIBHACrx977BgYG9Pbbb6urq8tZa621nD322MM577zz2jYYMZK0damy2SzBM6w2e3+NoihOlSstn8xng/Lt+qdTnqMAAGOH4AQ62vTp0yVVBydqZ3HazonruioUCspkMvrhD384ru2sp+OOO86pnUk2mpUvc+fOpfeGhrr66qtNb29v/HVy8MEex8lVX7YA/J///Gc9+uijbTNI89BDDykIAnV1daWetWZnuX31q1+tc+uaUxAE8fFiU9zZ1+3Ororr6uoa05/7xhtvpHpfcpViMlAhiYGNDpA831AfdnLNWmutpb6+PtPpz2s2PWladpKOXTEMpGVX4tvARC6XU6lU6pgVBZ2yAhUAMHYITqBjzZ492/T29ioIAuXzeRlj4ocpm4s9DENls9mqgapKpdLyOeprPfbYY3FaJ/sgnSY4MTAwoAMOOGAcWgis3H777RendArDcNiC9rVF3yXpoosuGtd21tsll1wSD/alOX+T28rzPB100EEdN3A13OCoMUa+78cDC+38p7+/P3Wak7ReffXVVO9zHKcjgkBYOdJ51Y+tAZLNZhUEgXp7ezVt2jRVKhVz5plndsy1frjJN2lXRNj7Y3LyA5BGFEXKZrPKZDIKwzDua7qu2xErA0cTBAQAQCI4gQ52yCGHqFKpVNVZ8DyvKld9cjZnpVKR7/u69dZbG9bmernyyivj7TCah+aenh5lMhnNmDGjYzq6aC4zZ840dga4/TPSYKvneVq2bJl+8IMftNXI2M033+z09/fL1pEZie082tUkBx10UD2b13SMMXEQJwzD+LXjOCoUCnGQtp3/9Pb2jvnKibfffjtV0CEZQEvmqS6XywQtOgCDV/Vl639IqprBHUWRTjzxRP3+97/viOe2xYsXV63SklasxzEce0+wk5SA0bD3N5tmNJPJKAgCVSqVjjieOmWFCABg7BCcQMf66Ec/qlwuJ2noIcoWcbSDIrlcrmrwxM6C2W+//dpqQFOSrr32WqdU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c+aUZKeytrbWrKD2N7j9eUOA1iEPLMvC3Llzu728tONef/11c1798eiFf8DFH7/2+OOP754CUqfV1dVpiavbmZWVjuPgjTfeyGPJKF+mT59u7l8Z8IhGo63C0cgKTvm7UCiEuro6DkpRtxk1apRSSqm7774bqVQqaxBPduf5JyL8IZH8A3/+MJ755P8/ZBeSlFEG7KRs6XTaDF5aloXq6mqzG/fBBx9EOBxWxx57rFq+fHlJtiGp+zzzzDNd8j6hUAgbN27E+eef3yXvV6omTpyoampqVDweV48//jiamprMIh4Apl6QScxwONwqjJPsropEIlmLu7aVA6GrQw+1ldNRQn35Fx9JmEh/1AEAZrFfr169kEwmyyY0EhERUTnh5MQOsm3bNKz821T9CbVlG740uNLpdFYOhdzQNU1NTXjooYfws5/9DAcccICaMmVKSbfCjj32WL3//vtnJQiX8ANAdtxl/zZlpRS2bNmChQsXlvTxKVV33313qxizsooKaMm7Ih0vuT4qKipw9dVXc1CzAJ155pmwbbtTq/Jc10U4HMasWbPyWDLKl2XLlqnGxkYz0CsruuX5lrtSU1aja60xcuTInik0lbUpU6aoiooKNWXKFDMpGolEzLUqu4CEhE6Rgb/c/A35JG1GoGWxhj8cldSfsVgMsVgMtm0jlUqhqakJt956K6LRqBo5ciTbSNRl7r777i4L+9OnTx/U1NRgxIgRbNMFMGLECFVdXa1OPPFErFq1Cl988YV5ptq2bSZQ/WGckslkVn9Ka42mpqasnY35TtTcVk5Hf5QAIX07y7KQSqWyFjAlk0l8+eWXmDt3LjjJSkREVHo4ObGDJM4vkL0yJDehtkxiyIo3f3K4dDqNv/71ryaPRHV1tTrrrLPUE088URaNr6lTpwJozjGRyWRMjGXZQSJbe4HWSSznzJnTM4WmHbZgwQK1YcOGrNBmMoknA52hUKjNROgXXHBBj5SZtu2UU07RBx10UFZ4rqCampowb968sqjvStHs2bMRDoez6m1/3Gt/8k75UymFAw44AEOHDuWgFPWI2267TR166KFKKaXuu+8+JJNJAC07WCUUiiwoEZK/Id/kPonFYqYtKYtYctudAPCf//wHK1euxNixY1FdXa2uuOIK1qnU5V588UX15Zdf7vD7SL4i13UxceLELihZ+VixYoUaMmSI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" alt="DATAFORCE">
+      </a>
+    </div>
+    <div class="hdr-mid-section">
+      <div class="header-title">MY BOOKINGS</div>
+      <div class="header-controls">
+        <div class="periods">
+          <button class="period-btn active" data-mode="ytd_flown">YTD FLOWN</button>
+          <button class="period-btn" data-mode="this_week_booked">THIS WEEK BOOKED</button>
+        </div>
+        <div class="filters">
+          <label for="bizSelect">Business</label>
+          <select id="bizSelect"></select>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-actions">
+        <span id="userLabel"></span>
+        <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading</span></span>
+        <button class="logout" onclick="signOut()">Sign out</button>
+      </div>
+      <div class="range">
+        <div class="range-main" id="rangeTitle">-</div>
+        <div id="rangeDates">-</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="error" id="errorBox"></div>
+  <section class="fixed-grid" id="fixedCards"></section>
+
+  <section class="content-grid">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" id="selectedTitle">Trend</div>
+        <div class="panel-note" id="salesPersonLabel">-</div>
+      </div>
+      <div class="trend" id="trendBox"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Recent Weeks</div>
+        <div class="panel-note">Selected business</div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Week</th><th>#Bkgs</th><th>Tons</th><th>Rev</th><th>P/KG</th></tr>
+          </thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="customer-grid">
+    <div class="panel customer-panel">
+      <div class="panel-head">
+        <div class="panel-title">Top Customers</div>
+        <div class="panel-note">Share</div>
+      </div>
+      <div class="table-scroll">
+        <table id="topCustomersTable"></table>
+      </div>
+    </div>
+    <div class="panel customer-panel">
+      <div class="panel-head">
+        <div class="panel-title">Growing</div>
+        <div class="panel-note">10 weeks</div>
+      </div>
+      <div class="table-scroll">
+        <table id="growingCustomersTable"></table>
+      </div>
+    </div>
+    <div class="panel customer-panel">
+      <div class="panel-head">
+        <div class="panel-title">Dropping</div>
+        <div class="panel-note">10 weeks</div>
+      </div>
+      <div class="table-scroll">
+        <table id="droppingCustomersTable"></table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-production.up.railway.app";
+const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+
+const BUSINESS_OPTIONS = [
+  { key:"ALL", label:"ALL" },
+  { key:"MERC_LOCAL", label:"MA-LOCAL" },
+  { key:"MERC_GSA", label:"MA-GSA" },
+  { key:"02_ET", label:"ET-USA" },
+  { key:"01_CXOFF", label:"CX-OFF" }
+];
+
+let currentMode = "ytd_flown";
+let currentData = null;
+
+function user() {
+  try { return JSON.parse(sessionStorage.getItem("df_user") || "{}"); }
+  catch (e) { return {}; }
+}
+
+function permissions() {
+  try { return JSON.parse(sessionStorage.getItem("df_permissions") || "{}"); }
+  catch (e) { return {}; }
+}
+
+function signOut() {
+  sessionStorage.removeItem("df_user");
+  sessionStorage.removeItem("df_permissions");
+  window.location.href = "https://dataforce.gsaforce.com/";
+}
+
+function num(value, digits = 0) {
+  const n = Number(value || 0);
+  return n.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+}
+
+function money(value) {
+  const n = Number(value || 0);
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+function shortMoney(value) {
+  const n = Number(value || 0);
+  const abs = Math.abs(n);
+  if (abs >= 1000000) return `${(n / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
+  if (abs >= 1000) return `${Math.round(n / 1000)}K`;
+  return money(n);
+}
+
+function pkg(value) {
+  const n = Number(value || 0);
+  return n ? n.toFixed(2) : "-";
+}
+
+function shortCustomer(value) {
+  const text = String(value || "-");
+  return text.length > 24 ? `${text.slice(0, 21)}...` : text;
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  const d = new Date(`${value}T00:00:00`);
+  return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+
+function cardMetric(metric, label) {
+  const titleClass = metric.key === "ALL" ? "kpi-card total" : "kpi-card";
+  return `
+    <div class="${titleClass}">
+      <div class="kpi-head">
+        <div>
+          <div class="kpi-title">${label || metric.label || metric.key}</div>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <div><div class="metric-label"># Bkgs</div><div class="metric-value">${num(metric.bookings)}</div></div>
+        <div><div class="metric-label">Tons</div><div class="metric-value">${num(metric.tons, 0)}</div></div>
+        <div><div class="metric-label">Rev</div><div class="metric-value">${shortMoney(metric.revenue)}</div></div>
+        <div><div class="metric-label">P/KG</div><div class="metric-value">${pkg(metric.profit_per_kg)}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderFixedCards() {
+  document.getElementById("fixedCards").innerHTML = (currentData.fixedCards || []).map(card => cardMetric(card)).join("");
+}
+
+function renderTrend() {
+  const rows = currentData.trend || [];
+  const prevRows = currentData.trendPrev || [];
+  const allRows = rows.concat(prevRows);
+  const max = Math.max(...allRows.map(r => Number(r.tons || 0)), 0);
+  const box = document.getElementById("trendBox");
+  if (!rows.length || max <= 0) {
+    box.innerHTML = '<div class="empty">No trend data for this selection.</div>';
+    return;
+  }
+  const w = 720, h = 210, padL = 42, padR = 16, padT = 18, padB = 30;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+  const count = Math.max(rows.length, prevRows.length, 2);
+  const xFor = i => padL + (count <= 1 ? 0 : (i / (count - 1)) * plotW);
+  const yFor = v => padT + plotH - (Number(v || 0) / max) * plotH;
+  const points = series => series.map((r, i) => `${xFor(i).toFixed(1)},${yFor(r.tons).toFixed(1)}`).join(" ");
+  const circlePoints = (series, cls) => series.map((r, i) => `<circle class="${cls}" cx="${xFor(i).toFixed(1)}" cy="${yFor(r.tons).toFixed(1)}" r="3"><title>${r.period_label}: ${num(r.tons, 2)} t</title></circle>`).join("");
+  const labels = rows.filter((_, i) => i === 0 || i === rows.length - 1 || i % Math.ceil(rows.length / 6) === 0);
+  const grid = [0, .25, .5, .75, 1].map(t => {
+    const y = padT + plotH - (t * plotH);
+    return `<line class="trend-grid" x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}"></line>`;
+  }).join("");
+  box.innerHTML = `
+    <div class="trend-legend">
+      <span class="legend-item"><span class="legend-swatch"></span>2026</span>
+      ${prevRows.length ? '<span class="legend-item"><span class="legend-swatch prev"></span>2025</span>' : ''}
+    </div>
+    <svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Tons trend">
+      ${grid}
+      <line class="trend-axis" x1="${padL}" y1="${padT + plotH}" x2="${w - padR}" y2="${padT + plotH}"></line>
+      <text class="trend-label" x="6" y="${padT + 4}">${num(max, 0)} t</text>
+      <text class="trend-label" x="16" y="${padT + plotH}">0</text>
+      ${prevRows.length ? `<polyline class="trend-line-prev" points="${points(prevRows)}"></polyline>${circlePoints(prevRows, "trend-dot-prev")}` : ''}
+      <polyline class="trend-line-current" points="${points(rows)}"></polyline>
+      ${circlePoints(rows, "trend-dot-current")}
+      ${labels.map(r => {
+        const i = rows.indexOf(r);
+        return `<text class="trend-label" text-anchor="middle" x="${xFor(i)}" y="${h - 8}">${r.period_label || ""}</text>`;
+      }).join("")}
+    </svg>
+  `;
+}
+
+function renderDetail() {
+  const body = document.getElementById("detailBody");
+  const rows = currentData.detail || [];
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="5" class="empty">No business detail for this selection.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name || r.period_label || r.week || "-"}</td>
+      <td>${num(r.bookings)}</td>
+      <td>${num(r.tons, 2)}</td>
+      <td>${shortMoney(r.revenue || r.rev)}</td>
+      <td>${pkg(r.profit_per_kg || r.pkg)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderCustomers() {
+  const top = (currentData.customers && currentData.customers.top) || [];
+  const growing = (currentData.customers && currentData.customers.growing) || [];
+  const dropping = (currentData.customers && currentData.customers.dropping) || [];
+
+  document.getElementById("topCustomersTable").innerHTML = `
+    <thead><tr><th>Customer</th><th>Tons</th><th>Rev</th><th>Share</th></tr></thead>
+    <tbody>${top.length ? top.map(c => `
+      <tr>
+        <td title="${c.customer || ""}">${shortCustomer(c.customer)}</td>
+        <td>${num(c.tons, 2)}</td>
+        <td>${shortMoney(c.revenue)}</td>
+        <td>${num(c.share, 1)}%</td>
+      </tr>
+    `).join("") : '<tr><td colspan="4" class="empty">No customer data.</td></tr>'}</tbody>
+  `;
+
+  const movementRows = rows => rows.map(c => `
+    <tr>
+      <td title="${c.customer || ""}">${shortCustomer(c.customer)}</td>
+      <td>${num(c.prior_avg_tons, 2)}</td>
+      <td>${num(c.recent_avg_tons, 2)}</td>
+      <td>${num(c.change_tons, 2)}</td>
+    </tr>
+  `).join("");
+
+  document.getElementById("growingCustomersTable").innerHTML = `
+    <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
+    <tbody>${growing.length ? movementRows(growing) : '<tr><td colspan="4" class="empty">No growing customers.</td></tr>'}</tbody>
+  `;
+
+  document.getElementById("droppingCustomersTable").innerHTML = `
+    <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
+    <tbody>${dropping.length ? movementRows(dropping) : '<tr><td colspan="4" class="empty">No dropping customers.</td></tr>'}</tbody>
+  `;
+}
+
+function renderAll() {
+  const modeLabel = currentMode === "ytd_flown" ? "YTD FLOWN" : "THIS WEEK BOOKED";
+  const bizLabel = BUSINESS_OPTIONS.find(b => b.key === document.getElementById("bizSelect").value)?.label || "ALL";
+  const p = permissions();
+  document.getElementById("rangeTitle").textContent = modeLabel;
+  document.getElementById("rangeDates").textContent = `${formatDate(currentData.start)} - ${formatDate(currentData.end)}`;
+  document.getElementById("selectedTitle").textContent = `${bizLabel} Trend`;
+  document.getElementById("salesPersonLabel").textContent = p.sales_person ? `Sales person ${p.sales_person}` : "All sales persons";
+  renderFixedCards();
+  renderTrend();
+  renderDetail();
+  renderCustomers();
+}
+
+function setStatus(text, ready) {
+  document.getElementById("statusText").textContent = text;
+  document.getElementById("statusDot").classList.toggle("ready", Boolean(ready));
+}
+
+function showError(message) {
+  const box = document.getElementById("errorBox");
+  box.textContent = message;
+  box.style.display = message ? "block" : "none";
+}
+
+async function loadReport() {
+  const u = user();
+  const biz = document.getElementById("bizSelect").value || "ALL";
+  setStatus("Loading reports", false);
+  showError("");
+  try {
+    const url = `${API_BASE}/api/my_bookings?mode=${encodeURIComponent(currentMode)}&biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(u.email || "")}`;
+    const r = await fetch(url, { headers:{ "x-api-key":API_KEY } });
+    if (!r.ok) {
+      let detail = "";
+      try {
+        const body = await r.json();
+        detail = body.detail ? `: ${body.detail}` : "";
+      } catch (_) {}
+      throw new Error(`API error ${r.status}${detail}`);
     }
-
-    # Weekly breakdown
-    biz_where, biz_params = build_authorized_where(biz, permissions)
-    w, p = add_date(biz_where, biz_params, date_col, last_sunday - timedelta(weeks=9), last_sunday)
-    weekly_rows = query(f"""
-        SELECT YEAR({date_col}) AS yr, WEEK({date_col}, 3) AS wk,
-            ROUND(SUM(CHW)/1000, 2) AS tons,
-            ROUND(SUM(CV_Sales)/NULLIF(SUM(CHW),0), 2) AS dkg,
-            ROUND(SUM(CV_CiaProfit)/NULLIF(SUM(CHW),0), 2) AS pkg
-        FROM GSAFORCE_CargoSystem_2015_20XX {w}
-        GROUP BY YEAR({date_col}), WEEK({date_col}, 3)
-        ORDER BY yr DESC, wk DESC LIMIT 7
-    """, p)
-    for r in weekly_rows:
-        r['week'] = f"W {r.pop('wk')}"
-        r.pop('yr', None)
-
-    biz_where2, biz_params2 = build_authorized_where(biz, permissions)
-    w2, p2 = add_date(biz_where2, biz_params2, date_col, yt_s, yt_e)
-    grand = query(f"""
-        SELECT 'Grand' AS week,
-            ROUND(SUM(CHW)/1000, 2) AS tons,
-            ROUND(SUM(CV_Sales)/NULLIF(SUM(CHW),0), 2) AS dkg,
-            ROUND(SUM(CV_CiaProfit)/NULLIF(SUM(CHW),0), 2) AS pkg
-        FROM GSAFORCE_CargoSystem_2015_20XX {w2}
-    """, p2)
-    weekly_breakdown = list(weekly_rows) + [dict(r, grand=True) for r in grand]
-
-    # Line chart
-    biz_where3, biz_params3 = build_authorized_where(biz, permissions)
-    year_cond = f"YEAR({date_col}) IN ({cur_yr},{cur_yr-1},{cur_yr-2})"
-    w3 = (biz_where3 + f" AND {year_cond}") if biz_where3 else f"WHERE {year_cond}"
-    chart_rows = query(f"""
-        SELECT WEEK({date_col}, 3) AS wk, YEAR({date_col}) AS yr,
-            NULLIF(ROUND(SUM(CHW)/1000, 2), 0) AS tons
-        FROM GSAFORCE_CargoSystem_2015_20XX {w3}
-        GROUP BY YEAR({date_col}), WEEK({date_col}, 3)
-        HAVING SUM(CHW) > 0
-        ORDER BY yr, wk
-    """, biz_params3)
-    yr_data = defaultdict(dict)
-    for r in chart_rows:
-        yr_data[r["yr"]][r["wk"]] = float(r["tons"] or 0)
-    all_weeks = list(range(1, 53))
-    line_chart = {
-        "weeks": [f"W{w}" for w in all_weeks],
-        "y2026": [(yr_data.get(cur_yr, {}).get(w) or None) if w <= cur_wk else None for w in all_weeks],
-        "y2025": [(yr_data.get(cur_yr-1, {}).get(w) or None) for w in all_weeks],
-        "y2024": [(yr_data.get(cur_yr-2, {}).get(w) or None) for w in all_weeks],
+    currentData = await r.json();
+    renderAll();
+    if (currentData.errors && currentData.errors.length) {
+      showError(currentData.errors.join(" · "));
     }
-
-    # Donut
-    biz_where4, biz_params4 = build_authorized_where(biz, permissions)
-    w4, p4 = add_date(biz_where4, biz_params4, date_col, lw_s, lw_e)
-    w4 += " AND Bkg_SalesPerson IS NOT NULL"
-    donut_rows = query(f"""
-        SELECT Bkg_SalesPerson AS label, ROUND(SUM(CHW)/1000, 2) AS tons
-        FROM GSAFORCE_CargoSystem_2015_20XX {w4}
-        GROUP BY Bkg_SalesPerson ORDER BY SUM(CHW) DESC LIMIT 8
-    """, p4)
-    total = sum(float(r["tons"] or 0) for r in donut_rows)
-    COLORS = ['#1a56db','#15803d','#c97a06','#0c9080','#7c3aed','#b91c1c','#566080','#e8a0bf']
-    donut = {
-        "labels": [r["label"] for r in donut_rows],
-        "values": [round(float(r["tons"] or 0)/total*100, 1) if total else 0 for r in donut_rows],
-        "colors": COLORS[:len(donut_rows)],
-    }
-
-    # Tables
-    def make_table(group_col, start, end):
-        biz_where5, biz_params5 = build_authorized_where(biz, permissions)
-        w5, p5 = add_date(biz_where5, biz_params5, date_col, start, end)
-        w5 += f" AND {group_col} IS NOT NULL"
-        rows = query(f"""
-            SELECT {group_col} AS name,
-                ROUND(SUM(CHW)/1000, 2) AS tons,
-                COUNT(DISTINCT Bkg_AWBNmr) AS bk,
-                ROUND(SUM(CV_Sales), 0) AS rev,
-                ROUND(SUM(CV_Sales)/NULLIF(SUM(CHW),0), 2) AS dkg,
-                ROUND(SUM(CV_CiaProfit)/NULLIF(SUM(CHW),0), 2) AS pkg
-            FROM GSAFORCE_CargoSystem_2015_20XX {w5}
-            GROUP BY {group_col} ORDER BY SUM(CHW) DESC LIMIT 20
-        """, p5)
-        return [dict(r) for r in rows]
-
-    result = {
-        "kpis": kpis,
-        "weeklyBreakdown": weekly_breakdown,
-        "lineChart": line_chart,
-        "donut": donut,
-        "gsaTable":       make_table("GSA_SName",       lw_s, lw_e),
-        "salesTable":     make_table("Bkg_SalesPerson", lw_s, lw_e),
-        "oriTable":       make_table("Bkg_Ori",         lw_s, lw_e),
-        "gsaTable_ytd":   make_table("GSA_SName",       yt_s, yt_e),
-        "salesTable_ytd": make_table("Bkg_SalesPerson", yt_s, yt_e),
-        "oriTable_ytd":   make_table("Bkg_Ori",         yt_s, yt_e),
-        "gsaTable_q1":    make_table("GSA_SName",       q1_s, q1_e),
-        "salesTable_q1":  make_table("Bkg_SalesPerson", q1_s, q1_e),
-        "oriTable_q1":    make_table("Bkg_Ori",         q1_s, q1_e),
-    }
-    cache_set(cache_key, result)
-    return result
-
-def dashboard_cache_scope(email: str, permissions) -> str:
-    """Use shared cache unless the data is filtered for one sales person."""
-    if permissions and permissions.get("sales_person"):
-        return f"user:{_normalize_email(email)}"
-    return "global"
-
-@app.get("/api/dashboard")
-def dashboard(
-    biz: str = Query("ALL"),
-    date_col: str = Query("FlightDate"),
-    week_mode: str = Query("last"),
-    email: str = Query(None),
-    module: str = Query(None),
-):
-    module_name = module or ("booked" if date_col == "Bkg_CreaDate" else "flown")
-    permissions = require_module_access(email, module_name)
-    cache_scope = dashboard_cache_scope(email, permissions)
-    return dashboard_data(
-        biz=biz,
-        date_col=date_col,
-        week_mode=week_mode,
-        module_name=module_name,
-        permissions=permissions,
-        cache_scope=cache_scope,
-    )
-
-@app.get("/api/all")
-def all_data(
-    date_col: str = Query("FlightDate"),
-    week_mode: str = Query("last"),
-    email: str = Query(None),  # New: email parameter for permission check
-):
-    """Returns data for ALL businesses in one call - used for instant switching."""
-    permissions = require_module_access(email, "dashboard")
-
-    if date_col not in ("FlightDate", "Bkg_CreaDate"):
-        date_col = "FlightDate"
-    if week_mode not in ("last", "current"):
-        week_mode = "last"
-
-    result = {}
-    allowed = {str(b).strip() for b in permissions.get("allowed_businesses", []) if str(b).strip()} if permissions else set()
-    restricted_allowed = allowed if allowed and "ALL" not in allowed else None
-    cache_scope = dashboard_cache_scope(email, permissions)
-    for biz in ALL_BIZ:
-        if restricted_allowed and biz not in restricted_allowed:
-            continue
-        try:
-            cache_key = f"{cache_scope}_{biz}_{date_col}_{week_mode}"
-            cached = cache_get(cache_key)
-            if cached:
-                result[biz] = cached
-            else:
-                data = dashboard_data(
-                    biz=biz,
-                    date_col=date_col,
-                    week_mode=week_mode,
-                    module_name="dashboard",
-                    permissions=permissions,
-                    cache_scope=cache_scope,
-                )
-                result[biz] = data
-        except Exception as e:
-            print(f"Error loading {biz}/{date_col}/{week_mode}: {e}")
-            result[biz] = None
-    return result
-
-# --- PRE-WARM CACHE ---
-ALL_BIZ = [
-    "MERC_LOCAL", "MERC_GSA", "MERC_ALL", "CXMEX",
-    "01_CXOFF", "01_CXSUD", "02_ET", "03_UPS", "03_UPS_805",
-    "04_ELAL", "04_ELAL_805", "05_AVASIA", "07_JPN",
-    "08_AVCHI", "09_AVOTHER", "10_VIRGIN", "10_VIRGIN_805",
-    "11_ULTRACN",
-]
-
-MERCURY_BIZ = {"MERC_LOCAL", "MERC_GSA", "MERC_ALL"}
-
-@app.on_event("startup")
-async def prewarm():
-    try:
-        ensure_meta_table()
-        print("Meta table ready.")
-    except Exception as e:
-        print(f"WARN: meta table init failed: {e}")
-    try:
-        ensure_access_requests_table()
-        print("Access requests table ready.")
-    except Exception as e:
-        print(f"WARN: access requests table init failed: {e}")
-
-    def warm():
-        import time
-        time.sleep(3)
-        prewarm_sync()
-    threading.Thread(target=warm, daemon=True).start()
-
-def prewarm_sync():
-    """Fills the cache for all businesses/combos in parallel. Safe to call from any thread."""
-    from concurrent.futures import ThreadPoolExecutor
-
-    tasks = []
-    for biz in ALL_BIZ:
-        combos = [("FlightDate", "last"), ("Bkg_CreaDate", "current")]
-        if biz in MERCURY_BIZ:
-            combos.append(("Bkg_CreaDate", "last"))
-        for dc, wm in combos:
-            tasks.append((biz, dc, wm))
-
-    def warm_one(args):
-        biz, dc, wm = args
-        try:
-            key = f"global_{biz}_{dc}_{wm}"
-            if not cache_get(key):
-                result = dashboard_data(
-                    biz=biz,
-                    date_col=dc,
-                    week_mode=wm,
-                    module_name="prewarm",
-                    permissions=None,
-                    cache_scope="global",
-                )
-                cache_set(key, result)
-                print(f"  OK: {biz}/{dc}/{wm}")
-        except Exception as e:
-            print(f"  FAIL: {biz}/{dc}/{wm}: {e}")
-
-    print("Warming cache (parallel)...")
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        executor.map(warm_one, tasks)
-    print("Cache ready!")
-
-@app.get("/ping")
-def ping():
-    """Lightweight keep-alive — no DB hit."""
-    return {"ok": True}
-
-@app.get("/api/warmup")
-def warmup():
-    """Warms the cache for all businesses in the background.
-    Returns immediately with a tiny response — safe for cron-job.org."""
-    threading.Thread(target=prewarm_sync, daemon=True).start()
-    cached = sum(1 for k in _cache if cache_get(k) is not None)
-    return {"ok": True, "cached_keys": cached}
-
-
-
-@app.get("/api/week_detail")
-def week_detail(
-    biz: str = Query("ALL"),
-    date_col: str = Query("FlightDate"),
-    week: int = Query(0),
-    year: int = Query(0),
-    email: str = Query(None),
-    module: str = Query("dashboard"),
-):
-    permissions = require_module_access(email, module)
-
-    if date_col not in ("FlightDate", "Bkg_CreaDate"):
-        date_col = "FlightDate"
-
-    biz_where, biz_params = build_authorized_where(biz, permissions)
-    week_cond = f"WEEK({date_col}, 3) = %s AND YEAR({date_col}) = %s"
-    if biz_where:
-        w = biz_where + f" AND {week_cond} AND Bkg_Prdt != 'Budget'"
-    else:
-        w = f"WHERE {week_cond} AND Bkg_Prdt != 'Budget'"
-    p = list(biz_params) + [week, year]
-
-    rows = query(f"""
-        SELECT
-            Bkg_Pfx AS pfx,
-            Bkg_AWBNmr AS awb,
-            Bkg_Ori AS ori,
-            Bkg_Des AS des,
-            ROUND(CHW, 0) AS chw,
-            ROUND(CV_Sales, 0) AS rev,
-            ROUND(CV_CiaProfit/NULLIF(CHW,0), 4) AS pkg
-        FROM GSAFORCE_CargoSystem_2015_20XX {w}
-        ORDER BY CHW DESC
-        LIMIT 200
-    """, p)
-    return {"rows": [dict(r) for r in rows]}
-
-@app.get("/api/awb_detail")
-def awb_detail(
-    biz: str = Query("ALL"),
-    date_col: str = Query("FlightDate"),
-    group_col: str = Query("GSA_SName"),
-    group_val: str = Query(""),
-    email: str = Query(None),
-    module: str = Query("dashboard"),
-):
-    permissions = require_module_access(email, module)
-
-    if date_col not in ("FlightDate", "Bkg_CreaDate"):
-        date_col = "FlightDate"
-
-    lw_s, lw_e = last_week_range()
-    biz_where, biz_params = build_authorized_where(biz, permissions)
-    w, p = add_date(biz_where, biz_params, date_col, lw_s, lw_e)
-
-    w += f" AND {group_col} = %s AND Bkg_Prdt != 'Budget'"
-    p = list(p) + [group_val]
-
-    rows = query(f"""
-        SELECT
-            Bkg_Pfx AS pfx,
-            Bkg_AWBNmr AS awb,
-            Bkg_Ori AS ori,
-            Bkg_Des AS des,
-            ROUND(CHW, 0) AS chw,
-            ROUND(CV_Sales, 0) AS rev,
-            ROUND(CV_CiaProfit/NULLIF(CHW,0), 4) AS pkg
-        FROM GSAFORCE_CargoSystem_2015_20XX {w}
-        ORDER BY CHW DESC
-        LIMIT 200
-    """, p)
-    return {"rows": [dict(r) for r in rows]}
-
-# --- MY BOOKINGS -------------------------------------------------------------
-MY_BOOKINGS_CORE_BIZ = [
-    {"key": "ALL", "label": "TOTAL"},
-    {"key": "MERC_LOCAL", "label": "MA-LOCAL"},
-    {"key": "MERC_GSA", "label": "MA-GSA"},
-    {"key": "02_ET", "label": "ET-USA"},
-    {"key": "01_CXOFF", "label": "CX-OFF"},
-]
-
-def _metric_from_row(row):
-    row = row or {}
-    tons = float(row.get("tons") or 0)
-    rev = float(row.get("rev") or 0)
-    profit = float(row.get("profit") or 0)
-    chw = float(row.get("chw") or 0)
-    cia = float(row.get("cia") or 0)
-    profit_per_kg = pkg(cia, chw)
-    return {
-        "bookings": int(row.get("bookings") or 0),
-        "tons": round(tons, 2),
-        "rev": round(rev, 0),
-        "revenue": round(rev, 0),
-        "profit": round(profit, 0),
-        "pkg": profit_per_kg,
-        "profit_per_kg": profit_per_kg,
-    }
-
-def _empty_metric(label=None, key=None):
-    data = {"bookings": 0, "tons": 0, "rev": 0, "revenue": 0, "profit": 0, "pkg": None, "profit_per_kg": None}
-    if label is not None:
-        data["label"] = label
-    if key is not None:
-        data["key"] = key
-    return data
-
-def _plain_value(value):
-    if hasattr(value, "isoformat"):
-        return value.isoformat()
-    try:
-        import decimal
-        if isinstance(value, decimal.Decimal):
-            return float(value)
-    except Exception:
-        pass
-    return value
-
-def _plain_rows(rows):
-    return [{k: _plain_value(v) for k, v in dict(r).items()} for r in (rows or [])]
-
-def _my_bookings_metric(biz, permissions, date_col, start, end):
-    biz_where, biz_params = build_authorized_where(biz, permissions)
-    w, p = add_date(biz_where, biz_params, date_col, start, end)
-    rows = query(f"""
-        SELECT
-            COUNT(DISTINCT Bkg_AWBNmr) AS bookings,
-            ROUND(SUM(CHW)/1000, 2) AS tons,
-            ROUND(SUM(CV_Sales), 0) AS rev,
-            ROUND(SUM(CV_CiaProfit), 0) AS profit,
-            SUM(CHW) AS chw,
-            SUM(CV_CiaProfit) AS cia
-        FROM GSAFORCE_CargoSystem_2015_20XX {w}
-    """, p)
-    return _metric_from_row(rows[0] if rows else None)
-
-def _my_bookings_customer_rows(biz, permissions, date_col, start, end):
-    biz_where, biz_params = build_authorized_where(biz, permissions)
-    w, p = add_date(biz_where, biz_params, date_col, start, end)
-    rows = query(f"""
-        SELECT
-            COALESCE(NULLIF(TRIM(Cust_Name), ''), 'Unknown') AS customer,
-            COUNT(DISTINCT Bkg_AWBNmr) AS bookings,
-            ROUND(SUM(CHW)/1000, 2) AS tons,
-            ROUND(SUM(CV_Sales), 0) AS rev,
-            ROUND(SUM(CV_CiaProfit), 0) AS profit,
-            SUM(CHW) AS chw,
-            SUM(CV_CiaProfit) AS cia
-        FROM GSAFORCE_CargoSystem_2015_20XX {w}
-        GROUP BY COALESCE(NULLIF(TRIM(Cust_Name), ''), 'Unknown')
-        HAVING SUM(CHW) > 0
-        ORDER BY SUM(CHW) DESC
-        LIMIT 20
-    """, p)
-    total_tons = sum(float(r.get("tons") or 0) for r in rows)
-    out = []
-    for r in rows:
-        item = _metric_from_row(r)
-        item["customer"] = r["customer"]
-        item["share"] = round((float(r.get("tons") or 0) / total_tons * 100), 1) if total_tons else 0
-        out.append(item)
-    return out
-
-def _as_date(value):
-    if hasattr(value, "date") and not isinstance(value, date):
-        return value.date()
-    if isinstance(value, date):
-        return value
-    if isinstance(value, str):
-        try:
-            return date.fromisoformat(value[:10])
-        except Exception:
-            return None
-    return None
-
-def _my_bookings_period_rows(biz, permissions, date_col, start, end, trend_group):
-    biz_where, biz_params = build_authorized_where(biz, permissions)
-    w, p = add_date(biz_where, biz_params, date_col, start, end)
-    rows = query(f"""
-        SELECT
-            {date_col} AS activity_date,
-            Bkg_AWBNmr AS awb,
-            CHW AS chw,
-            CV_Sales AS rev,
-            CV_CiaProfit AS profit
-        FROM GSAFORCE_CargoSystem_2015_20XX {w}
-        ORDER BY {date_col}
-    """, p)
-
-    buckets = {}
-    for row in rows:
-        d = _as_date(row.get("activity_date"))
-        if not d:
-            continue
-        if trend_group == "daily":
-            key = d.isoformat()
-            label = d.isoformat()
-            sort_key = d
-        else:
-            iso = d.isocalendar()
-            key = f"{iso.year}-{iso.week:02d}"
-            label = f"W {iso.week}"
-            sort_key = (iso.year, iso.week)
-
-        bucket = buckets.setdefault(key, {
-            "period_label": label,
-            "sort_key": sort_key,
-            "awb_set": set(),
-            "chw": 0,
-            "rev": 0,
-            "profit": 0,
-        })
-        if row.get("awb") is not None:
-            bucket["awb_set"].add(str(row.get("awb")))
-        bucket["chw"] += float(row.get("chw") or 0)
-        bucket["rev"] += float(row.get("rev") or 0)
-        bucket["profit"] += float(row.get("profit") or 0)
-
-    output = []
-    for bucket in sorted(buckets.values(), key=lambda b: b["sort_key"]):
-        chw = bucket["chw"]
-        pkg = round(bucket["profit"] / chw, 2) if chw else None
-        output.append({
-            "period_label": bucket["period_label"],
-            "bookings": len(bucket["awb_set"]),
-            "tons": round(chw / 1000, 2),
-            "rev": round(bucket["rev"], 0),
-            "revenue": round(bucket["rev"], 0),
-            "profit": round(bucket["profit"], 0),
-            "pkg": pkg,
-            "profit_per_kg": pkg,
-        })
-    return output
-
-def _my_bookings_customer_movement(biz, permissions, date_col, end):
-    start = end - timedelta(weeks=10)
-    biz_where, biz_params = build_authorized_where(biz, permissions)
-    w, p = add_date(biz_where, biz_params, date_col, start, end)
-    rows = query(f"""
-        SELECT
-            COALESCE(NULLIF(TRIM(Cust_Name), ''), 'Unknown') AS customer,
-            YEAR({date_col}) AS yr,
-            WEEK({date_col}, 3) AS wk,
-            MAX({date_col}) AS last_activity,
-            ROUND(SUM(CHW)/1000, 2) AS tons,
-            ROUND(SUM(CV_Sales), 0) AS rev
-        FROM GSAFORCE_CargoSystem_2015_20XX {w}
-        GROUP BY COALESCE(NULLIF(TRIM(Cust_Name), ''), 'Unknown'), YEAR({date_col}), WEEK({date_col}, 3)
-        HAVING SUM(CHW) > 0
-        ORDER BY yr, wk
-    """, p)
-
-    week_keys = sorted({(int(r["yr"]), int(r["wk"])) for r in rows})
-    last_10 = week_keys[-10:]
-    recent = set(last_10[-3:])
-    prior = set(last_10[:-3])
-
-    customers = {}
-    for r in rows:
-        key = (int(r["yr"]), int(r["wk"]))
-        if key not in last_10:
-            continue
-        cust = r["customer"]
-        data = customers.setdefault(cust, {
-            "customer": cust,
-            "recent_tons": 0,
-            "prior_tons": 0,
-            "recent_rev": 0,
-            "last_activity": r.get("last_activity"),
-        })
-        tons = float(r.get("tons") or 0)
-        rev = float(r.get("rev") or 0)
-        if key in recent:
-            data["recent_tons"] += tons
-            data["recent_rev"] += rev
-        elif key in prior:
-            data["prior_tons"] += tons
-        if r.get("last_activity") and (not data["last_activity"] or r["last_activity"] > data["last_activity"]):
-            data["last_activity"] = r["last_activity"]
-
-    prior_weeks = max(len(prior), 1)
-    recent_weeks = max(len(recent), 1)
-    growing = []
-    dropping = []
-    for data in customers.values():
-        prior_avg = data["prior_tons"] / prior_weeks
-        recent_avg = data["recent_tons"] / recent_weeks
-        change = ((recent_avg - prior_avg) / prior_avg * 100) if prior_avg else (100 if recent_avg else 0)
-        item = {
-            "customer": data["customer"],
-            "prior_avg_tons": round(prior_avg, 2),
-            "recent_avg_tons": round(recent_avg, 2),
-            "change_tons": round(recent_avg - prior_avg, 2),
-            "prior_avg": round(prior_avg, 2),
-            "recent_avg": round(recent_avg, 2),
-            "change": round(change, 1),
-            "recent_tons": round(data["recent_tons"], 2),
-            "prior_tons": round(data["prior_tons"], 2),
-            "recent_rev": round(data["recent_rev"], 0),
-            "last_activity": str(data["last_activity"]) if data["last_activity"] else None,
-        }
-        if recent_avg >= max(prior_avg * 1.15, prior_avg + 0.1) and recent_avg > 0:
-            growing.append(item)
-        if prior_avg >= 0.1 and recent_avg <= prior_avg * 0.5:
-            dropping.append(item)
-
-    growing.sort(key=lambda x: x["change"], reverse=True)
-    dropping.sort(key=lambda x: x["change"])
-    return growing[:20], dropping[:20]
-
-@app.get("/api/my_bookings")
-def my_bookings(
-    mode: str = Query("ytd_flown"),
-    biz: str = Query("ALL"),
-    email: str = Query(None),
-):
-    permissions = require_module_access(email, "my_bookings")
-    mode = mode if mode in ("ytd_flown", "this_week_booked") else "ytd_flown"
-
-    today = today_local()
-    if mode == "this_week_booked":
-        date_col = "Bkg_CreaDate"
-        start = current_week_start()
-        end = today
-        trend_group = "daily"
-    else:
-        date_col = "FlightDate"
-        _, last_sunday = last_week_range()
-        start, _ = ytd_range(last_sunday)
-        end = last_sunday
-        trend_group = "weekly"
-
-    errors = []
-    fixed_cards = []
-    for cfg in MY_BOOKINGS_CORE_BIZ:
-        try:
-            metric = _my_bookings_metric(cfg["key"], permissions, date_col, start, end)
-            metric.update({"key": cfg["key"], "label": cfg["label"]})
-        except HTTPException:
-            metric = _empty_metric(cfg["label"], cfg["key"])
-        except Exception as e:
-            print(f"My Bookings fixed card failed for {cfg['key']}: {e}")
-            metric = _empty_metric(cfg["label"], cfg["key"])
-            errors.append(f"{cfg['label']} card unavailable")
-        fixed_cards.append(metric)
-
-    try:
-        selected_metric = _my_bookings_metric(biz, permissions, date_col, start, end)
-    except Exception as e:
-        print(f"My Bookings selected metric failed for {biz}: {e}")
-        selected_metric = _empty_metric()
-        errors.append("Selected business metric unavailable")
-
-    trend_rows = []
-    try:
-        trend_rows = _my_bookings_period_rows(biz, permissions, date_col, start, end, trend_group)
-    except Exception as e:
-        print(f"My Bookings trend failed for {biz}: {e}")
-        errors.append("Trend unavailable")
-
-    detail_start = end - timedelta(weeks=10)
-    detail_rows = []
-    try:
-        detail_rows = list(reversed(_my_bookings_period_rows(
-            biz, permissions, date_col, detail_start, end, trend_group
-        )))[:10]
-    except Exception as e:
-        print(f"My Bookings detail failed for {biz}: {e}")
-        errors.append("Recent weeks unavailable")
-
-    try:
-        top_customers = _my_bookings_customer_rows(biz, permissions, date_col, start, end)
-    except Exception as e:
-        print(f"My Bookings top customers failed for {biz}: {e}")
-        top_customers = []
-        errors.append("Top customers unavailable")
-
-    try:
-        growing, dropping = _my_bookings_customer_movement(biz, permissions, date_col, end)
-    except Exception as e:
-        print(f"My Bookings customer movement failed for {biz}: {e}")
-        growing, dropping = [], []
-        errors.append("Customer movement unavailable")
-
-    return {
-        "mode": mode,
-        "date_col": date_col,
-        "start": str(start),
-        "end": str(end),
-        "errors": errors,
-        "fixedCards": fixed_cards,
-        "selectedMetric": selected_metric,
-        "trend": _plain_rows(trend_rows),
-        "detail": _plain_rows(detail_rows),
-        "customers": {
-            "top": top_customers,
-            "growing": growing,
-            "dropping": dropping,
-        },
-    }
-
-@app.get("/health")
-def health():
-    try:
-        query("SELECT 1")
-        return {"status": "ok", "db": "connected_securely"}
-    except Exception as e:
-        return {"status": "error", "db": str(e)}
-
-# =============================================================================
-# VVI CHARTERS ENDPOINT
-# Returns KPIs + sales/customer breakdown for the next Friday's VVI charter
-# flights, plus a per-flight series for all booked charters (Tons & Revenue).
-#
-# Filter: Bkg_Prdt = 'CHARTER' AND Seg_Dnm = 'AV' (one row per booking, the VVI segment)
-# KPIs/tables: only the next upcoming Friday (FlightDate = next_friday)
-# Charts: all booked Fridays with VVI charter data
-# =============================================================================
-
-def _next_friday_from(ref: date) -> date:
-    """Return the next Friday >= ref date."""
-    dow = ref.weekday()  # 0=Mon … 4=Fri … 6=Sun
-    days_ahead = (4 - dow) % 7   # 4 = Friday
-    return ref + timedelta(days=days_ahead)
-
-@app.get("/api/vvi_charters")
-def vvi_charters(
-    flight_date: str = Query(None, description="ISO date YYYY-MM-DD of target Friday. Defaults to next Friday."),
-    email: str = Query(None),
-):
-    """
-    VVI Charters dashboard data.
-
-    - kpis: Tons / Profit / P·Kg for the target Friday
-    - byAgent: breakdown by Bkg_SalesPerson for that Friday
-    - byCustomer: breakdown by Cust_Name for that Friday
-    - byFlight: Tons + Revenue for every Friday that has VVI charter bookings
-                (used for the bar charts — all future & recent bookings)
-    """
-    permissions = require_module_access(email, "vvi_charters")
-
-    # ── Resolve target Friday ─────────────────────────────────────────────────
-    today = today_local()
-    if flight_date:
-        try:
-            target = date.fromisoformat(flight_date)
-        except ValueError:
-            target = _next_friday_from(today)
-    else:
-        target = _next_friday_from(today)
-
-    # Cache key includes the target date so different days return different data
-    cache_key = f"vvi_charters_{_normalize_email(email) or 'public'}_{target.isoformat()}"
-    cached = cache_get(cache_key)
-    if cached:
-        return cached
-
-    # ── Base WHERE for all VVI charter queries ────────────────────────────────
-    BASE = "WHERE Bkg_Prdt = 'CHARTER' AND Seg_Des = 'VVI'"
-    base_params = []
-    if permissions and permissions.get("sales_person"):
-        BASE += " AND Bkg_SalesPerson = %s"
-        base_params.append(permissions["sales_person"])
-
-    # ── 1. KPIs — target Friday only ─────────────────────────────────────────
-    kpi_rows = query(f"""
-        SELECT
-            ROUND(SUM(CHW)/1000, 2)                          AS tons,
-            ROUND(SUM(CV_CiaProfit), 0)                      AS profit,
-            ROUND(SUM(CV_Sales), 0)                          AS rev,
-            SUM(CHW)                                         AS chw,
-            SUM(CV_CiaProfit)                                AS cia
-        FROM GSAFORCE_CargoSystem_2015_20XX
-        {BASE}
-          AND FlightDate = %s
-    """, base_params + [target])
-
-    k = kpi_rows[0] if kpi_rows else {}
-    def _f(v): return float(v) if v else 0
-
-    chw_val = _f(k.get("chw"))
-    cia_val = _f(k.get("cia"))
-    kpis = {
-        "tons":   round(_f(k.get("tons")),  2) or None,
-        "profit": round(_f(k.get("profit")), 0) or None,
-        "pkg":    round(cia_val / chw_val, 4) if chw_val else None,
-    }
-
-    # ── 2. By Sales Person — target Friday ───────────────────────────────────
-    def _breakdown(group_col):
-        rows = query(f"""
-            SELECT
-                {group_col}                                          AS name,
-                ROUND(SUM(CHW)/1000, 2)                              AS tons,
-                COUNT(DISTINCT Bkg_AWBNmr)                           AS bkg,
-                ROUND(SUM(CV_Sales), 0)                              AS rev,
-                ROUND(SUM(CV_Sales)/NULLIF(SUM(CHW), 0), 4)          AS rate_kg,
-                ROUND(SUM(CV_CiaProfit)/NULLIF(SUM(CHW), 0), 4)      AS pkg,
-                ROUND(SUM(CV_CiaProfit), 0)                          AS profit
-            FROM GSAFORCE_CargoSystem_2015_20XX
-            {BASE}
-              AND FlightDate = %s
-              AND {group_col} IS NOT NULL
-            GROUP BY {group_col}
-            ORDER BY SUM(CHW) DESC
-            LIMIT 50
-        """, base_params + [target])
-        return [dict(r) for r in rows]
-
-    by_agent    = _breakdown("Bkg_SalesPerson")
-    by_customer = _breakdown("Cust_Name")
-
-    # ── 2.5 AWB Details — target Friday ──────────────────────────────────────
-    awb_rows = query(f"""
-        SELECT
-            Bkg_Pfx AS pfx,
-            Bkg_AWBNmr AS awb,
-            Bkg_SalesPerson AS salesperson,
-            Cust_Name AS customer,
-            CHW AS kg,
-            CV_Sales AS revenue,
-            ROUND(CV_Sales/NULLIF(CHW, 0), 2) AS price_per_kg,
-            ROUND(CV_CiaProfit/NULLIF(CHW, 0), 2) AS profit_per_kg
-        FROM GSAFORCE_CargoSystem_2015_20XX
-        {BASE}
-          AND FlightDate = %s
-        ORDER BY CHW DESC
-        LIMIT 1000
-    """, base_params + [target])
-    
-    awbs = [dict(r) for r in awb_rows]
-
-    # ── 3. Per-flight bar chart — all VVI charter Fridays with bookings ───────
-    flight_rows = query(f"""
-        SELECT
-            FlightDate                                              AS flight_date,
-            ROUND(SUM(CHW)/1000, 2)                                AS tons,
-            ROUND(SUM(CV_Sales), 0)                                AS rev
-        FROM GSAFORCE_CargoSystem_2015_20XX
-        {BASE}
-          AND FlightDate >= %s
-        GROUP BY FlightDate
-        HAVING SUM(CHW) > 0
-        ORDER BY FlightDate ASC
-        LIMIT 52
-    """, base_params + [today.replace(month=1, day=1)])   # from Jan 1 of current year
-
-    def _fmt_label(d):
-        """Short label: 'Jun 6' or '13-Jun'"""
-        if hasattr(d, "strftime"):
-            return d.strftime("%-d %b")
-        return str(d)
-
-    by_flight = [
-        {
-            "date":  str(r["flight_date"]),
-            "label": _fmt_label(r["flight_date"]),
-            "tons":  float(r["tons"] or 0),
-            "rev":   float(r["rev"]  or 0),
-        }
-        for r in flight_rows
-    ]
-
-    result = {
-        "kpis":        kpis,
-        "byAgent":     by_agent,
-        "byCustomer":  by_customer,
-        "awbs":        awbs,
-        "byFlight":    by_flight,
-        "targetFriday": target.isoformat(),
-    }
-    cache_set(cache_key, result)
-    return result
-
-
-@app.get("/api/status")
-def status():
-    """When was data last refreshed? Used by the summary header."""
-    try:
-        meta = get_meta("last_upload")
-    except Exception as e:
-        return {"last_upload_at": None, "note": None, "error": str(e)}
-    if not meta:
-        return {"last_upload_at": None, "note": None}
-    upd = meta.get("updated_at")
-    return {
-        "last_upload_at": upd.isoformat() + "Z" if upd else None,
-        "note":           meta.get("meta_value"),
-    }
-
-@app.get("/myip")
-def myip():
-    import urllib.request
-    try:
-        ip = urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode()
-        return {"outbound_ip": ip}
-    except Exception as e:
-        return {"error": str(e)}
-
-
-# =============================================================================
-# DATA UPLOAD ENDPOINT
-# Accepts the raw Report_Details file (.xlsx or .csv) directly from your
-# internal system. No Excel prep needed — all formula logic runs server-side.
-#
-# Requires UPLOAD_SECRET env variable set in Railway → Variables.
-# =============================================================================
-
-UPLOAD_SECRET = os.environ.get("UPLOAD_SECRET", "change-me-please")
-
-
-def _excel_serial_to_date(val):
-    """
-    Convert an Excel date serial (e.g. 46009) or parseable string
-    into a 'YY-MM-DD' string. Returns None if value is blank/null.
-    """
-    if val is None or (isinstance(val, float) and pd.isna(val)):
-        return None
-    try:
-        numeric = float(val)
-        # Excel epoch: Dec 30 1899 (includes the Lotus 1-2-3 leap-year bug)
-        origin = date(1899, 12, 30)
-        d = origin + timedelta(days=int(numeric))
-        return d.strftime("%y-%m-%d")
-    except (ValueError, TypeError):
-        pass
-    # Already a string — try to parse and reformat
-    try:
-        d = pd.to_datetime(str(val))
-        return d.strftime("%y-%m-%d")
-    except Exception:
-        return str(val)
-
-
-def _transform(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Replicates all Excel formula logic from Base_Cargo_system_2026.xlsx
-    columns AL→BO and returns the 30-column DB-ready DataFrame.
-
-    Formula reference (from the workbook):
-      AL  SID              = A   direct
-      AM  GSA_SName        = B   direct
-      AN  Bkg_CreaDate     = TEXT(C,"YY-MM-DD")
-      AO  Bkg_Pfx          = D   direct
-      AP  Bkg_AWBNmr       = E   direct
-      AQ  Bkg_Ori          = F   direct
-      AR  Bkg_Des          = G   direct
-      AS  Bkg_Via          = H   direct
-      AT  Bkg_Comm         = I   direct
-      AU  Bkg_Prdt         = J   direct
-      AV  Cust_Name        = K   direct
-      AW  Bkg_SalesPerson  = L   direct
-      AX  CHW              = IF(BILL_St="OPEN", Bkg_Chw, AWB_CHW)
-      AY  Seg_St           = O   direct
-      AZ  Seg_corr         = P   direct
-      BA  Seg_Carrier      = Q   direct
-      BB  Seg_Dnm          = R   direct
-      BC  Seg_Ori          = S   direct
-      BD  Seg_Des          = T   direct
-      BE  FlightDate       = TEXT(IF(Seg_FwdFlightDate="",Seg_FlightDate,Seg_FwdFlightDate),"YY-MM-DD")
-      BF  BILL_St          = W   direct
-      BG  CV_Sales         = IF(BILL_St="OPEN", CVBkg_Sales,            CVAWB_Sales)
-      BH  CV_SalesOthandDisc = IF(BILL_St="OPEN", CVBkg_SalesOthandDisc, CVAWB_SalesOthandDisc)
-      BI  CV_Cost          = IF(BILL_St="OPEN", CVBkg_Cost,             CVAWB_Cost)
-      BJ  CV_CiaProfit     = IF(BILL_St="OPEN", CVBkg_CiaProfit,        CVAWB_CiaProfit)
-      BK  Seg_bkg_cost     = AF  direct
-      BL  AMS              = AG  direct
-      BM  FSC              = AH  direct
-      BN  Bkg_Currency     = AI  direct
-      BO  Bkg_LastDate     = TEXT(AK,"YY-MM-DD")
-    """
-    df.columns = [c.strip() for c in df.columns]
-
-    is_open = df["BILL_St"].str.strip().str.upper() == "OPEN"
-
-    out = pd.DataFrame()
-    out["SID"]             = df["SID"]
-    out["GSA_SName"]       = df["GSA_SName"]
-    out["Bkg_CreaDate"]    = df["Bkg_CreaDate"].apply(_excel_serial_to_date)
-    out["Bkg_Pfx"]         = df["Bkg_Pfx"]
-    out["Bkg_AWBNmr"]      = df["Bkg_AWBNmr"]
-    out["Bkg_Ori"]         = df["Bkg_Ori"]
-    out["Bkg_Des"]         = df["Bkg_Des"]
-    out["Bkg_Via"]         = df["Bkg_Via"]
-    out["Bkg_Comm"]        = df["Bkg_Comm"]
-    out["Bkg_Prdt"]        = df["Bkg_Prdt"]
-    out["Cust_Name"]       = df["Cust_Name"]
-    out["Bkg_SalesPerson"] = df["Bkg_SalesPerson"]
-
-    # CHW: =IF(BILL_St="OPEN", Bkg_Chw, AWB_CHW)
-    out["CHW"] = df["Bkg_Chw"].where(is_open, other=df["AWB_CHW"])
-
-    out["Seg_St"]          = df["Seg_St"]
-    out["Seg_corr"]        = df["Seg_corr"]
-    out["Seg_Carrier"]     = df["Seg_Carrier"]
-    out["Seg_Dnm"]         = df["Seg_Dnm"]
-    out["Seg_Ori"]         = df["Seg_Ori"]
-    out["Seg_Des"]         = df["Seg_Des"]
-
-    # FlightDate: =TEXT(IF(Seg_FwdFlightDate="", Seg_FlightDate, Seg_FwdFlightDate), "YY-MM-DD")
-    fwd     = df["Seg_FwdFlightDate"]
-    flt     = df["Seg_FlightDate"]
-    use_fwd = fwd.notna() & (fwd.astype(str).str.strip() != "")
-    out["FlightDate"] = fwd.where(use_fwd, other=flt).apply(_excel_serial_to_date)
-
-    out["BILL_St"]             = df["BILL_St"]
-    out["CV_Sales"]            = df["CVBkg_Sales"].where(is_open,            other=df["CVAWB_Sales"])
-    out["CV_SalesOthandDisc"]  = df["CVBkg_SalesOthandDisc"].where(is_open,  other=df["CVAWB_SalesOthandDisc"])
-    out["CV_Cost"]             = df["CVBkg_Cost"].where(is_open,             other=df["CVAWB_Cost"])
-    out["CV_CiaProfit"]        = df["CVBkg_CiaProfit"].where(is_open,        other=df["CVAWB_CiaProfit"])
-    out["Seg_bkg_cost"]        = df["Seg_bkg_cost"]
-    out["AMS"]                 = df["AMS"]
-    out["FSC"]                 = df["FSC"]
-    out["Bkg_Currency"]        = df["Bkg_Currency"]
-    out["Bkg_LastDate"]        = df["Bkg_LastDate"].apply(_excel_serial_to_date)
-
-    return out
-
-
-@app.post("/api/upload_cargo")
-async def upload_cargo(
-    file: UploadFile = File(...),
-    x_upload_key: str = Header(None),
-    email: str = Query(None),
-):
-    """
-    Single-step weekly data update. Drop the raw Report_Details file here.
-
-    Automatically:
-      1. Applies all formula transformations (CHW, FlightDate, financials, date formats)
-      2. DELETEs 2026 non-Budget rows from the DB
-      3. Bulk-INSERTs the transformed data
-      4. Runs the currency → USD conversion
-
-    Set UPLOAD_SECRET in Railway → Variables and share it with uploaders.
-    """
-    # ── Auth ─────────────────────────────────────────────────────────────────
-    require_module_access(email, "upload")
-    if x_upload_key != UPLOAD_SECRET:
-        raise HTTPException(status_code=401, detail="Invalid upload key")
-
-    fname = file.filename or ""
-    ext   = fname.rsplit(".", 1)[-1].lower() if "." in fname else ""
-    if ext not in ("xlsx", "csv"):
-        raise HTTPException(status_code=400, detail="Only .xlsx or .csv files are accepted")
-
-    raw = await file.read()
-
-    # ── Parse ────────────────────────────────────────────────────────────────
-    try:
-        if ext == "xlsx":
-            df_raw = pd.read_excel(io.BytesIO(raw), engine="openpyxl")
-        else:
-            try:
-                text = raw.decode("utf-8-sig")
-            except UnicodeDecodeError:
-                text = raw.decode("latin-1")
-            df_raw = pd.read_csv(io.StringIO(text))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not parse file: {e}")
-
-    if df_raw.empty:
-        raise HTTPException(status_code=400, detail="File is empty")
-
-    # ── Transform (replaces the Excel formula step entirely) ─────────────────
-    try:
-        df = _transform(df_raw)
-    except KeyError as e:
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                f"Expected column not found in file: {e}. "
-                "Make sure you're uploading the raw Report_Details file."
-            ),
-        )
-
-    columns = list(df.columns)
-
-    # ── DB: DELETE → INSERT → currency conversion (one transaction) ──────────
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-
-            # STEP 1 — Delete 2026 non-Budget rows
-            cur.execute("""
-                DELETE FROM GSAFORCE_CargoSystem_2015_20XX
-                WHERE YEAR(FlightDate) = 2026
-                  AND Bkg_Prdt <> 'Budget'
-            """)
-            deleted = cur.rowcount
-
-            # STEP 2 — Bulk INSERT
-            col_list     = ", ".join(f"`{c}`" for c in columns)
-            placeholders = ", ".join(["%s"] * len(columns))
-            insert_sql   = (
-                f"INSERT INTO GSAFORCE_CargoSystem_2015_20XX "
-                f"({col_list}) VALUES ({placeholders})"
-            )
-
-            # NaN → None so pymysql sends NULL instead of 'nan'
-            records = [
-                tuple(None if (v is not None and isinstance(v, float) and pd.isna(v)) else v
-                      for v in row)
-                for row in df.itertuples(index=False, name=None)
-            ]
-
-            CHUNK    = 500
-            inserted = 0
-            for i in range(0, len(records), CHUNK):
-                cur.executemany(insert_sql, records[i:i + CHUNK])
-                inserted += cur.rowcount
-
-            # STEP 3 — Currency → USD conversion (original query, unchanged)
-            cur.execute("""
-                UPDATE GSAFORCE_CargoSystem_2015_20XX C
-                INNER JOIN IATA_Currency I
-                    ON  C.Bkg_Currency      = I.Currency
-                    AND YEAR(C.FlightDate)  = I.Year
-                    AND MONTH(C.FlightDate) = I.Month
-                SET
-                    C.CV_Sales            = C.CV_Sales            / I.Rate,
-                    C.CV_SalesOthandDisc  = C.CV_SalesOthandDisc  / I.Rate,
-                    C.CV_Cost             = C.CV_Cost             / I.Rate,
-                    C.CV_CiaProfit        = C.CV_CiaProfit        / I.Rate,
-                    C.Seg_bkg_cost        = C.Seg_bkg_cost        / I.Rate,
-                    C.AMS = CASE
-                        WHEN TRIM(C.AMS) = '' OR C.AMS IS NULL THEN NULL
-                        ELSE CAST(C.AMS AS DECIMAL(12,4)) / I.Rate
-                    END,
-                    C.FSC = CASE
-                        WHEN TRIM(C.FSC) = '' OR C.FSC IS NULL THEN NULL
-                        ELSE CAST(C.FSC AS DECIMAL(12,4)) / I.Rate
-                    END,
-                    C.Bkg_Currency = 'USD'
-                WHERE C.Bkg_Currency <> 'USD'
-                  AND C.FlightDate   >= '2021-01-01'
-                  AND I.Rate         >  0
-            """)
-            converted = cur.rowcount
-
-        conn.commit()
-
-    except Exception as e:
-        conn.rollback()
-        raise HTTPException(status_code=500, detail=f"DB error — rolled back: {e}")
-    finally:
-        conn.close()
-
-    # Clear dashboard cache so the next page load reflects the new data
-    _cache.clear()
-    # Re-warm in background so the first user after upload doesn't wait
-    threading.Thread(target=prewarm_sync, daemon=True).start()
-
-    # Record this upload so the dashboard can show "Last refresh: ..."
-    try:
-        set_meta("last_upload", f"{inserted} rows inserted from {fname}")
-    except Exception as e:
-        print(f"WARN: couldn't update meta table: {e}")
-
-    return {
-        "status":                  "ok",
-        "file":                    fname,
-        "source_rows":             len(df_raw),
-        "deleted_rows":            deleted,
-        "inserted_rows":           inserted,
-        "currency_rows_converted": converted,
-    }
-
-
-# =============================================================================
-# ACCESS REQUEST ENDPOINTS
-# =============================================================================
-class AccessRequestPayload(BaseModel):
-    email: str
-
-
-@app.post("/api/request_access")
-def request_access(payload: AccessRequestPayload, x_api_key: str = Header(None)):
-    requester = _normalize_email(payload.email)
-    if not requester:
-        raise HTTPException(status_code=400, detail="Email is required")
-    if not requester.endswith("@gsaforce.com"):
-        raise HTTPException(status_code=403, detail="Only GSA Force accounts can request access")
-
-    ensure_access_requests_table()
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO dataforce_access_requests (email, status, requested_at)
-                VALUES (%s, 'pending', NOW())
-                ON DUPLICATE KEY UPDATE
-                    status = 'pending',
-                    requested_at = NOW(),
-                    resolved_at = NULL,
-                    resolved_by = NULL
-            """, (requester,))
-        conn.commit()
-        return {"ok": True, "status": "pending"}
-    except Exception as e:
-        conn.rollback()
-        print(f"Failed to save access request for {requester}: {e}")
-        raise HTTPException(status_code=500, detail="Could not save access request")
-    finally:
-        conn.close()
-
-
-@app.get("/api/access_requests")
-def list_access_requests(x_user_email: str = Header(None)):
-    require_module_access(x_user_email, "admin")
-    ensure_access_requests_table()
-    rows = query("""
-        SELECT id, email, status, requested_at, resolved_at, resolved_by
-        FROM dataforce_access_requests
-        WHERE status = 'pending'
-        ORDER BY requested_at DESC
-        LIMIT 100
-    """)
-    return {"requests": [dict(r) for r in rows], "count": len(rows)}
-
-
-@app.delete("/api/access_requests/{request_id}")
-def dismiss_access_request(request_id: int, x_user_email: str = Header(None)):
-    admin_email = _normalize_email(x_user_email)
-    require_module_access(admin_email, "admin")
-    ensure_access_requests_table()
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                UPDATE dataforce_access_requests
-                SET status = 'resolved', resolved_at = NOW(), resolved_by = %s
-                WHERE id = %s
-            """, (admin_email, request_id))
-        conn.commit()
-        return {"ok": True}
-    finally:
-        conn.close()
-
-
-# =============================================================================
-# USER MANAGEMENT ENDPOINTS
-# =============================================================================
-
-@app.get("/api/users")
-def list_users(
-    search: str = Query("", description="Search by name or email"),
-    module: str = Query("", description="Filter by module access"),
-    limit: int = Query(100, ge=1, le=500),
-    x_user_email: str = Header(None),
-):
-    """
-    List all users with optional filtering.
-    
-    ?search=sharon
-    ?module=booked
-    """
-    require_module_access(x_user_email, "admin")
-
-    # Quick optimization: if no filters, just get all (much faster)
-    if not search and not module:
-        sql = "SELECT id, name, email, modules, allowed_businesses, sales_person, created_at, updated_at FROM GSAFORCE_Users ORDER BY name LIMIT %s"
-        rows = query(sql, (limit,))
-    else:
-        conn = get_db_connection()
-        try:
-            with conn.cursor(pymysql.cursors.DictCursor) as cur:
-                sql = "SELECT id, name, email, modules, allowed_businesses, sales_person, created_at, updated_at FROM GSAFORCE_Users"
-                params = []
-                
-                filters = []
-                if search:
-                    filters.append("(name LIKE %s OR email LIKE %s)")
-                    params.extend([f"%{search}%", f"%{search}%"])
-                
-                if module:
-                    filters.append("JSON_CONTAINS(modules, %s)")
-                    params.append(json.dumps(module.lower()))
-                
-                if filters:
-                    sql += " WHERE " + " AND ".join(filters)
-                
-                sql += f" ORDER BY name LIMIT {limit}"
-                cur.execute(sql, params)
-                rows = cur.fetchall()
-        finally:
-            conn.close()
-    
-    result = []
-    for r in rows:
-        r['modules'] = json.loads(r['modules']) if r['modules'] else []
-        r['allowed_businesses'] = json.loads(r['allowed_businesses']) if r['allowed_businesses'] else []
-        result.append(dict(r))
-    
-    return {"users": result, "count": len(result)}
-
-
-@app.get("/api/users/sales-persons")
-def list_sales_persons(x_user_email: str = Header(None)):
-    """
-    Fetch all distinct Bkg_SalesPerson values from the cargo table.
-    Used to populate the dropdown in the user admin form.
-    """
-    require_module_access(x_user_email, "admin")
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor(pymysql.cursors.DictCursor) as cur:
-            cur.execute("""
-                SELECT DISTINCT Bkg_SalesPerson AS sales_person
-                FROM GSAFORCE_CargoSystem_2015_20XX
-                WHERE Bkg_SalesPerson IS NOT NULL
-                  AND TRIM(Bkg_SalesPerson) <> ''
-                ORDER BY Bkg_SalesPerson
-            """)
-            rows = cur.fetchall()
-            persons = [r['sales_person'] for r in rows]
-            return {"sales_persons": persons}
-    finally:
-        conn.close()
-
-
-@app.get("/api/users/{user_id}")
-def get_user(user_id: int, x_user_email: str = Header(None)):
-    """Fetch a single user by ID."""
-    require_module_access(x_user_email, "admin")
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor(pymysql.cursors.DictCursor) as cur:
-            cur.execute(
-                "SELECT id, name, email, modules, allowed_businesses, sales_person, created_at, updated_at FROM GSAFORCE_Users WHERE id = %s",
-                (user_id,)
-            )
-            row = cur.fetchone()
-            if not row:
-                raise HTTPException(status_code=404, detail="User not found")
-            
-            row['modules'] = json.loads(row['modules']) if row['modules'] else []
-            row['allowed_businesses'] = json.loads(row['allowed_businesses']) if row['allowed_businesses'] else []
-            return dict(row)
-    finally:
-        conn.close()
-
-
-@app.post("/api/users")
-def create_user(
-    email: str = Query(...),
-    name: str = Query(...),
-    modules: str = Query(..., description="JSON array: [\"booked\", \"flown\", ...]"),
-    allowed_businesses: str = Query(..., description="JSON array: [\"MERC_LOCAL\", \"01_CXOFF\", ...]"),
-    sales_person: str = Query("", description="Optional: single sales person name"),
-    x_user_email: str = Header(None),
-):
-    """
-    Create a new user.
-    
-    POST /api/users?email=john@gsaforce.com&name=John+Smith&modules=["booked","flown"]&allowed_businesses=["MERC_LOCAL"]&sales_person=
-    """
-    require_module_access(x_user_email, "admin")
-
-    try:
-        modules_list = json.loads(modules)
-        biz_list = json.loads(allowed_businesses)
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
-    
-    if not isinstance(modules_list, list) or not isinstance(biz_list, list):
-        raise HTTPException(status_code=400, detail="modules and allowed_businesses must be arrays")
-    
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO GSAFORCE_Users (email, name, modules, allowed_businesses, sales_person)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                (
-                    email,
-                    name,
-                    json.dumps(modules_list),
-                    json.dumps(biz_list),
-                    sales_person or None,
-                )
-            )
-        conn.commit()
-        user_id = cur.lastrowid
-        
-        return {
-            "status": "created",
-            "id": user_id,
-            "email": email,
-            "name": name,
-        }
-    except Exception as e:
-        conn.rollback()
-        if "Duplicate entry" in str(e):
-            raise HTTPException(status_code=409, detail=f"User with email {email} already exists")
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        conn.close()
-
-
-@app.put("/api/users/{user_id}")
-def update_user(
-    user_id: int,
-    name: str = Query(None),
-    email: str = Query(None),
-    modules: str = Query(None, description="JSON array"),
-    allowed_businesses: str = Query(None, description="JSON array"),
-    sales_person: str = Query(None),
-    x_user_email: str = Header(None),
-):
-    """
-    Update a user. Pass only the fields you want to change.
-    """
-    require_module_access(x_user_email, "admin")
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            # Build dynamic UPDATE
-            updates = []
-            params = []
-            
-            if name is not None:
-                updates.append("name = %s")
-                params.append(name)
-            
-            if email is not None:
-                updates.append("email = %s")
-                params.append(email)
-            
-            if modules is not None:
-                try:
-                    modules_list = json.loads(modules)
-                    if not isinstance(modules_list, list):
-                        raise HTTPException(status_code=400, detail="modules must be an array")
-                    updates.append("modules = %s")
-                    params.append(json.dumps(modules_list))
-                except json.JSONDecodeError:
-                    raise HTTPException(status_code=400, detail="Invalid JSON in modules")
-            
-            if allowed_businesses is not None:
-                try:
-                    biz_list = json.loads(allowed_businesses)
-                    if not isinstance(biz_list, list):
-                        raise HTTPException(status_code=400, detail="allowed_businesses must be an array")
-                    updates.append("allowed_businesses = %s")
-                    params.append(json.dumps(biz_list))
-                except json.JSONDecodeError:
-                    raise HTTPException(status_code=400, detail="Invalid JSON in allowed_businesses")
-            
-            if sales_person is not None:
-                updates.append("sales_person = %s")
-                params.append(sales_person if sales_person else None)
-            
-            if not updates:
-                raise HTTPException(status_code=400, detail="No fields to update")
-            
-            updates.append("updated_at = NOW()")
-            params.append(user_id)
-            
-            sql = f"UPDATE GSAFORCE_Users SET {', '.join(updates)} WHERE id = %s"
-            cur.execute(sql, params)
-        
-        conn.commit()
-        
-        if cur.rowcount == 0:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        return {"status": "updated", "id": user_id}
-    except Exception as e:
-        conn.rollback()
-        if "Duplicate entry" in str(e):
-            raise HTTPException(status_code=409, detail="Email already in use")
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        conn.close()
-
-
-@app.delete("/api/users/{user_id}")
-def delete_user(user_id: int, x_user_email: str = Header(None)):
-    """Soft-delete or hard-delete a user. Currently hard-delete."""
-    require_module_access(x_user_email, "admin")
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM GSAFORCE_Users WHERE id = %s", (user_id,))
-        conn.commit()
-        
-        if cur.rowcount == 0:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        return {"status": "deleted", "id": user_id}
-    except Exception as e:
-        conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        conn.close()
+    setStatus("Ready", true);
+  } catch (e) {
+    console.error("Failed to load My Bookings:", e);
+    setStatus("Error", false);
+    showError(`Could not load My Bookings. ${e.message || "Please refresh or contact an administrator."}`);
+  }
+}
+
+function populateBusinessSelect() {
+  const select = document.getElementById("bizSelect");
+  const p = permissions();
+  const allowed = Array.isArray(p.allowed_businesses) ? p.allowed_businesses : ["ALL"];
+  const allAllowed = allowed.includes("ALL") || allowed.length === 0;
+  const visible = BUSINESS_OPTIONS.filter(opt => opt.key === "ALL" || allAllowed || allowed.includes(opt.key));
+  select.innerHTML = visible.map(opt => `<option value="${opt.key}">${opt.label}</option>`).join("");
+  select.value = "ALL";
+}
+
+function bindEvents() {
+  document.querySelectorAll(".period-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentMode = btn.dataset.mode;
+      document.querySelectorAll(".period-btn").forEach(b => b.classList.toggle("active", b === btn));
+      loadReport();
+    });
+  });
+  document.getElementById("bizSelect").addEventListener("change", loadReport);
+}
+
+function initMyBookings() {
+  const u = user();
+  document.getElementById("userLabel").textContent = u.name || (u.email ? u.email.split("@")[0] : "");
+  populateBusinessSelect();
+  bindEvents();
+  loadReport();
+}
+
+checkModuleAccess("my_bookings", initMyBookings);
+</script>
+</body>
+</html>
