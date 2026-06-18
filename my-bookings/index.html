@@ -71,12 +71,14 @@
   .filters label { color:#8fb5d7; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
   select {
     min-width:150px;
+    height:25px;
     border:1px solid #45658d;
     background:#102847;
     color:#fff;
     border-radius:5px;
-    padding:6px 9px;
-    font:inherit;
+    padding:3px 9px;
+    font-size:10px;
+    line-height:1;
     outline:none;
   }
 
@@ -138,7 +140,8 @@
   tbody tr:nth-child(even) td { background:#f0f2f6; }
   .table-scroll { max-height:270px; overflow:auto; }
   .customer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-  .customer-panel { min-height:320px; }
+  .customer-panel { min-height:368px; }
+  .customer-panel .table-scroll { max-height:330px; }
   .empty { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
   .loading { padding:42px 16px; text-align:center; color:var(--text3); }
   .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
@@ -233,7 +236,7 @@
     <div class="panel customer-panel">
       <div class="panel-head">
         <div class="panel-title">Top Customers</div>
-        <div class="panel-note">Share</div>
+        <div class="panel-note">SOW</div>
       </div>
       <div class="table-scroll">
         <table id="topCustomersTable"></table>
@@ -439,7 +442,7 @@ function renderCustomers() {
   const dropping = (currentData.customers && currentData.customers.dropping) || [];
 
   document.getElementById("topCustomersTable").innerHTML = `
-    <thead><tr><th>Customer</th><th>Tons</th><th>Rev</th><th>Share</th></tr></thead>
+    <thead><tr><th>Customer</th><th>Tons</th><th>Rev</th><th>SOW</th></tr></thead>
     <tbody>${top.length ? top.map(c => `
       <tr>
         <td title="${c.customer || ""}">${shortCustomer(c.customer)}</td>
