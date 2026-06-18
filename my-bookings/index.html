@@ -437,9 +437,9 @@ function renderDetail() {
 }
 
 function renderCustomers() {
-  const top = (currentData.customers && currentData.customers.top) || [];
-  const growing = (currentData.customers && currentData.customers.growing) || [];
-  const dropping = (currentData.customers && currentData.customers.dropping) || [];
+  const top = ((currentData.customers && currentData.customers.top) || []).slice(0, 10);
+  const growing = ((currentData.customers && currentData.customers.growing) || []).slice(0, 10);
+  const dropping = ((currentData.customers && currentData.customers.dropping) || []).slice(0, 10);
 
   document.getElementById("topCustomersTable").innerHTML = `
     <thead><tr><th>Customer</th><th>Tons</th><th>Rev</th><th>SOW</th></tr></thead>
