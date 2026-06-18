@@ -1,1 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - My Bookings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e8eaee;
+    --surface:#fff;
+    --surface2:#f5f7fb;
+    --border:#d8dde8;
+    --navy:#0d1f3c;
+    --navy2:#1a3360;
+    --text1:#0d1f3c;
+    --text2:#41536c;
+    --text3:#8391a8;
+    --blue:#1a56db;
+    --teal:#0c9080;
+    --amber:#c97a06;
+    --red:#b91c1c;
+    --green:#15803d;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  body { overflow-x:hidden; }
+  .app { min-height:100vh; padding:8px; }
+  .header {
+    min-height:54px;
+    background:var(--navy);
+    border-radius:6px;
+    padding:8px 16px;
+    display:grid;
+    grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr);
+    align-items:center;
+    gap:12px;
+    margin-bottom:8px;
+  }
+  .brand { justify-self:start; color:#fff; text-decoration:none; display:flex; align-items:center; gap:10px; }
+  .brand-mark { color:#7aaed5; font-size:12px; letter-spacing:2.2px; font-weight:300; }
+  .brand-arrow { width:19px; height:19px; border:2px solid #fff; border-left:0; border-bottom:0; position:relative; opacity:.95; }
+  .brand-arrow:before { content:''; position:absolute; right:-2px; top:-2px; width:9px; height:2px; background:#fff; transform:rotate(-45deg); transform-origin:right center; }
+  .header-title { text-align:center; color:#7aaed5; letter-spacing:.12em; font-size:18px; font-weight:500; white-space:nowrap; }
+  .header-right { justify-self:end; display:flex; align-items:center; gap:12px; color:#fff; font-size:11px; }
+  .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:7px; height:7px; border-radius:999px; background:#c97a06; }
+  .dot.ready { background:#22c55e; }
+  .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font:inherit; font-size:10px; }
+
+  .toolbar {
+    background:var(--navy);
+    border-radius:6px;
+    padding:10px 12px;
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    align-items:center;
+    gap:12px;
+    margin-bottom:8px;
+  }
+  .periods { display:flex; gap:8px; justify-self:start; }
+  .period-btn {
+    border:1px solid rgba(122,174,213,.45);
+    background:#102847;
+    color:#9abfe0;
+    border-radius:5px;
+    padding:6px 13px;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.08em;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .period-btn.active { background:var(--blue); color:#fff; border-color:#5e9bff; }
+  .range { color:#8fb5d7; text-align:center; line-height:1.35; }
+  .range-main { color:#fff; font-size:13px; letter-spacing:.08em; font-weight:500; }
+  .filters { justify-self:end; display:flex; align-items:center; gap:8px; }
+  .filters label { color:#8fb5d7; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+  select {
+    min-width:150px;
+    border:1px solid #45658d;
+    background:#102847;
+    color:#fff;
+    border-radius:5px;
+    padding:6px 9px;
+    font:inherit;
+    outline:none;
+  }
+
+  .fixed-grid {
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .kpi-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:6px;
+    overflow:hidden;
+    min-height:118px;
+  }
+  .kpi-head {
+    height:30px;
+    border-top:4px solid var(--teal);
+    padding:5px 10px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+  }
+  .kpi-card.total .kpi-head { border-top-color:var(--blue); }
+  .kpi-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.04em; }
+  .kpi-sub { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.08em; }
+  .kpi-body { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:10px; }
+  .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px; }
+  .metric-value { color:var(--text1); font-size:16px; font-weight:500; line-height:1.15; white-space:nowrap; }
+
+  .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
+  .panel-head {
+    background:var(--navy2);
+    color:#c8d8f0;
+    padding:8px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    min-height:38px;
+  }
+  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+  .selected-summary {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    padding:12px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface2);
+  }
+  .mini { background:#fff; border:1px solid var(--border); border-radius:5px; padding:9px 10px; }
+  .mini .metric-value { font-size:18px; }
+  .trend { padding:12px; display:flex; flex-direction:column; gap:8px; min-height:210px; }
+  .bar-row { display:grid; grid-template-columns:68px 1fr 74px; align-items:center; gap:10px; min-height:22px; }
+  .bar-label { color:var(--text2); font-size:10px; font-weight:500; }
+  .bar-track { height:14px; background:#eef2f8; border-radius:999px; overflow:hidden; }
+  .bar { height:100%; min-width:2px; background:linear-gradient(90deg,#86b7ff,#1a56db); border-radius:999px; }
+  .bar-value { color:var(--text1); font-size:10px; text-align:right; font-variant-numeric:tabular-nums; }
+
+  table { width:100%; border-collapse:collapse; }
+  th { background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:7px 8px; text-align:right; white-space:nowrap; }
+  th:first-child, td:first-child { text-align:left; }
+  td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:right; color:var(--text1); font-size:11px; white-space:nowrap; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  .table-scroll { max-height:270px; overflow:auto; }
+  .customers { min-height:360px; }
+  .tabs { display:flex; gap:6px; }
+  .tab {
+    border:1px solid rgba(200,216,240,.35);
+    background:rgba(255,255,255,.06);
+    color:#c8d8f0;
+    border-radius:4px;
+    padding:4px 9px;
+    cursor:pointer;
+    font:inherit;
+    font-size:10px;
+  }
+  .tab.active { background:#fff; color:var(--navy); }
+  .empty { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
+  .loading { padding:42px 16px; text-align:center; color:var(--text3); }
+  .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
+
+  @media (max-width:980px) {
+    .header, .toolbar { grid-template-columns:1fr; text-align:center; }
+    .brand, .header-right, .periods, .filters { justify-self:center; }
+    .fixed-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .content-grid { grid-template-columns:1fr; }
+  }
+  @media (max-width:560px) {
+    .fixed-grid, .selected-summary { grid-template-columns:1fr; }
+    .periods, .filters { width:100%; justify-content:center; flex-wrap:wrap; }
+    select { width:100%; }
+    .bar-row { grid-template-columns:54px 1fr 62px; }
+    .header-title { font-size:15px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="header">
+    <a class="brand" href="/" aria-label="Back to DATAFORCE home">
+      <span class="brand-mark">DATAFORCE</span>
+      <span class="brand-arrow" aria-hidden="true"></span>
+    </a>
+    <div class="header-title">MY BOOKINGS</div>
+    <div class="header-right">
+      <span id="userLabel"></span>
+      <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading</span></span>
+      <button class="logout" onclick="signOut()">Sign out</button>
+    </div>
+  </header>
+
+  <section class="toolbar">
+    <div class="periods">
+      <button class="period-btn active" data-mode="ytd_flown">YTD FLOWN</button>
+      <button class="period-btn" data-mode="this_week_booked">THIS WEEK BOOKED</button>
+    </div>
+    <div class="range">
+      <div class="range-main" id="rangeTitle">-</div>
+      <div id="rangeDates">-</div>
+    </div>
+    <div class="filters">
+      <label for="bizSelect">Business</label>
+      <select id="bizSelect"></select>
+    </div>
+  </section>
+
+  <div class="error" id="errorBox"></div>
+  <section class="fixed-grid" id="fixedCards"></section>
+
+  <section class="content-grid">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" id="selectedTitle">Trend</div>
+        <div class="panel-note" id="salesPersonLabel">-</div>
+      </div>
+      <div class="selected-summary" id="selectedSummary"></div>
+      <div class="trend" id="trendBox"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Recent Weeks</div>
+        <div class="panel-note">Selected business</div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Week</th><th>#Bkgs</th><th>Tons</th><th>Rev</th><th>P/KG</th></tr>
+          </thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel customers">
+    <div class="panel-head">
+      <div class="panel-title">Customers</div>
+      <div class="tabs">
+        <button class="tab active" data-tab="top">Top</button>
+        <button class="tab" data-tab="growing">Growing</button>
+        <button class="tab" data-tab="dropping">Dropping</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table id="customersTable"></table>
+    </div>
+  </section>
+</div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-production.up.railway.app";
+const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+
+const BUSINESS_OPTIONS = [
+  { key:"ALL", label:"ALL" },
+  { key:"MERC_LOCAL", label:"MA-LOCAL" },
+  { key:"MERC_GSA", label:"MA-GSA" },
+  { key:"02_ET", label:"ET-USA" },
+  { key:"01_CXOFF", label:"CX-OFF" }
+];
+
+let currentMode = "ytd_flown";
+let currentTab = "top";
+let currentData = null;
+
+function user() {
+  try { return JSON.parse(sessionStorage.getItem("df_user") || "{}"); }
+  catch (e) { return {}; }
+}
+
+function permissions() {
+  try { return JSON.parse(sessionStorage.getItem("df_permissions") || "{}"); }
+  catch (e) { return {}; }
+}
+
+function signOut() {
+  sessionStorage.removeItem("df_user");
+  sessionStorage.removeItem("df_permissions");
+  window.location.href = "https://dataforce.gsaforce.com/";
+}
+
+function num(value, digits = 0) {
+  const n = Number(value || 0);
+  return n.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+}
+
+function money(value) {
+  const n = Number(value || 0);
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+function pkg(value) {
+  const n = Number(value || 0);
+  return n ? n.toFixed(2) : "-";
+}
+
+function shortCustomer(value) {
+  const text = String(value || "-");
+  return text.length > 34 ? `${text.slice(0, 31)}...` : text;
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  const d = new Date(`${value}T00:00:00`);
+  return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+
+function cardMetric(metric, label) {
+  const titleClass = metric.key === "ALL" ? "kpi-card total" : "kpi-card";
+  return `
+    <div class="${titleClass}">
+      <div class="kpi-head">
+        <div>
+          <div class="kpi-title">${label || metric.label || metric.key}</div>
+          <div class="kpi-sub">${metric.key === "ALL" ? "Allowed total" : "Business"}</div>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <div><div class="metric-label"># Bkgs</div><div class="metric-value">${num(metric.bookings)}</div></div>
+        <div><div class="metric-label">Tons</div><div class="metric-value">${num(metric.tons, 2)}</div></div>
+        <div><div class="metric-label">Rev</div><div class="metric-value">${money(metric.revenue)}</div></div>
+        <div><div class="metric-label">P/KG</div><div class="metric-value">${pkg(metric.profit_per_kg)}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderFixedCards() {
+  document.getElementById("fixedCards").innerHTML = (currentData.fixedCards || []).map(card => cardMetric(card)).join("");
+}
+
+function renderSelectedSummary() {
+  const m = currentData.selectedMetric || {};
+  document.getElementById("selectedSummary").innerHTML = `
+    <div class="mini"><div class="metric-label"># Bkgs</div><div class="metric-value">${num(m.bookings)}</div></div>
+    <div class="mini"><div class="metric-label">Tons</div><div class="metric-value">${num(m.tons, 2)}</div></div>
+    <div class="mini"><div class="metric-label">Revenue</div><div class="metric-value">${money(m.revenue)}</div></div>
+    <div class="mini"><div class="metric-label">Profit/KG</div><div class="metric-value">${pkg(m.profit_per_kg)}</div></div>
+  `;
+}
+
+function renderTrend() {
+  const rows = currentData.trend || [];
+  const max = Math.max(...rows.map(r => Number(r.tons || 0)), 0);
+  const box = document.getElementById("trendBox");
+  if (!rows.length || max <= 0) {
+    box.innerHTML = '<div class="empty">No trend data for this selection.</div>';
+    return;
+  }
+  box.innerHTML = rows.map(row => {
+    const pct = Math.max(2, (Number(row.tons || 0) / max) * 100);
+    const label = row.period_label || row.period || row.label || "-";
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${label}</div>
+        <div class="bar-track"><div class="bar" style="width:${pct}%"></div></div>
+        <div class="bar-value">${num(row.tons, 2)} t</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderDetail() {
+  const body = document.getElementById("detailBody");
+  const rows = currentData.detail || [];
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="5" class="empty">No business detail for this selection.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name || r.week || "-"}</td>
+      <td>${num(r.bookings)}</td>
+      <td>${num(r.tons, 2)}</td>
+      <td>${money(r.revenue || r.rev)}</td>
+      <td>${pkg(r.profit_per_kg || r.pkg)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderCustomers() {
+  const table = document.getElementById("customersTable");
+  const customers = (currentData.customers && currentData.customers[currentTab]) || [];
+  if (currentTab === "top") {
+    table.innerHTML = `
+      <thead><tr><th>Customer</th><th>#Bkgs</th><th>Tons</th><th>Rev</th><th>Share</th><th>P/KG</th></tr></thead>
+      <tbody>${customers.length ? customers.map(c => `
+        <tr>
+          <td title="${c.customer || ""}">${shortCustomer(c.customer)}</td>
+          <td>${num(c.bookings)}</td>
+          <td>${num(c.tons, 2)}</td>
+          <td>${money(c.revenue)}</td>
+          <td>${num(c.share, 1)}%</td>
+          <td>${pkg(c.profit_per_kg)}</td>
+        </tr>
+      `).join("") : '<tr><td colspan="6" class="empty">No customer data for this selection.</td></tr>'}</tbody>
+    `;
+    return;
+  }
+
+  table.innerHTML = `
+    <thead><tr><th>Customer</th><th>Prior Avg</th><th>Recent Avg</th><th>Change</th><th>Recent Tons</th><th>Last Activity</th></tr></thead>
+    <tbody>${customers.length ? customers.map(c => `
+      <tr>
+        <td title="${c.customer || ""}">${shortCustomer(c.customer)}</td>
+        <td>${num(c.prior_avg_tons, 2)}</td>
+        <td>${num(c.recent_avg_tons, 2)}</td>
+        <td>${num(c.change_tons, 2)}</td>
+        <td>${num(c.recent_tons, 2)}</td>
+        <td>${formatDate(c.last_activity)}</td>
+      </tr>
+    `).join("") : `<tr><td colspan="6" class="empty">No ${currentTab} customers found.</td></tr>`}</tbody>
+  `;
+}
+
+function renderAll() {
+  const modeLabel = currentMode === "ytd_flown" ? "YTD FLOWN" : "THIS WEEK BOOKED";
+  const bizLabel = BUSINESS_OPTIONS.find(b => b.key === document.getElementById("bizSelect").value)?.label || "ALL";
+  const p = permissions();
+  document.getElementById("rangeTitle").textContent = modeLabel;
+  document.getElementById("rangeDates").textContent = `${formatDate(currentData.start)} - ${formatDate(currentData.end)}`;
+  document.getElementById("selectedTitle").textContent = `${bizLabel} Trend`;
+  document.getElementById("salesPersonLabel").textContent = p.sales_person ? `Sales person ${p.sales_person}` : "All sales persons";
+  renderFixedCards();
+  renderSelectedSummary();
+  renderTrend();
+  renderDetail();
+  renderCustomers();
+}
+
+function setStatus(text, ready) {
+  document.getElementById("statusText").textContent = text;
+  document.getElementById("statusDot").classList.toggle("ready", Boolean(ready));
+}
+
+function showError(message) {
+  const box = document.getElementById("errorBox");
+  box.textContent = message;
+  box.style.display = message ? "block" : "none";
+}
+
+async function loadReport() {
+  const u = user();
+  const biz = document.getElementById("bizSelect").value || "ALL";
+  setStatus("Loading reports", false);
+  showError("");
+  try {
+    const url = `${API_BASE}/api/my_bookings?mode=${encodeURIComponent(currentMode)}&biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(u.email || "")}`;
+    const r = await fetch(url, { headers:{ "x-api-key":API_KEY } });
+    if (!r.ok) throw new Error(`API error ${r.status}`);
+    currentData = await r.json();
+    renderAll();
+    setStatus("Ready", true);
+  } catch (e) {
+    console.error("Failed to load My Bookings:", e);
+    setStatus("Error", false);
+    showError("Could not load My Bookings. Please refresh or contact an administrator.");
+  }
+}
+
+function populateBusinessSelect() {
+  const select = document.getElementById("bizSelect");
+  const p = permissions();
+  const allowed = Array.isArray(p.allowed_businesses) ? p.allowed_businesses : ["ALL"];
+  const allAllowed = allowed.includes("ALL") || allowed.length === 0;
+  const visible = BUSINESS_OPTIONS.filter(opt => opt.key === "ALL" || allAllowed || allowed.includes(opt.key));
+  select.innerHTML = visible.map(opt => `<option value="${opt.key}">${opt.label}</option>`).join("");
+  select.value = "ALL";
+}
+
+function bindEvents() {
+  document.querySelectorAll(".period-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentMode = btn.dataset.mode;
+      document.querySelectorAll(".period-btn").forEach(b => b.classList.toggle("active", b === btn));
+      loadReport();
+    });
+  });
+  document.getElementById("bizSelect").addEventListener("change", loadReport);
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentTab = btn.dataset.tab;
+      document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b === btn));
+      renderCustomers();
+    });
+  });
+}
+
+function initMyBookings() {
+  const u = user();
+  document.getElementById("userLabel").textContent = u.name || (u.email ? u.email.split("@")[0] : "");
+  populateBusinessSelect();
+  bindEvents();
+  loadReport();
+}
+
+checkModuleAccess("my_bookings", initMyBookings);
+</script>
+</body>
+</html>
 
