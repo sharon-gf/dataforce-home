@@ -41,9 +41,10 @@
   .logo a { display:flex; align-items:center; cursor:pointer; }
   .logo img { height:28px; width:auto; object-fit:contain; display:block; }
   .hdr-mid-section { flex:1; text-align:center; min-width:0; }
-  .header-title { text-align:center; color:#7aaed5; letter-spacing:.12em; font-size:18px; font-weight:500; white-space:nowrap; margin-bottom:7px; }
-  .header-controls { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; }
-  .header-right { min-width:280px; display:flex; justify-content:flex-end; align-items:center; gap:12px; color:#fff; font-size:11px; }
+  .header-title { text-align:center; color:#7aaed5; letter-spacing:.12em; font-size:17px; font-weight:500; white-space:nowrap; margin-bottom:6px; }
+  .header-controls { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:7px; }
+  .header-right { min-width:260px; display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:5px; color:#fff; font-size:11px; }
+  .header-actions { display:flex; justify-content:flex-end; align-items:center; gap:12px; }
   .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
   .dot { width:7px; height:7px; border-radius:999px; background:#c97a06; }
   .dot.ready { background:#22c55e; }
@@ -54,17 +55,17 @@
     border:1px solid rgba(122,174,213,.45);
     background:#102847;
     color:#9abfe0;
-    border-radius:5px;
-    padding:6px 13px;
-    font-size:11px;
+    border-radius:4px;
+    padding:4px 15px;
+    font-size:10px;
     font-weight:600;
     letter-spacing:.08em;
     cursor:pointer;
     white-space:nowrap;
   }
   .period-btn.active { background:var(--blue); color:#fff; border-color:#5e9bff; }
-  .range { color:#8fb5d7; text-align:right; line-height:1.35; min-width:152px; }
-  .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:none; }
+  .range { color:#8fb5d7; text-align:right; line-height:1.35; min-width:152px; font-size:10px; }
+  .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:block; }
   .filters { display:flex; align-items:center; gap:8px; }
   .filters label { color:#8fb5d7; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
   select {
@@ -89,10 +90,10 @@
     border:1px solid var(--border);
     border-radius:6px;
     overflow:hidden;
-    min-height:92px;
+    min-height:86px;
   }
   .kpi-head {
-    height:28px;
+    height:30px;
     border-top:4px solid var(--teal);
     padding:5px 10px 0;
     display:flex;
@@ -102,9 +103,10 @@
   .kpi-card.total .kpi-head { border-top-color:var(--blue); }
   .kpi-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.04em; }
   .kpi-sub { display:none; }
-  .kpi-body { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; padding:8px 10px 10px; }
-  .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px; }
-  .metric-value { color:var(--text1); font-size:15px; font-weight:500; line-height:1.15; white-space:nowrap; }
+  .kpi-body { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:8px 8px 10px; }
+  .kpi-body > div { text-align:center; min-width:0; }
+  .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; text-align:center; }
+  .metric-value { color:var(--text1); font-size:14px; font-weight:500; line-height:1.15; white-space:nowrap; text-align:center; }
 
   .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
   .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
@@ -154,6 +156,7 @@
     .logo { order:1; flex:1 1 45%; min-width:0; }
     .logo img { height:30px; }
     .header-right { order:2; flex:1 1 45%; min-width:0; }
+    .header-actions { flex-wrap:wrap; row-gap:5px; }
     .hdr-mid-section { order:3; flex:1 1 100%; margin-top:10px; }
     .periods, .filters { justify-content:center; }
     .fixed-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -163,7 +166,8 @@
   @media (max-width:560px) {
     .fixed-grid, .selected-summary { grid-template-columns:1fr; }
     .header-controls, .periods, .filters { width:100%; justify-content:center; flex-wrap:wrap; }
-    .header-right { justify-content:center; flex-wrap:wrap; }
+    .header-right { justify-content:center; align-items:center; flex-wrap:wrap; }
+    .header-actions { justify-content:center; }
     .range { text-align:center; }
     select { width:100%; }
     .bar-row { grid-template-columns:54px 1fr 62px; }
@@ -193,13 +197,15 @@
       </div>
     </div>
     <div class="header-right">
+      <div class="header-actions">
+        <span id="userLabel"></span>
+        <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading</span></span>
+        <button class="logout" onclick="signOut()">Sign out</button>
+      </div>
       <div class="range">
         <div class="range-main" id="rangeTitle">-</div>
         <div id="rangeDates">-</div>
       </div>
-      <span id="userLabel"></span>
-      <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading</span></span>
-      <button class="logout" onclick="signOut()">Sign out</button>
     </div>
   </header>
 
