@@ -6,6 +6,7 @@
 <title>DATAFORCE - My Bookings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
     --bg:#e8eaee;
@@ -123,16 +124,9 @@
   }
   .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
   .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
-  .trend { padding:12px; min-height:250px; }
-  .trend svg { width:100%; height:226px; display:block; }
-  .trend-axis { stroke:#d8dde8; stroke-width:1; }
-  .trend-grid { stroke:#eef2f8; stroke-width:1; }
-  .trend-line-current { fill:none; stroke:#1a56db; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-  .trend-line-prev { fill:none; stroke:#ef4444; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
-  .trend-dot-current { fill:#1a56db; }
-  .trend-dot-prev { fill:#ef4444; }
-  .trend-label { fill:#6b7f99; font-size:10px; }
-  .trend-legend { display:flex; justify-content:flex-end; align-items:center; gap:14px; color:var(--text2); font-size:10px; margin-bottom:4px; }
+  .trend { padding:8px 10px 10px; min-height:250px; }
+  .chart-wrap { position:relative; width:100%; height:224px; }
+  .trend-legend { display:flex; justify-content:flex-end; align-items:center; gap:14px; color:var(--text2); font-size:10px; margin-bottom:2px; }
   .legend-item { display:flex; align-items:center; gap:5px; }
   .legend-swatch { width:18px; height:3px; border-radius:99px; background:#1a56db; }
   .legend-swatch.prev { background:#ef4444; }
@@ -285,6 +279,7 @@ const BUSINESS_OPTIONS = [
 
 let currentMode = "ytd_flown";
 let currentData = null;
+let trendChart = null;
 
 function user() {
   try { return JSON.parse(sessionStorage.getItem("df_user") || "{}"); }
@@ -368,41 +363,56 @@ function renderTrend() {
   const max = Math.max(...allRows.map(r => Number(r.tons || 0)), 0);
   const box = document.getElementById("trendBox");
   if (!rows.length || max <= 0) {
+    if (trendChart) {
+      trendChart.destroy();
+      trendChart = null;
+    }
     box.innerHTML = '<div class="empty">No trend data for this selection.</div>';
     return;
   }
-  const w = 720, h = 210, padL = 42, padR = 16, padT = 18, padB = 30;
-  const plotW = w - padL - padR;
-  const plotH = h - padT - padB;
   const weekly = rows.some(r => Number(r.period_week || 0) > 0) || prevRows.some(r => Number(r.period_week || 0) > 0);
-  const count = weekly ? 52 : Math.max(rows.length, prevRows.length, 2);
-  const xIndex = (row, i) => weekly ? Math.max(0, Math.min(51, Number(row.period_week || 1) - 1)) : i;
-  const xForIndex = i => padL + (count <= 1 ? 0 : (i / (count - 1)) * plotW);
-  const yFor = v => padT + plotH - (Number(v || 0) / max) * plotH;
-  const points = series => series.map((r, i) => `${xForIndex(xIndex(r, i)).toFixed(1)},${yFor(r.tons).toFixed(1)}`).join(" ");
-  const circlePoints = (series, cls) => series.map((r, i) => `<circle class="${cls}" cx="${xForIndex(xIndex(r, i)).toFixed(1)}" cy="${yFor(r.tons).toFixed(1)}" r="2"><title>${r.period_label}: ${num(r.tons, 2)} t</title></circle>`).join("");
-  const labelWeeks = weekly ? [1, 13, 26, 39, 52] : null;
-  const labels = weekly ? labelWeeks.map(wk => ({ period_label:`W ${wk}`, idx:wk - 1 })) : rows.filter((_, i) => i === 0 || i === rows.length - 1 || i % Math.ceil(rows.length / 6) === 0).map((r, i) => ({ ...r, idx: rows.indexOf(r) }));
-  const grid = [0, .25, .5, .75, 1].map(t => {
-    const y = padT + plotH - (t * plotH);
-    return `<line class="trend-grid" x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}"></line>`;
-  }).join("");
+  const labels = weekly ? Array.from({ length:52 }, (_, i) => `W${i + 1}`) : rows.map(r => r.period_label || "");
+  const toSeries = source => {
+    if (!weekly) return source.map(r => Number(r.tons || 0));
+    const values = Array(52).fill(null);
+    source.forEach(r => {
+      const week = Number(r.period_week || 0);
+      if (week >= 1 && week <= 52) values[week - 1] = Number(r.tons || 0);
+    });
+    return values;
+  };
   box.innerHTML = `
     <div class="trend-legend">
       <span class="legend-item"><span class="legend-swatch"></span>2026</span>
       ${prevRows.length ? '<span class="legend-item"><span class="legend-swatch prev"></span>2025</span>' : ''}
     </div>
-    <svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Tons trend">
-      ${grid}
-      <line class="trend-axis" x1="${padL}" y1="${padT + plotH}" x2="${w - padR}" y2="${padT + plotH}"></line>
-      <text class="trend-label" x="6" y="${padT + 4}">${num(max, 0)} t</text>
-      <text class="trend-label" x="16" y="${padT + plotH}">0</text>
-      ${prevRows.length ? `<polyline class="trend-line-prev" points="${points(prevRows)}"></polyline>${circlePoints(prevRows, "trend-dot-prev")}` : ''}
-      <polyline class="trend-line-current" points="${points(rows)}"></polyline>
-      ${circlePoints(rows, "trend-dot-current")}
-      ${labels.map(r => `<text class="trend-label" text-anchor="middle" x="${xForIndex(r.idx)}" y="${h - 8}">${r.period_label || ""}</text>`).join("")}
-    </svg>
+    <div class="chart-wrap"><canvas id="myBookingsTrendChart"></canvas></div>
   `;
+  const ctx = document.getElementById("myBookingsTrendChart").getContext("2d");
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type:"line",
+    data:{
+      labels,
+      datasets:[
+        {label:"2026", data:toSeries(rows), borderColor:"#4a8eff", borderWidth:1.5, pointRadius:1, pointHoverRadius:5, tension:0.3, fill:false, spanGaps:false},
+        ...(prevRows.length ? [{label:"2025", data:toSeries(prevRows), borderColor:"#e05555", borderWidth:1.5, pointRadius:1, pointHoverRadius:4, tension:0.3, fill:false, spanGaps:false}] : [])
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:"index", intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:"#0d1f3c", borderColor:"#243a5c", borderWidth:1, titleColor:"#7aaae8", bodyColor:"#d8e4f4", padding:8}
+      },
+      scales:{
+        x:{grid:{color:"rgba(0,0,0,0.05)"}, ticks:{color:"#8896aa", font:{size:8}, maxRotation:45, autoSkip:!weekly}},
+        y:{grid:{color:"rgba(0,0,0,0.05)"}, ticks:{color:"#8896aa", font:{size:8}}, beginAtZero:true}
+      }
+    }
+  });
 }
 
 function renderDetail() {
