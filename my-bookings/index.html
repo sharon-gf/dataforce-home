@@ -221,7 +221,7 @@
     <div class="panel recent-panel">
       <div class="panel-head">
         <div class="panel-title">Recent Weeks</div>
-        <div class="panel-note">Selected business</div>
+        <div class="panel-note" id="detailNote">Selected business</div>
       </div>
       <div class="table-scroll">
         <table>
@@ -483,6 +483,7 @@ function renderAll() {
   document.getElementById("rangeDates").textContent = `${formatDate(currentData.start)} - ${formatDate(currentData.end)}`;
   document.getElementById("selectedTitle").textContent = `${bizLabel} Trend`;
   document.getElementById("salesPersonLabel").textContent = p.sales_person ? `Sales person ${p.sales_person}` : "All sales persons";
+  document.getElementById("detailNote").textContent = currentMode === "ytd_flown" ? "By flight date" : "By booking date";
   renderFixedCards();
   renderTrend();
   renderDetail();
