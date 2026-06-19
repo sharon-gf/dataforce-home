@@ -356,7 +356,7 @@ function buildCard(cfg, data) {
   else if (cfg.dbCol === 'Bkg_Ori') rows = oriRows;
 
   const tableRows = rows.length > 0
-    ? rows.map(r => `<tr><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(Math.round(r.tons*1000*r.pkg),0)}</td><td>${n(r.pkg)}</td></tr>`).join('')
+    ? rows.map(r => `<tr onclick="showAwbDetail('${cfg.dbCol}', '${r.name.replace(/'/g, "\\'")}', '${r.name.replace(/'/g, "\\'")}', this)" style="cursor:pointer;" onmouseover="this.style.background='#f0f5ff';" onmouseout="this.style.background=''"><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(Math.round(r.tons*1000*r.pkg),0)}</td><td>${n(r.pkg)}</td></tr>`).join('')
     : `<tr><td colspan="4" class="nodata-cell">No data this week</td></tr>`;
 
   return `
@@ -435,5 +435,87 @@ async function loadSummary() {
 
 checkModuleAccess('booked', loadSummary);
 </script>
-</body>
-</html>
+
+<!-- AWB Detail Modal -->
+<div id="awb-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:8px;width:80%;max-width:900px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <div style="background:#0d1f3c;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <span id="awb-modal-title" style="color:#fff;font-weight:400;font-size:13px;">AWB Detail</span>
+      <button onclick="closeAwbModal()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#1a3360;color:#fff;position:sticky;top:0;">
+            <th style="padding:8px 10px;text-align:left;">PFX</th>
+            <th style="padding:8px 10px;text-align:left;">AWB</th>
+            <th style="padding:8px 10px;text-align:left;">ORI</th>
+            <th style="padding:8px 10px;text-align:left;">DES</th>
+            <th style="padding:8px 10px;text-align:right;">KGS</th>
+            <th style="padding:8px 10px;text-align:right;">REV</th>
+            <th style="padding:8px 10px;text-align:right;">P/KG</th>
+          </tr>
+        </thead>
+        <tbody id="awb-modal-body"></tbody>
+      </table>
+    </div>
+    <div id="awb-modal-footer" style="padding:8px 16px;background:#f5f5f5;font-size:11px;color:#666;border-top:1px solid #e0e0e0;"></div>
+  </div>
+</div>
+
+<script>
+function closeAwbModal() {
+  document.getElementById('awb-modal').style.display = 'none';
+}
+
+// Close on backdrop click
+document.getElementById('awb-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAwbModal();
+});
+
+async function showAwbDetail(groupCol, groupVal, label) {
+  const biz = document.querySelector('[id^="card-"]')?.id.split('-')[1] || 'MERC_LOCAL';
+  const modal = document.getElementById('awb-modal');
+  const body = document.getElementById('awb-modal-body');
+  const title = document.getElementById('awb-modal-title');
+  const footer = document.getElementById('awb-modal-footer');
+
+  title.textContent = `AWB Detail — ${label}`;
+  body.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#666;">Loading...</td></tr>';
+  footer.textContent = '';
+  modal.style.display = 'flex';
+
+  try {
+    const userEmail = getUserEmail();
+    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=Bkg_CreaDate&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=booked`;
+    const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
+    const data = await r.json();
+    const rows = data.rows || [];
+
+    if (rows.length === 0) {
+      body.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#666;">No data found</td></tr>';
+      return;
+    }
+
+    const fmt = (v, dec=0) => v == null ? '—' : Number(v).toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+    
+    body.innerHTML = rows.map((r, i) => `
+      <tr style="background:${i%2===0?'#fff':'#f9fafb'};">
+        <td style="padding:6px 10px;">${r.pfx || '—'}</td>
+        <td style="padding:6px 10px;font-family:monospace;">${r.awb || '—'}</td>
+        <td style="padding:6px 10px;">${r.ori || '—'}</td>
+        <td style="padding:6px 10px;">${r.des || '—'}</td>
+        <td style="padding:6px 10px;text-align:right;">${fmt(r.chw, 2)}</td>
+        <td style="padding:6px 10px;text-align:right;">${fmt(r.rev)}</td>
+        <td style="padding:6px 10px;text-align:right;">${fmt(r.pkg, 2)}</td>
+      </tr>`).join('');
+
+    const totalChw = rows.reduce((s, r) => s + (r.chw || 0), 0);
+    const totalRev = rows.reduce((s, r) => s + (r.rev || 0), 0);
+    footer.textContent = `${rows.length} AWBs — Total: ${Math.round(totalChw).toLocaleString('en-US')} kgs / ${totalRev.toLocaleString('en-US')} rev`;
+  } catch(e) {
+    body.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:red;">Error loading data</td></tr>';
+    console.error('Modal fetch error:', e);
+  }
+}
+</script>
