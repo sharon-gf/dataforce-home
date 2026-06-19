@@ -83,6 +83,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-arrow svg { width:11px; height:11px; }
 .card-dashboard { --card-accent:#1a56db; --card-icon-bg:#eef3fb; }
 .card-my-bookings { --card-accent:#0f766e; --card-icon-bg:#e6f5f3; }
+.card-booking-details { --card-accent:#1a3360; --card-icon-bg:#edf1f7; }
 .card-summary   { --card-accent:#0c9080; --card-icon-bg:#e8f7f5; }
 .card-booked    { --card-accent:#c97a06; --card-icon-bg:#fef6e8; }
 .card-upload    { --card-accent:#6d3fc7; --card-icon-bg:#f2eefa; }
@@ -154,6 +155,11 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/><path d="M20 7l-4 4-3-3-5 5"/></svg></div>
         <div><div class="card-name">My Bookings</div><div class="card-desc">Personal sales KPIs, business mix and customer trends</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#0f766e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+      <a class="card card-booking-details" href="https://dataforce.gsaforce.com/booking-details/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a3360" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></div>
+        <div><div class="card-name">Booking Details</div><div class="card-desc">Search bookings and view full segment detail</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a3360" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
       <a class="card card-summary" href="https://dataforce.gsaforce.com/flown-report/">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0c9080" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
@@ -244,6 +250,7 @@ async function applyModulePermissions() {
     const classMap = {
       'dashboard': '.card-dashboard',
       'my_bookings': '.card-my-bookings',
+      'booking_details': '.card-booking-details',
       'booked': '.card-booked',
       'flown': '.card-summary',
       'vvi_charters': '.card-vvi',
