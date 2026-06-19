@@ -1,1 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - Booking Details</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e8eaee;
+    --surface:#fff;
+    --surface2:#f5f7fb;
+    --surface3:#edf1f7;
+    --border:#d8dde8;
+    --navy:#0d1f3c;
+    --navy2:#1a3360;
+    --text1:#0d1f3c;
+    --text2:#41536c;
+    --text3:#8391a8;
+    --blue:#1a56db;
+    --cyan:#7aaed5;
+    --teal:#0c9080;
+    --amber:#c97a06;
+    --red:#b91c1c;
+    --green:#15803d;
+    --content-width:1080px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  body { overflow-x:hidden; }
+  button, input, select { font:inherit; }
+  .app { min-height:100vh; padding:8px; }
 
+  .header {
+    background:var(--navy);
+    border-radius:6px;
+    padding:8px 16px;
+    display:grid;
+    grid-template-columns:minmax(180px,1fr) minmax(360px,1.4fr) minmax(250px,1fr);
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .logo-link { color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:9px; width:max-content; }
+  .df-mark { width:28px; height:28px; border:1px solid rgba(122,174,213,.7); border-radius:4px; display:grid; place-items:center; color:#7aaed5; font-size:12px; font-weight:700; letter-spacing:0; }
+  .logo-word { display:flex; flex-direction:column; gap:1px; }
+  .logo-main { font-size:18px; letter-spacing:.13em; font-weight:600; line-height:1; }
+  .logo-sub { color:var(--cyan); font-size:9px; letter-spacing:.24em; text-transform:uppercase; }
+  .hdr-mid { text-align:center; min-width:0; }
+  .header-title { color:var(--cyan); letter-spacing:.12em; font-size:17px; font-weight:500; white-space:nowrap; }
+  .header-right { color:#fff; display:flex; flex-direction:column; align-items:flex-end; gap:6px; font-size:11px; min-width:0; }
+  .header-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; max-width:100%; }
+  .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:7px; height:7px; border-radius:99px; background:#22c55e; }
+  .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font-size:10px; }
+  .range { color:#8fb5d7; text-align:right; line-height:1.35; font-size:10px; }
+  .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:block; }
+
+  .summary-grid { width:min(var(--content-width),100%); margin:0 auto 8px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+  .kpi-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:6px;
+    overflow:hidden;
+    min-height:86px;
+  }
+  .kpi-head {
+    height:30px;
+    border-top:4px solid var(--teal);
+    padding:5px 10px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .kpi-card.total .kpi-head { border-top-color:var(--blue); }
+  .kpi-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.04em; }
+  .biz-logo { width:30px; height:20px; border:1px solid #d5dce8; border-radius:3px; display:flex; align-items:center; justify-content:center; color:var(--text2); background:#fff; font-size:9px; font-weight:700; letter-spacing:.04em; }
+  .kpi-card.total .biz-logo { color:#1a56db; border-color:#bcd1ff; }
+  .kpi-body { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:8px 8px 10px; }
+  .kpi-body > div { text-align:center; min-width:0; }
+  .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; text-align:center; }
+  .metric-value { color:var(--text1); font-size:14px; font-weight:500; line-height:1.15; white-space:nowrap; text-align:center; }
+
+  .panel { width:min(var(--content-width),100%); margin:0 auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+  .panel-head {
+    background:var(--navy2);
+    color:#c8d8f0;
+    padding:8px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    min-height:38px;
+  }
+  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
+  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+
+  .filters { padding:10px 12px; display:grid; grid-template-columns:1.7fr repeat(4,minmax(120px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .field { min-width:0; }
+  label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
+  input, select {
+    width:100%;
+    height:30px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    background:#fff;
+    color:var(--text1);
+    padding:5px 8px;
+    outline:none;
+  }
+  input:focus, select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
+  .filter-actions { display:flex; gap:6px; align-items:end; justify-content:flex-end; }
+  .tool-btn {
+    height:30px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--text1);
+    border-radius:4px;
+    padding:0 10px;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .tool-btn.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .tool-btn:hover { border-color:#9aa9bd; }
+
+  .table-shell { min-height:526px; }
+  .table-wrap { overflow:auto; max-height:526px; padding:0 0 12px; }
+  table { width:100%; border-collapse:collapse; }
+  th { position:sticky; top:0; z-index:1; background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:7px 8px; text-align:center; white-space:nowrap; }
+  td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:center; color:var(--text1); font-size:11px; white-space:nowrap; }
+  .booking-table { width:100%; margin:0 auto; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  tbody tr { cursor:pointer; }
+  tbody tr:hover td, tbody tr.active td { background:#e4ecfb !important; }
+  .awb { color:var(--blue); font-weight:600; }
+  .customer { max-width:210px; overflow:hidden; text-overflow:ellipsis; }
+  .empty { padding:38px 16px; color:var(--text3); text-align:center; font-size:12px; }
+
+  .modal-backdrop { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.58); align-items:center; justify-content:center; padding:18px; }
+  .modal-card { background:#fff; border-radius:8px; width:min(640px,94vw); max-height:86vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,.35); }
+  .modal-head { background:var(--navy); color:#fff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .modal-kicker { color:#8fb5d7; font-size:9px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; margin-bottom:4px; }
+  .modal-title { color:#fff; font-size:14px; font-weight:400; letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .modal-close { width:28px; height:28px; border:1px solid rgba(122,174,213,.5); background:transparent; color:#fff; border-radius:4px; cursor:pointer; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .modal-close:hover { background:#17345d; }
+  .modal-body { overflow:auto; padding:12px 14px; }
+  .detail-head { padding:0 0 12px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+  .detail-kicker { color:var(--text3); font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-bottom:5px; }
+  .detail-awb { color:var(--text1); font-size:18px; font-weight:600; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .detail-customer { color:var(--text2); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .detail-section { margin-bottom:14px; }
+  .detail-title { color:var(--text2); font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-bottom:7px; }
+  .kv-grid { display:flex; flex-wrap:wrap; align-items:flex-start; gap:8px; }
+  .kv { background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:6px 9px; min-width:96px; width:max-content; max-width:100%; }
+  .booking-grid .kv:nth-child(2) { min-width:220px; max-width:360px; }
+  .financial-grid { display:grid; grid-template-columns:repeat(2,122px); align-items:start; width:max-content; max-width:100%; }
+  .financial-grid .kv { width:122px; min-width:122px; }
+  .kv-label { color:var(--text3); font-size:8px; letter-spacing:.07em; text-transform:uppercase; margin-bottom:3px; }
+  .kv-value { color:var(--text1); font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:330px; }
+  .route-line { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:9px; padding:2px 8px 12px; margin-bottom:12px; border-bottom:1px solid var(--border); }
+  .route-point { min-width:0; }
+  .airport { font-size:24px; font-weight:600; letter-spacing:.08em; text-align:center; }
+  .route-label { color:var(--text3); font-size:8px; letter-spacing:.08em; text-transform:uppercase; text-align:center; margin-top:3px; }
+  .route-center { display:flex; flex-direction:column; align-items:center; gap:7px; min-width:50px; }
+  .route-mid { width:54px; height:1px; background:#9aa9bd; position:relative; }
+  .route-mid::after { content:""; position:absolute; right:-1px; top:-3px; width:0; height:0; border-top:4px solid transparent; border-bottom:4px solid transparent; border-left:6px solid #9aa9bd; }
+  .route-via { color:var(--text2); font-size:9px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+  .segment-table th { position:static; font-size:8px; padding:6px; }
+  .segment-table td { font-size:10px; padding:6px; }
+
+  @media (max-width:1100px) {
+    .header { grid-template-columns:1fr; text-align:center; }
+    .logo-link { margin:auto; align-items:center; }
+    .header-right { align-items:center; }
+    .range { text-align:center; }
+    .filters { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .filter-actions { justify-content:flex-start; }
+    .summary-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  }
+  @media (max-width:680px) {
+    .app { padding:6px; }
+    .filters { grid-template-columns:1fr; }
+    .summary-grid { grid-template-columns:1fr 1fr; }
+    .metric-value { font-size:13px; }
+    .table-wrap { max-height:420px; }
+    th, td { padding:7px 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <a class="logo-link" href="#">
+      <span class="df-mark">DF</span>
+      <span class="logo-word">
+        <span class="logo-main">DATAFORCE</span>
+        <span class="logo-sub">GSA Force</span>
+      </span>
+    </a>
+    <div class="hdr-mid">
+      <div class="header-title">BOOKING DETAILS</div>
+    </div>
+    <div class="header-right">
+      <div class="header-actions">
+        <span id="userLabel">cv@gsaforce.com</span>
+        <span class="status"><span class="dot"></span><span id="statusText">Ready</span></span>
+        <button class="logout">Sign out</button>
+      </div>
+      <div class="range">
+        <span class="range-main" id="rangeTitle">BOOKED THIS WEEK</span>
+        <span id="rangeDates">Jun 15, 2026 - Jun 21, 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="summary-grid" id="summaryGrid"></section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Bookings</div>
+      <div class="panel-note" id="resultNote">0 rows</div>
+    </div>
+    <div class="filters">
+      <div class="field">
+        <label for="searchInput">Search</label>
+        <input id="searchInput" type="search" placeholder="AWB, customer, origin, destination">
+      </div>
+      <div class="field">
+        <label for="businessFilter">Business</label>
+        <select id="businessFilter">
+          <option value="ALL">All</option>
+          <option value="MA-LOCAL">MA-LOCAL</option>
+          <option value="CX-MEX">CX-MEX</option>
+          <option value="ET-USA">ET-USA</option>
+          <option value="AV-CHILE">AV-CHILE</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="originFilter">Origin</label>
+        <select id="originFilter">
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dateFrom">Booked From</label>
+        <input id="dateFrom" type="date" value="2026-06-15">
+      </div>
+      <div class="field">
+        <label for="dateTo">Booked To</label>
+        <input id="dateTo" type="date" value="2026-06-21">
+      </div>
+      <div class="filter-actions">
+        <button class="tool-btn" id="resetBtn" type="button">Reset</button>
+        <button class="tool-btn primary" id="exportBtn" type="button">Export</button>
+      </div>
+    </div>
+    <div class="table-shell">
+      <div class="table-wrap">
+        <table class="booking-table">
+          <thead>
+            <tr>
+              <th>Booked</th>
+              <th>AWB</th>
+              <th>Business</th>
+              <th>Customer</th>
+              <th>Ori</th>
+              <th>Des</th>
+              <th>Via</th>
+              <th>CHW</th>
+              <th>Rev</th>
+              <th>P/KG</th>
+            </tr>
+          </thead>
+          <tbody id="bookingBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="bookingModal" onclick="if (event.target === this) closeBookingModal()">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div>
+        <div class="modal-kicker">Booking detail</div>
+        <div class="modal-title" id="bookingModalTitle">AWB Detail</div>
+      </div>
+      <button class="modal-close" type="button" onclick="closeBookingModal()" aria-label="Close booking detail">x</button>
+    </div>
+    <div class="modal-body" id="bookingModalBody"></div>
+  </div>
+</div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-production.up.railway.app";
+const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+
+let bookingRows = [];
+let currentData = null;
+let selectedRow = null;
+let requestSeq = 0;
+let searchTimer = null;
+let businessOptionsLoaded = false;
+let knownOrigins = new Set();
+
+const els = {
+  summaryGrid: document.getElementById("summaryGrid"),
+  body: document.getElementById("bookingBody"),
+  modal: document.getElementById("bookingModal"),
+  modalTitle: document.getElementById("bookingModalTitle"),
+  modalBody: document.getElementById("bookingModalBody"),
+  resultNote: document.getElementById("resultNote"),
+  search: document.getElementById("searchInput"),
+  business: document.getElementById("businessFilter"),
+  origin: document.getElementById("originFilter"),
+  from: document.getElementById("dateFrom"),
+  to: document.getElementById("dateTo"),
+  rangeTitle: document.getElementById("rangeTitle"),
+  rangeDates: document.getElementById("rangeDates")
+};
+
+function user() {
+  return getDataforceUser() || {};
+}
+
+function signOut() {
+  sessionStorage.removeItem("df_user");
+  sessionStorage.removeItem("df_permissions");
+  window.location.href = "https://dataforce.gsaforce.com/";
+}
+
+function fmt(n, digits = 0) {
+  return Number(n || 0).toLocaleString(undefined, {maximumFractionDigits:digits, minimumFractionDigits:digits});
+}
+
+function money(n) {
+  const value = Number(n || 0);
+  if (Math.abs(value) >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1000) return `${Math.round(value / 1000)}K`;
+  return fmt(value);
+}
+
+function fullMoney(n) {
+  return fmt(Number(n || 0));
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[ch]));
+}
+
+function dateLabel(value) {
+  if (!value) return "-";
+  const d = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"});
+}
+
+function pkg(value) {
+  const n = Number(value || 0);
+  return n ? n.toFixed(2) : "-";
+}
+
+function kpiCard(metric) {
+  const logos = { TOTAL:"DF", "MA-LOCAL":"MA", "CX-MEX":"CX", "ET-USA":"ET", "AV-CHILE":"AV" };
+  const label = metric.label || metric.key || "-";
+  const revenue = metric.revenue ?? metric.rev ?? 0;
+  const pKg = metric.profit_per_kg ?? metric.pkg;
+  return `
+    <div class="kpi-card ${metric.key === "TOTAL" ? "total" : ""}">
+      <div class="kpi-head">
+        <div class="kpi-title">${esc(label)}</div>
+        <div class="biz-logo">${esc(logos[metric.key] || label.slice(0, 2))}</div>
+      </div>
+      <div class="kpi-body">
+        <div><div class="metric-label"># Bkgs</div><div class="metric-value">${fmt(metric.bookings)}</div></div>
+        <div><div class="metric-label">Tons</div><div class="metric-value">${fmt(metric.tons, 0)}</div></div>
+        <div><div class="metric-label">Rev</div><div class="metric-value">${money(revenue)}</div></div>
+        <div><div class="metric-label">P/KG</div><div class="metric-value">${pkg(pKg)}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function setStatus(text, ready) {
+  document.getElementById("statusText").textContent = text;
+  document.querySelector(".dot").style.background = ready ? "#22c55e" : "#c97a06";
+}
+
+function isoDate(d) {
+  const copy = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return copy.toISOString().slice(0, 10);
+}
+
+function currentWeekDefaults() {
+  const today = new Date();
+  const monday = new Date(today);
+  const day = (today.getDay() + 6) % 7;
+  monday.setDate(today.getDate() - day);
+  return { from: isoDate(monday), to: isoDate(today) };
+}
+
+function setDefaultDates() {
+  const defaults = currentWeekDefaults();
+  els.from.value = defaults.from;
+  els.to.value = defaults.to;
+}
+
+function populateBusinessSelect(options) {
+  if (businessOptionsLoaded || !Array.isArray(options) || !options.length) return;
+  const current = els.business.value || "ALL";
+  els.business.innerHTML = options.map(opt => `<option value="${esc(opt.key)}">${esc(opt.label)}</option>`).join("");
+  els.business.value = options.some(opt => opt.key === current) ? current : "ALL";
+  businessOptionsLoaded = true;
+}
+
+function populateOriginFilter(rows) {
+  rows.forEach(row => {
+    if (row.ori) knownOrigins.add(String(row.ori));
+  });
+  const current = els.origin.value || "ALL";
+  const origins = [...knownOrigins].sort();
+  els.origin.innerHTML = '<option value="ALL">All</option>' + origins.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join("");
+  els.origin.value = origins.includes(current) ? current : "ALL";
+}
+
+function renderSummary() {
+  els.summaryGrid.innerHTML = ((currentData && currentData.fixedCards) || []).map(kpiCard).join("");
+}
+
+function renderTable() {
+  els.resultNote.textContent = `${bookingRows.length} rows`;
+  if (!bookingRows.length) {
+    els.body.innerHTML = '<tr><td colspan="10" class="empty">No bookings match this filter.</td></tr>';
+    return;
+  }
+  els.body.innerHTML = bookingRows.map((row, index) => `
+    <tr data-index="${index}">
+      <td>${dateLabel(row.booked_date)}</td>
+      <td class="awb">${esc(row.awb)}</td>
+      <td>${esc(row.business)}</td>
+      <td class="customer" title="${esc(row.customer)}">${esc(row.customer)}</td>
+      <td>${esc(row.ori)}</td>
+      <td>${esc(row.des)}</td>
+      <td>${esc(row.via)}</td>
+      <td>${fmt(row.chw)}</td>
+      <td>$${fullMoney(row.rev)}</td>
+      <td>${pkg(row.pkg)}</td>
+    </tr>
+  `).join("");
+  els.body.querySelectorAll("tr[data-index]").forEach(tr => {
+    tr.addEventListener("click", () => {
+      openBookingModal(bookingRows[Number(tr.dataset.index)]);
+    });
+  });
+}
+
+function render() {
+  renderSummary();
+  renderTable();
+}
+
+async function loadBookings() {
+  const u = user();
+  const seq = ++requestSeq;
+  setStatus("Loading", false);
+  els.body.innerHTML = '<tr><td colspan="10" class="empty">Loading bookings...</td></tr>';
+
+  const params = new URLSearchParams({
+    email: u.email || "",
+    biz: els.business.value || "ALL",
+    date_from: els.from.value || "",
+    date_to: els.to.value || "",
+    search: els.search.value.trim(),
+    origin: els.origin.value || "ALL",
+    limit: "500"
+  });
+
+  try {
+    const response = await fetch(`${API_BASE}/api/booking_details?${params.toString()}`, {
+      headers: { "x-api-key": API_KEY }
+    });
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const body = await response.json();
+        detail = body.detail ? `: ${body.detail}` : "";
+      } catch (_) {}
+      throw new Error(`API error ${response.status}${detail}`);
+    }
+    const data = await response.json();
+    if (seq !== requestSeq) return;
+    currentData = data;
+    bookingRows = data.rows || [];
+    populateBusinessSelect(data.businessOptions || []);
+    populateOriginFilter(bookingRows);
+    els.rangeTitle.textContent = "BOOKED THIS WEEK";
+    els.rangeDates.textContent = `${dateLabel(data.date_from)} - ${dateLabel(data.date_to)}`;
+    render();
+    setStatus("Ready", true);
+  } catch (e) {
+    if (seq !== requestSeq) return;
+    console.error("Failed to load Booking Details:", e);
+    setStatus("Error", false);
+    els.body.innerHTML = `<tr><td colspan="10" class="empty">Could not load bookings. ${esc(e.message || "")}</td></tr>`;
+  }
+}
+
+function debouncedLoad() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadBookings, 250);
+}
+
+function openBookingModal(row) {
+  selectedRow = row;
+  renderDetail(row, null);
+  els.modal.style.display = "flex";
+  loadSegments(row);
+}
+
+function closeBookingModal() {
+  els.modal.style.display = "none";
+}
+
+async function loadSegments(row) {
+  if (!row) return;
+  const u = user();
+  const params = new URLSearchParams({
+    email: u.email || "",
+    pfx: row.pfx || "",
+    awb: row.awb_no || "",
+    biz: els.business.value || "ALL"
+  });
+  try {
+    const response = await fetch(`${API_BASE}/api/booking_details_segments?${params.toString()}`, {
+      headers: { "x-api-key": API_KEY }
+    });
+    if (!response.ok) throw new Error(`API error ${response.status}`);
+    const data = await response.json();
+    renderDetail(row, data.rows || []);
+  } catch (e) {
+    console.error("Failed to load segments:", e);
+    renderDetail(row, [], "Could not load segment detail.");
+  }
+}
+
+function renderDetail(row, segments, segmentError = "") {
+  if (!row) {
+    els.modalTitle.textContent = "AWB Detail";
+    els.modalBody.innerHTML = '<div class="empty">Select a booking.</div>';
+    return;
+  }
+  const profit = Number(row.profit || 0);
+  const salesRateKg = row.sales_per_kg ?? (row.chw ? row.rev / row.chw : 0);
+  els.modalTitle.textContent = `${row.awb} - ${row.customer}`;
+  const segmentRows = Array.isArray(segments) ? segments.map(seg => `
+    <tr>
+      <td>${esc(seg.carrier)}</td>
+      <td>${esc(seg.flight)}</td>
+      <td>${dateLabel(seg.flight_date)}</td>
+      <td>${esc(seg.ori)}</td>
+      <td>${esc(seg.des)}</td>
+      <td>${esc(seg.status)}</td>
+      <td>$${fullMoney(seg.cost)}</td>
+      <td>${pkg(seg.cost_kg)}</td>
+    </tr>
+  `).join("") : "";
+  const segmentBody = segmentError
+    ? `<tr><td colspan="8" class="empty">${esc(segmentError)}</td></tr>`
+    : segments === null
+      ? '<tr><td colspan="8" class="empty">Loading segments...</td></tr>'
+      : (segmentRows || '<tr><td colspan="8" class="empty">No segments found.</td></tr>');
+  els.modalBody.innerHTML = `
+    <div class="detail-head">
+      <div class="detail-kicker">Booking summary</div>
+      <div class="detail-awb">${esc(row.awb)}</div>
+    </div>
+    <div class="detail-body">
+      <div class="route-line">
+        <div class="route-point">
+          <div class="airport">${esc(row.ori)}</div>
+          <div class="route-label">Origin</div>
+        </div>
+        <div class="route-center">
+          <div class="route-mid"></div>
+          <div class="route-via">via ${esc(row.via || "-")}</div>
+        </div>
+        <div class="route-point">
+          <div class="airport">${esc(row.des)}</div>
+          <div class="route-label">Destination</div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-title">Booking</div>
+        <div class="kv-grid booking-grid">
+          <div class="kv"><div class="kv-label">Business</div><div class="kv-value">${esc(row.business)}</div></div>
+          <div class="kv"><div class="kv-label">Customer</div><div class="kv-value">${esc(row.customer)}</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-title">Cargo</div>
+        <div class="kv-grid cargo-grid">
+          <div class="kv"><div class="kv-label">Commodity</div><div class="kv-value">${esc(row.commodity)}</div></div>
+          <div class="kv"><div class="kv-label">Product</div><div class="kv-value">${esc(row.product)}</div></div>
+          <div class="kv"><div class="kv-label">CHW</div><div class="kv-value">${fmt(row.chw)} kg</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-title">Financials</div>
+        <div class="kv-grid financial-grid">
+          <div class="kv"><div class="kv-label">Sales/KG</div><div class="kv-value">$${pkg(salesRateKg)}</div></div>
+          <div class="kv"><div class="kv-label">Profit/KG</div><div class="kv-value">$${pkg(row.pkg)}</div></div>
+          <div class="kv"><div class="kv-label">Sales Revenue</div><div class="kv-value">$${fullMoney(row.rev)}</div></div>
+          <div class="kv"><div class="kv-label">Profit</div><div class="kv-value">$${fullMoney(profit)}</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-title">Segments</div>
+        <table class="segment-table">
+          <thead><tr><th>Carrier</th><th>Flight</th><th>Flight Date</th><th>Ori</th><th>Des</th><th>Status</th><th>Cost</th><th>Cost/KG</th></tr></thead>
+          <tbody>${segmentBody}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeBookingModal();
+});
+
+els.search.addEventListener("input", debouncedLoad);
+[els.business, els.origin, els.from, els.to].forEach(el => el.addEventListener("input", loadBookings));
+document.getElementById("resetBtn").addEventListener("click", () => {
+  els.search.value = "";
+  els.business.value = "ALL";
+  els.origin.value = "ALL";
+  setDefaultDates();
+  loadBookings();
+});
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const csv = ["Booked,AWB,Business,Customer,Origin,Destination,Via,CHW,Revenue,ProfitPerKG"]
+    .concat(bookingRows.map(r => [r.booked_date, r.awb, r.business, r.customer, r.ori, r.des, r.via, r.chw, r.rev, r.pkg].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")))
+    .join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "booking-details.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function initBookingDetails() {
+  const u = user();
+  document.getElementById("userLabel").textContent = u.name || u.email || "";
+  setDefaultDates();
+  loadBookings();
+}
+
+checkModuleAccess("booking_details", initBookingDetails);
+</script>
+</body>
+</html>
