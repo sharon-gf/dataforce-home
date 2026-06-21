@@ -15,10 +15,13 @@ body {
 .df-shell-header {
   box-sizing: border-box;
   display: block !important;
-  width: calc(100% - 12px);
+  position: relative;
+  left: 50%;
+  width: calc(100vw - 12px) !important;
   height: auto !important;
-  margin: 6px;
+  margin: 6px 0;
   padding: 9px 14px 8px;
+  transform: translateX(-50%);
   border-radius: 6px;
   background: var(--df-navy);
   color: #fff;
@@ -26,9 +29,14 @@ body {
   box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 8px 24px rgba(13,31,60,0.12);
 }
 
+.dash > .df-shell-header,
+.app > .df-shell-header {
+  margin-top: -2px;
+}
+
 .df-shell-top {
   display: grid;
-  grid-template-columns: minmax(190px, 280px) minmax(160px, 1fr) minmax(230px, 320px);
+  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
   align-items: center;
   gap: 12px;
   min-height: 34px;
@@ -45,9 +53,9 @@ body {
 
 .df-shell-logo img {
   display: block;
-  height: 28px;
+  height: 30px;
   width: auto;
-  max-width: 210px;
+  max-width: 220px;
   object-fit: contain;
 }
 
@@ -319,7 +327,13 @@ body {
   display: none !important;
 }
 
-@media (max-width: 860px) {
+@media (min-width: 701px) {
+  .df-shell-header {
+    height: 85px !important;
+  }
+}
+
+@media (max-width: 700px) {
   .df-shell-top {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
@@ -351,7 +365,7 @@ body {
   }
 
   .df-shell-logo img {
-    max-width: 150px;
+    max-width: 145px;
   }
 
   .df-shell-word-main {

@@ -3,6 +3,8 @@
 
   const HOME_URL = "https://dataforce.gsaforce.com/";
   const DEFAULT_API_BASE = "https://dataforce-api-production.up.railway.app";
+  const SCRIPT_URL = document.currentScript && document.currentScript.src ? document.currentScript.src : "";
+  const DEFAULT_LOGO_URL = SCRIPT_URL ? new URL("dataforce-logo.png", SCRIPT_URL).href : "dataforce-logo.png";
 
   function onReady(fn) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
@@ -65,22 +67,18 @@
     link.href = HOME_URL;
     link.setAttribute("aria-label", "Back to DATAFORCE home");
 
-    const img = first([
-      "img[alt='DATAFORCE']",
-      "img.logo-img",
-      "img.logo-svg",
-      ".logo img",
-      ".logo-area img"
-    ], oldHeader);
+    const img = document.createElement("img");
+    img.src = cfg().logoSrc || DEFAULT_LOGO_URL;
+    img.alt = "DATAFORCE";
+    img.onerror = function () {
+      img.remove();
+      if (!link.querySelector(".df-shell-logo-fallback")) link.appendChild(makeLogoFallback());
+    };
+    link.appendChild(img);
+    return link;
+  }
 
-    if (img) {
-      const clone = img.cloneNode(true);
-      clone.removeAttribute("style");
-      clone.alt = "DATAFORCE";
-      link.appendChild(clone);
-      return link;
-    }
-
+  function makeLogoFallback() {
     const fallback = document.createElement("span");
     fallback.className = "df-shell-logo-fallback";
     fallback.innerHTML = [
@@ -88,8 +86,7 @@
       "<span><span class=\"df-shell-word-main\">DATAFORCE</span>",
       "<span class=\"df-shell-word-sub\">GSA FORCE</span></span>"
     ].join("");
-    link.appendChild(fallback);
-    return link;
+    return fallback;
   }
 
   function makeUser(oldHeader) {
