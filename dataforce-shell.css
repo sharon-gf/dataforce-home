@@ -8,8 +8,33 @@
   --df-loading: #c97a06;
 }
 
+html,
 body {
-  padding-bottom: 48px !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+body {
+  padding-bottom: 64px !important;
+}
+
+.screen {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow: visible !important;
+}
+
+.screen > main {
+  min-height: auto !important;
+  overflow: visible !important;
+  padding-bottom: 72px !important;
+}
+
+.dash,
+.app {
+  padding-bottom: 72px !important;
 }
 
 .df-shell-header {
