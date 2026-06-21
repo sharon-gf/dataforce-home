@@ -321,23 +321,59 @@ body {
 
 @media (max-width: 860px) {
   .df-shell-top {
-    grid-template-columns: 1fr;
-    gap: 7px;
-    text-align: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "logo user"
+      "title title";
+    gap: 7px 10px;
+    text-align: left;
   }
 
-  .df-shell-logo,
+  .df-shell-logo {
+    grid-area: logo;
+    justify-content: flex-start;
+  }
+
   .df-shell-user {
-    justify-content: center;
+    grid-area: user;
+    justify-content: flex-end;
   }
 
   .df-shell-title {
-    order: 2;
+    grid-area: title;
+    text-align: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .df-shell-header {
+    padding: 9px 10px 8px;
+  }
+
+  .df-shell-logo img {
+    max-width: 150px;
+  }
+
+  .df-shell-word-main {
+    font-size: 17px;
+    letter-spacing: 3px;
+  }
+
+  .df-shell-word-sub {
+    letter-spacing: 3px;
   }
 
   .df-shell-user {
-    order: 3;
-    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .df-shell-user-name {
+    max-width: 70px;
+  }
+
+  .df-shell-status {
+    font-size: 10px;
   }
 
   .df-shell-sub {
