@@ -1,0 +1,352 @@
+:root {
+  --df-navy: #0d1f3c;
+  --df-navy-2: #132b4d;
+  --df-accent: #8fb5d7;
+  --df-text-soft: #b8ccec;
+  --df-border: rgba(143, 181, 215, 0.32);
+  --df-ready: #22c55e;
+  --df-loading: #c97a06;
+}
+
+body {
+  padding-bottom: 48px !important;
+}
+
+.df-shell-header {
+  box-sizing: border-box;
+  display: block !important;
+  width: calc(100% - 12px);
+  height: auto !important;
+  margin: 6px;
+  padding: 9px 14px 8px;
+  border-radius: 6px;
+  background: var(--df-navy);
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 8px 24px rgba(13,31,60,0.12);
+}
+
+.df-shell-top {
+  display: grid;
+  grid-template-columns: minmax(190px, 280px) minmax(160px, 1fr) minmax(230px, 320px);
+  align-items: center;
+  gap: 12px;
+  min-height: 34px;
+}
+
+.df-shell-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #fff;
+  text-decoration: none;
+}
+
+.df-shell-logo img {
+  display: block;
+  height: 28px;
+  width: auto;
+  max-width: 210px;
+  object-fit: contain;
+}
+
+.df-shell-logo-fallback {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.df-shell-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #4a8eff;
+  border-radius: 4px;
+  color: #9cc6f4;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.df-shell-word-main {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  line-height: 1;
+}
+
+.df-shell-word-sub {
+  display: block;
+  margin-top: 4px;
+  color: #8fb5d7;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  line-height: 1;
+}
+
+.df-shell-title {
+  margin: 0;
+  overflow: hidden;
+  color: var(--df-accent);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.df-shell-user {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.df-shell-user-name {
+  overflow: hidden;
+  max-width: 150px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.df-shell-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--df-text-soft);
+  font-size: 10px;
+}
+
+.df-shell-dot,
+.df-shell-status .dot,
+.df-shell-status .conn-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 999px;
+  background: var(--df-loading);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.df-shell-dot.ready,
+.df-shell-status .dot.ready,
+.df-shell-status .conn-dot.live {
+  background: var(--df-ready);
+}
+
+.df-shell-signout {
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid #45658d;
+  border-radius: 4px;
+  background: #102847;
+  color: #fff;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.df-shell-signout:hover {
+  background: #183764;
+}
+
+.df-shell-sub {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, auto);
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+  margin-top: 4px;
+}
+
+.df-shell-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.df-shell-controls:empty {
+  min-height: 1px;
+}
+
+.df-shell-controls .periods,
+.df-shell-controls .filters,
+.df-shell-controls .header-controls,
+.df-shell-controls .date-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 !important;
+}
+
+.df-shell-controls label {
+  color: var(--df-text-soft) !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.7px !important;
+  text-transform: uppercase !important;
+}
+
+.df-shell-controls select,
+.df-shell-controls button {
+  box-sizing: border-box;
+  min-height: 24px;
+  border: 1px solid #45658d !important;
+  border-radius: 4px !important;
+  background: #102847 !important;
+  color: #fff !important;
+  font-family: inherit !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+.df-shell-controls select {
+  min-width: 150px;
+  padding: 0 24px 0 8px !important;
+}
+
+.df-shell-controls button {
+  padding: 0 12px !important;
+  cursor: pointer;
+}
+
+.df-shell-controls button.active,
+.df-shell-controls .period-btn.active {
+  border-color: #4a8eff !important;
+  background: #1a56db !important;
+  color: #fff !important;
+}
+
+.df-shell-controls button:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.45 !important;
+}
+
+.df-shell-meta {
+  justify-self: end;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--df-text-soft);
+  font-size: 10px;
+  line-height: 1.1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.df-shell-meta:empty {
+  display: none;
+}
+
+.df-shell-meta .range,
+.df-shell-meta .week-badge {
+  display: flex !important;
+  align-items: flex-end !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  margin: 0 !important;
+  color: var(--df-text-soft) !important;
+  text-align: right !important;
+}
+
+.df-shell-meta .range-main,
+.df-shell-meta .week-num,
+.df-shell-meta .wk,
+.df-shell-meta .next-flight-date {
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.7px !important;
+  text-transform: uppercase !important;
+}
+
+.df-shell-meta .week-dates,
+.df-shell-meta .dt,
+.df-shell-meta #rangeDates {
+  color: var(--df-text-soft) !important;
+  font-size: 10px !important;
+}
+
+.df-shell-footer {
+  position: fixed;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--df-navy);
+  color: var(--df-text-soft);
+  box-shadow: 0 -8px 24px rgba(13,31,60,0.15);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.df-shell-footer strong {
+  margin-left: 4px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.df-shell-footer-note {
+  margin-left: 8px;
+  color: #8fb5d7;
+}
+
+.df-shell-hidden {
+  display: none !important;
+}
+
+@media (max-width: 860px) {
+  .df-shell-top {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    text-align: center;
+  }
+
+  .df-shell-logo,
+  .df-shell-user {
+    justify-content: center;
+  }
+
+  .df-shell-title {
+    order: 2;
+  }
+
+  .df-shell-user {
+    order: 3;
+    flex-wrap: wrap;
+  }
+
+  .df-shell-sub {
+    grid-template-columns: 1fr;
+  }
+
+  .df-shell-meta {
+    justify-self: center;
+    align-items: center;
+    text-align: center;
+  }
+}
