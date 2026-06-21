@@ -227,6 +227,10 @@ main {
   gap:6px;
   flex-shrink:0;
 }
+.bottom-table-body {
+  max-height:196px;
+  overflow-y:auto;
+}
 .sec-lbl { font-size:8.5px; font-weight:400; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); padding:0 2px; flex-shrink:0; margin-bottom:5px; }
 
 /* ── DATA TABLES (all 4 share this) ── */
@@ -522,7 +526,7 @@ main {
 
     <div class="card">
       <div class="card-hdr"><span class="card-title">By GSA</span></div>
-      <div class="card-body np" style="max-height:280px;overflow-y:auto;">
+      <div class="card-body np bottom-table-body">
         <table class="dtbl"><thead><tr><th>GSA</th><th>Tons</th><th>#Bk</th><th>Rev</th><th>$/kg</th><th>P/kg</th></tr></thead>
         <tbody id="gsaBody"></tbody></table>
       </div>
@@ -530,7 +534,7 @@ main {
 
     <div class="card">
       <div class="card-hdr"><span class="card-title">By Sales Person</span></div>
-      <div class="card-body np" style="max-height:280px;overflow-y:auto;">
+      <div class="card-body np bottom-table-body">
         <table class="dtbl"><thead><tr><th>Airline</th><th>Tons</th><th>#Bk</th><th>Rev</th><th>$/kg</th><th>P/kg</th></tr></thead>
         <tbody id="salesBody"></tbody></table>
       </div>
@@ -538,7 +542,7 @@ main {
 
     <div class="card">
       <div class="card-hdr"><span class="card-title">By Origin Airport</span></div>
-      <div class="card-body np" style="max-height:280px;overflow-y:auto;">
+      <div class="card-body np bottom-table-body">
         <table class="dtbl"><thead><tr><th>Origin</th><th>Tons</th><th>#Bk</th><th>Rev</th><th>$/kg</th><th>P/kg</th></tr></thead>
         <tbody id="oriBody"></tbody></table>
       </div>
