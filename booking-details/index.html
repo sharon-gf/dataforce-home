@@ -29,6 +29,7 @@
   * { box-sizing:border-box; margin:0; padding:0; }
   html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
   body { overflow-x:hidden; }
+  body.filter-drawer-open { overflow:hidden; }
   button, input, select { font:inherit; }
   .app { min-height:100vh; padding:8px; }
 
@@ -81,6 +82,27 @@
   .kpi-body > div { text-align:center; min-width:0; }
   .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; text-align:center; }
   .metric-value { color:var(--text1); font-size:14px; font-weight:500; line-height:1.15; white-space:nowrap; text-align:center; }
+  .mobile-kpi-toggle {
+    display:none;
+    width:min(var(--content-width),100%);
+    margin:0 auto 6px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    background:var(--surface);
+    color:var(--text1);
+    padding:9px 12px;
+    align-items:center;
+    justify-content:space-between;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+  .mobile-kpi-toggle span:last-child {
+    color:var(--blue);
+    font-size:9px;
+  }
 
   .panel { width:min(var(--content-width),100%); margin:0 auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
   .panel-head {
@@ -95,8 +117,24 @@
   }
   .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
   .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+  .mobile-filter-toggle {
+    display:none;
+    height:28px;
+    border:1px solid rgba(200,216,240,.65);
+    background:transparent;
+    color:#fff;
+    border-radius:4px;
+    padding:0 10px;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+  }
 
   .filters { padding:10px 12px; display:grid; grid-template-columns:1.7fr repeat(4,minmax(120px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .filter-backdrop { display:none; }
+  .mobile-filter-head { display:none; }
   .field { min-width:0; }
   label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
   input, select {
@@ -184,9 +222,70 @@
   }
   @media (max-width:680px) {
     .app { padding:6px; }
-    .filters { grid-template-columns:1fr; }
+    .mobile-kpi-toggle { display:flex; }
+    .summary-grid.mobile-collapsed { display:none; }
     .summary-grid { grid-template-columns:1fr 1fr; }
     .metric-value { font-size:13px; }
+    .panel { overflow:visible; }
+    .panel-head { border-radius:6px 6px 0 0; }
+    .mobile-filter-toggle { display:inline-flex; align-items:center; justify-content:center; }
+    .panel-head .panel-note { margin-left:auto; }
+    .filter-backdrop.is-open {
+      display:block;
+      position:fixed;
+      inset:0;
+      z-index:1090;
+      background:rgba(13,31,60,.45);
+    }
+    .mobile-filter-head {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding-bottom:4px;
+      border-bottom:1px solid var(--border);
+    }
+    .mobile-filter-title {
+      color:var(--text1);
+      font-size:12px;
+      font-weight:600;
+      letter-spacing:.09em;
+      text-transform:uppercase;
+    }
+    .mobile-filter-close {
+      width:30px;
+      height:30px;
+      border:1px solid var(--border);
+      border-radius:4px;
+      background:#fff;
+      color:var(--text1);
+      cursor:pointer;
+      font-size:16px;
+      line-height:1;
+    }
+    .filters {
+      position:fixed;
+      top:0;
+      right:0;
+      z-index:1100;
+      width:min(88vw,360px);
+      height:100vh;
+      height:100dvh;
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      gap:10px;
+      padding:14px;
+      border-left:1px solid var(--border);
+      border-bottom:0;
+      box-shadow:-18px 0 45px rgba(13,31,60,.28);
+      overflow-y:auto;
+      transform:translateX(105%);
+      transition:transform .2s ease;
+    }
+    .filters.is-open { transform:translateX(0); }
+    .filter-actions { justify-content:stretch; }
+    .filter-actions .tool-btn { flex:1; }
     .table-wrap { max-height:420px; }
     th, td { padding:7px 6px; }
   }
@@ -222,14 +321,24 @@
     </div>
   </header>
 
-  <section class="summary-grid" id="summaryGrid"></section>
+  <button class="mobile-kpi-toggle" id="kpiToggle" type="button" aria-expanded="false" aria-controls="summaryGrid">
+    <span>This Week KPIs</span>
+    <span id="kpiToggleText">Show</span>
+  </button>
+  <section class="summary-grid mobile-collapsed" id="summaryGrid"></section>
 
   <section class="panel">
     <div class="panel-head">
       <div class="panel-title">Bookings</div>
       <div class="panel-note" id="resultNote">0 rows</div>
+      <button class="mobile-filter-toggle" id="filterToggle" type="button" aria-expanded="false" aria-controls="bookingFilters">Filters</button>
     </div>
-    <div class="filters">
+    <div class="filter-backdrop" id="filterBackdrop"></div>
+    <div class="filters" id="bookingFilters">
+      <div class="mobile-filter-head">
+        <span class="mobile-filter-title">Filters</span>
+        <button class="mobile-filter-close" id="filterClose" type="button" aria-label="Close filters">x</button>
+      </div>
       <div class="field">
         <label for="searchInput">Search</label>
         <input id="searchInput" type="search" placeholder="AWB, customer, origin, destination">
@@ -326,8 +435,16 @@ const els = {
   from: document.getElementById("dateFrom"),
   to: document.getElementById("dateTo"),
   rangeTitle: document.getElementById("rangeTitle"),
-  rangeDates: document.getElementById("rangeDates")
+  rangeDates: document.getElementById("rangeDates"),
+  kpiToggle: document.getElementById("kpiToggle"),
+  kpiToggleText: document.getElementById("kpiToggleText"),
+  filters: document.getElementById("bookingFilters"),
+  filterToggle: document.getElementById("filterToggle"),
+  filterClose: document.getElementById("filterClose"),
+  filterBackdrop: document.getElementById("filterBackdrop")
 };
+
+const MOBILE_QUERY = window.matchMedia("(max-width:680px)");
 
 function user() {
   return getDataforceUser() || {};
@@ -396,6 +513,34 @@ function kpiCard(metric) {
 function setStatus(text, ready) {
   document.getElementById("statusText").textContent = text;
   document.querySelector(".dot").style.background = ready ? "#22c55e" : "#c97a06";
+}
+
+function setKpisCollapsed(collapsed) {
+  els.summaryGrid.classList.toggle("mobile-collapsed", collapsed);
+  els.kpiToggle.setAttribute("aria-expanded", String(!collapsed));
+  els.kpiToggleText.textContent = collapsed ? "Show" : "Hide";
+}
+
+function openFilterDrawer() {
+  if (!MOBILE_QUERY.matches) return;
+  els.filters.classList.add("is-open");
+  els.filterBackdrop.classList.add("is-open");
+  els.filterToggle.setAttribute("aria-expanded", "true");
+  document.body.classList.add("filter-drawer-open");
+}
+
+function closeFilterDrawer() {
+  els.filters.classList.remove("is-open");
+  els.filterBackdrop.classList.remove("is-open");
+  els.filterToggle.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("filter-drawer-open");
+}
+
+function syncMobileControls() {
+  if (!MOBILE_QUERY.matches) {
+    setKpisCollapsed(false);
+    closeFilterDrawer();
+  }
 }
 
 function isoDate(d) {
@@ -637,8 +782,27 @@ function renderDetail(row, segments, segmentError = "") {
 }
 
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape") closeBookingModal();
+  if (event.key === "Escape") {
+    closeBookingModal();
+    closeFilterDrawer();
+  }
 });
+
+els.kpiToggle.addEventListener("click", () => {
+  setKpisCollapsed(!els.summaryGrid.classList.contains("mobile-collapsed"));
+});
+els.filterToggle.addEventListener("click", () => {
+  if (els.filters.classList.contains("is-open")) closeFilterDrawer();
+  else openFilterDrawer();
+});
+els.filterClose.addEventListener("click", closeFilterDrawer);
+els.filterBackdrop.addEventListener("click", closeFilterDrawer);
+if (MOBILE_QUERY.addEventListener) {
+  MOBILE_QUERY.addEventListener("change", syncMobileControls);
+} else {
+  MOBILE_QUERY.addListener(syncMobileControls);
+}
+syncMobileControls();
 
 els.search.addEventListener("input", debouncedLoad);
 [els.business, els.origin, els.from, els.to].forEach(el => el.addEventListener("input", loadBookings));
@@ -648,6 +812,7 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   els.origin.value = "ALL";
   setDefaultDates();
   loadBookings();
+  closeFilterDrawer();
 });
 document.getElementById("exportBtn").addEventListener("click", () => {
   const csv = ["Booked,AWB,Business,Customer,Origin,Destination,Via,CHW,Revenue,ProfitPerKG"]
