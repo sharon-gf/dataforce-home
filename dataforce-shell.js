@@ -243,7 +243,6 @@
 
   async function loadFooterStatus() {
     const value = document.getElementById("dfShellRefreshValue");
-    const note = document.getElementById("dfShellRefreshNote");
     const oldLabel = document.getElementById("lastUpdateLabel");
     if (!value) return;
 
@@ -257,7 +256,6 @@
       const formatted = formatRefresh(data.last_upload_at);
       value.textContent = formatted;
       if (oldLabel) oldLabel.textContent = formatted;
-      if (note) note.textContent = data.note ? `· ${data.note}` : "";
     } catch (e) {
       value.textContent = "Unable to load";
     }
@@ -268,7 +266,7 @@
     const footer = document.createElement("footer");
     footer.id = "dfShellFooter";
     footer.className = "df-shell-footer";
-    footer.innerHTML = "Last data update <strong id=\"dfShellRefreshValue\">Loading...</strong><span class=\"df-shell-footer-note\" id=\"dfShellRefreshNote\"></span>";
+    footer.innerHTML = "Last data update <strong id=\"dfShellRefreshValue\">Loading...</strong>";
     document.body.appendChild(footer);
   }
 
