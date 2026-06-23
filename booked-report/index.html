@@ -454,13 +454,13 @@ checkModuleAccess('booked', loadSummary);
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead>
           <tr style="background:#1a3360;color:#fff;position:sticky;top:0;">
-            <th style="padding:8px 10px;text-align:left;">PFX</th>
-            <th style="padding:8px 10px;text-align:left;">AWB</th>
-            <th style="padding:8px 10px;text-align:left;">ORI</th>
-            <th style="padding:8px 10px;text-align:left;">DES</th>
-            <th style="padding:8px 10px;text-align:right;">KGS</th>
-            <th style="padding:8px 10px;text-align:right;">REV</th>
-            <th style="padding:8px 10px;text-align:right;">P/KG</th>
+            <th style="padding:8px 10px;text-align:left;color:#fff;">PFX</th>
+            <th style="padding:8px 10px;text-align:left;color:#fff;">AWB</th>
+            <th style="padding:8px 10px;text-align:left;color:#fff;">ORI</th>
+            <th style="padding:8px 10px;text-align:left;color:#fff;">DES</th>
+            <th style="padding:8px 10px;text-align:right;color:#fff;">KGS</th>
+            <th style="padding:8px 10px;text-align:right;color:#fff;">REV</th>
+            <th style="padding:8px 10px;text-align:right;color:#fff;">P/KG</th>
           </tr>
         </thead>
         <tbody id="awb-modal-body"></tbody>
@@ -497,7 +497,7 @@ async function showAwbDetail(groupCol, groupVal, label, rowElement) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=Bkg_CreaDate&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=booked`;
+    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=Bkg_CreaDate&week_mode=current&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=booked`;
     console.log('=== AWB Detail Request ===');
     console.log('biz:', biz);
     console.log('groupCol:', groupCol);
