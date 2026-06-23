@@ -51,21 +51,7 @@
   .dot.ready { background:#22c55e; }
   .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font:inherit; font-size:10px; }
 
-  .periods { display:flex; gap:8px; justify-content:center; }
-  .period-btn {
-    border:1px solid rgba(122,174,213,.45);
-    background:#102847;
-    color:#9abfe0;
-    border-radius:4px;
-    padding:4px 15px;
-    font-size:10px;
-    font-weight:600;
-    letter-spacing:.08em;
-    cursor:pointer;
-    white-space:nowrap;
-  }
-  .period-btn.active { background:var(--blue); color:#fff; border-color:#5e9bff; }
-  .range { color:#8fb5d7; text-align:right; line-height:1.35; min-width:152px; font-size:10px; }
+	  .range { color:#8fb5d7; text-align:right; line-height:1.35; min-width:152px; font-size:10px; }
   .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:block; }
   .filters { display:flex; align-items:center; gap:8px; }
   .filters label { color:#8fb5d7; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
@@ -166,14 +152,14 @@
     .header-right { order:2; flex:1 1 45%; min-width:0; }
     .header-actions { flex-wrap:wrap; row-gap:5px; }
     .hdr-mid-section { order:3; flex:1 1 100%; margin-top:10px; }
-    .periods, .filters { justify-content:center; }
+	    .filters { justify-content:center; }
     .fixed-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .content-grid { grid-template-columns:1fr; }
     .customer-grid { grid-template-columns:1fr; }
   }
   @media (max-width:560px) {
     .fixed-grid { grid-template-columns:1fr; }
-    .header-controls, .periods, .filters { width:100%; justify-content:center; flex-wrap:wrap; }
+	    .header-controls, .filters { width:100%; justify-content:center; flex-wrap:wrap; }
     .header-right { justify-content:center; align-items:center; flex-wrap:wrap; }
     .header-actions { justify-content:center; }
     .range { text-align:center; }
@@ -184,7 +170,7 @@
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
-<script>window.DATAFORCE_SHELL = {"title":"My Bookings","controls":[".periods",".filters"],"meta":[".range"],"userNameId":"userLabel"};</script>
+<script>window.DATAFORCE_SHELL = {"title":"My Bookings","controls":[".filters"],"meta":[".range"],"userNameId":"userLabel"};</script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -196,15 +182,11 @@
       </a>
     </div>
     <div class="hdr-mid-section">
-      <div class="header-title">MY BOOKINGS</div>
-      <div class="header-controls">
-        <div class="periods">
-          <button class="period-btn active" data-mode="ytd_flown">YTD FLOWN</button>
-          <button class="period-btn" data-mode="this_week_booked">THIS WEEK BOOKED</button>
-        </div>
-        <div class="filters">
-          <label for="bizSelect">Business</label>
-          <select id="bizSelect"></select>
+	      <div class="header-title">MY BOOKINGS</div>
+	      <div class="header-controls">
+	        <div class="filters">
+	          <label for="bizSelect">Business</label>
+	          <select id="bizSelect"></select>
         </div>
       </div>
     </div>
@@ -331,7 +313,7 @@ const BUSINESS_OPTIONS = [
   { key:"11_ULTRACN", label:"CN-ULTRA" }
 ];
 
-let currentMode = "ytd_flown";
+const MY_BOOKINGS_MODE = "ytd_flown";
 let currentData = null;
 let trendChart = null;
 const reportCache = new Map();
@@ -570,8 +552,8 @@ async function showAwbDetail({scope, periodYear, periodWeek, customer, title}) {
   footer.textContent = "";
   modal.style.display = "flex";
 
-  const params = new URLSearchParams({
-    mode: currentMode,
+	  const params = new URLSearchParams({
+	    mode: MY_BOOKINGS_MODE,
     biz,
     email: u.email || "",
     scope: scope || "period"
@@ -613,14 +595,13 @@ async function showAwbDetail({scope, periodYear, periodWeek, customer, title}) {
 }
 
 function renderAll() {
-  const modeLabel = currentMode === "ytd_flown" ? "YTD FLOWN" : "THIS WEEK BOOKED";
   const bizLabel = BUSINESS_OPTIONS.find(b => b.key === document.getElementById("bizSelect").value)?.label || "ALL";
   const p = permissions();
-  document.getElementById("rangeTitle").textContent = modeLabel;
+  document.getElementById("rangeTitle").textContent = "YTD FLOWN";
   document.getElementById("rangeDates").textContent = `${formatDate(currentData.start)} - ${formatDate(currentData.end)}`;
   document.getElementById("selectedTitle").textContent = `${bizLabel} Trend`;
   document.getElementById("salesPersonLabel").textContent = p.sales_person ? `Sales person ${p.sales_person}` : "All sales persons";
-  document.getElementById("detailNote").textContent = currentMode === "ytd_flown" ? "By flight date" : "By booking date";
+  document.getElementById("detailNote").textContent = "By flight date";
   renderFixedCards();
   renderTrend();
   renderDetail();
@@ -641,7 +622,7 @@ function showError(message) {
 async function loadReport() {
   const u = user();
   const biz = document.getElementById("bizSelect").value || "ALL";
-  const cacheKey = `${currentMode}|${biz}|${u.email || ""}`;
+  const cacheKey = `${MY_BOOKINGS_MODE}|${biz}|${u.email || ""}`;
   const seq = ++requestSeq;
   if (reportCache.has(cacheKey)) {
     currentData = reportCache.get(cacheKey);
@@ -653,7 +634,7 @@ async function loadReport() {
   setStatus("Loading reports", false);
   showError("");
   try {
-    const url = `${API_BASE}/api/my_bookings?mode=${encodeURIComponent(currentMode)}&biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(u.email || "")}`;
+	    const url = `${API_BASE}/api/my_bookings?mode=${encodeURIComponent(MY_BOOKINGS_MODE)}&biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(u.email || "")}`;
     const r = await fetch(url, { headers:{ "x-api-key":API_KEY } });
     if (!r.ok) {
       let detail = "";
@@ -691,13 +672,6 @@ function populateBusinessSelect() {
 }
 
 function bindEvents() {
-  document.querySelectorAll(".period-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      currentMode = btn.dataset.mode;
-      document.querySelectorAll(".period-btn").forEach(b => b.classList.toggle("active", b === btn));
-      loadReport();
-    });
-  });
   document.getElementById("bizSelect").addEventListener("change", loadReport);
 }
 
