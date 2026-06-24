@@ -471,6 +471,26 @@ function fullMoney(n) {
   return fmt(Number(n || 0));
 }
 
+function formatAwb(awb, pfx) {
+  const raw = String(awb ?? "").trim();
+  if (!raw) return "";
+  const prefixDigits = String(pfx ?? "").replace(/\D/g, "");
+  const parts = raw.split("-");
+  const padPrefix = value => value.padStart(3, "0").slice(-3);
+  const padNumber = value => value.padStart(8, "0").slice(-8);
+
+  if (parts.length >= 2) {
+    const parsedPrefix = parts[0].replace(/\D/g, "");
+    const parsedNumber = parts.slice(1).join("").replace(/\D/g, "");
+    if (parsedPrefix && parsedNumber) return `${padPrefix(parsedPrefix)}-${padNumber(parsedNumber)}`;
+  }
+
+  const numberDigits = raw.replace(/\D/g, "");
+  if (prefixDigits && numberDigits) return `${padPrefix(prefixDigits)}-${padNumber(numberDigits)}`;
+  if (numberDigits.length > 8) return `${padPrefix(numberDigits.slice(0, -8))}-${padNumber(numberDigits.slice(-8))}`;
+  return raw;
+}
+
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, ch => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
@@ -593,7 +613,7 @@ function renderTable() {
   els.body.innerHTML = bookingRows.map((row, index) => `
     <tr data-index="${index}">
       <td>${dateLabel(row.booked_date)}</td>
-      <td class="awb">${esc(row.awb)}</td>
+      <td class="awb">${esc(formatAwb(row.awb_no || row.awb, row.pfx))}</td>
       <td>${esc(row.business)}</td>
       <td class="customer" title="${esc(row.customer)}">${esc(row.customer)}</td>
       <td>${esc(row.ori)}</td>
@@ -708,7 +728,8 @@ function renderDetail(row, segments, segmentError = "") {
   }
   const profit = Number(row.profit || 0);
   const salesRateKg = row.sales_per_kg ?? (row.chw ? row.rev / row.chw : 0);
-  els.modalTitle.textContent = `${row.awb} - ${row.customer}`;
+  const displayAwb = formatAwb(row.awb_no || row.awb, row.pfx);
+  els.modalTitle.textContent = `${displayAwb} - ${row.customer}`;
   const segmentRows = Array.isArray(segments) ? segments.map(seg => `
     <tr>
       <td>${esc(seg.carrier)}</td>
@@ -729,7 +750,7 @@ function renderDetail(row, segments, segmentError = "") {
   els.modalBody.innerHTML = `
     <div class="detail-head">
       <div class="detail-kicker">Booking summary</div>
-      <div class="detail-awb">${esc(row.awb)}</div>
+      <div class="detail-awb">${esc(displayAwb)}</div>
     </div>
     <div class="detail-body">
       <div class="route-line">
@@ -816,7 +837,7 @@ document.getElementById("resetBtn").addEventListener("click", () => {
 });
 document.getElementById("exportBtn").addEventListener("click", () => {
   const csv = ["Booked,AWB,Business,Customer,Origin,Destination,Via,CHW,Revenue,ProfitPerKG"]
-    .concat(bookingRows.map(r => [r.booked_date, r.awb, r.business, r.customer, r.ori, r.des, r.via, r.chw, r.rev, r.pkg].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")))
+    .concat(bookingRows.map(r => [r.booked_date, formatAwb(r.awb_no || r.awb, r.pfx), r.business, r.customer, r.ori, r.des, r.via, r.chw, r.rev, r.pkg].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")))
     .join("\n");
   const blob = new Blob([csv], {type:"text/csv"});
   const url = URL.createObjectURL(blob);

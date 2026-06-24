@@ -5,6 +5,7 @@
   const DEFAULT_API_BASE = "https://dataforce-api-production.up.railway.app";
   const SCRIPT_URL = document.currentScript && document.currentScript.src ? document.currentScript.src : "";
   const DEFAULT_LOGO_URL = SCRIPT_URL ? new URL("dataforce-logo.png", SCRIPT_URL).href : "dataforce-logo.png";
+  const DEFAULT_FAVICON_HREF = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='4'%20fill='%231a56db'/%3E%3Cpath%20d='M20%205h7v7h-4v8H12v4H5V13h11V9h4z'%20fill='white'/%3E%3Cpath%20d='M13%208h8v8h-4v4H9v-8h4z'%20fill='%237aaed5'%20opacity='.75'/%3E%3C/svg%3E";
 
   function onReady(fn) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
@@ -13,6 +14,15 @@
 
   function cfg() {
     return window.DATAFORCE_SHELL || {};
+  }
+
+  function ensureFavicon() {
+    if (document.querySelector("link[rel~='icon']")) return;
+    const icon = document.createElement("link");
+    icon.rel = "icon";
+    icon.type = "image/svg+xml";
+    icon.href = cfg().faviconHref || DEFAULT_FAVICON_HREF;
+    document.head.appendChild(icon);
   }
 
   function first(selectors, root) {
@@ -276,6 +286,7 @@
   };
 
   onReady(function () {
+    ensureFavicon();
     buildHeader();
     buildFooter();
     loadFooterStatus();

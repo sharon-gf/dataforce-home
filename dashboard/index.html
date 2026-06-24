@@ -629,6 +629,26 @@ const DEMO = {
 let lc=null;
 const n=(v,d=0)=>v==null?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 
+function formatAwb(awb, pfx) {
+  const raw = String(awb ?? "").trim();
+  if (!raw) return "";
+  const prefixDigits = String(pfx ?? "").replace(/\D/g, "");
+  const parts = raw.split("-");
+  const padPrefix = value => value.padStart(3, "0").slice(-3);
+  const padNumber = value => value.padStart(8, "0").slice(-8);
+
+  if (parts.length >= 2) {
+    const parsedPrefix = parts[0].replace(/\D/g, "");
+    const parsedNumber = parts.slice(1).join("").replace(/\D/g, "");
+    if (parsedPrefix && parsedNumber) return `${padPrefix(parsedPrefix)}-${padNumber(parsedNumber)}`;
+  }
+
+  const numberDigits = raw.replace(/\D/g, "");
+  if (prefixDigits && numberDigits) return `${padPrefix(prefixDigits)}-${padNumber(numberDigits)}`;
+  if (numberDigits.length > 8) return `${padPrefix(numberDigits.slice(0, -8))}-${padNumber(numberDigits.slice(-8))}`;
+  return raw;
+}
+
 function renderWeekly(data){
   const tb = document.getElementById('weeklyBody');
   tb.innerHTML = data.map(r => {
@@ -678,7 +698,7 @@ async function showWeekDetail(week, year) {
     body.innerHTML = rows.map((r, i) => `
       <tr style="background:${i%2===0?'#fff':'#f9fafb'};">
         <td style="padding:6px 10px;">${r.pfx||'—'}</td>
-        <td style="padding:6px 10px;font-family:monospace;">${r.awb||'—'}</td>
+        <td style="padding:6px 10px;font-family:monospace;">${formatAwb(r.awb, r.pfx) || '—'}</td>
         <td style="padding:6px 10px;">${r.ori||'—'}</td>
         <td style="padding:6px 10px;">${r.des||'—'}</td>
         <td style="padding:6px 10px;text-align:right;">${fmt(r.chw,0)}</td>
@@ -1273,7 +1293,7 @@ async function showAwbDetail(groupCol, groupVal, label) {
     body.innerHTML = rows.map((r, i) => `
       <tr style="background:${i%2===0?'#fff':'#f9fafb'};">
         <td style="padding:6px 10px;">${r.pfx || '—'}</td>
-        <td style="padding:6px 10px;font-family:monospace;">${r.awb || '—'}</td>
+        <td style="padding:6px 10px;font-family:monospace;">${formatAwb(r.awb, r.pfx) || '—'}</td>
         <td style="padding:6px 10px;">${r.ori || '—'}</td>
         <td style="padding:6px 10px;">${r.des || '—'}</td>
         <td style="padding:6px 10px;text-align:right;">${fmt(r.chw, 2)}</td>
