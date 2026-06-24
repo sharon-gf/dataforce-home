@@ -109,6 +109,22 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
   border-top:1.5px solid var(--border); border-bottom:none;
 }
 .nodata-cell td { color:var(--text3); font-style:italic; font-size:10px; text-align:center !important; }
+.matrix-wrap { max-height:420px; overflow:auto; }
+.matrix-table { min-width:720px; }
+.matrix-table th:first-child,
+.matrix-table td:first-child {
+  position:sticky;
+  left:0;
+  z-index:2;
+  min-width:180px;
+  max-width:240px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.matrix-table th:first-child { z-index:4; background:var(--navy-hdr); }
+.matrix-table tbody tr:nth-child(even) td:first-child { background:var(--stripe); }
+.matrix-table tbody tr:nth-child(odd) td:first-child { background:var(--surface); }
+.matrix-table td:not(:first-child) { min-width:74px; }
 
 /* ── CHARTS ROW (dos columnas en desktop, una en móvil) ── */
 .charts-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
@@ -186,6 +202,8 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
   /* Tabla: texto más pequeño para caber */
   .dtbl th, .dtbl td { font-size:8.5px; padding:3px 5px; }
+  .matrix-table th:first-child,
+  .matrix-table td:first-child { min-width:150px; max-width:190px; }
 }
 </style>
 
@@ -299,6 +317,24 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
   </div><!-- /charts-row -->
 
+  <!-- CUSTOMER WEEK MATRIX -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">YTD Kilos By Customer</span>
+      <span class="card-sub">By flight date</span>
+    </div>
+    <div class="tbl-wrap matrix-wrap">
+      <table class="dtbl matrix-table">
+        <thead id="thead-customer-weeks">
+          <tr><th>Customer</th></tr>
+        </thead>
+        <tbody id="tbody-customer-weeks">
+          <tr class="nodata-cell"><td>Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- DOWNLOAD BUTTON -->
   <div style="padding:16px 12px; display:flex; justify-content:center;">
     <button id="downloadAwbBtn" style="padding:10px 24px; background:#1a56db; color:white; border:none; border-radius:4px; font-size:13px; cursor:pointer; font-weight:500; transition:background 0.3s;" onmouseover="this.style.background='#1444bf'" onmouseout="this.style.background='#1a56db'">⬇ Download AWBs</button>
@@ -349,6 +385,10 @@ const fmtMoneyK = v => {
 };
 const fmtPkg   = v => v==null?'—':'$'+Number(v).toFixed(2);
 const fmtPkgSm = v => v==null?'—':'$'+Number(v).toFixed(2);
+const fmtMatrixKg = v => {
+  const value = Number(v || 0);
+  return value ? value.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) : '—';
+};
 function esc(s){ if(!s)return'—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ─── CHART INSTANCES ─────────────────────────────────────────────────────────
@@ -428,12 +468,14 @@ async function load() {
     renderSalesTable(data.byAgent    || []);
     renderCustTable (data.byCustomer || []);
     renderCharts    (data.byFlight   || []);
+    renderCustomerWeeks(data.customerWeeks || {});
   } catch(err) {
     console.error('VVI Charters load error:', err);
     ['kpi-tons','kpi-profit','kpi-pkg'].forEach(id => document.getElementById(id).textContent='err');
     renderSalesTable([]);
     renderCustTable([]);
     renderCharts([]);
+    renderCustomerWeeks({});
   }
 
   document.getElementById('loadOverlay').style.display='none';
@@ -484,6 +526,27 @@ function buildTableBody(rows, tbodyId) {
 }
 function renderSalesTable(rows){ buildTableBody(rows,'tbody-sales'); }
 function renderCustTable(rows) { buildTableBody(rows,'tbody-cust');  }
+
+function renderCustomerWeeks(matrix) {
+  const columns = matrix.columns || [];
+  const rows = matrix.rows || [];
+  const thead = document.getElementById('thead-customer-weeks');
+  const tbody = document.getElementById('tbody-customer-weeks');
+
+  thead.innerHTML = `<tr><th>Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join('')}</tr>`;
+
+  if (!columns.length || !rows.length) {
+    tbody.innerHTML = `<tr class="nodata-cell"><td colspan="${columns.length + 1}">No YTD charter kilos found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(row => `
+    <tr>
+      <td title="${esc(row.customer)}">${esc(row.customer)}</td>
+      ${columns.map(col => `<td>${fmtMatrixKg((row.values || {})[col.date])}</td>`).join('')}
+    </tr>
+  `).join('');
+}
 
 // ─── CHARTS ──────────────────────────────────────────────────────────────────
 function renderCharts(flights) {
