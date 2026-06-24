@@ -136,6 +136,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 .matrix-table tbody tr:nth-child(odd) .sales-col,
 .matrix-table tbody tr:nth-child(odd) .customer-col { background:var(--surface); }
 .matrix-table td:not(.sales-col):not(.customer-col) { min-width:74px; }
+.matrix-table .total-col { font-weight:500; color:var(--navy2); }
 
 /* ── CHARTS ROW (dos columnas en desktop, una en móvil) ── */
 .charts-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
@@ -544,10 +545,10 @@ function renderCustomerWeeks(matrix) {
   const thead = document.getElementById('thead-customer-weeks');
   const tbody = document.getElementById('tbody-customer-weeks');
 
-  thead.innerHTML = `<tr><th class="sales-col">Sales</th><th class="customer-col">Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join('')}</tr>`;
+  thead.innerHTML = `<tr><th class="sales-col">Sales</th><th class="customer-col">Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join('')}<th class="total-col">Total</th></tr>`;
 
   if (!columns.length || !rows.length) {
-    tbody.innerHTML = `<tr class="nodata-cell"><td colspan="${columns.length + 2}">No YTD charter kilos found</td></tr>`;
+    tbody.innerHTML = `<tr class="nodata-cell"><td colspan="${columns.length + 3}">No YTD charter kilos found</td></tr>`;
     return;
   }
 
@@ -556,6 +557,7 @@ function renderCustomerWeeks(matrix) {
       <td class="sales-col" title="${esc(row.salesPerson)}">${esc(row.salesPerson)}</td>
       <td class="customer-col" title="${esc(row.customer)}">${esc(row.customer)}</td>
       ${columns.map(col => `<td>${fmtMatrixKg((row.values || {})[col.date])}</td>`).join('')}
+      <td class="total-col">${fmtMatrixKg(row.totalKg)}</td>
     </tr>
   `).join('');
 }
