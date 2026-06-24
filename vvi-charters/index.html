@@ -111,20 +111,31 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 .nodata-cell td { color:var(--text3); font-style:italic; font-size:10px; text-align:center !important; }
 .matrix-wrap { max-height:420px; overflow:auto; }
 .matrix-table { min-width:720px; }
-.matrix-table th:first-child,
-.matrix-table td:first-child {
+.matrix-table .sales-col,
+.matrix-table .customer-col {
   position:sticky;
-  left:0;
   z-index:2;
-  min-width:180px;
-  max-width:240px;
+  text-align:left;
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.matrix-table th:first-child { z-index:4; background:var(--navy-hdr); }
-.matrix-table tbody tr:nth-child(even) td:first-child { background:var(--stripe); }
-.matrix-table tbody tr:nth-child(odd) td:first-child { background:var(--surface); }
-.matrix-table td:not(:first-child) { min-width:74px; }
+.matrix-table .sales-col {
+  left:0;
+  min-width:130px;
+  max-width:150px;
+}
+.matrix-table .customer-col {
+  left:130px;
+  min-width:190px;
+  max-width:250px;
+}
+.matrix-table th.sales-col,
+.matrix-table th.customer-col { z-index:4; background:var(--navy-hdr); }
+.matrix-table tbody tr:nth-child(even) .sales-col,
+.matrix-table tbody tr:nth-child(even) .customer-col { background:var(--stripe); }
+.matrix-table tbody tr:nth-child(odd) .sales-col,
+.matrix-table tbody tr:nth-child(odd) .customer-col { background:var(--surface); }
+.matrix-table td:not(.sales-col):not(.customer-col) { min-width:74px; }
 
 /* ── CHARTS ROW (dos columnas en desktop, una en móvil) ── */
 .charts-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
@@ -202,8 +213,8 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
   /* Tabla: texto más pequeño para caber */
   .dtbl th, .dtbl td { font-size:8.5px; padding:3px 5px; }
-  .matrix-table th:first-child,
-  .matrix-table td:first-child { min-width:150px; max-width:190px; }
+  .matrix-table .sales-col { min-width:110px; max-width:130px; }
+  .matrix-table .customer-col { left:110px; min-width:150px; max-width:190px; }
 }
 </style>
 
@@ -326,10 +337,10 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
     <div class="tbl-wrap matrix-wrap">
       <table class="dtbl matrix-table">
         <thead id="thead-customer-weeks">
-          <tr><th>Customer</th></tr>
+          <tr><th class="sales-col">Sales</th><th class="customer-col">Customer</th></tr>
         </thead>
         <tbody id="tbody-customer-weeks">
-          <tr class="nodata-cell"><td>Loading…</td></tr>
+          <tr class="nodata-cell"><td colspan="2">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -533,16 +544,17 @@ function renderCustomerWeeks(matrix) {
   const thead = document.getElementById('thead-customer-weeks');
   const tbody = document.getElementById('tbody-customer-weeks');
 
-  thead.innerHTML = `<tr><th>Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join('')}</tr>`;
+  thead.innerHTML = `<tr><th class="sales-col">Sales</th><th class="customer-col">Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join('')}</tr>`;
 
   if (!columns.length || !rows.length) {
-    tbody.innerHTML = `<tr class="nodata-cell"><td colspan="${columns.length + 1}">No YTD charter kilos found</td></tr>`;
+    tbody.innerHTML = `<tr class="nodata-cell"><td colspan="${columns.length + 2}">No YTD charter kilos found</td></tr>`;
     return;
   }
 
   tbody.innerHTML = rows.map(row => `
     <tr>
-      <td title="${esc(row.customer)}">${esc(row.customer)}</td>
+      <td class="sales-col" title="${esc(row.salesPerson)}">${esc(row.salesPerson)}</td>
+      <td class="customer-col" title="${esc(row.customer)}">${esc(row.customer)}</td>
       ${columns.map(col => `<td>${fmtMatrixKg((row.values || {})[col.date])}</td>`).join('')}
     </tr>
   `).join('');
