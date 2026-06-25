@@ -88,6 +88,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-booked    { --card-accent:#c97a06; --card-icon-bg:#fef6e8; }
 .card-upload    { --card-accent:#6d3fc7; --card-icon-bg:#f2eefa; }
 .card-vvi       { --card-accent:#b91c1c; --card-icon-bg:#fef2f2; }
+.card-check-rates { --card-accent:#7c3aed; --card-icon-bg:#f3e8ff; }
 .hub-footer { margin-top:28px; font-size:9px; color:var(--text3); letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
 .hub-footer span { width:16px; height:1px; background:var(--border); display:inline-block; }
 
@@ -102,10 +103,6 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 }
   
 </style>
-
-<link rel="stylesheet" href="dataforce-shell.css">
-<script>window.DATAFORCE_SHELL = {"title":"Home","userNameId":"user-name","statusText":"Ready","statusDotId":"homeStatusDot"};</script>
-<script src="dataforce-shell.js"></script>
 </head>
 <body>
 
@@ -157,7 +154,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
       </a>
       <a class="card card-my-bookings" href="https://dataforce.gsaforce.com/my-bookings/">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/><path d="M20 7l-4 4-3-3-5 5"/></svg></div>
-        <div><div class="card-name">My Bookings (Flown)</div><div class="card-desc">YTD Personal sales KPIs, business mix and customer trends</div></div>
+        <div><div class="card-name">My Bookings</div><div class="card-desc">Personal sales KPIs, business mix and customer trends</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#0f766e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
       <a class="card card-booking-details" href="https://dataforce.gsaforce.com/booking-details/">
@@ -184,6 +181,11 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"> <path d="M22 2 11 13"/> <path d="M22 2 15 22l-4-9-9-4z"/> </svg></div>
         <div><div class="card-name">VVI Charters</div><div class="card-desc">Next charter flight KPIs, tonnage and revenue</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#b91c1c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+      <a class="card card-check-rates" href="https://dataforce.gsaforce.com/check-rates/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M17 5H9.5a3.5 3.5 0 000 7H14a3.5 3.5 0 010 7H6"/><path d="M19 12h2"/><path d="M3 12h2"/></svg></div>
+        <div><div class="card-name">Check Rates</div><div class="card-desc">Administrative review of AWBs with zero or negative P/KG</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
       <a class="card card-admin" id="users-admin-card" href="https://dataforce.gsaforce.com/users/" style="display: none;">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
@@ -258,8 +260,9 @@ async function applyModulePermissions() {
       'booked': '.card-booked',
       'flown': '.card-summary',
       'vvi_charters': '.card-vvi',
+      'check_rates': '.card-check-rates',
       'upload': '.card-upload',
-      'admin': '#users-admin-card'
+      'admin': '#users-admin-card, .card-check-rates'
     };
     
     allowedModules.forEach(module => {
