@@ -18,12 +18,15 @@
   }
 
   function ensureFavicon() {
-    if (document.querySelector("link[rel~='icon']")) return;
-    const icon = document.createElement("link");
+    let icon = document.querySelector("link[rel~='icon']");
+    if (!icon) {
+      icon = document.createElement("link");
+      document.head.appendChild(icon);
+    }
     icon.rel = "icon";
     icon.type = cfg().faviconType || DEFAULT_FAVICON_TYPE;
     icon.href = cfg().faviconHref || DEFAULT_FAVICON_HREF;
-    document.head.appendChild(icon);
+    // document.head.appendChild(icon);
   }
 
   function first(selectors, root) {
