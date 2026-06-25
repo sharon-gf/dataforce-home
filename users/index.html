@@ -6,7 +6,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DATAFORCE — User Administration</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -212,8 +211,6 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     <div class="login-title">DATAFORCE</div>
     <div class="login-desc">User Administration</div>
     <div id="login-error"></div>
-    <div id="g_id_onload" data-client_id="851383087701-8i1p8pqkj91i5ejrfacnv2vfrq4l5g5j.apps.googleusercontent.com" data-callback="handleCredentialResponse"></div>
-    <div id="g_id_signin" data-type="standard"></div>
   </div>
 </div>
 
@@ -449,25 +446,6 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     });
   }
 
-  function handleCredentialResponse(response) {
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    const email = payload.email || '';
-    const name = payload.given_name || email.split('@')[0];
-    const domain = email.split('@')[1] || '';
-    
-    if (domain !== ALLOWED_DOMAIN) {
-      document.getElementById('login-error').textContent = 'Access denied. Please use a GSA Force email.';
-      document.getElementById('login-error').style.display = 'block';
-      return;
-    }
-
-    currentUserEmail = email;
-    document.getElementById('userName').textContent = name;
-    sessionStorage.setItem('df_user', JSON.stringify({ email, name }));
-
-    startAdminApp();
-  }
-
   function showApp() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
@@ -476,8 +454,8 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   function signOut() {
     currentUserEmail = '';
     sessionStorage.removeItem('df_user');
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
+    sessionStorage.removeItem('df_permissions');
+    window.location.href = 'https://dataforce.gsaforce.com/';
   }
 
   async function loadUsers() {
@@ -828,12 +806,20 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   }
 
   window.addEventListener('load', () => {
-    const saved = sessionStorage.getItem('df_user');
-    if (saved) {
+    try {
+      const saved = sessionStorage.getItem('df_user');
+      if (!saved) {
+        window.location.href = 'https://dataforce.gsaforce.com/';
+        return;
+      }
       const { name, email } = JSON.parse(saved);
       currentUserEmail = email;
       document.getElementById('userName').textContent = name;
       startAdminApp();
+    } catch (e) {
+      sessionStorage.removeItem('df_user');
+      sessionStorage.removeItem('df_permissions');
+      window.location.href = 'https://dataforce.gsaforce.com/';
     }
   });
 </script>
