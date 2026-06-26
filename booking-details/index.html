@@ -148,11 +148,70 @@
     padding:5px 8px;
     outline:none;
   }
-  select[multiple] {
-    height:68px;
-    padding:4px 6px;
-  }
   input:focus, select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
+  .multi-field { position:relative; }
+  .multi-select { position:relative; }
+  .multi-button {
+    width:100%;
+    height:30px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    background:#fff;
+    color:var(--text1);
+    padding:5px 26px 5px 8px;
+    display:flex;
+    align-items:center;
+    text-align:left;
+    cursor:pointer;
+    position:relative;
+  }
+  .multi-button:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); outline:none; }
+  .multi-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .multi-caret {
+    position:absolute;
+    right:9px;
+    top:50%;
+    width:0;
+    height:0;
+    border-left:4px solid transparent;
+    border-right:4px solid transparent;
+    border-top:5px solid var(--text2);
+    transform:translateY(-35%);
+  }
+  .multi-menu {
+    display:none;
+    position:absolute;
+    z-index:12;
+    top:calc(100% + 4px);
+    left:0;
+    width:max(100%, 138px);
+    max-height:220px;
+    overflow:auto;
+    border:1px solid #aab5c4;
+    border-radius:4px;
+    background:#fff;
+    box-shadow:0 12px 28px rgba(13,31,60,.18);
+    padding:4px;
+  }
+  .multi-select.is-open .multi-menu { display:block; }
+  .multi-option {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-height:26px;
+    padding:4px 6px;
+    border-radius:3px;
+    color:var(--text1);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .multi-option:hover { background:#eaf0fb; }
+  .multi-option input {
+    width:14px;
+    height:14px;
+    flex:0 0 auto;
+    accent-color:var(--blue);
+  }
   .filter-actions { display:flex; gap:6px; align-items:end; justify-content:flex-end; }
   .tool-btn {
     height:30px;
@@ -358,17 +417,25 @@
           <option value="AV-CHILE">AV-CHILE</option>
         </select>
       </div>
-      <div class="field">
-        <label for="originFilter">Origin</label>
-        <select id="originFilter" multiple size="4">
-          <option value="ALL" selected>All</option>
-        </select>
+      <div class="field multi-field">
+        <label for="originFilterButton">Origin</label>
+        <div class="multi-select" id="originFilter" data-value="ALL">
+          <button class="multi-button" id="originFilterButton" type="button" aria-expanded="false">
+            <span class="multi-text">All</span>
+            <span class="multi-caret"></span>
+          </button>
+          <div class="multi-menu"></div>
+        </div>
       </div>
-      <div class="field">
-        <label for="destinationFilter">Destination</label>
-        <select id="destinationFilter" multiple size="4">
-          <option value="ALL" selected>All</option>
-        </select>
+      <div class="field multi-field">
+        <label for="destinationFilterButton">Destination</label>
+        <div class="multi-select" id="destinationFilter" data-value="ALL">
+          <button class="multi-button" id="destinationFilterButton" type="button" aria-expanded="false">
+            <span class="multi-text">All</span>
+            <span class="multi-caret"></span>
+          </button>
+          <div class="multi-menu"></div>
+        </div>
       </div>
       <div class="field">
         <label for="dateFrom">Booked From</label>
@@ -568,6 +635,7 @@ function closeFilterDrawer() {
   els.filterBackdrop.classList.remove("is-open");
   els.filterToggle.setAttribute("aria-expanded", "false");
   document.body.classList.remove("filter-drawer-open");
+  closeMultiFilters();
 }
 
 function syncMobileControls() {
@@ -604,44 +672,86 @@ function populateBusinessSelect(options) {
   businessOptionsLoaded = true;
 }
 
-function selectedValues(select) {
-  return [...select.selectedOptions].map(opt => opt.value).filter(Boolean);
+function multiValues(root) {
+  return String(root.dataset.value || "ALL").split(",").filter(Boolean);
 }
 
-function normalizedMultiValues(select) {
-  const concrete = selectedValues(select).filter(value => value !== "ALL");
+function normalizedMultiValues(root) {
+  const concrete = multiValues(root).filter(value => value !== "ALL");
   return concrete.length ? concrete : ["ALL"];
 }
 
-function setMultiValues(select, values) {
+function setMultiValues(root, values) {
   const concrete = (values || []).filter(value => value && value !== "ALL");
   const next = concrete.length ? concrete : ["ALL"];
-  const selected = new Set(next);
-  [...select.options].forEach(option => {
-    option.selected = selected.has(option.value);
-  });
-  select.dataset.previous = next.join(",");
+  root.dataset.value = next.join(",");
+  updateMultiFilter(root);
 }
 
-function validMultiValues(select, options) {
-  const valid = normalizedMultiValues(select).filter(value => value === "ALL" || options.includes(value));
+function validMultiValues(root, options) {
+  const valid = normalizedMultiValues(root).filter(value => value === "ALL" || options.includes(value));
   const concrete = valid.filter(value => value !== "ALL");
   return concrete.length ? concrete : ["ALL"];
 }
 
-function multiFilterValue(select) {
-  const concrete = normalizedMultiValues(select).filter(value => value !== "ALL");
+function multiFilterValue(root) {
+  const concrete = normalizedMultiValues(root).filter(value => value !== "ALL");
   return concrete.length ? concrete.join(",") : "ALL";
 }
 
-function handleMultiFilterChange(select) {
-  const selected = selectedValues(select);
-  const previous = (select.dataset.previous || "ALL").split(",").filter(Boolean);
-  if (selected.includes("ALL") && !previous.includes("ALL")) {
-    setMultiValues(select, ["ALL"]);
-  } else {
-    setMultiValues(select, selected);
-  }
+function updateMultiFilter(root) {
+  const values = normalizedMultiValues(root);
+  const text = root.querySelector(".multi-text");
+  const selected = new Set(values);
+  text.textContent = selected.has("ALL")
+    ? "All"
+    : values.length <= 2
+      ? values.join(", ")
+      : `${values.length} selected`;
+  root.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.checked = selected.has(input.value);
+  });
+}
+
+function renderMultiFilter(root, options) {
+  const current = validMultiValues(root, options);
+  const menu = root.querySelector(".multi-menu");
+  const allOptions = ["ALL"].concat(options);
+  menu.innerHTML = allOptions.map(value => `
+    <label class="multi-option">
+      <input type="checkbox" value="${esc(value)}">
+      <span>${esc(value === "ALL" ? "All" : value)}</span>
+    </label>
+  `).join("");
+  menu.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.addEventListener("change", () => {
+      if (input.value === "ALL" && input.checked) {
+        setMultiValues(root, ["ALL"]);
+      } else {
+        const selected = [...menu.querySelectorAll('input[type="checkbox"]:checked')]
+          .map(item => item.value)
+          .filter(value => value !== "ALL");
+        setMultiValues(root, selected.length ? selected : ["ALL"]);
+      }
+      loadBookings();
+    });
+  });
+  setMultiValues(root, current);
+}
+
+function closeMultiFilters(except = null) {
+  document.querySelectorAll(".multi-select.is-open").forEach(root => {
+    if (root === except) return;
+    root.classList.remove("is-open");
+    root.querySelector(".multi-button").setAttribute("aria-expanded", "false");
+  });
+}
+
+function toggleMultiFilter(root) {
+  const open = !root.classList.contains("is-open");
+  closeMultiFilters(root);
+  root.classList.toggle("is-open", open);
+  root.querySelector(".multi-button").setAttribute("aria-expanded", String(open));
 }
 
 function populateOriginFilter(rows) {
@@ -649,9 +759,7 @@ function populateOriginFilter(rows) {
     if (row.ori) knownOrigins.add(String(row.ori));
   });
   const origins = [...knownOrigins].sort();
-  const current = validMultiValues(els.origin, origins);
-  els.origin.innerHTML = '<option value="ALL">All</option>' + origins.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join("");
-  setMultiValues(els.origin, current);
+  renderMultiFilter(els.origin, origins);
 }
 
 function populateDestinationFilter(rows) {
@@ -659,9 +767,7 @@ function populateDestinationFilter(rows) {
     if (row.des) knownDestinations.add(String(row.des));
   });
   const destinations = [...knownDestinations].sort();
-  const current = validMultiValues(els.destination, destinations);
-  els.destination.innerHTML = '<option value="ALL">All</option>' + destinations.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
-  setMultiValues(els.destination, current);
+  renderMultiFilter(els.destination, destinations);
 }
 
 function renderSummary() {
@@ -889,7 +995,11 @@ document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     closeBookingModal();
     closeFilterDrawer();
+    closeMultiFilters();
   }
+});
+document.addEventListener("click", event => {
+  if (!event.target.closest(".multi-select")) closeMultiFilters();
 });
 
 els.kpiToggle.addEventListener("click", () => {
@@ -910,10 +1020,12 @@ syncMobileControls();
 
 els.search.addEventListener("input", debouncedLoad);
 [els.business, els.from, els.to].forEach(el => el.addEventListener("input", loadBookings));
-[els.origin, els.destination].forEach(el => el.addEventListener("change", () => {
-  handleMultiFilterChange(el);
-  loadBookings();
-}));
+[els.origin, els.destination].forEach(root => {
+  root.querySelector(".multi-button").addEventListener("click", event => {
+    event.stopPropagation();
+    toggleMultiFilter(root);
+  });
+});
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.search.value = "";
   els.business.value = "ALL";
