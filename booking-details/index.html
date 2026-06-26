@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DATAFORCE - Booking Details</title>
@@ -116,7 +117,7 @@
     min-height:38px;
   }
   .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
-  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; text-align:right; min-width:0; }
   .mobile-filter-toggle {
     display:none;
     height:28px;
@@ -132,7 +133,7 @@
     cursor:pointer;
   }
 
-  .filters { padding:10px 12px; display:grid; grid-template-columns:1.7fr repeat(4,minmax(120px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .filters { padding:10px 12px; display:grid; grid-template-columns:minmax(150px,1fr) minmax(108px,.7fr) minmax(86px,.55fr) minmax(86px,.55fr) minmax(126px,.75fr) minmax(126px,.75fr) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
   .filter-backdrop { display:none; }
   .mobile-filter-head { display:none; }
   .field { min-width:0; }
@@ -227,9 +228,9 @@
     .summary-grid { grid-template-columns:1fr 1fr; }
     .metric-value { font-size:13px; }
     .panel { overflow:visible; }
-    .panel-head { border-radius:6px 6px 0 0; }
-    .mobile-filter-toggle { display:inline-flex; align-items:center; justify-content:center; }
-    .panel-head .panel-note { margin-left:auto; }
+    .panel-head { border-radius:6px 6px 0 0; flex-wrap:wrap; }
+    .mobile-filter-toggle { display:inline-flex; align-items:center; justify-content:center; margin-left:auto; }
+    .panel-head .panel-note { order:3; width:100%; margin-left:0; text-align:left; white-space:normal; line-height:1.35; }
     .filter-backdrop.is-open {
       display:block;
       position:fixed;
@@ -360,6 +361,12 @@
         </select>
       </div>
       <div class="field">
+        <label for="destinationFilter">Destination</label>
+        <select id="destinationFilter">
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="field">
         <label for="dateFrom">Booked From</label>
         <input id="dateFrom" type="date" value="2026-06-15">
       </div>
@@ -386,6 +393,7 @@
               <th>Via</th>
               <th>CHW</th>
               <th>Rev</th>
+              <th>Sales/KG</th>
               <th>P/KG</th>
             </tr>
           </thead>
@@ -421,6 +429,7 @@ let requestSeq = 0;
 let searchTimer = null;
 let businessOptionsLoaded = false;
 let knownOrigins = new Set();
+let knownDestinations = new Set();
 
 const els = {
   summaryGrid: document.getElementById("summaryGrid"),
@@ -432,6 +441,7 @@ const els = {
   search: document.getElementById("searchInput"),
   business: document.getElementById("businessFilter"),
   origin: document.getElementById("originFilter"),
+  destination: document.getElementById("destinationFilter"),
   from: document.getElementById("dateFrom"),
   to: document.getElementById("dateTo"),
   rangeTitle: document.getElementById("rangeTitle"),
@@ -600,14 +610,40 @@ function populateOriginFilter(rows) {
   els.origin.value = origins.includes(current) ? current : "ALL";
 }
 
+function populateDestinationFilter(rows) {
+  rows.forEach(row => {
+    if (row.des) knownDestinations.add(String(row.des));
+  });
+  const current = els.destination.value || "ALL";
+  const destinations = [...knownDestinations].sort();
+  els.destination.innerHTML = '<option value="ALL">All</option>' + destinations.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
+  els.destination.value = destinations.includes(current) ? current : "ALL";
+}
+
 function renderSummary() {
   els.summaryGrid.innerHTML = ((currentData && currentData.fixedCards) || []).map(kpiCard).join("");
 }
 
+function filteredTotals() {
+  const summary = (currentData && currentData.summary) || {};
+  const fallback = bookingRows.reduce((totals, row) => {
+    totals.bookings += 1;
+    totals.chw += Number(row.chw || 0);
+    totals.rev += Number(row.rev || 0);
+    return totals;
+  }, {bookings:0, chw:0, rev:0});
+  return {
+    bookings: summary.bookings ?? fallback.bookings,
+    chw: summary.chw ?? fallback.chw,
+    rev: summary.rev ?? fallback.rev
+  };
+}
+
 function renderTable() {
-  els.resultNote.textContent = `${bookingRows.length} rows`;
+  const totals = filteredTotals();
+  els.resultNote.textContent = `${fmt(totals.bookings)} bookings | ${fmt(totals.chw)} kg | $${fullMoney(totals.rev)} rev`;
   if (!bookingRows.length) {
-    els.body.innerHTML = '<tr><td colspan="10" class="empty">No bookings match this filter.</td></tr>';
+    els.body.innerHTML = '<tr><td colspan="11" class="empty">No bookings match this filter.</td></tr>';
     return;
   }
   els.body.innerHTML = bookingRows.map((row, index) => `
@@ -621,6 +657,7 @@ function renderTable() {
       <td>${esc(row.via)}</td>
       <td>${fmt(row.chw)}</td>
       <td>$${fullMoney(row.rev)}</td>
+      <td>$${pkg(row.sales_per_kg ?? (row.chw ? row.rev / row.chw : 0))}</td>
       <td>${pkg(row.pkg)}</td>
     </tr>
   `).join("");
@@ -640,7 +677,7 @@ async function loadBookings() {
   const u = user();
   const seq = ++requestSeq;
   setStatus("Loading", false);
-  els.body.innerHTML = '<tr><td colspan="10" class="empty">Loading bookings...</td></tr>';
+  els.body.innerHTML = '<tr><td colspan="11" class="empty">Loading bookings...</td></tr>';
 
   const params = new URLSearchParams({
     email: u.email || "",
@@ -649,6 +686,7 @@ async function loadBookings() {
     date_to: els.to.value || "",
     search: els.search.value.trim(),
     origin: els.origin.value || "ALL",
+    destination: els.destination.value || "ALL",
     limit: "500"
   });
 
@@ -670,6 +708,7 @@ async function loadBookings() {
     bookingRows = data.rows || [];
     populateBusinessSelect(data.businessOptions || []);
     populateOriginFilter(bookingRows);
+    populateDestinationFilter(bookingRows);
     els.rangeTitle.textContent = "BOOKED THIS WEEK";
     els.rangeDates.textContent = `${dateLabel(data.date_from)} - ${dateLabel(data.date_to)}`;
     render();
@@ -678,7 +717,7 @@ async function loadBookings() {
     if (seq !== requestSeq) return;
     console.error("Failed to load Booking Details:", e);
     setStatus("Error", false);
-    els.body.innerHTML = `<tr><td colspan="10" class="empty">Could not load bookings. ${esc(e.message || "")}</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="11" class="empty">Could not load bookings. ${esc(e.message || "")}</td></tr>`;
   }
 }
 
@@ -826,18 +865,19 @@ if (MOBILE_QUERY.addEventListener) {
 syncMobileControls();
 
 els.search.addEventListener("input", debouncedLoad);
-[els.business, els.origin, els.from, els.to].forEach(el => el.addEventListener("input", loadBookings));
+[els.business, els.origin, els.destination, els.from, els.to].forEach(el => el.addEventListener("input", loadBookings));
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.search.value = "";
   els.business.value = "ALL";
   els.origin.value = "ALL";
+  els.destination.value = "ALL";
   setDefaultDates();
   loadBookings();
   closeFilterDrawer();
 });
 document.getElementById("exportBtn").addEventListener("click", () => {
-  const csv = ["Booked,AWB,Business,Customer,Origin,Destination,Via,CHW,Revenue,ProfitPerKG"]
-    .concat(bookingRows.map(r => [r.booked_date, formatAwb(r.awb_no || r.awb, r.pfx), r.business, r.customer, r.ori, r.des, r.via, r.chw, r.rev, r.pkg].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")))
+  const csv = ["Booked,AWB,Business,Customer,Origin,Destination,Via,CHW,Revenue,SalesPerKG,ProfitPerKG"]
+    .concat(bookingRows.map(r => [r.booked_date, formatAwb(r.awb_no || r.awb, r.pfx), r.business, r.customer, r.ori, r.des, r.via, r.chw, r.rev, r.sales_per_kg ?? (r.chw ? r.rev / r.chw : ""), r.pkg].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")))
     .join("\n");
   const blob = new Blob([csv], {type:"text/csv"});
   const url = URL.createObjectURL(blob);
