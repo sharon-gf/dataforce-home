@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - Customers Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e8eaee;
+    --surface:#fff;
+    --surface2:#f5f7fb;
+    --surface3:#edf1f7;
+    --border:#d8dde8;
+    --navy:#0d1f3c;
+    --navy2:#1a3360;
+    --text1:#0d1f3c;
+    --text2:#41536c;
+    --text3:#8391a8;
+    --blue:#1a56db;
+    --blue-hover:#1145be;
+    --cyan:#7aaed5;
+    --teal:#0c9080;
+    --green:#15803d;
+    --content-width:1080px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  button, input { font:inherit; }
+  .app { min-height:100vh; padding:8px; }
+
+  .header {
+    background:var(--navy);
+    border-radius:6px;
+    padding:8px 16px;
+    display:grid;
+    grid-template-columns:minmax(180px,1fr) minmax(360px,1.4fr) minmax(250px,1fr);
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .logo-link { color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:9px; width:max-content; }
+  .df-mark { width:28px; height:28px; border:1px solid rgba(122,174,213,.7); border-radius:4px; display:grid; place-items:center; color:#7aaed5; font-size:12px; font-weight:700; }
+  .logo-word { display:flex; flex-direction:column; gap:1px; }
+  .logo-main { font-size:18px; letter-spacing:.13em; font-weight:600; line-height:1; }
+  .logo-sub { color:var(--cyan); font-size:9px; letter-spacing:.24em; text-transform:uppercase; }
+  .hdr-mid { text-align:center; min-width:0; }
+  .header-title { color:var(--cyan); letter-spacing:.12em; font-size:17px; font-weight:500; white-space:nowrap; }
+  .header-right { color:#fff; display:flex; flex-direction:column; align-items:flex-end; gap:6px; font-size:11px; min-width:0; }
+  .header-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; max-width:100%; }
+  .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:7px; height:7px; border-radius:99px; background:#22c55e; }
+  .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font-size:10px; }
+  
+  .panel { width:min(var(--content-width),100%); margin:0 auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+  .panel-head {
+    background:var(--navy2);
+    color:#c8d8f0;
+    padding:8px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    min-height:38px;
+  }
+  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+  .panel-note { font-size:10px; color:#8fb5d7; }
+
+  .info-bar { padding:10px 12px; background:var(--surface2); border-bottom:1px solid var(--border); font-size:11px; color:var(--text2); line-height:1.4; }
+
+  .table-shell { min-height:526px; }
+  .table-wrap { overflow:auto; max-height:600px; padding:0 0 12px; }
+  table { width:100%; border-collapse:collapse; }
+  th { position:sticky; top:0; z-index:1; background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:10px 8px; text-align:left; }
+  td { border-bottom:1px solid var(--border); padding:8px; text-align:left; color:var(--text1); font-size:11px; white-space:nowrap; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  
+  .col-read { background:var(--surface2); color:var(--text2); font-weight:500; }
+  .col-editable { background:#fff; }
+  
+  .edit-container { display:flex; align-items:center; gap:8px; width:100%; }
+  .input-name {
+    flex:1;
+    height:28px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:0 8px;
+    color:var(--text1);
+    font-size:11px;
+    outline:none;
+  }
+  .input-name:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
+  
+  .btn-save {
+    height:28px;
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    padding:0 12px;
+    font-size:10px;
+    font-weight:600;
+    text-transform:uppercase;
+    cursor:pointer;
+    white-space:nowrap;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background:var(--blue-hover); }
+  .btn-save:disabled { background:var(--text3); cursor:not-allowed; }
+  .empty { padding:38px 16px; color:var(--text3); text-align:center; font-size:12px; }
+</style>
+<link rel="stylesheet" href="../dataforce-shell.css">
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <a class="logo-link" href="#">
+      <span class="df-mark">DF</span>
+      <span class="logo-word">
+        <span class="logo-main">DATAFORCE</span>
+        <span class="logo-sub">GSA Force</span>
+      </span>
+    </a>
+    <div class="hdr-mid">
+      <div class="header-title">CUSTOMER NAMES MANAGER</div>
+    </div>
+    <div class="header-right">
+      <div class="header-actions">
+        <span id="userLabel">—</span>
+        <span class="status"><span class="dot"></span><span id="statusText">Ready</span></span>
+        <button class="logout" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">GSAFORCE Customers Registry</div>
+      <div class="panel-note" id="resultNote">0 customers</div>
+    </div>
+    <div class="info-bar">
+      💡 <strong>Data Policy Note:</strong> fields <em>GSA</em>, <em>Cust ID</em>, and <em>Alias CS</em> are protected logs mapped directly from our main database system. Only the <strong>Customer Name</strong> column is open for custom renaming and group mapping.
+    </div>
+    
+    <div class="table-shell">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%;">GSA</th>
+              <th style="width: 15%;">Cust ID</th>
+              <th style="width: 30%;">Alias CS</th>
+              <th style="width: 35%;">Customer Name (Editable Shortname)</th>
+            </tr>
+          </thead>
+          <tbody id="customersBody">
+            <tr><td colspan="4" class="empty">Loading registry...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-production.up.railway.app";
+const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+
+function user() {
+  return getDataforceUser() || {};
+}
+
+function signOut() {
+  sessionStorage.removeItem("df_user");
+  sessionStorage.removeItem("df_permissions");
+  window.location.href = "https://dataforce.gsaforce.com/";
+}
+
+function setStatus(text, ready) {
+  document.getElementById("statusText").textContent = text;
+  document.querySelector(".dot").style.background = ready ? "#22c55e" : "#c97a06";
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[ch]));
+}
+
+async function loadCustomers() {
+  const u = user();
+  setStatus("Loading", false);
+  const tbody = document.getElementById("customersBody");
+  tbody.innerHTML = '<tr><td colspan="4" class="empty">Loading database registry...</td></tr>';
+
+  try {
+    const response = await fetch(`${API_BASE}/api/customers?email=${encodeURIComponent(u.email || "")}`, {
+      headers: { "x-api-key": API_KEY }
+    });
+    
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.detail || `Server status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const rows = data.rows || [];
+    document.getElementById("resultNote").textContent = `${rows.length} customers registered`;
+    
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No customers found in GSAFORCE_Customers table.</td></tr>';
+      setStatus("Ready", true);
+      return;
+    }
+
+    tbody.innerHTML = rows.map(row => `
+      <tr>
+        <td class="col-read">${esc(row.gsa)}</td>
+        <td class="col-read"><strong>${esc(row.cust_id)}</strong></td>
+        <td class="col-read">${esc(row.alias_cs)}</td>
+        <td class="col-editable">
+          <div class="edit-container">
+            <input type="text" class="input-name" id="input-${esc(row.cust_id)}" value="${esc(row.customer)}">
+            <button class="btn-save" id="btn-${esc(row.cust_id)}" onclick="saveCustomerName('${esc(row.cust_id)}')">Save</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+    
+    setStatus("Ready", true);
+  } catch (e) {
+    console.error("Failed to load customers layout:", e);
+    setStatus("Error", false);
+    tbody.innerHTML = `<tr><td colspan="4" class="empty" style="color:var(--red);">Could not pull data: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+async function saveCustomerName(custId) {
+  const u = user();
+  const inputEl = document.getElementById(`input-${custId}`);
+  const btnEl = document.getElementById(`btn-${custId}`);
+  const newName = inputEl.value.trim();
+
+  if (!newName) {
+    alert("Customer Name cannot be empty.");
+    return;
+  }
+
+  // Visual feedback during request execution
+  inputEl.disabled = true;
+  btnEl.disabled = true;
+  btnEl.textContent = "Saving...";
+  setStatus("Updating", false);
+
+  try {
+    const url = `${API_BASE}/api/customers/${encodeURIComponent(custId)}?customer=${encodeURIComponent(newName)}&email=${encodeURIComponent(u.email || "")}`;
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: { "x-api-key": API_KEY }
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.detail || "Update operation failed");
+    }
+
+    setStatus("Ready", true);
+    btnEl.textContent = "Saved!";
+    btnEl.style.backgroundColor = "var(--green)";
+    
+    // Reset standard styles after 1.5 seconds
+    setTimeout(() => {
+      btnEl.textContent = "Save";
+      btnEl.style.backgroundColor = "var(--blue)";
+      inputEl.disabled = false;
+      btnEl.disabled = false;
+    }, 1500);
+
+  } catch (e) {
+    alert(`Error saving modifications: ${e.message}`);
+    setStatus("Error", false);
+    inputEl.disabled = false;
+    btnEl.disabled = false;
+    btnEl.textContent = "Save";
+  }
+}
+
+function initCustomersModule() {
+  const u = user();
+  document.getElementById("userLabel").textContent = u.name || u.email || "";
+  loadCustomers();
+}
+
+// Integración automática con tu guard de accesos corporativos
+checkModuleAccess("customers", initCustomersModule);
+</script>
+</body>
+</html>
