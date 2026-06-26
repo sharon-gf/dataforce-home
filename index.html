@@ -192,6 +192,13 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div><div class="card-name">Users</div><div class="card-desc">Manage user access, roles and permissions</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
+      <a class="card card-customers" href="https://dataforce.gsaforce.com/customers/" style="--card-accent:#0c9080; --card-icon-bg:#e8f7f5;">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0c9080" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
+        </div>
+        <div><div class="card-name">Customers Shortname</div><div class="card-desc">Manage shortnames and groups for business reports</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#0c9080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
     </div>
     <div class="hub-footer"><span></span>DATAFORCE · GSA Cargo Intelligence Platform<span></span></div>
   </main>
@@ -255,13 +262,14 @@ async function applyModulePermissions() {
     // Show only allowed modules based on their class name
     const classMap = {
       'dashboard': '.card-dashboard',
-      'my_bookings': '.card-my-bookings',
-      'booking_details': '.card-booking-details',
       'booked': '.card-booked',
       'flown': '.card-summary',
+      'my_bookings': '.card-my-bookings',
+      'booking_details': '.card-booking-details',
       'vvi_charters': '.card-vvi',
       'check_rates': '.card-check-rates',
       'upload': '.card-upload',
+      'customers': '.card-customers',
       'admin': '#users-admin-card, .card-check-rates'
     };
     
