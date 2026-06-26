@@ -148,6 +148,10 @@
     padding:5px 8px;
     outline:none;
   }
+  select[multiple] {
+    height:68px;
+    padding:4px 6px;
+  }
   input:focus, select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
   .filter-actions { display:flex; gap:6px; align-items:end; justify-content:flex-end; }
   .tool-btn {
@@ -356,14 +360,14 @@
       </div>
       <div class="field">
         <label for="originFilter">Origin</label>
-        <select id="originFilter">
-          <option value="ALL">All</option>
+        <select id="originFilter" multiple size="4">
+          <option value="ALL" selected>All</option>
         </select>
       </div>
       <div class="field">
         <label for="destinationFilter">Destination</label>
-        <select id="destinationFilter">
-          <option value="ALL">All</option>
+        <select id="destinationFilter" multiple size="4">
+          <option value="ALL" selected>All</option>
         </select>
       </div>
       <div class="field">
@@ -600,24 +604,64 @@ function populateBusinessSelect(options) {
   businessOptionsLoaded = true;
 }
 
+function selectedValues(select) {
+  return [...select.selectedOptions].map(opt => opt.value).filter(Boolean);
+}
+
+function normalizedMultiValues(select) {
+  const concrete = selectedValues(select).filter(value => value !== "ALL");
+  return concrete.length ? concrete : ["ALL"];
+}
+
+function setMultiValues(select, values) {
+  const concrete = (values || []).filter(value => value && value !== "ALL");
+  const next = concrete.length ? concrete : ["ALL"];
+  const selected = new Set(next);
+  [...select.options].forEach(option => {
+    option.selected = selected.has(option.value);
+  });
+  select.dataset.previous = next.join(",");
+}
+
+function validMultiValues(select, options) {
+  const valid = normalizedMultiValues(select).filter(value => value === "ALL" || options.includes(value));
+  const concrete = valid.filter(value => value !== "ALL");
+  return concrete.length ? concrete : ["ALL"];
+}
+
+function multiFilterValue(select) {
+  const concrete = normalizedMultiValues(select).filter(value => value !== "ALL");
+  return concrete.length ? concrete.join(",") : "ALL";
+}
+
+function handleMultiFilterChange(select) {
+  const selected = selectedValues(select);
+  const previous = (select.dataset.previous || "ALL").split(",").filter(Boolean);
+  if (selected.includes("ALL") && !previous.includes("ALL")) {
+    setMultiValues(select, ["ALL"]);
+  } else {
+    setMultiValues(select, selected);
+  }
+}
+
 function populateOriginFilter(rows) {
   rows.forEach(row => {
     if (row.ori) knownOrigins.add(String(row.ori));
   });
-  const current = els.origin.value || "ALL";
   const origins = [...knownOrigins].sort();
+  const current = validMultiValues(els.origin, origins);
   els.origin.innerHTML = '<option value="ALL">All</option>' + origins.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join("");
-  els.origin.value = origins.includes(current) ? current : "ALL";
+  setMultiValues(els.origin, current);
 }
 
 function populateDestinationFilter(rows) {
   rows.forEach(row => {
     if (row.des) knownDestinations.add(String(row.des));
   });
-  const current = els.destination.value || "ALL";
   const destinations = [...knownDestinations].sort();
+  const current = validMultiValues(els.destination, destinations);
   els.destination.innerHTML = '<option value="ALL">All</option>' + destinations.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
-  els.destination.value = destinations.includes(current) ? current : "ALL";
+  setMultiValues(els.destination, current);
 }
 
 function renderSummary() {
@@ -685,8 +729,8 @@ async function loadBookings() {
     date_from: els.from.value || "",
     date_to: els.to.value || "",
     search: els.search.value.trim(),
-    origin: els.origin.value || "ALL",
-    destination: els.destination.value || "ALL",
+    origin: multiFilterValue(els.origin),
+    destination: multiFilterValue(els.destination),
     limit: "500"
   });
 
@@ -865,12 +909,16 @@ if (MOBILE_QUERY.addEventListener) {
 syncMobileControls();
 
 els.search.addEventListener("input", debouncedLoad);
-[els.business, els.origin, els.destination, els.from, els.to].forEach(el => el.addEventListener("input", loadBookings));
+[els.business, els.from, els.to].forEach(el => el.addEventListener("input", loadBookings));
+[els.origin, els.destination].forEach(el => el.addEventListener("change", () => {
+  handleMultiFilterChange(el);
+  loadBookings();
+}));
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.search.value = "";
   els.business.value = "ALL";
-  els.origin.value = "ALL";
-  els.destination.value = "ALL";
+  setMultiValues(els.origin, ["ALL"]);
+  setMultiValues(els.destination, ["ALL"]);
   setDefaultDates();
   loadBookings();
   closeFilterDrawer();
