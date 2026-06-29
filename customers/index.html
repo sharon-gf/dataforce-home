@@ -151,6 +151,11 @@
     border-color:#d8a433;
     background:#fffaf0;
   }
+  .readonly-value {
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
   .row-actions { display:inline-flex; gap:6px; justify-content:flex-end; }
   .row-btn {
     height:26px;
@@ -393,9 +398,7 @@ function renderTable() {
       <td>
         <input class="cell-input" data-index="${index}" data-field="customer_name" value="${esc(row.customer_name)}" aria-label="Customer_Name">
       </td>
-      <td>
-        <input class="cell-input" data-index="${index}" data-field="alias_cs" value="${esc(row.alias_cs)}" aria-label="Alias_CS">
-      </td>
+      <td title="${esc(row.alias_cs)}"><span class="readonly-value">${esc(row.alias_cs)}</span></td>
       <td class="actions-cell">
         <span class="row-actions">
           <button class="row-btn" type="button" data-action="view" data-index="${index}">View / Edit</button>
@@ -455,8 +458,7 @@ function debouncedLoad() {
 
 function rowValues(index) {
   return {
-    customer_name: document.querySelector(inputSelector(index, "customer_name")).value.trim(),
-    alias_cs: document.querySelector(inputSelector(index, "alias_cs")).value.trim()
+    customer_name: document.querySelector(inputSelector(index, "customer_name")).value.trim()
   };
 }
 
@@ -470,8 +472,7 @@ async function saveCustomer(index, values, sourceButton) {
 
   const params = new URLSearchParams({
     email: user().email || "",
-    customer_name: values.customer_name,
-    alias_cs: values.alias_cs
+    customer_name: values.customer_name
   });
 
   const button = sourceButton || document.querySelector(`.row-btn.primary[data-action="save"][data-index="${index}"]`);
@@ -491,7 +492,6 @@ async function saveCustomer(index, values, sourceButton) {
       throw new Error(body.detail || `API error ${response.status}`);
     }
     row.customer_name = values.customer_name;
-    row.alias_cs = values.alias_cs;
     document.querySelectorAll(`.cell-input[data-index="${index}"]`).forEach(input => {
       input.classList.remove("dirty");
     });
@@ -533,6 +533,10 @@ function openCustomerModal(index) {
           <div class="kv-label">GSA</div>
           <div class="kv-value">${esc(row.gsa)}</div>
         </div>
+        <div class="kv">
+          <div class="kv-label">Alias_CS</div>
+          <div class="kv-value">${esc(row.alias_cs)}</div>
+        </div>
       </div>
     </div>
     <div class="detail-section">
@@ -541,10 +545,6 @@ function openCustomerModal(index) {
         <div class="field">
           <label for="modalCustomerName">Customer_Name</label>
           <input id="modalCustomerName" value="${esc(row.customer_name)}">
-        </div>
-        <div class="field">
-          <label for="modalAliasCs">Alias_CS</label>
-          <input id="modalAliasCs" value="${esc(row.alias_cs)}">
         </div>
       </div>
     </div>
@@ -562,8 +562,7 @@ function closeCustomerModal() {
 async function saveModalCustomer() {
   if (modalIndex === null) return;
   const values = {
-    customer_name: document.getElementById("modalCustomerName").value.trim(),
-    alias_cs: document.getElementById("modalAliasCs").value.trim()
+    customer_name: document.getElementById("modalCustomerName").value.trim()
   };
   els.modalSaveState.textContent = "Saving";
   const saved = await saveCustomer(modalIndex, values, els.modalSaveBtn);
@@ -573,10 +572,8 @@ async function saveModalCustomer() {
   }
   const row = customerRows[modalIndex];
   const nameInput = document.querySelector(inputSelector(modalIndex, "customer_name"));
-  const aliasInput = document.querySelector(inputSelector(modalIndex, "alias_cs"));
-  if (row && nameInput && aliasInput) {
+  if (row && nameInput) {
     nameInput.value = row.customer_name;
-    aliasInput.value = row.alias_cs;
     els.modalTitle.textContent = row.customer_name || row.cust_id || "Customer";
     els.modalSaveState.textContent = "Saved";
     setTimeout(() => {
