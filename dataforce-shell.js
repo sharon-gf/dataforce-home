@@ -9,7 +9,48 @@
   const DEFAULT_FAVICON_TYPE = "image/jpeg";
   const DEFAULT_APP_LOGO_URL = SCRIPT_URL ? new URL("app-logo.png", SCRIPT_URL).href : "app-logo.png";
 
+  // ==========================================
+  // AGREGA ESTE BLOQUE JUSTO AQUÍ (AL INICIO)
+  // ==========================================
 
+  (function injectApplePWATags() {
+    const head = document.head || document.getElementsByTagName('head')[0];
+    if (!head) return;
+
+    // 1. Apple Touch Icon (Usa tu app-logo.png del repositorio)
+    if (!document.querySelector('link[rel="apple-touch-icon"]')) {
+      const appleIcon = document.createElement('link');
+      appleIcon.rel = 'apple-touch-icon';
+      appleIcon.href = DEFAULT_APP_LOGO_URL;
+      head.appendChild(appleIcon);
+    }
+
+    // 2. Web App Capable (Elimina las barras de Safari)
+    if (!document.querySelector('meta[name="apple-mobile-web-app-capable"]')) {
+      const appCapable = document.createElement('meta');
+      appCapable.name = 'apple-mobile-web-app-capable';
+      appCapable.content = 'yes';
+      head.appendChild(appCapable);
+    }
+
+    // 3. Status Bar Style
+    if (!document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')) {
+      const appStatus = document.createElement('meta');
+      appStatus.name = 'apple-mobile-web-app-status-bar-style';
+      appStatus.content = 'default';
+      head.appendChild(appStatus);
+    }
+
+    // 4. App Title
+    if (!document.querySelector('meta[name="apple-mobile-web-app-title"]')) {
+      const appTitle = document.createElement('meta');
+      appTitle.name = 'apple-mobile-web-app-title';
+      appTitle.content = 'DataForce';
+      head.appendChild(appTitle);
+    }
+  })();
+
+  
   function onReady(fn) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
     else fn();
@@ -29,27 +70,6 @@
     icon.type = cfg().faviconType || DEFAULT_FAVICON_TYPE;
     icon.href = cfg().faviconHref || DEFAULT_FAVICON_HREF;
     // document.head.appendChild(icon);
-  
-    // ADD THIS — Apple home screen meta tags
-    const appleIcon = document.createElement("link");
-    appleIcon.rel = "apple-touch-icon";
-    appleIcon.href = cfg().logoUrl || DEFAULT_APP_LOGO_URL;
-    document.head.appendChild(appleIcon);
-  
-    const appTitle = document.createElement("meta");
-    appTitle.name = "apple-mobile-web-app-title";
-    appTitle.content = "DataForce";
-    document.head.appendChild(appTitle);
-  
-    const appCapable = document.createElement("meta");
-    appCapable.name = "apple-mobile-web-app-capable";
-    appCapable.content = "yes";
-    document.head.appendChild(appCapable);
-  
-    const appStatus = document.createElement("meta");
-    appStatus.name = "apple-mobile-web-app-status-bar-style";
-    appStatus.content = "default";
-    document.head.appendChild(appStatus);
   }
 
   function first(selectors, root) {
