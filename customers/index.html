@@ -4,7 +4,7 @@
 <link rel="icon" type="image/jpeg" href="../favicon.jpg">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DATAFORCE - Customers Management</title>
+<title>DATAFORCE - Customers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -12,7 +12,6 @@
     --bg:#e8eaee;
     --surface:#fff;
     --surface2:#f5f7fb;
-    --surface3:#edf1f7;
     --border:#d8dde8;
     --navy:#0d1f3c;
     --navy2:#1a3360;
@@ -22,13 +21,16 @@
     --blue:#1a56db;
     --blue-hover:#1145be;
     --cyan:#7aaed5;
-    --teal:#0c9080;
+    --amber:#c97a06;
+    --red:#b91c1c;
     --green:#15803d;
     --content-width:1080px;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
-  button, input { font:inherit; }
+  body { overflow-x:hidden; }
+  body.modal-open { overflow:hidden; }
+  button, input, select { font:inherit; }
   .app { min-height:100vh; padding:8px; }
 
   .header {
@@ -42,7 +44,7 @@
     margin-bottom:8px;
   }
   .logo-link { color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:9px; width:max-content; }
-  .df-mark { width:28px; height:28px; border:1px solid rgba(122,174,213,.7); border-radius:4px; display:grid; place-items:center; color:#7aaed5; font-size:12px; font-weight:700; }
+  .df-mark { width:28px; height:28px; border:1px solid rgba(122,174,213,.7); border-radius:4px; display:grid; place-items:center; color:#7aaed5; font-size:12px; font-weight:700; letter-spacing:0; }
   .logo-word { display:flex; flex-direction:column; gap:1px; }
   .logo-main { font-size:18px; letter-spacing:.13em; font-weight:600; line-height:1; }
   .logo-sub { color:var(--cyan); font-size:9px; letter-spacing:.24em; text-transform:uppercase; }
@@ -53,7 +55,7 @@
   .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
   .dot { width:7px; height:7px; border-radius:99px; background:#22c55e; }
   .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font-size:10px; }
-  
+
   .panel { width:min(var(--content-width),100%); margin:0 auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
   .panel-head {
     background:var(--navy2);
@@ -65,98 +67,200 @@
     gap:10px;
     min-height:38px;
   }
-  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
-  .panel-note { font-size:10px; color:#8fb5d7; }
+  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
+  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; text-align:right; min-width:0; }
 
-  .info-bar { padding:10px 12px; background:var(--surface2); border-bottom:1px solid var(--border); font-size:11px; color:var(--text2); line-height:1.4; }
-
-  .table-shell { min-height:526px; }
-  .table-wrap { overflow:auto; max-height:600px; padding:0 0 12px; }
-  table { width:100%; border-collapse:collapse; }
-  th { position:sticky; top:0; z-index:1; background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:10px 8px; text-align:left; }
-  td { border-bottom:1px solid var(--border); padding:8px; text-align:left; color:var(--text1); font-size:11px; white-space:nowrap; }
-  tbody tr:nth-child(even) td { background:#f0f2f6; }
-  
-  .col-read { background:var(--surface2); color:var(--text2); font-weight:500; }
-  .col-editable { background:#fff; }
-  
-  .edit-container { display:flex; align-items:center; gap:8px; width:100%; }
-  .input-name {
-    flex:1;
-    height:28px;
+  .filters {
+    padding:10px 12px;
+    display:grid;
+    grid-template-columns:minmax(220px,1fr) minmax(160px,.45fr) auto;
+    gap:8px;
+    align-items:end;
+    background:var(--surface2);
+    border-bottom:1px solid var(--border);
+  }
+  .field { min-width:0; }
+  label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
+  input, select {
+    width:100%;
+    height:30px;
     border:1px solid var(--border);
     border-radius:4px;
-    padding:0 8px;
+    background:#fff;
     color:var(--text1);
-    font-size:11px;
+    padding:5px 8px;
     outline:none;
   }
-  .input-name:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
-  
-  .btn-save {
-    height:28px;
-    background:var(--blue);
-    color:#fff;
-    border:none;
+  input:focus, select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
+  .filter-actions { display:flex; justify-content:flex-end; gap:6px; }
+  .tool-btn {
+    height:30px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--text1);
     border-radius:4px;
-    padding:0 12px;
+    padding:0 10px;
     font-size:10px;
     font-weight:600;
+    letter-spacing:.06em;
     text-transform:uppercase;
     cursor:pointer;
     white-space:nowrap;
-    transition: background 0.15s;
   }
-  .btn-save:hover { background:var(--blue-hover); }
-  .btn-save:disabled { background:var(--text3); cursor:not-allowed; }
+  .tool-btn.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .tool-btn:hover { border-color:#9aa9bd; }
+
+  .table-shell { min-height:526px; }
+  .table-wrap { overflow:auto; max-height:620px; padding:0 0 12px; }
+  table { width:100%; border-collapse:collapse; }
+  th {
+    position:sticky;
+    top:0;
+    z-index:1;
+    background:var(--navy2);
+    color:#c8d8f0;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    padding:7px 8px;
+    text-align:left;
+    white-space:nowrap;
+  }
+  td { border-bottom:1px solid var(--border); padding:7px 8px; color:var(--text1); font-size:11px; white-space:nowrap; vertical-align:middle; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  tbody tr:hover td { background:#e4ecfb !important; }
+  .customers-table { table-layout:fixed; min-width:760px; }
+  .col-gsa { width:22%; }
+  .col-name { width:38%; }
+  .col-alias { width:28%; }
+  .col-actions { width:12%; text-align:right; }
+  td.actions-cell { text-align:right; }
+  .cell-input {
+    height:28px;
+    min-width:0;
+    border-color:transparent;
+    background:transparent;
+    padding:4px 6px;
+  }
+  .cell-input:hover, .cell-input:focus {
+    border-color:#b8c5d8;
+    background:#fff;
+  }
+  .cell-input.dirty {
+    border-color:#d8a433;
+    background:#fffaf0;
+  }
+  .row-actions { display:inline-flex; gap:6px; justify-content:flex-end; }
+  .row-btn {
+    height:26px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--text1);
+    border-radius:4px;
+    padding:0 9px;
+    cursor:pointer;
+    font-size:9px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .row-btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .row-btn.primary:hover { background:var(--blue-hover); }
+  .row-btn:disabled { opacity:.55; cursor:not-allowed; }
   .empty { padding:38px 16px; color:var(--text3); text-align:center; font-size:12px; }
+
+  .modal-backdrop { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.58); align-items:center; justify-content:center; padding:18px; }
+  .modal-card { background:#fff; border-radius:8px; width:min(620px,94vw); max-height:86vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,.35); }
+  .modal-head { background:var(--navy); color:#fff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .modal-kicker { color:#8fb5d7; font-size:9px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; margin-bottom:4px; }
+  .modal-title { color:#fff; font-size:14px; font-weight:400; letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .modal-close { width:28px; height:28px; border:1px solid rgba(122,174,213,.5); background:transparent; color:#fff; border-radius:4px; cursor:pointer; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .modal-close:hover { background:#17345d; }
+  .modal-body { overflow:auto; padding:12px 14px; }
+  .detail-section { margin-bottom:14px; }
+  .detail-title { color:var(--text2); font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-bottom:7px; }
+  .kv-grid { display:flex; flex-wrap:wrap; align-items:flex-start; gap:8px; }
+  .kv { background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:6px 9px; min-width:118px; width:max-content; max-width:100%; }
+  .kv-label { color:var(--text3); font-size:8px; letter-spacing:.07em; text-transform:uppercase; margin-bottom:3px; }
+  .kv-value { color:var(--text1); font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:360px; }
+  .edit-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modal-footer { display:flex; justify-content:flex-end; gap:8px; padding:12px 14px; border-top:1px solid var(--border); background:var(--surface2); }
+  .save-state { margin-right:auto; align-self:center; color:var(--text3); font-size:10px; }
+
+  @media (max-width:760px) {
+    .header { grid-template-columns:1fr; text-align:center; }
+    .logo-link { margin:auto; align-items:center; }
+    .header-right { align-items:center; }
+    .header-actions { flex-wrap:wrap; justify-content:center; }
+    .header-title { white-space:normal; font-size:15px; }
+    .filters { grid-template-columns:1fr; }
+    .filter-actions { justify-content:stretch; }
+    .filter-actions .tool-btn { flex:1; }
+    .panel-head { flex-wrap:wrap; }
+    .panel-note { width:100%; text-align:left; white-space:normal; }
+    .edit-grid { grid-template-columns:1fr; }
+  }
 </style>
 <link rel="stylesheet" href="../dataforce-shell.css">
+<script>window.DATAFORCE_SHELL = {"title":"Customers","userNameId":"userLabel"};</script>
+<script src="../dataforce-shell.js"></script>
 </head>
 <body>
 <div class="app">
   <header class="header">
-    <a class="logo-link" href="#">
+    <a class="logo-link" href="https://dataforce.gsaforce.com/" aria-label="Back to DATAFORCE home">
       <span class="df-mark">DF</span>
       <span class="logo-word">
         <span class="logo-main">DATAFORCE</span>
-        <span class="logo-sub">GSA Force</span>
+        <span class="logo-sub">GSA FORCE</span>
       </span>
     </a>
     <div class="hdr-mid">
-      <div class="header-title">CUSTOMER NAMES MANAGER</div>
+      <div class="header-title">CUSTOMERS</div>
     </div>
     <div class="header-right">
       <div class="header-actions">
-        <span id="userLabel">—</span>
-        <span class="status"><span class="dot"></span><span id="statusText">Ready</span></span>
-        <button class="logout" onclick="signOut()">Sign out</button>
+        <span id="userLabel"></span>
+        <span class="status"><span class="dot ready"></span><span id="statusText">Ready</span></span>
+        <button class="logout" type="button" onclick="signOut()">Sign out</button>
       </div>
     </div>
   </header>
 
   <section class="panel">
     <div class="panel-head">
-      <div class="panel-title">GSAFORCE Customers Registry</div>
-      <div class="panel-note" id="resultNote">0 customers</div>
+      <div class="panel-title">Customer Registry</div>
+      <div class="panel-note" id="resultNote">0 rows</div>
     </div>
-    <div class="info-bar">
-      💡 <strong>Data Policy Note:</strong> fields <em>GSA</em>, <em>Cust ID</em>, and <em>Alias CS</em> are protected logs mapped directly from our main database system. Only the <strong>Customer Name</strong> column is open for custom renaming and group mapping.
+    <div class="filters">
+      <div class="field">
+        <label for="nameSearch">Customer_Name</label>
+        <input id="nameSearch" type="search" placeholder="Search by name">
+      </div>
+      <div class="field">
+        <label for="gsaFilter">GSA</label>
+        <select id="gsaFilter">
+          <option value="">All GSA</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button class="tool-btn" id="resetBtn" type="button">Reset</button>
+        <button class="tool-btn primary" id="refreshBtn" type="button">Refresh</button>
+      </div>
     </div>
-    
     <div class="table-shell">
       <div class="table-wrap">
-        <table>
+        <table class="customers-table">
           <thead>
             <tr>
-              <th style="width: 20%;">GSA</th>
-              <th style="width: 15%;">Cust ID</th>
-              <th style="width: 30%;">Alias CS</th>
-              <th style="width: 35%;">Customer Name (Editable Shortname)</th>
+              <th class="col-gsa">GSA</th>
+              <th class="col-name">Customer_Name</th>
+              <th class="col-alias">Alias_CS</th>
+              <th class="col-actions">Actions</th>
             </tr>
           </thead>
           <tbody id="customersBody">
-            <tr><td colspan="4" class="empty">Loading registry...</td></tr>
+            <tr><td colspan="4" class="empty">Loading customers...</td></tr>
           </tbody>
         </table>
       </div>
@@ -164,10 +268,45 @@
   </section>
 </div>
 
+<div class="modal-backdrop" id="customerModal" onclick="if (event.target === this) closeCustomerModal()">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div>
+        <div class="modal-kicker">Customer detail</div>
+        <div class="modal-title" id="modalTitle">Customer</div>
+      </div>
+      <button class="modal-close" type="button" onclick="closeCustomerModal()" aria-label="Close customer detail">x</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <div class="save-state" id="modalSaveState"></div>
+      <button class="tool-btn" type="button" onclick="closeCustomerModal()">Close</button>
+      <button class="tool-btn primary" id="modalSaveBtn" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
 <script src="../permission-guard.js"></script>
 <script>
 const API_BASE = "https://dataforce-api-production.up.railway.app";
 const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+
+let customerRows = [];
+let requestSeq = 0;
+let searchTimer = null;
+let modalIndex = null;
+
+const els = {
+  body: document.getElementById("customersBody"),
+  resultNote: document.getElementById("resultNote"),
+  nameSearch: document.getElementById("nameSearch"),
+  gsaFilter: document.getElementById("gsaFilter"),
+  modal: document.getElementById("customerModal"),
+  modalTitle: document.getElementById("modalTitle"),
+  modalBody: document.getElementById("modalBody"),
+  modalSaveBtn: document.getElementById("modalSaveBtn"),
+  modalSaveState: document.getElementById("modalSaveState")
+};
 
 function user() {
   return getDataforceUser() || {};
@@ -179,122 +318,293 @@ function signOut() {
   window.location.href = "https://dataforce.gsaforce.com/";
 }
 
-function setStatus(text, ready) {
-  document.getElementById("statusText").textContent = text;
-  document.querySelector(".dot").style.background = ready ? "#22c55e" : "#c97a06";
-}
-
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, ch => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
   }[ch]));
 }
 
-async function loadCustomers() {
-  const u = user();
-  setStatus("Loading", false);
-  const tbody = document.getElementById("customersBody");
-  tbody.innerHTML = '<tr><td colspan="4" class="empty">Loading database registry...</td></tr>';
-
-  try {
-    const response = await fetch(`${API_BASE}/api/customers?email=${encodeURIComponent(u.email || "")}`, {
-      headers: { "x-api-key": API_KEY }
-    });
-    
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      throw new Error(body.detail || `Server status ${response.status}`);
-    }
-    
-    const data = await response.json();
-    const rows = data.rows || [];
-    document.getElementById("resultNote").textContent = `${rows.length} customers registered`;
-    
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty">No customers found in GSAFORCE_Customers table.</td></tr>';
-      setStatus("Ready", true);
-      return;
-    }
-
-    tbody.innerHTML = rows.map(row => `
-      <tr>
-        <td class="col-read">${esc(row.gsa)}</td>
-        <td class="col-read"><strong>${esc(row.cust_id)}</strong></td>
-        <td class="col-read">${esc(row.alias_cs)}</td>
-        <td class="col-editable">
-          <div class="edit-container">
-            <input type="text" class="input-name" id="input-${esc(row.cust_id)}" value="${esc(row.customer)}">
-            <button class="btn-save" id="btn-${esc(row.cust_id)}" onclick="saveCustomerName('${esc(row.cust_id)}')">Save</button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
-    
-    setStatus("Ready", true);
-  } catch (e) {
-    console.error("Failed to load customers layout:", e);
-    setStatus("Error", false);
-    tbody.innerHTML = `<tr><td colspan="4" class="empty" style="color:var(--red);">Could not pull data: ${esc(e.message)}</td></tr>`;
+function setStatus(text, ready) {
+  const status = document.getElementById("statusText");
+  const dot = document.querySelector(".dot");
+  if (status) status.textContent = text;
+  if (dot) {
+    dot.style.background = ready ? "#22c55e" : "#c97a06";
+    dot.classList.toggle("ready", Boolean(ready));
   }
 }
 
-async function saveCustomerName(custId) {
-  const u = user();
-  const inputEl = document.getElementById(`input-${custId}`);
-  const btnEl = document.getElementById(`btn-${custId}`);
-  const newName = inputEl.value.trim();
+function normalizeRow(row) {
+  return {
+    gsa: row.gsa ?? row.GSA ?? "",
+    cust_id: row.cust_id ?? row.Cust_Id ?? "",
+    customer_name: row.customer_name ?? row.customer ?? row.Customer_Name ?? "",
+    alias_cs: row.alias_cs ?? row.Alias_CS ?? ""
+  };
+}
 
-  if (!newName) {
-    alert("Customer Name cannot be empty.");
+function buildParams() {
+  const u = user();
+  const params = new URLSearchParams({
+    email: u.email || "",
+    name: els.nameSearch.value.trim(),
+    gsa: els.gsaFilter.value || "",
+    limit: "1000"
+  });
+  return params;
+}
+
+function populateGsaFilter(options) {
+  const current = els.gsaFilter.value;
+  const gsas = Array.from(new Set((options || []).filter(Boolean))).sort((a, b) => String(a).localeCompare(String(b)));
+  els.gsaFilter.innerHTML = '<option value="">All GSA</option>' + gsas.map(gsa =>
+    `<option value="${esc(gsa)}">${esc(gsa)}</option>`
+  ).join("");
+  if (gsas.includes(current)) els.gsaFilter.value = current;
+}
+
+function updateResultNote(count) {
+  const label = count === 1 ? "row" : "rows";
+  els.resultNote.textContent = `${count} ${label}`;
+}
+
+function inputSelector(index, field) {
+  return `.cell-input[data-index="${index}"][data-field="${field}"]`;
+}
+
+function markDirty(index) {
+  document.querySelectorAll(`.cell-input[data-index="${index}"]`).forEach(input => {
+    input.classList.add("dirty");
+  });
+  const saveBtn = document.querySelector(`.row-btn.primary[data-action="save"][data-index="${index}"]`);
+  if (saveBtn) saveBtn.textContent = "Save";
+}
+
+function renderTable() {
+  updateResultNote(customerRows.length);
+  if (!customerRows.length) {
+    els.body.innerHTML = '<tr><td colspan="4" class="empty">No customers found.</td></tr>';
     return;
   }
 
-  // Visual feedback during request execution
-  inputEl.disabled = true;
-  btnEl.disabled = true;
-  btnEl.textContent = "Saving...";
-  setStatus("Updating", false);
+  els.body.innerHTML = customerRows.map((row, index) => `
+    <tr data-index="${index}">
+      <td title="${esc(row.gsa)}">${esc(row.gsa)}</td>
+      <td>
+        <input class="cell-input" data-index="${index}" data-field="customer_name" value="${esc(row.customer_name)}" aria-label="Customer_Name">
+      </td>
+      <td>
+        <input class="cell-input" data-index="${index}" data-field="alias_cs" value="${esc(row.alias_cs)}" aria-label="Alias_CS">
+      </td>
+      <td class="actions-cell">
+        <span class="row-actions">
+          <button class="row-btn" type="button" data-action="view" data-index="${index}">View / Edit</button>
+          <button class="row-btn primary" type="button" data-action="save" data-index="${index}">Save</button>
+        </span>
+      </td>
+    </tr>
+  `).join("");
+
+  els.body.querySelectorAll(".cell-input").forEach(input => {
+    input.addEventListener("input", () => markDirty(input.dataset.index));
+  });
+  els.body.querySelectorAll("[data-action='view']").forEach(button => {
+    button.addEventListener("click", () => openCustomerModal(Number(button.dataset.index)));
+  });
+  els.body.querySelectorAll("[data-action='save']").forEach(button => {
+    button.addEventListener("click", () => saveInlineCustomer(Number(button.dataset.index)));
+  });
+}
+
+async function loadCustomers() {
+  const seq = ++requestSeq;
+  setStatus("Loading", false);
+  els.body.innerHTML = '<tr><td colspan="4" class="empty">Loading customers...</td></tr>';
 
   try {
-    const url = `${API_BASE}/api/customers/${encodeURIComponent(custId)}?customer=${encodeURIComponent(newName)}&email=${encodeURIComponent(u.email || "")}`;
-    const response = await fetch(url, {
-      method: 'PUT',
+    const response = await fetch(`${API_BASE}/api/customers?${buildParams().toString()}`, {
       headers: { "x-api-key": API_KEY }
     });
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const body = await response.json();
+        detail = body.detail ? `: ${body.detail}` : "";
+      } catch (_) {}
+      throw new Error(`API error ${response.status}${detail}`);
+    }
+    const data = await response.json();
+    if (seq !== requestSeq) return;
+    customerRows = (data.rows || []).map(normalizeRow);
+    populateGsaFilter(data.gsa_options || customerRows.map(row => row.gsa));
+    renderTable();
+    setStatus("Ready", true);
+  } catch (e) {
+    if (seq !== requestSeq) return;
+    console.error("Failed to load customers:", e);
+    setStatus("Error", false);
+    updateResultNote(0);
+    els.body.innerHTML = `<tr><td colspan="4" class="empty">Could not load customers. ${esc(e.message || "")}</td></tr>`;
+  }
+}
 
+function debouncedLoad() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadCustomers, 250);
+}
+
+function rowValues(index) {
+  return {
+    customer_name: document.querySelector(inputSelector(index, "customer_name")).value.trim(),
+    alias_cs: document.querySelector(inputSelector(index, "alias_cs")).value.trim()
+  };
+}
+
+async function saveCustomer(index, values, sourceButton) {
+  const row = customerRows[index];
+  if (!row) return false;
+  if (!values.customer_name) {
+    alert("Customer_Name cannot be empty.");
+    return false;
+  }
+
+  const params = new URLSearchParams({
+    email: user().email || "",
+    customer_name: values.customer_name,
+    alias_cs: values.alias_cs
+  });
+
+  const button = sourceButton || document.querySelector(`.row-btn.primary[data-action="save"][data-index="${index}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Saving";
+  }
+  setStatus("Saving", false);
+
+  try {
+    const response = await fetch(`${API_BASE}/api/customers/${encodeURIComponent(row.cust_id)}?${params.toString()}`, {
+      method: "PUT",
+      headers: { "x-api-key": API_KEY }
+    });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      throw new Error(body.detail || "Update operation failed");
+      throw new Error(body.detail || `API error ${response.status}`);
     }
-
-    setStatus("Ready", true);
-    btnEl.textContent = "Saved!";
-    btnEl.style.backgroundColor = "var(--green)";
-    
-    // Reset standard styles after 1.5 seconds
+    row.customer_name = values.customer_name;
+    row.alias_cs = values.alias_cs;
+    document.querySelectorAll(`.cell-input[data-index="${index}"]`).forEach(input => {
+      input.classList.remove("dirty");
+    });
+    if (button) button.textContent = "Saved";
     setTimeout(() => {
-      btnEl.textContent = "Save";
-      btnEl.style.backgroundColor = "var(--blue)";
-      inputEl.disabled = false;
-      btnEl.disabled = false;
-    }, 1500);
-
+      if (button) button.textContent = "Save";
+    }, 1200);
+    setStatus("Ready", true);
+    return true;
   } catch (e) {
-    alert(`Error saving modifications: ${e.message}`);
+    alert(`Could not save customer: ${e.message}`);
     setStatus("Error", false);
-    inputEl.disabled = false;
-    btnEl.disabled = false;
-    btnEl.textContent = "Save";
+    if (button) button.textContent = "Save";
+    return false;
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function saveInlineCustomer(index) {
+  saveCustomer(index, rowValues(index));
+}
+
+function openCustomerModal(index) {
+  const row = customerRows[index];
+  if (!row) return;
+  modalIndex = index;
+  els.modalTitle.textContent = row.customer_name || row.cust_id || "Customer";
+  els.modalSaveState.textContent = "";
+  els.modalBody.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-title">Customer</div>
+      <div class="kv-grid">
+        <div class="kv">
+          <div class="kv-label">Cust_Id</div>
+          <div class="kv-value">${esc(row.cust_id)}</div>
+        </div>
+        <div class="kv">
+          <div class="kv-label">GSA</div>
+          <div class="kv-value">${esc(row.gsa)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-title">Edit</div>
+      <div class="edit-grid">
+        <div class="field">
+          <label for="modalCustomerName">Customer_Name</label>
+          <input id="modalCustomerName" value="${esc(row.customer_name)}">
+        </div>
+        <div class="field">
+          <label for="modalAliasCs">Alias_CS</label>
+          <input id="modalAliasCs" value="${esc(row.alias_cs)}">
+        </div>
+      </div>
+    </div>
+  `;
+  els.modal.style.display = "flex";
+  document.body.classList.add("modal-open");
+}
+
+function closeCustomerModal() {
+  els.modal.style.display = "none";
+  document.body.classList.remove("modal-open");
+  modalIndex = null;
+}
+
+async function saveModalCustomer() {
+  if (modalIndex === null) return;
+  const values = {
+    customer_name: document.getElementById("modalCustomerName").value.trim(),
+    alias_cs: document.getElementById("modalAliasCs").value.trim()
+  };
+  els.modalSaveState.textContent = "Saving";
+  const saved = await saveCustomer(modalIndex, values, els.modalSaveBtn);
+  if (!saved) {
+    els.modalSaveState.textContent = "";
+    return;
+  }
+  const row = customerRows[modalIndex];
+  const nameInput = document.querySelector(inputSelector(modalIndex, "customer_name"));
+  const aliasInput = document.querySelector(inputSelector(modalIndex, "alias_cs"));
+  if (row && nameInput && aliasInput) {
+    nameInput.value = row.customer_name;
+    aliasInput.value = row.alias_cs;
+    els.modalTitle.textContent = row.customer_name || row.cust_id || "Customer";
+    els.modalSaveState.textContent = "Saved";
+    setTimeout(() => {
+      els.modalSaveState.textContent = "";
+    }, 1200);
   }
 }
 
 function initCustomersModule() {
   const u = user();
-  document.getElementById("userLabel").textContent = u.name || u.email || "";
+  const label = document.getElementById("userLabel");
+  if (label) label.textContent = u.name || u.email || "";
   loadCustomers();
 }
 
-// Integración automática con tu guard de accesos corporativos
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeCustomerModal();
+});
+els.nameSearch.addEventListener("input", debouncedLoad);
+els.gsaFilter.addEventListener("change", loadCustomers);
+document.getElementById("resetBtn").addEventListener("click", () => {
+  els.nameSearch.value = "";
+  els.gsaFilter.value = "";
+  loadCustomers();
+});
+document.getElementById("refreshBtn").addEventListener("click", loadCustomers);
+els.modalSaveBtn.addEventListener("click", saveModalCustomer);
+
 checkModuleAccess("customers", initCustomersModule);
 </script>
 </body>
