@@ -21,7 +21,8 @@
     if (!document.querySelector('link[rel="apple-touch-icon"]')) {
       const appleIcon = document.createElement('link');
       appleIcon.rel = 'apple-touch-icon';
-      appleIcon.href = DEFAULT_APP_LOGO_URL;
+      //appleIcon.href = DEFAULT_APP_LOGO_URL;
+      appleIcon.href = 'https://dataforce.gsaforce.com/app-logo.png';
       head.appendChild(appleIcon);
     }
 
