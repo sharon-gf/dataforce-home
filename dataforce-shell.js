@@ -52,12 +52,6 @@
     document.head.appendChild(appStatus);
   }
 
-
-
-
-    
-  }
-
   function first(selectors, root) {
     const base = root || document;
     for (const selector of selectors) {
