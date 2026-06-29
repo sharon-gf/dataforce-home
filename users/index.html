@@ -41,21 +41,22 @@ header {
   border-radius:6px;
   margin:8px;
 }
-.logo-area { grid-column:1; justify-self:start; display:flex; align-items:center; flex-shrink:0; }
+.logo-area { grid-column:1; justify-self:start; display:flex; align-items:center; min-width:0; flex-shrink:0; }
 .logo-area a { display:flex; align-items:center; text-decoration:none; cursor:pointer; }
 .hdr-div   { display:none; }
 
 /* Bloque central */
-.hdr-mid { grid-column:2; text-align:center; }
+.hdr-mid { grid-column:2; min-width:0; text-align:center; }
 .hdr-module-name {
   font-size:18px; font-weight:500; color:#7aaed5;
-  letter-spacing:0.08em; line-height:1.2; margin:0; padding:0;
+  overflow-wrap:anywhere; letter-spacing:0.08em; line-height:1.2; margin:0; padding:0;
 }
 
 /* Derecha */
-.header-right { grid-column:3; justify-self:end; text-align:right; flex-shrink:0; }
-.user-info { font-size:11px; color:#fff; }
-.logout-btn { background:transparent; border:1px solid #7aaed5; color:#7aaed5; padding:4px 10px; border-radius:3px; font-size:9px; cursor:pointer; margin-left:10px; transition:all 0.2s; }
+.header-right { grid-column:3; justify-self:end; min-width:0; max-width:100%; text-align:right; flex-shrink:0; }
+.user-info { display:flex; align-items:center; justify-content:flex-end; gap:10px; min-width:0; font-size:11px; color:#fff; white-space:nowrap; }
+#userName { display:inline-block; overflow:hidden; max-width:160px; text-overflow:ellipsis; vertical-align:middle; }
+.logout-btn { background:transparent; border:1px solid #7aaed5; color:#7aaed5; padding:4px 10px; border-radius:3px; font-size:9px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
 .logout-btn:hover { background:#7aaed5; color:var(--navy); }
 
 /* ── LOGIN ── */
@@ -67,19 +68,19 @@ header {
 
 /* ── MAIN ── */
 #app { display:none; flex-direction:column; min-height:100vh; background:var(--bg); }
-main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
+main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:column; gap:8px; }
 
 /* ── PAGE TITLE ── */
 .page-title { color:var(--text1); font-size:14px; font-weight:500; margin:0; }
 .page-desc { color:var(--text3); font-size:9px; font-weight:300; margin:0; }
 
 /* ── CONTROLS ── */
-.controls-row { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
-.search-box { flex:1; min-width:200px; }
+.controls-row { display:grid; grid-template-columns:minmax(220px,1fr) minmax(150px,auto) auto; gap:8px; margin-bottom:8px; align-items:center; }
+.search-box { min-width:0; }
 .search-box input { width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); }
 .search-box input:focus { outline:none; border-color:var(--blue); }
-.filter-select { padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); }
-.add-btn { background:var(--blue); color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:10px; font-weight:500; cursor:pointer; white-space:nowrap; }
+.filter-select { width:100%; min-width:150px; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); }
+.add-btn { justify-self:end; background:var(--blue); color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:10px; font-weight:500; cursor:pointer; white-space:nowrap; }
 .add-btn:hover { background:#0d47a1; }
 
 /* ── STATS ── */
@@ -95,16 +96,21 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   text-align:left; color:#c8d8f0; font-weight:500; font-size:8px; letter-spacing:0.05em; text-transform:uppercase;
   padding:6px 8px; background:var(--navy-hdr); white-space:nowrap;
 }
-.dtbl th.module-col, .dtbl th.summary-col { text-align:center; }
+.dtbl th.module-col, .dtbl th.summary-col, .dtbl th.status-col { text-align:center; }
 .dtbl th.actions-col { text-align:right; }
 .dtbl td {
   text-align:left; padding:6px 8px; color:var(--text1); font-size:9.5px; border-bottom:1px solid var(--border); white-space:nowrap;
 }
-.dtbl td.module-cell, .dtbl td.summary-cell { text-align:center; }
+.dtbl td.module-cell, .dtbl td.summary-cell, .dtbl td.status-cell { text-align:center; }
 .dtbl td.actions-cell { text-align:right; }
 .dtbl tbody tr:nth-child(even) td { background:var(--stripe); }
 .dtbl tbody tr:nth-child(odd)  td { background:var(--surface); }
 .dtbl tbody tr:hover td { background:#e8edf7 !important; }
+.dtbl tbody tr.user-row { cursor:pointer; }
+.dtbl tbody tr.user-row:focus-visible { outline:2px solid var(--blue); outline-offset:-2px; }
+.name-cell strong { display:block; overflow:hidden; text-overflow:ellipsis; }
+.status-col { width:96px; }
+.actions-col, .actions-cell { width:128px; }
 .module-check {
   display:inline-block;
   min-width:18px;
@@ -119,7 +125,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 .status-active { background:#c8d8f0; color:var(--navy); }
 .status-inactive { background:#e8c4c4; color:#8b3a3a; }
 
-.btn-edit, .btn-delete { background:transparent; border:1px solid var(--border); padding:4px 8px; border-radius:3px; cursor:pointer; font-size:8px; color:var(--text1); transition:all 0.2s; }
+.btn-edit, .btn-delete { min-width:42px; background:transparent; border:1px solid var(--border); padding:4px 8px; border-radius:3px; cursor:pointer; font-size:8px; color:var(--text1); transition:all 0.2s; }
 .btn-edit:hover { background:var(--blue); color:#fff; border-color:var(--blue); }
 .btn-delete:hover { background:#8b3a3a; color:#fff; border-color:#8b3a3a; }
 
@@ -196,11 +202,41 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
 /* ── RESPONSIVE ── */
 @media (max-width:600px) {
-  header { flex-wrap:wrap; gap:8px; }
-  .hdr-mid { order:3; flex:1 1 100%; margin-top:8px; }
-  .stats { grid-template-columns:1fr; }
-  .controls-row { flex-direction:column; }
-  .search-box { min-width:auto; }
+  header {
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:
+      "logo user"
+      "title title";
+    gap:7px 8px;
+    min-height:0;
+    margin:6px;
+    padding:9px 10px;
+  }
+  .logo-area { grid-area:logo; }
+  .logo-svg { height:24px; max-width:145px; }
+  .hdr-mid { grid-area:title; }
+  .hdr-module-name { font-size:14px; letter-spacing:0.04em; }
+  .header-right { grid-area:user; max-width:160px; }
+  .user-info { gap:6px; font-size:10px; }
+  #userName { max-width:72px; }
+  .logout-btn { padding:4px 7px; font-size:9px; }
+  main { padding:6px 10px 20px; }
+  .stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .stat { padding:7px 6px; }
+  .stat-label { font-size:7px; }
+  .stat-value { font-size:16px; }
+  .controls-row { grid-template-columns:minmax(0,1fr) minmax(112px,42%); }
+  .filter-select { min-width:0; }
+  .add-btn { grid-column:1 / -1; justify-self:stretch; }
+  .dtbl th, .dtbl td { padding:8px 7px; font-size:9px; }
+  .actions-col, .actions-cell { width:112px; }
+  .btn-edit, .btn-delete { padding:5px 7px; }
+}
+
+@media (max-width:360px) {
+  .logo-svg { max-width:120px; }
+  #userName { max-width:54px; }
+  .actions-col, .actions-cell { width:100px; }
 }
 </style>
 </head>
@@ -229,16 +265,9 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
   </header>
 
   <main>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
-      <div>
-        <p class="page-title">Manage Users</p>
-        <p class="page-desc">Add, edit, or remove user access and permissions</p>
-      </div>
-    </div>
-
     <div class="controls-row">
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search by name or email…" onkeyup="filterTable()" />
+        <input type="text" id="searchInput" placeholder="Search by name…" onkeyup="filterTable()" />
       </div>
       <select id="moduleFilter" class="filter-select" onchange="filterTable()">
         <option value="">All modules</option>
@@ -285,19 +314,7 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
         <thead>
           <tr>
             <th>Name</th>
-            <th>Email</th>
-            <th class="module-col">BKD</th>
-            <th class="module-col">FLWN</th>
-            <th class="module-col">DASHB</th>
-            <th class="module-col">MYBK</th>
-            <th class="module-col">BKDTL</th>
-            <th class="module-col">RATE</th>
-            <th class="module-col">UP</th>
-            <th class="module-col">VVI</th>
-            <th class="module-col">ADMIN</th>
-            <th class="summary-col">Biz</th>
-            <th class="summary-col">Sales Person</th>
-            <th>Status</th>
+            <th class="status-col">Status</th>
             <th class="actions-col">Actions</th>
           </tr>
         </thead>
@@ -583,6 +600,16 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     return Array.isArray(value) ? value : [];
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+  }
+
   function formatBizSummary(value) {
     const businesses = asList(value);
     if (businesses.length === 0 || businesses.includes('ALL') || businesses.length >= BUSINESSES.length) {
@@ -609,26 +636,41 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
     allUsers.forEach(user => {
       const row = document.createElement('tr');
       const modules = asList(user.modules);
-      const moduleCells = MODULE_COLUMNS.map(module =>
-        `<td class="module-cell">${modules.includes(module.key) ? '<span class="module-check">✓</span>' : ''}</td>`
-      ).join('');
-      const bizSummary = formatBizSummary(user.allowed_businesses);
-      const salesPerson = formatSalesPerson(user.sales_person);
       const status = user.status || 'active';
+      const statusLabel = status === 'inactive' ? 'Inactive' : 'Active';
+      const displayName = user.name || '—';
+      const email = user.email || '';
+      row.className = 'user-row';
+      row.tabIndex = 0;
+      row.setAttribute('role', 'button');
+      row.setAttribute('aria-label', `Open details for ${displayName !== '—' ? displayName : email || 'user'}`);
       row.dataset.modules = modules.join(' ').toLowerCase();
+      row.dataset.search = `${displayName} ${email}`.toLowerCase();
+
+      row.addEventListener('click', () => editUser(user.id));
+      row.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          editUser(user.id);
+        }
+      });
 
       row.innerHTML = `
-        <td><strong>${user.name || '—'}</strong></td>
-        <td>${user.email}</td>
-        ${moduleCells}
-        <td class="summary-cell"><span class="summary-value">${bizSummary}</span></td>
-        <td class="summary-cell"><span class="summary-value">${salesPerson}</span></td>
-        <td><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${status === 'active' ? 'Active' : 'Inactive'}</span></td>
+        <td class="name-cell"><strong>${escapeHtml(displayName)}</strong></td>
+        <td class="status-cell"><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${statusLabel}</span></td>
         <td class="actions-cell">
-          <button class="btn-edit" onclick="editUser(${user.id})">Edit</button>
-          <button class="btn-delete" onclick="deleteUser(${user.id})">Del</button>
+          <button type="button" class="btn-edit">Edit</button>
+          <button type="button" class="btn-delete">Del</button>
         </td>
       `;
+      row.querySelector('.btn-edit').addEventListener('click', event => {
+        event.stopPropagation();
+        editUser(user.id);
+      });
+      row.querySelector('.btn-delete').addEventListener('click', event => {
+        event.stopPropagation();
+        deleteUser(user.id);
+      });
       tbody.appendChild(row);
     });
 
@@ -651,11 +693,10 @@ main { padding:8px 80px 24px; display:flex; flex-direction:column; gap:8px; }
 
     const rows = document.querySelectorAll('#tableBody tr');
     rows.forEach(row => {
-      const name = row.cells[0].textContent.toLowerCase();
-      const email = row.cells[1].textContent.toLowerCase();
+      const searchText = row.dataset.search || '';
       const modules = row.dataset.modules || '';
 
-      const matchesSearch = name.includes(search) || email.includes(search);
+      const matchesSearch = searchText.includes(search);
       const matchesModule = !module || modules.includes(module);
 
       row.style.display = matchesSearch && matchesModule ? '' : 'none';
