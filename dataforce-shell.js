@@ -7,6 +7,8 @@
   const DEFAULT_LOGO_URL = SCRIPT_URL ? new URL("dataforce-logo.png", SCRIPT_URL).href : "dataforce-logo.png";
   const DEFAULT_FAVICON_HREF = SCRIPT_URL ? new URL("favicon.jpg", SCRIPT_URL).href : "favicon.jpg";
   const DEFAULT_FAVICON_TYPE = "image/jpeg";
+  const DEFAULT_APP_LOGO_URL = SCRIPT_URL ? new URL("app-logo.png", SCRIPT_URL).href : "app-logo.png";
+
 
   function onReady(fn) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
@@ -27,6 +29,33 @@
     icon.type = cfg().faviconType || DEFAULT_FAVICON_TYPE;
     icon.href = cfg().faviconHref || DEFAULT_FAVICON_HREF;
     // document.head.appendChild(icon);
+  
+    // ADD THIS — Apple home screen meta tags
+    const appleIcon = document.createElement("link");
+    appleIcon.rel = "apple-touch-icon";
+    appleIcon.href = cfg().logoUrl || DEFAULT_APP_LOGO_URL;
+    document.head.appendChild(appleIcon);
+  
+    const appTitle = document.createElement("meta");
+    appTitle.name = "apple-mobile-web-app-title";
+    appTitle.content = "DataForce";
+    document.head.appendChild(appTitle);
+  
+    const appCapable = document.createElement("meta");
+    appCapable.name = "apple-mobile-web-app-capable";
+    appCapable.content = "yes";
+    document.head.appendChild(appCapable);
+  
+    const appStatus = document.createElement("meta");
+    appStatus.name = "apple-mobile-web-app-status-bar-style";
+    appStatus.content = "default";
+    document.head.appendChild(appStatus);
+  }
+
+
+
+
+    
   }
 
   function first(selectors, root) {
