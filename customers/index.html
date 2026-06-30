@@ -73,7 +73,7 @@
   .filters {
     padding:10px 12px;
     display:grid;
-    grid-template-columns:minmax(220px,1fr) minmax(160px,.45fr) auto;
+    grid-template-columns:minmax(220px,1fr) minmax(140px,.4fr) minmax(360px,auto);
     gap:8px;
     align-items:end;
     background:var(--surface2);
@@ -92,7 +92,7 @@
     outline:none;
   }
   input:focus, select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
-  .filter-actions { display:flex; justify-content:flex-end; gap:6px; }
+  .filter-actions { display:flex; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
   .tool-btn {
     height:30px;
     border:1px solid var(--border);
@@ -173,6 +173,7 @@
   .row-btn.primary:hover { background:var(--blue-hover); }
   .row-btn:disabled { opacity:.55; cursor:not-allowed; }
   .empty { padding:38px 16px; color:var(--text3); text-align:center; font-size:12px; }
+  .file-input { display:none; }
 
   .modal-backdrop { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.58); align-items:center; justify-content:center; padding:18px; }
   .modal-card { background:#fff; border-radius:8px; width:min(620px,94vw); max-height:86vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,.35); }
@@ -249,8 +250,11 @@
         </select>
       </div>
       <div class="filter-actions">
+        <button class="tool-btn primary" id="newCustomerBtn" type="button">New Customer</button>
+        <button class="tool-btn" id="uploadCustomersBtn" type="button">Upload Excel</button>
         <button class="tool-btn" id="resetBtn" type="button">Reset</button>
-        <button class="tool-btn primary" id="refreshBtn" type="button">Refresh</button>
+        <button class="tool-btn" id="refreshBtn" type="button">Refresh</button>
+        <input class="file-input" id="customerUploadInput" type="file" accept=".xlsx,.xls,.csv">
       </div>
     </div>
     <div class="table-shell">
@@ -277,7 +281,7 @@
   <div class="modal-card">
     <div class="modal-head">
       <div>
-        <div class="modal-kicker">Customer detail</div>
+        <div class="modal-kicker" id="modalKicker">Customer detail</div>
         <div class="modal-title" id="modalTitle">Customer</div>
       </div>
       <button class="modal-close" type="button" onclick="closeCustomerModal()" aria-label="Close customer detail">x</button>
@@ -300,6 +304,7 @@ let customerRows = [];
 let requestSeq = 0;
 let searchTimer = null;
 let modalIndex = null;
+let modalMode = "edit";
 
 const els = {
   body: document.getElementById("customersBody"),
@@ -307,10 +312,12 @@ const els = {
   nameSearch: document.getElementById("nameSearch"),
   gsaFilter: document.getElementById("gsaFilter"),
   modal: document.getElementById("customerModal"),
+  modalKicker: document.getElementById("modalKicker"),
   modalTitle: document.getElementById("modalTitle"),
   modalBody: document.getElementById("modalBody"),
   modalSaveBtn: document.getElementById("modalSaveBtn"),
-  modalSaveState: document.getElementById("modalSaveState")
+  modalSaveState: document.getElementById("modalSaveState"),
+  uploadInput: document.getElementById("customerUploadInput")
 };
 
 function user() {
@@ -327,6 +334,13 @@ function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, ch => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
   }[ch]));
+}
+
+function errorDetail(body, fallback) {
+  const detail = body && body.detail;
+  if (Array.isArray(detail)) return detail.join("\n");
+  if (detail) return String(detail);
+  return fallback || "Unknown error";
 }
 
 function setStatus(text, ready) {
@@ -489,7 +503,7 @@ async function saveCustomer(index, values, sourceButton) {
     });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      throw new Error(body.detail || `API error ${response.status}`);
+      throw new Error(errorDetail(body, `API error ${response.status}`));
     }
     row.customer_name = values.customer_name;
     document.querySelectorAll(`.cell-input[data-index="${index}"]`).forEach(input => {
@@ -518,8 +532,11 @@ function saveInlineCustomer(index) {
 function openCustomerModal(index) {
   const row = customerRows[index];
   if (!row) return;
+  modalMode = "edit";
   modalIndex = index;
+  els.modalKicker.textContent = "Customer detail";
   els.modalTitle.textContent = row.customer_name || row.cust_id || "Customer";
+  els.modalSaveBtn.textContent = "Save";
   els.modalSaveState.textContent = "";
   els.modalBody.innerHTML = `
     <div class="detail-section">
@@ -553,13 +570,105 @@ function openCustomerModal(index) {
   document.body.classList.add("modal-open");
 }
 
+function openCreateCustomerModal() {
+  modalMode = "create";
+  modalIndex = null;
+  els.modalKicker.textContent = "Create customer";
+  els.modalTitle.textContent = "New Customer";
+  els.modalSaveBtn.textContent = "Create";
+  els.modalSaveState.textContent = "";
+  els.modalBody.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-title">Create Customer</div>
+      <div class="edit-grid">
+        <div class="field">
+          <label for="newCustId">Cust_Id</label>
+          <input id="newCustId" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="newGsa">GSA</label>
+          <input id="newGsa" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="newAliasCs">Alias_CS</label>
+          <input id="newAliasCs" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="newCustomerName">Customer_Name</label>
+          <input id="newCustomerName" autocomplete="off">
+        </div>
+      </div>
+    </div>
+  `;
+  els.modal.style.display = "flex";
+  document.body.classList.add("modal-open");
+  setTimeout(() => document.getElementById("newCustId")?.focus(), 0);
+}
+
 function closeCustomerModal() {
   els.modal.style.display = "none";
   document.body.classList.remove("modal-open");
   modalIndex = null;
+  modalMode = "edit";
+  els.modalKicker.textContent = "Customer detail";
+  els.modalSaveBtn.textContent = "Save";
+}
+
+async function createCustomerFromModal() {
+  const payload = {
+    cust_id: document.getElementById("newCustId").value.trim(),
+    gsa: document.getElementById("newGsa").value.trim(),
+    alias_cs: document.getElementById("newAliasCs").value.trim(),
+    customer_name: document.getElementById("newCustomerName").value.trim()
+  };
+  const missing = [];
+  if (!payload.cust_id) missing.push("Cust_Id");
+  if (!payload.gsa) missing.push("GSA");
+  if (!payload.alias_cs) missing.push("Alias_CS");
+  if (!payload.customer_name) missing.push("Customer_Name");
+  if (missing.length) {
+    alert(`Missing required fields: ${missing.join(", ")}`);
+    return;
+  }
+
+  const params = new URLSearchParams({ email: user().email || "" });
+  els.modalSaveBtn.disabled = true;
+  els.modalSaveBtn.textContent = "Creating";
+  els.modalSaveState.textContent = "Creating";
+  setStatus("Creating", false);
+
+  try {
+    const response = await fetch(`${API_BASE}/api/customers?${params.toString()}`, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(errorDetail(body, `API error ${response.status}`));
+    }
+    els.modalSaveState.textContent = "Created";
+    setStatus("Ready", true);
+    closeCustomerModal();
+    await loadCustomers();
+  } catch (e) {
+    alert(`Could not create customer: ${e.message}`);
+    els.modalSaveState.textContent = "";
+    setStatus("Error", false);
+  } finally {
+    els.modalSaveBtn.disabled = false;
+    els.modalSaveBtn.textContent = modalMode === "create" ? "Create" : "Save";
+  }
 }
 
 async function saveModalCustomer() {
+  if (modalMode === "create") {
+    await createCustomerFromModal();
+    return;
+  }
   if (modalIndex === null) return;
   const values = {
     customer_name: document.getElementById("modalCustomerName").value.trim()
@@ -582,6 +691,36 @@ async function saveModalCustomer() {
   }
 }
 
+async function uploadCustomersFile() {
+  const file = els.uploadInput.files && els.uploadInput.files[0];
+  if (!file) return;
+
+  const params = new URLSearchParams({ email: user().email || "" });
+  const form = new FormData();
+  form.append("file", file);
+  setStatus("Uploading", false);
+
+  try {
+    const response = await fetch(`${API_BASE}/api/customers/upload?${params.toString()}`, {
+      method: "POST",
+      headers: { "x-api-key": API_KEY },
+      body: form
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(errorDetail(body, `API error ${response.status}`));
+    }
+    alert(`${body.inserted_rows || 0} customers created from ${body.file || file.name}.`);
+    setStatus("Ready", true);
+    await loadCustomers();
+  } catch (e) {
+    alert(`Could not upload customers:\n${e.message}`);
+    setStatus("Error", false);
+  } finally {
+    els.uploadInput.value = "";
+  }
+}
+
 function initCustomersModule() {
   const u = user();
   const label = document.getElementById("userLabel");
@@ -599,6 +738,9 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   els.gsaFilter.value = "";
   loadCustomers();
 });
+document.getElementById("newCustomerBtn").addEventListener("click", openCreateCustomerModal);
+document.getElementById("uploadCustomersBtn").addEventListener("click", () => els.uploadInput.click());
+els.uploadInput.addEventListener("change", uploadCustomersFile);
 document.getElementById("refreshBtn").addEventListener("click", loadCustomers);
 els.modalSaveBtn.addEventListener("click", saveModalCustomer);
 
