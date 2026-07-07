@@ -281,6 +281,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
         <option value="spot_opportunities">Spot Opportunities</option>
         <option value="check_rates">Check Rates</option>
         <option value="vvi_charters">VVI Charters</option>
+        <option value="customers">Customers</option>
         <option value="upload">Upload</option>
         <option value="admin">Admin</option>
       </select>
@@ -327,6 +328,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
             <th class="module-col desktop-col">RATE</th>
             <th class="module-col desktop-col">UP</th>
             <th class="module-col desktop-col">VVI</th>
+            <th class="module-col desktop-col">CUST</th>
             <th class="module-col desktop-col">ADMIN</th>
             <th class="summary-col desktop-col">Biz</th>
             <th class="summary-col desktop-col">Sales Person</th>
@@ -392,6 +394,10 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
         <div class="checkbox-item">
           <input type="checkbox" id="mod-vvi" value="vvi_charters" onchange="updateSelectAllModules()" />
           <label for="mod-vvi">VVI Charters</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="mod-customers" value="customers" onchange="updateSelectAllModules()" />
+          <label for="mod-customers">Customers</label>
         </div>
         <div class="checkbox-item">
           <input type="checkbox" id="mod-upload" value="upload" onchange="updateSelectAllModules()" />
@@ -463,6 +469,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     { key: 'check_rates', label: 'RATE' },
     { key: 'upload', label: 'UP' },
     { key: 'vvi_charters', label: 'VVI' },
+    { key: 'customers', label: 'CUST' },
     { key: 'admin', label: 'ADMIN' }
   ];
 
