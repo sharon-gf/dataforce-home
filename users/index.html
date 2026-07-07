@@ -228,6 +228,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   .controls-row { grid-template-columns:minmax(0,1fr) minmax(112px,42%); }
   .filter-select { min-width:0; }
   .add-btn { grid-column:1 / -1; justify-self:stretch; }
+  .desktop-col { display:none; }
+  .dtbl { table-layout:fixed; }
   .dtbl th, .dtbl td { padding:8px 7px; font-size:9px; }
   .actions-col, .actions-cell { width:112px; }
   .btn-edit, .btn-delete { padding:5px 7px; }
@@ -314,6 +316,18 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
         <thead>
           <tr>
             <th>Name</th>
+            <th class="desktop-col">Email</th>
+            <th class="module-col desktop-col">BKD</th>
+            <th class="module-col desktop-col">FLWN</th>
+            <th class="module-col desktop-col">DASHB</th>
+            <th class="module-col desktop-col">MYBK</th>
+            <th class="module-col desktop-col">BKDTL</th>
+            <th class="module-col desktop-col">RATE</th>
+            <th class="module-col desktop-col">UP</th>
+            <th class="module-col desktop-col">VVI</th>
+            <th class="module-col desktop-col">ADMIN</th>
+            <th class="summary-col desktop-col">Biz</th>
+            <th class="summary-col desktop-col">Sales Person</th>
             <th class="status-col">Status</th>
             <th class="actions-col">Actions</th>
           </tr>
@@ -636,6 +650,11 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     allUsers.forEach(user => {
       const row = document.createElement('tr');
       const modules = asList(user.modules);
+      const moduleCells = MODULE_COLUMNS.map(module =>
+        `<td class="module-cell desktop-col">${modules.includes(module.key) ? '<span class="module-check">✓</span>' : ''}</td>`
+      ).join('');
+      const bizSummary = formatBizSummary(user.allowed_businesses);
+      const salesPerson = formatSalesPerson(user.sales_person);
       const status = user.status || 'active';
       const statusLabel = status === 'inactive' ? 'Inactive' : 'Active';
       const displayName = user.name || '—';
@@ -657,6 +676,10 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 
       row.innerHTML = `
         <td class="name-cell"><strong>${escapeHtml(displayName)}</strong></td>
+        <td class="desktop-col">${escapeHtml(email)}</td>
+        ${moduleCells}
+        <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(bizSummary)}</span></td>
+        <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(salesPerson)}</span></td>
         <td class="status-cell"><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${statusLabel}</span></td>
         <td class="actions-cell">
           <button type="button" class="btn-edit">Edit</button>
