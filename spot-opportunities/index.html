@@ -26,7 +26,7 @@
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
-  button, input { font:inherit; }
+  button, input, select { font:inherit; }
   .app { min-height:100vh; padding:8px; }
   .header {
     background:var(--navy);
@@ -50,7 +50,7 @@
   .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
   .dot { width:7px; height:7px; border-radius:99px; background:#c97a06; }
   .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font-size:10px; }
-  .summary-grid { width:min(var(--content-width),100%); margin:0 auto 8px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .summary-grid { width:min(var(--content-width),100%); margin:0 auto 8px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
   .metric-card { background:var(--surface); border:1px solid var(--border); border-radius:6px; min-height:72px; padding:12px; border-top:4px solid var(--teal); }
   .metric-card.cost { border-top-color:var(--amber); }
   .metric-label { color:var(--text3); font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
@@ -59,10 +59,10 @@
   .panel-head { background:var(--navy2); color:#c8d8f0; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:38px; }
   .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
   .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
-  .filters { padding:10px 12px; display:grid; grid-template-columns:minmax(240px,1fr) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .filters { padding:10px 12px; display:grid; grid-template-columns:repeat(3,minmax(150px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
   .field { min-width:0; }
   label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
-  input {
+  input, select {
     width:100%;
     height:30px;
     border:1px solid var(--border);
@@ -72,7 +72,7 @@
     padding:5px 8px;
     outline:none;
   }
-  input:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
+  input:focus, select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
   .filter-actions { display:flex; gap:6px; align-items:end; justify-content:flex-end; }
   .tool-btn { height:30px; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:4px; padding:0 10px; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
   .tool-btn.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
@@ -129,8 +129,12 @@
       <div class="metric-value" id="metricKgs">0</div>
     </div>
     <div class="metric-card cost">
-      <div class="metric-label">Seg Cost</div>
-      <div class="metric-value" id="metricCost">$0</div>
+      <div class="metric-label">Avg Cost/Kg</div>
+      <div class="metric-value" id="metricCostKg">$0.00</div>
+    </div>
+    <div class="metric-card cost">
+      <div class="metric-label">Avg P/Kg</div>
+      <div class="metric-value" id="metricProfitKg">$0.00</div>
     </div>
   </section>
 
@@ -141,8 +145,16 @@
     </div>
     <div class="filters">
       <div class="field">
-        <label for="searchInput">Search</label>
-        <input id="searchInput" type="search" placeholder="AWB, sales person, route, carrier">
+        <label for="originFilter">Ori</label>
+        <select id="originFilter"><option value="ALL">All origins</option></select>
+      </div>
+      <div class="field">
+        <label for="destinationFilter">Des</label>
+        <select id="destinationFilter"><option value="ALL">All destinations</option></select>
+      </div>
+      <div class="field">
+        <label for="carrierFilter">Carrier</label>
+        <select id="carrierFilter"><option value="ALL">All carriers</option></select>
       </div>
       <div class="filter-actions">
         <button class="tool-btn" id="resetBtn" type="button">Reset</button>
@@ -161,7 +173,8 @@
               <th>Seg Des</th>
               <th>Carrier</th>
               <th>Flight Date</th>
-              <th>Seg Cost</th>
+              <th>Cost/Kg</th>
+              <th>P/Kg</th>
             </tr>
           </thead>
           <tbody id="opportunitiesBody"></tbody>
@@ -178,17 +191,20 @@ const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 
 let rows = [];
 let requestSeq = 0;
-let searchTimer = null;
+let filterOptions = {origins: [], destinations: [], carriers: []};
 
 const els = {
   body: document.getElementById("opportunitiesBody"),
   resultNote: document.getElementById("resultNote"),
-  search: document.getElementById("searchInput"),
+  origin: document.getElementById("originFilter"),
+  destination: document.getElementById("destinationFilter"),
+  carrier: document.getElementById("carrierFilter"),
   status: document.getElementById("statusText"),
   dot: document.querySelector(".dot"),
   metricAwbs: document.getElementById("metricAwbs"),
   metricKgs: document.getElementById("metricKgs"),
-  metricCost: document.getElementById("metricCost")
+  metricCostKg: document.getElementById("metricCostKg"),
+  metricProfitKg: document.getElementById("metricProfitKg")
 };
 
 function user() {
@@ -218,6 +234,13 @@ function money(value) {
   const n = Number(value || 0);
   const sign = n < 0 ? "-$" : "$";
   return `${sign}${fmt(Math.abs(n), 0)}`;
+}
+
+function moneyRate(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  const n = Number(value || 0);
+  const sign = n < 0 ? "-$" : "$";
+  return `${sign}${Math.abs(n).toFixed(2)}`;
 }
 
 function formatAwb(awb, pfx) {
@@ -256,13 +279,31 @@ function renderSummary(data) {
   const summary = data && data.summary ? data.summary : {};
   els.metricAwbs.textContent = fmt(data ? data.count : 0);
   els.metricKgs.textContent = fmt(summary.kgs || 0);
-  els.metricCost.textContent = money(summary.seg_cost || 0);
+  els.metricCostKg.textContent = moneyRate(summary.avg_cost_kg || 0);
+  els.metricProfitKg.textContent = moneyRate(summary.avg_p_kg || 0);
+}
+
+function optionHtml(value) {
+  return `<option value="${esc(value)}">${esc(value)}</option>`;
+}
+
+function syncSelect(select, values, allLabel) {
+  const current = select.value || "ALL";
+  select.innerHTML = `<option value="ALL">${esc(allLabel)}</option>${(values || []).map(optionHtml).join("")}`;
+  select.value = (values || []).includes(current) ? current : "ALL";
+}
+
+function renderFilters(options) {
+  filterOptions = options || filterOptions;
+  syncSelect(els.origin, filterOptions.origins, "All origins");
+  syncSelect(els.destination, filterOptions.destinations, "All destinations");
+  syncSelect(els.carrier, filterOptions.carriers, "All carriers");
 }
 
 function renderTable() {
   els.resultNote.textContent = `${rows.length} rows`;
   if (!rows.length) {
-    els.body.innerHTML = '<tr><td colspan="8" class="empty">No spot opportunities found.</td></tr>';
+    els.body.innerHTML = '<tr><td colspan="9" class="empty">No spot opportunities found.</td></tr>';
     return;
   }
 
@@ -275,7 +316,8 @@ function renderTable() {
       <td class="route">${esc(row.seg_des)}</td>
       <td>${esc(row.carrier)}</td>
       <td>${esc(dateLabel(row.flight_date))}</td>
-      <td>${money(row.seg_cost)}</td>
+      <td>${moneyRate(row.cost_kg)}</td>
+      <td>${moneyRate(row.p_kg)}</td>
     </tr>
   `).join("");
 }
@@ -288,7 +330,9 @@ async function loadOpportunities() {
 
   const params = new URLSearchParams({
     email: u.email || "",
-    search: els.search.value.trim()
+    origin: els.origin.value || "ALL",
+    destination: els.destination.value || "ALL",
+    carrier: els.carrier.value || "ALL"
   });
 
   try {
@@ -306,6 +350,7 @@ async function loadOpportunities() {
     const data = await response.json();
     if (seq !== requestSeq) return;
     rows = data.rows || [];
+    renderFilters(data.options || {});
     renderSummary(data);
     renderTable();
     setStatus("Ready", true);
@@ -315,17 +360,12 @@ async function loadOpportunities() {
     rows = [];
     renderSummary({count: 0, summary: {}});
     setStatus("Error", false);
-    els.body.innerHTML = `<tr><td colspan="8" class="empty">Could not load opportunities. ${esc(e.message || "")}</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="9" class="empty">Could not load opportunities. ${esc(e.message || "")}</td></tr>`;
   }
 }
 
-function debouncedLoad() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(loadOpportunities, 250);
-}
-
 function exportCsv() {
-  const csv = ["AWB,Sales Person,Kgs,Seg Ori,Seg Des,Carrier,Flight Date,Seg Cost"]
+  const csv = ["AWB,Sales Person,Kgs,Seg Ori,Seg Des,Carrier,Flight Date,Cost/Kg,P/Kg"]
     .concat(rows.map(r => [
       formatAwb(r.awb_no || r.awb, r.pfx),
       r.sales_person,
@@ -334,7 +374,8 @@ function exportCsv() {
       r.seg_des,
       r.carrier,
       r.flight_date,
-      r.seg_cost
+      r.cost_kg,
+      r.p_kg
     ].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")))
     .join("\n");
   const blob = new Blob([csv], {type:"text/csv"});
@@ -372,9 +413,11 @@ async function checkSpotAccess(initFunction) {
   }
 }
 
-els.search.addEventListener("input", debouncedLoad);
+[els.origin, els.destination, els.carrier].forEach(el => el.addEventListener("change", loadOpportunities));
 document.getElementById("resetBtn").addEventListener("click", () => {
-  els.search.value = "";
+  els.origin.value = "ALL";
+  els.destination.value = "ALL";
+  els.carrier.value = "ALL";
   loadOpportunities();
 });
 document.getElementById("exportBtn").addEventListener("click", exportCsv);
