@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DATAFORCE - Spot Opportunities</title>
@@ -271,6 +273,10 @@ function dateLabel(value) {
   return d.toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"});
 }
 
+function cleanFilterValue(value) {
+  return String(value ?? "").trim();
+}
+
 function setStatus(text, ready) {
   els.status.textContent = text;
   els.dot.style.background = ready ? "#22c55e" : "#c97a06";
@@ -288,24 +294,36 @@ function renderSummary(data) {
 }
 
 function optionHtml(value) {
-  return `<option value="${esc(value)}">${esc(value)}</option>`;
+  const clean = cleanFilterValue(value);
+  return `<option value="${esc(clean)}">${esc(clean)}</option>`;
 }
 
 function syncSelect(select, values, allLabel) {
-  const current = select.value || "ALL";
-  select.innerHTML = `<option value="ALL">${esc(allLabel)}</option>${(values || []).map(optionHtml).join("")}`;
-  select.value = (values || []).includes(current) ? current : "ALL";
+  const current = cleanFilterValue(select.value || "ALL");
+  const cleanValues = (values || []).map(cleanFilterValue).filter(Boolean);
+  select.innerHTML = `<option value="ALL">${esc(allLabel)}</option>${cleanValues.map(optionHtml).join("")}`;
+  select.value = cleanValues.includes(current) ? current : "ALL";
+}
+
+function buildFilterOptions(sourceRows) {
+  return {
+    origins: Array.from(new Set(sourceRows.map(row => cleanFilterValue(row.seg_ori)).filter(Boolean))).sort(),
+    destinations: Array.from(new Set(sourceRows.map(row => cleanFilterValue(row.seg_des)).filter(Boolean))).sort(),
+    carriers: Array.from(new Set(sourceRows.map(row => cleanFilterValue(row.carrier)).filter(Boolean))).sort()
+  };
 }
 
 function renderFilters(options) {
-  filterOptions = options || filterOptions;
+  filterOptions = options || buildFilterOptions(allRows);
   syncSelect(els.origin, filterOptions.origins, "All origins");
   syncSelect(els.destination, filterOptions.destinations, "All destinations");
   syncSelect(els.carrier, filterOptions.carriers, "All carriers");
 }
 
 function renderTable() {
-  els.resultNote.textContent = `${rows.length} rows`;
+  els.resultNote.textContent = allRows.length && rows.length !== allRows.length
+    ? `${rows.length} of ${allRows.length} rows`
+    : `${rows.length} rows`;
   if (!rows.length) {
     els.body.innerHTML = '<tr><td colspan="9" class="empty">No spot opportunities found.</td></tr>';
     return;
@@ -327,13 +345,13 @@ function renderTable() {
 }
 
 function applyFilters() {
-  const origin = els.origin.value || "ALL";
-  const destination = els.destination.value || "ALL";
-  const carrier = els.carrier.value || "ALL";
+  const origin = cleanFilterValue(els.origin.value || "ALL");
+  const destination = cleanFilterValue(els.destination.value || "ALL");
+  const carrier = cleanFilterValue(els.carrier.value || "ALL");
   rows = allRows.filter(row =>
-    (origin === "ALL" || row.seg_ori === origin) &&
-    (destination === "ALL" || row.seg_des === destination) &&
-    (carrier === "ALL" || row.carrier === carrier)
+    (origin === "ALL" || cleanFilterValue(row.seg_ori) === origin) &&
+    (destination === "ALL" || cleanFilterValue(row.seg_des) === destination) &&
+    (carrier === "ALL" || cleanFilterValue(row.carrier) === carrier)
   );
   renderSummary({rows});
   renderTable();
@@ -343,7 +361,7 @@ async function loadOpportunities() {
   const u = user();
   const seq = ++requestSeq;
   setStatus("Loading", false);
-  els.body.innerHTML = '<tr><td colspan="8" class="empty">Loading opportunities...</td></tr>';
+  els.body.innerHTML = '<tr><td colspan="9" class="empty">Loading opportunities...</td></tr>';
 
   const params = new URLSearchParams({
     email: u.email || "",
@@ -366,7 +384,7 @@ async function loadOpportunities() {
     if (seq !== requestSeq) return;
     allRows = data.rows || [];
     rows = allRows.slice();
-    renderFilters(data.options || {});
+    renderFilters(buildFilterOptions(allRows));
     renderSummary({rows});
     renderTable();
     setStatus("Ready", true);
