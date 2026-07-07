@@ -190,6 +190,7 @@ const API_BASE = "https://dataforce-api-production.up.railway.app";
 const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 
 let rows = [];
+let allRows = [];
 let requestSeq = 0;
 let filterOptions = {origins: [], destinations: [], carriers: []};
 
@@ -276,11 +277,14 @@ function setStatus(text, ready) {
 }
 
 function renderSummary(data) {
-  const summary = data && data.summary ? data.summary : {};
-  els.metricAwbs.textContent = fmt(data ? data.count : 0);
-  els.metricKgs.textContent = fmt(summary.kgs || 0);
-  els.metricCostKg.textContent = moneyRate(summary.avg_cost_kg || 0);
-  els.metricProfitKg.textContent = moneyRate(summary.avg_p_kg || 0);
+  const activeRows = data && data.rows ? data.rows : rows;
+  const totalKgs = activeRows.reduce((sum, row) => sum + Number(row.kgs || 0), 0);
+  const avgCostKg = activeRows.reduce((sum, row) => sum + (Number(row.cost_kg || 0) * Number(row.kgs || 0)), 0) / Math.max(totalKgs, 1);
+  const avgProfitKg = activeRows.reduce((sum, row) => sum + (Number(row.p_kg || 0) * Number(row.kgs || 0)), 0) / Math.max(totalKgs, 1);
+  els.metricAwbs.textContent = fmt(activeRows.length);
+  els.metricKgs.textContent = fmt(totalKgs);
+  els.metricCostKg.textContent = moneyRate(avgCostKg);
+  els.metricProfitKg.textContent = moneyRate(avgProfitKg);
 }
 
 function optionHtml(value) {
@@ -322,6 +326,19 @@ function renderTable() {
   `).join("");
 }
 
+function applyFilters() {
+  const origin = els.origin.value || "ALL";
+  const destination = els.destination.value || "ALL";
+  const carrier = els.carrier.value || "ALL";
+  rows = allRows.filter(row =>
+    (origin === "ALL" || row.seg_ori === origin) &&
+    (destination === "ALL" || row.seg_des === destination) &&
+    (carrier === "ALL" || row.carrier === carrier)
+  );
+  renderSummary({rows});
+  renderTable();
+}
+
 async function loadOpportunities() {
   const u = user();
   const seq = ++requestSeq;
@@ -330,9 +347,7 @@ async function loadOpportunities() {
 
   const params = new URLSearchParams({
     email: u.email || "",
-    origin: els.origin.value || "ALL",
-    destination: els.destination.value || "ALL",
-    carrier: els.carrier.value || "ALL"
+    limit: "10000"
   });
 
   try {
@@ -349,16 +364,18 @@ async function loadOpportunities() {
     }
     const data = await response.json();
     if (seq !== requestSeq) return;
-    rows = data.rows || [];
+    allRows = data.rows || [];
+    rows = allRows.slice();
     renderFilters(data.options || {});
-    renderSummary(data);
+    renderSummary({rows});
     renderTable();
     setStatus("Ready", true);
   } catch (e) {
     if (seq !== requestSeq) return;
     console.error("Failed to load Spot Opportunities:", e);
+    allRows = [];
     rows = [];
-    renderSummary({count: 0, summary: {}});
+    renderSummary({rows});
     setStatus("Error", false);
     els.body.innerHTML = `<tr><td colspan="9" class="empty">Could not load opportunities. ${esc(e.message || "")}</td></tr>`;
   }
@@ -413,19 +430,19 @@ async function checkSpotAccess(initFunction) {
   }
 }
 
-[els.origin, els.destination, els.carrier].forEach(el => el.addEventListener("change", loadOpportunities));
+[els.origin, els.destination, els.carrier].forEach(el => el.addEventListener("change", applyFilters));
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.origin.value = "ALL";
   els.destination.value = "ALL";
   els.carrier.value = "ALL";
-  loadOpportunities();
+  applyFilters();
 });
 document.getElementById("exportBtn").addEventListener("click", exportCsv);
 
 function initSpotOpportunities() {
   const u = user();
   document.getElementById("userLabel").textContent = u.name || u.email || "";
-  renderSummary({count: 0, summary: {}});
+  renderSummary({rows: []});
   loadOpportunities();
 }
 
