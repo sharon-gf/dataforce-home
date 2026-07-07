@@ -61,7 +61,7 @@
   .panel-head { background:var(--navy2); color:#c8d8f0; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:38px; }
   .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
   .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
-  .filters { padding:10px 12px; display:grid; grid-template-columns:repeat(3,minmax(150px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .filters { padding:10px 12px; display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
   .field { min-width:0; }
   label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
   input, select {
@@ -147,6 +147,10 @@
     </div>
     <div class="filters">
       <div class="field">
+        <label for="businessFilter">Business</label>
+        <select id="businessFilter"><option value="ALL">All Mercury</option></select>
+      </div>
+      <div class="field">
         <label for="originFilter">Ori</label>
         <select id="originFilter"><option value="ALL">All origins</option></select>
       </div>
@@ -194,11 +198,12 @@ const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 let rows = [];
 let allRows = [];
 let requestSeq = 0;
-let filterOptions = {origins: [], destinations: [], carriers: []};
+let filterOptions = {businesses: [], origins: [], destinations: [], carriers: []};
 
 const els = {
   body: document.getElementById("opportunitiesBody"),
   resultNote: document.getElementById("resultNote"),
+  business: document.getElementById("businessFilter"),
   origin: document.getElementById("originFilter"),
   destination: document.getElementById("destinationFilter"),
   carrier: document.getElementById("carrierFilter"),
@@ -307,6 +312,7 @@ function syncSelect(select, values, allLabel) {
 
 function buildFilterOptions(sourceRows) {
   return {
+    businesses: Array.from(new Set(sourceRows.map(row => cleanFilterValue(row.business)).filter(Boolean))).sort(),
     origins: Array.from(new Set(sourceRows.map(row => cleanFilterValue(row.seg_ori)).filter(Boolean))).sort(),
     destinations: Array.from(new Set(sourceRows.map(row => cleanFilterValue(row.seg_des)).filter(Boolean))).sort(),
     carriers: Array.from(new Set(sourceRows.map(row => cleanFilterValue(row.carrier)).filter(Boolean))).sort()
@@ -315,6 +321,7 @@ function buildFilterOptions(sourceRows) {
 
 function renderFilters(options) {
   filterOptions = options || buildFilterOptions(allRows);
+  syncSelect(els.business, filterOptions.businesses, "All Mercury");
   syncSelect(els.origin, filterOptions.origins, "All origins");
   syncSelect(els.destination, filterOptions.destinations, "All destinations");
   syncSelect(els.carrier, filterOptions.carriers, "All carriers");
@@ -345,10 +352,12 @@ function renderTable() {
 }
 
 function applyFilters() {
+  const business = cleanFilterValue(els.business.value || "ALL");
   const origin = cleanFilterValue(els.origin.value || "ALL");
   const destination = cleanFilterValue(els.destination.value || "ALL");
   const carrier = cleanFilterValue(els.carrier.value || "ALL");
   rows = allRows.filter(row =>
+    (business === "ALL" || cleanFilterValue(row.business) === business) &&
     (origin === "ALL" || cleanFilterValue(row.seg_ori) === origin) &&
     (destination === "ALL" || cleanFilterValue(row.seg_des) === destination) &&
     (carrier === "ALL" || cleanFilterValue(row.carrier) === carrier)
@@ -448,8 +457,9 @@ async function checkSpotAccess(initFunction) {
   }
 }
 
-[els.origin, els.destination, els.carrier].forEach(el => el.addEventListener("change", applyFilters));
+[els.business, els.origin, els.destination, els.carrier].forEach(el => el.addEventListener("change", applyFilters));
 document.getElementById("resetBtn").addEventListener("click", () => {
+  els.business.value = "ALL";
   els.origin.value = "ALL";
   els.destination.value = "ALL";
   els.carrier.value = "ALL";
