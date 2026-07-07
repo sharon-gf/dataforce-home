@@ -88,6 +88,10 @@
   tbody tr:hover td { background:#e4ecfb; }
   .awb { color:var(--blue); font-weight:600; }
   .route { font-weight:600; }
+  .ok-cell { width:52px; }
+  .ok-check { width:16px; height:16px; cursor:pointer; accent-color:var(--green); }
+  .show-ok { display:flex; align-items:center; gap:6px; height:30px; color:var(--text2); font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+  .show-ok input { width:14px; height:14px; cursor:pointer; accent-color:var(--green); }
   .empty { padding:38px 16px; color:var(--text3); text-align:center; font-size:12px; }
 
   @media (max-width:900px) {
@@ -163,6 +167,7 @@
         <select id="carrierFilter"><option value="ALL">All carriers</option></select>
       </div>
       <div class="filter-actions">
+        <label class="show-ok"><input id="showOkFilter" type="checkbox">Show OK</label>
         <button class="tool-btn" id="resetBtn" type="button">Reset</button>
         <button class="tool-btn primary" id="exportBtn" type="button">Export</button>
       </div>
@@ -172,6 +177,7 @@
         <table>
           <thead>
             <tr>
+              <th>OK</th>
               <th>AWB</th>
               <th>Sales Person</th>
               <th>Kgs</th>
@@ -199,6 +205,7 @@ let rows = [];
 let allRows = [];
 let requestSeq = 0;
 let filterOptions = {businesses: [], origins: [], destinations: [], carriers: []};
+let handledKeys = new Set();
 
 const els = {
   body: document.getElementById("opportunitiesBody"),
@@ -207,6 +214,7 @@ const els = {
   origin: document.getElementById("originFilter"),
   destination: document.getElementById("destinationFilter"),
   carrier: document.getElementById("carrierFilter"),
+  showOk: document.getElementById("showOkFilter"),
   status: document.getElementById("statusText"),
   dot: document.querySelector(".dot"),
   metricAwbs: document.getElementById("metricAwbs"),
@@ -271,6 +279,34 @@ function formatAwb(awb, pfx) {
   return raw;
 }
 
+function handledStorageKey() {
+  const email = String(user().email || "unknown").trim().toLowerCase();
+  return `spotOpportunitiesHandled:${email}`;
+}
+
+function rowKey(row) {
+  return [
+    formatAwb(row.awb_no || row.awb, row.pfx),
+    cleanFilterValue(row.business),
+    cleanFilterValue(row.seg_ori),
+    cleanFilterValue(row.seg_des),
+    cleanFilterValue(row.carrier),
+    cleanFilterValue(row.flight_date)
+  ].join("|").toUpperCase();
+}
+
+function loadHandledKeys() {
+  try {
+    handledKeys = new Set(JSON.parse(localStorage.getItem(handledStorageKey()) || "[]"));
+  } catch (_) {
+    handledKeys = new Set();
+  }
+}
+
+function saveHandledKeys() {
+  localStorage.setItem(handledStorageKey(), JSON.stringify(Array.from(handledKeys)));
+}
+
 function dateLabel(value) {
   if (!value) return "-";
   const d = new Date(`${value}T00:00:00`);
@@ -328,16 +364,18 @@ function renderFilters(options) {
 }
 
 function renderTable() {
-  els.resultNote.textContent = allRows.length && rows.length !== allRows.length
-    ? `${rows.length} of ${allRows.length} rows`
+  const visibleTotal = els.showOk.checked ? allRows.length : allRows.filter(row => !handledKeys.has(rowKey(row))).length;
+  els.resultNote.textContent = allRows.length && rows.length !== visibleTotal
+    ? `${rows.length} of ${visibleTotal} rows`
     : `${rows.length} rows`;
   if (!rows.length) {
-    els.body.innerHTML = '<tr><td colspan="9" class="empty">No spot opportunities found.</td></tr>';
+    els.body.innerHTML = '<tr><td colspan="10" class="empty">No spot opportunities found.</td></tr>';
     return;
   }
 
   els.body.innerHTML = rows.map(row => `
     <tr>
+      <td class="ok-cell"><input class="ok-check" type="checkbox" data-key="${esc(rowKey(row))}" ${handledKeys.has(rowKey(row)) ? "checked" : ""} aria-label="Mark opportunity OK"></td>
       <td class="awb">${esc(formatAwb(row.awb_no || row.awb, row.pfx))}</td>
       <td>${esc(row.sales_person)}</td>
       <td>${fmt(row.kgs)}</td>
@@ -356,11 +394,13 @@ function applyFilters() {
   const origin = cleanFilterValue(els.origin.value || "ALL");
   const destination = cleanFilterValue(els.destination.value || "ALL");
   const carrier = cleanFilterValue(els.carrier.value || "ALL");
+  const showOk = els.showOk.checked;
   rows = allRows.filter(row =>
     (business === "ALL" || cleanFilterValue(row.business) === business) &&
     (origin === "ALL" || cleanFilterValue(row.seg_ori) === origin) &&
     (destination === "ALL" || cleanFilterValue(row.seg_des) === destination) &&
-    (carrier === "ALL" || cleanFilterValue(row.carrier) === carrier)
+    (carrier === "ALL" || cleanFilterValue(row.carrier) === carrier) &&
+    (showOk || !handledKeys.has(rowKey(row)))
   );
   renderSummary({rows});
   renderTable();
@@ -370,7 +410,7 @@ async function loadOpportunities() {
   const u = user();
   const seq = ++requestSeq;
   setStatus("Loading", false);
-  els.body.innerHTML = '<tr><td colspan="9" class="empty">Loading opportunities...</td></tr>';
+  els.body.innerHTML = '<tr><td colspan="10" class="empty">Loading opportunities...</td></tr>';
 
   const params = new URLSearchParams({
     email: u.email || "",
@@ -392,10 +432,8 @@ async function loadOpportunities() {
     const data = await response.json();
     if (seq !== requestSeq) return;
     allRows = data.rows || [];
-    rows = allRows.slice();
     renderFilters(buildFilterOptions(allRows));
-    renderSummary({rows});
-    renderTable();
+    applyFilters();
     setStatus("Ready", true);
   } catch (e) {
     if (seq !== requestSeq) return;
@@ -404,7 +442,7 @@ async function loadOpportunities() {
     rows = [];
     renderSummary({rows});
     setStatus("Error", false);
-    els.body.innerHTML = `<tr><td colspan="9" class="empty">Could not load opportunities. ${esc(e.message || "")}</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="10" class="empty">Could not load opportunities. ${esc(e.message || "")}</td></tr>`;
   }
 }
 
@@ -457,12 +495,22 @@ async function checkSpotAccess(initFunction) {
   }
 }
 
-[els.business, els.origin, els.destination, els.carrier].forEach(el => el.addEventListener("change", applyFilters));
+[els.business, els.origin, els.destination, els.carrier, els.showOk].forEach(el => el.addEventListener("change", applyFilters));
+els.body.addEventListener("change", event => {
+  if (!event.target.classList.contains("ok-check")) return;
+  const key = event.target.dataset.key;
+  if (!key) return;
+  if (event.target.checked) handledKeys.add(key);
+  else handledKeys.delete(key);
+  saveHandledKeys();
+  applyFilters();
+});
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.business.value = "ALL";
   els.origin.value = "ALL";
   els.destination.value = "ALL";
   els.carrier.value = "ALL";
+  els.showOk.checked = false;
   applyFilters();
 });
 document.getElementById("exportBtn").addEventListener("click", exportCsv);
@@ -470,6 +518,7 @@ document.getElementById("exportBtn").addEventListener("click", exportCsv);
 function initSpotOpportunities() {
   const u = user();
   document.getElementById("userLabel").textContent = u.name || u.email || "";
+  loadHandledKeys();
   renderSummary({rows: []});
   loadOpportunities();
 }
