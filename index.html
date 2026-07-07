@@ -90,6 +90,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-dashboard { --card-accent:#1a56db; --card-icon-bg:#eef3fb; }
 .card-my-bookings { --card-accent:#0f766e; --card-icon-bg:#e6f5f3; }
 .card-booking-details { --card-accent:#1a3360; --card-icon-bg:#edf1f7; }
+.card-spot-opportunities { --card-accent:#0b7f8f; --card-icon-bg:#e7f6f8; }
 .card-summary   { --card-accent:#0c9080; --card-icon-bg:#e8f7f5; }
 .card-booked    { --card-accent:#c97a06; --card-icon-bg:#fef6e8; }
 .card-upload    { --card-accent:#6d3fc7; --card-icon-bg:#f2eefa; }
@@ -181,6 +182,12 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a3360" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></div>
         <div><div class="card-name">Booking Details</div><div class="card-desc">Search bookings and view full segment detail</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a3360" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+
+      <a class="card card-spot-opportunities" href="https://dataforce.gsaforce.com/spot-opportunities/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0b7f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/><path d="M3 21h18"/></svg></div>
+        <div><div class="card-name">Spot Opportunities</div><div class="card-desc">Mercury open booked AWBs ready for spot review</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#0b7f8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
 
       <a class="card card-check-rates" href="https://dataforce.gsaforce.com/check-rates/">
@@ -281,11 +288,12 @@ async function applyModulePermissions() {
       'flown': '.card-summary',
       'my_bookings': '.card-my-bookings',
       'booking_details': '.card-booking-details',
+      'spot_opportunities': '.card-spot-opportunities',
       'vvi_charters': '.card-vvi',
       'check_rates': '.card-check-rates',
       'upload': '.card-upload',
       'customers': '.card-customers',
-      'admin': '#users-admin-card, .card-check-rates'
+      'admin': '#users-admin-card, .card-check-rates, .card-spot-opportunities'
     };
     
     allowedModules.forEach(module => {
