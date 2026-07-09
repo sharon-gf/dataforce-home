@@ -799,18 +799,23 @@ function filteredTotals() {
     totals.bookings += 1;
     totals.chw += Number(row.chw || 0);
     totals.rev += Number(row.rev || 0);
+    totals.profit += Number(row.profit || 0);
     return totals;
-  }, {bookings:0, chw:0, rev:0});
+  }, {bookings:0, chw:0, rev:0, profit:0});
+  const summaryProfit = summary.profit ?? fallback.profit;
+  const summaryChw = summary.chw ?? fallback.chw;
   return {
     bookings: summary.bookings ?? fallback.bookings,
-    chw: summary.chw ?? fallback.chw,
-    rev: summary.rev ?? fallback.rev
+    chw: summaryChw,
+    rev: summary.rev ?? fallback.rev,
+    profit: summaryProfit,
+    pkg: summary.profit_per_kg ?? summary.pkg ?? (summaryChw ? summaryProfit / summaryChw : null)
   };
 }
 
 function renderTable() {
   const totals = filteredTotals();
-  els.resultNote.textContent = `${fmt(totals.bookings)} bookings | ${fmt(totals.chw)} kg | $${fullMoney(totals.rev)} rev`;
+  els.resultNote.textContent = `${fmt(totals.bookings)} bookings | ${fmt(totals.chw)} kg | $${fullMoney(totals.rev)} rev | ${pkg(totals.pkg)} p/kg`;
   if (!bookingRows.length) {
     els.body.innerHTML = '<tr><td colspan="11" class="empty">No bookings match this filter.</td></tr>';
     return;
