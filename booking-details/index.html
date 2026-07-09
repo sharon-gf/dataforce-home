@@ -673,7 +673,9 @@ function populateBusinessSelect(options) {
 }
 
 function multiValues(root) {
-  return String(root.dataset.value || "ALL").split(",").filter(Boolean);
+  const value = root.dataset.value;
+  if (value === undefined) return ["ALL"];
+  return String(value).split(",").filter(Boolean);
 }
 
 function multiOptionValues(root) {
@@ -684,30 +686,32 @@ function multiOptionValues(root) {
 
 function normalizedMultiValues(root) {
   const concrete = multiValues(root).filter(value => value !== "ALL");
-  return concrete.length ? concrete : ["ALL"];
+  if (concrete.length) return concrete;
+  return multiValues(root).includes("ALL") ? ["ALL"] : [];
 }
 
 function setMultiValues(root, values) {
-  const concrete = (values || []).filter(value => value && value !== "ALL");
-  const next = concrete.length ? concrete : ["ALL"];
-  root.dataset.value = next.join(",");
+  const raw = values || [];
+  const concrete = raw.filter(value => value && value !== "ALL");
+  root.dataset.value = concrete.length ? concrete.join(",") : (raw.includes("ALL") ? "ALL" : "");
   updateMultiFilter(root);
 }
 
 function validMultiValues(root, options) {
   const valid = normalizedMultiValues(root).filter(value => value === "ALL" || options.includes(value));
   const concrete = valid.filter(value => value !== "ALL");
-  return concrete.length ? concrete : ["ALL"];
+  if (concrete.length) return concrete;
+  return valid.includes("ALL") ? ["ALL"] : [];
 }
 
 function multiFilterValue(root) {
   const concrete = normalizedMultiValues(root).filter(value => value !== "ALL");
   const selected = new Set(concrete);
   const options = multiOptionValues(root);
-  if (!concrete.length || (options.length > 0 && options.every(value => selected.has(value)))) {
+  if (normalizedMultiValues(root).includes("ALL") || (options.length > 0 && options.every(value => selected.has(value)))) {
     return "ALL";
   }
-  return concrete.join(",");
+  return concrete.length ? concrete.join(",") : "__NONE__";
 }
 
 function updateMultiFilter(root) {
@@ -718,9 +722,11 @@ function updateMultiFilter(root) {
   const allSelected = selected.has("ALL") || (options.length > 0 && options.every(value => selected.has(value)));
   text.textContent = allSelected
     ? "All"
-    : values.length <= 2
-      ? values.join(", ")
-      : `${values.length} selected`;
+    : values.length === 0
+      ? "None"
+      : values.length <= 2
+        ? values.join(", ")
+        : `${values.length} selected`;
   root.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.checked = input.value === "ALL" ? allSelected : allSelected || selected.has(input.value);
   });
@@ -738,13 +744,13 @@ function renderMultiFilter(root, options) {
   `).join("");
   menu.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.addEventListener("change", () => {
-      if (input.value === "ALL" && input.checked) {
-        setMultiValues(root, options);
+      if (input.value === "ALL") {
+        setMultiValues(root, input.checked ? options : []);
       } else {
         const selected = [...menu.querySelectorAll('input[type="checkbox"]:checked')]
           .map(item => item.value)
           .filter(value => value !== "ALL");
-        setMultiValues(root, selected.length ? selected : ["ALL"]);
+        setMultiValues(root, selected);
       }
       loadBookings();
     });
