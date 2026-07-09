@@ -279,11 +279,6 @@ function formatAwb(awb, pfx) {
   return raw;
 }
 
-function handledStorageKey() {
-  const email = String(user().email || "unknown").trim().toLowerCase();
-  return `spotOpportunitiesHandled:${email}`;
-}
-
 function rowKey(row) {
   return [
     formatAwb(row.awb_no || row.awb, row.pfx),
@@ -296,15 +291,64 @@ function rowKey(row) {
 }
 
 function loadHandledKeys() {
-  try {
-    handledKeys = new Set(JSON.parse(localStorage.getItem(handledStorageKey()) || "[]"));
-  } catch (_) {
-    handledKeys = new Set();
-  }
+  const u = user();
+  return fetch(`${API_BASE}/api/spot_opportunities_ok?email=${encodeURIComponent(u.email || "")}`, {
+    headers: { "x-api-key": API_KEY }
+  })
+    .then(response => {
+      if (!response.ok) throw new Error(`API error ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      handledKeys = new Set((data.keys || []).map(key => String(key).trim().toUpperCase()).filter(Boolean));
+    })
+    .catch(error => {
+      console.error("Failed to load shared OK opportunities:", error);
+      handledKeys = new Set();
+    });
 }
 
-function saveHandledKeys() {
-  localStorage.setItem(handledStorageKey(), JSON.stringify(Array.from(handledKeys)));
+async function migrateLegacyHandledKeys() {
+  const email = String(user().email || "unknown").trim().toLowerCase();
+  const legacyKey = `spotOpportunitiesHandled:${email}`;
+  let legacyKeys = [];
+  try {
+    legacyKeys = JSON.parse(localStorage.getItem(legacyKey) || "[]");
+  } catch (_) {
+    legacyKeys = [];
+  }
+
+  legacyKeys = legacyKeys.map(key => String(key).trim().toUpperCase()).filter(Boolean);
+  const missingKeys = legacyKeys.filter(key => !handledKeys.has(key));
+  if (!missingKeys.length) {
+    localStorage.removeItem(legacyKey);
+    return;
+  }
+
+  await Promise.all(missingKeys.map(key => setHandledKey(key, true)));
+  missingKeys.forEach(key => handledKeys.add(key));
+  localStorage.removeItem(legacyKey);
+}
+
+async function setHandledKey(key, checked) {
+  const u = user();
+  const response = await fetch(`${API_BASE}/api/spot_opportunities_ok?email=${encodeURIComponent(u.email || "")}`, {
+    method: "POST",
+    headers: {
+      "x-api-key": API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({opportunity_key: key, ok: checked})
+  });
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const body = await response.json();
+      detail = body.detail ? `: ${body.detail}` : "";
+    } catch (_) {}
+    throw new Error(`API error ${response.status}${detail}`);
+  }
+  return response.json();
 }
 
 function dateLabel(value) {
@@ -500,10 +544,18 @@ els.body.addEventListener("change", event => {
   if (!event.target.classList.contains("ok-check")) return;
   const key = event.target.dataset.key;
   if (!key) return;
-  if (event.target.checked) handledKeys.add(key);
+  const checked = event.target.checked;
+  if (checked) handledKeys.add(key);
   else handledKeys.delete(key);
-  saveHandledKeys();
   applyFilters();
+  setHandledKey(key, checked).catch(error => {
+    console.error("Failed to update shared OK opportunity:", error);
+    if (checked) handledKeys.delete(key);
+    else handledKeys.add(key);
+    setStatus("Error", false);
+    alert(`Could not update OK status. ${error.message || ""}`);
+    applyFilters();
+  });
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.business.value = "ALL";
@@ -515,10 +567,15 @@ document.getElementById("resetBtn").addEventListener("click", () => {
 });
 document.getElementById("exportBtn").addEventListener("click", exportCsv);
 
-function initSpotOpportunities() {
+async function initSpotOpportunities() {
   const u = user();
   document.getElementById("userLabel").textContent = u.name || u.email || "";
-  loadHandledKeys();
+  await loadHandledKeys();
+  try {
+    await migrateLegacyHandledKeys();
+  } catch (error) {
+    console.error("Failed to migrate local OK opportunities:", error);
+  }
   renderSummary({rows: []});
   loadOpportunities();
 }
