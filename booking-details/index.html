@@ -676,6 +676,12 @@ function multiValues(root) {
   return String(root.dataset.value || "ALL").split(",").filter(Boolean);
 }
 
+function multiOptionValues(root) {
+  return [...root.querySelectorAll('input[type="checkbox"]')]
+    .map(input => input.value)
+    .filter(value => value !== "ALL");
+}
+
 function normalizedMultiValues(root) {
   const concrete = multiValues(root).filter(value => value !== "ALL");
   return concrete.length ? concrete : ["ALL"];
@@ -696,20 +702,27 @@ function validMultiValues(root, options) {
 
 function multiFilterValue(root) {
   const concrete = normalizedMultiValues(root).filter(value => value !== "ALL");
-  return concrete.length ? concrete.join(",") : "ALL";
+  const selected = new Set(concrete);
+  const options = multiOptionValues(root);
+  if (!concrete.length || (options.length > 0 && options.every(value => selected.has(value)))) {
+    return "ALL";
+  }
+  return concrete.join(",");
 }
 
 function updateMultiFilter(root) {
   const values = normalizedMultiValues(root);
+  const options = multiOptionValues(root);
   const text = root.querySelector(".multi-text");
   const selected = new Set(values);
-  text.textContent = selected.has("ALL")
+  const allSelected = selected.has("ALL") || (options.length > 0 && options.every(value => selected.has(value)));
+  text.textContent = allSelected
     ? "All"
     : values.length <= 2
       ? values.join(", ")
       : `${values.length} selected`;
   root.querySelectorAll('input[type="checkbox"]').forEach(input => {
-    input.checked = selected.has(input.value);
+    input.checked = input.value === "ALL" ? allSelected : allSelected || selected.has(input.value);
   });
 }
 
@@ -726,7 +739,7 @@ function renderMultiFilter(root, options) {
   menu.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.addEventListener("change", () => {
       if (input.value === "ALL" && input.checked) {
-        setMultiValues(root, ["ALL"]);
+        setMultiValues(root, options);
       } else {
         const selected = [...menu.querySelectorAll('input[type="checkbox"]:checked')]
           .map(item => item.value)
