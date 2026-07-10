@@ -235,6 +235,10 @@
   .table-wrap { overflow:auto; max-height:526px; padding:0 0 12px; }
   table { width:100%; border-collapse:collapse; }
   th { position:sticky; top:0; z-index:1; background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:7px 8px; text-align:center; white-space:nowrap; }
+  th.sortable { cursor:pointer; user-select:none; }
+  th.sortable::after { content:""; display:inline-block; width:10px; color:#8fb5d7; font-size:8px; margin-left:4px; }
+  th.sortable.sort-asc::after { content:"▲"; }
+  th.sortable.sort-desc::after { content:"▼"; }
   td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:center; color:var(--text1); font-size:11px; white-space:nowrap; }
   .booking-table { width:100%; margin:0 auto; }
   tbody tr:nth-child(even) td { background:#f0f2f6; }
@@ -456,17 +460,17 @@
         <table class="booking-table">
           <thead>
             <tr>
-              <th>Booked</th>
-              <th>AWB</th>
-              <th>Business</th>
-              <th>Customer</th>
-              <th>Ori</th>
-              <th>Des</th>
-              <th>Via</th>
-              <th>CHW</th>
-              <th>Rev</th>
-              <th>Sales/KG</th>
-              <th>P/KG</th>
+              <th class="sortable" data-sort="booked_date">Booked</th>
+              <th class="sortable" data-sort="awb">AWB</th>
+              <th class="sortable" data-sort="business">Business</th>
+              <th class="sortable" data-sort="customer">Customer</th>
+              <th class="sortable" data-sort="ori">Ori</th>
+              <th class="sortable" data-sort="des">Des</th>
+              <th class="sortable" data-sort="via">Via</th>
+              <th class="sortable" data-sort="chw">CHW</th>
+              <th class="sortable" data-sort="rev">Rev</th>
+              <th class="sortable" data-sort="sales_per_kg">Sales/KG</th>
+              <th class="sortable" data-sort="pkg">P/KG</th>
             </tr>
           </thead>
           <tbody id="bookingBody"></tbody>
@@ -506,6 +510,7 @@ let searchTimer = null;
 let businessOptionsLoaded = false;
 let knownOrigins = new Set();
 let knownDestinations = new Set();
+let sortState = {key: null, dir: "asc"};
 
 const els = {
   summaryGrid: document.getElementById("summaryGrid"),
@@ -830,14 +835,45 @@ function filteredTotals() {
   };
 }
 
+function sortValue(row, key) {
+  if (key === "awb") return formatAwb(row.awb_no || row.awb, row.pfx);
+  if (key === "sales_per_kg") return row.sales_per_kg ?? (row.chw ? row.rev / row.chw : null);
+  return row[key];
+}
+
+function sortedBookingRows() {
+  if (!sortState.key) return bookingRows.slice();
+  const {key, dir} = sortState;
+  const direction = dir === "asc" ? 1 : -1;
+  return bookingRows.slice().sort((a, b) => {
+    const av = sortValue(a, key);
+    const bv = sortValue(b, key);
+    const an = Number(av);
+    const bn = Number(bv);
+    if (!Number.isNaN(an) && !Number.isNaN(bn)) return (an - bn) * direction;
+    return String(av ?? "").localeCompare(String(bv ?? ""), undefined, {numeric:true, sensitivity:"base"}) * direction;
+  });
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll(".booking-table th.sortable").forEach(th => {
+    const active = th.dataset.sort === sortState.key;
+    th.classList.toggle("sort-asc", active && sortState.dir === "asc");
+    th.classList.toggle("sort-desc", active && sortState.dir === "desc");
+    th.setAttribute("aria-sort", active ? (sortState.dir === "asc" ? "ascending" : "descending") : "none");
+  });
+}
+
 function renderTable() {
   const totals = filteredTotals();
   els.resultNote.textContent = `${fmt(totals.bookings)} bookings | ${fmt(totals.chw)} kg | $${fullMoney(totals.rev)} rev | ${pkg(totals.pkg)} p/kg`;
+  updateSortHeaders();
   if (!bookingRows.length) {
     els.body.innerHTML = '<tr><td colspan="11" class="empty">No bookings match this filter.</td></tr>';
     return;
   }
-  els.body.innerHTML = bookingRows.map((row, index) => `
+  const displayRows = sortedBookingRows();
+  els.body.innerHTML = displayRows.map((row, index) => `
     <tr data-index="${index}">
       <td>${dateLabel(row.booked_date)}</td>
       <td class="awb">${esc(formatAwb(row.awb_no || row.awb, row.pfx))}</td>
@@ -854,7 +890,7 @@ function renderTable() {
   `).join("");
   els.body.querySelectorAll("tr[data-index]").forEach(tr => {
     tr.addEventListener("click", () => {
-      openBookingModal(bookingRows[Number(tr.dataset.index)]);
+      openBookingModal(displayRows[Number(tr.dataset.index)]);
     });
   });
 }
@@ -1087,6 +1123,16 @@ document.getElementById("exportBtn").addEventListener("click", () => {
   a.download = "booking-details.csv";
   a.click();
   URL.revokeObjectURL(url);
+});
+document.querySelectorAll(".booking-table th.sortable").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    sortState = {
+      key,
+      dir: sortState.key === key && sortState.dir === "asc" ? "desc" : "asc"
+    };
+    renderTable();
+  });
 });
 
 function initBookingDetails() {
