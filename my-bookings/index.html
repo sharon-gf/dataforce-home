@@ -456,7 +456,16 @@ function renderTrend() {
         tooltip:{backgroundColor:"#0d1f3c", borderColor:"#243a5c", borderWidth:1, titleColor:"#7aaae8", bodyColor:"#d8e4f4", padding:8}
       },
       scales:{
-        x:{grid:{color:"rgba(0,0,0,0.05)"}, ticks:{color:"#8896aa", font:{size:8}, maxRotation:45, autoSkip:!weekly}},
+        x:{grid:{color:"rgba(0,0,0,0.05)"}, ticks:{
+          color:"#8896aa",
+          font:{size:8},
+          maxRotation:45,
+          autoSkip:false,
+          callback:function(value, index) {
+            if (weekly && index % 2 === 1) return "";
+            return this.getLabelForValue(value);
+          }
+        }},
         y:{grid:{color:"rgba(0,0,0,0.05)"}, ticks:{color:"#8896aa", font:{size:8}}, beginAtZero:true}
       }
     }
