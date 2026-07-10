@@ -75,8 +75,8 @@ main {
 .finance-card {
   position: relative;
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) 26px;
-  gap: 14px;
+  grid-template-columns: 128px minmax(0, 1fr) 26px;
+  gap: 18px;
   align-items: center;
   min-height: 132px;
   padding: 22px;
@@ -106,7 +106,7 @@ main {
   transform: translateY(-2px);
 }
 
-.finance-icon,
+.finance-logo,
 .finance-arrow {
   display: grid;
   place-items: center;
@@ -115,14 +115,18 @@ main {
   color: var(--accent);
 }
 
-.finance-icon {
-  width: 46px;
-  height: 46px;
+.finance-logo {
+  width: 128px;
+  height: 72px;
+  padding: 8px;
+  overflow: hidden;
 }
 
-.finance-icon svg {
-  width: 23px;
-  height: 23px;
+.finance-logo img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .finance-name {
@@ -175,8 +179,16 @@ main {
   }
 
   .finance-card {
+    grid-template-columns: 96px minmax(0, 1fr) 26px;
     min-height: 116px;
     padding: 18px;
+    gap: 14px;
+  }
+
+  .finance-logo {
+    width: 96px;
+    height: 62px;
+    padding: 7px;
   }
 }
 </style>
@@ -197,8 +209,8 @@ main {
 
     <div class="finance-grid">
       <a class="finance-card mercury" href="https://mercury-dashboard-compass.lovable.app/" target="_blank" rel="noopener noreferrer">
-        <div class="finance-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/><path d="M14 7h6v6"/></svg>
+        <div class="finance-logo">
+          <img src="../assets/mercury-logo.jpg" alt="Mercury Americas">
         </div>
         <div>
           <div class="finance-name">Mercury Finance</div>
@@ -210,8 +222,8 @@ main {
       </a>
 
       <a class="finance-card gsa-force" href="https://gsaforce-dashboard-compass.lovable.app" target="_blank" rel="noopener noreferrer">
-        <div class="finance-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M17 6H9.5a3.5 3.5 0 000 7H14a3.5 3.5 0 010 7H6"/><path d="M3 6h3"/><path d="M18 18h3"/></svg>
+        <div class="finance-logo">
+          <img src="../assets/gsa-force-logo.svg" alt="GSA Force">
         </div>
         <div>
           <div class="finance-name">GSA Force Finance</div>
