@@ -191,7 +191,7 @@
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
-<script>window.DATAFORCE_SHELL = {"title":"Flown Report","controls":["#btn-lw","#btn-q1","#btn-ytd"],"meta":["#weekLabel","#datesLabel"],"statusText":"Connecting..."};</script>
+<script>window.DATAFORCE_SHELL = {"title":"Flown Report","controls":["#btn-lw","#btn-q1","#btn-q2","#btn-ytd"],"meta":["#weekLabel","#datesLabel"],"statusText":"Connecting..."};</script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -208,6 +208,7 @@
       <div style="display:inline-flex;gap:4px;">
         <button id="btn-lw" onclick="setMode('lw')" style="background:#1a3360;border:1px solid #4a8eff;color:#fff;border-radius:4px;padding:2px 14px;font-size:10px;cursor:pointer;font-family:Inter,sans-serif;">LAST WEEK</button>
         <button id="btn-q1"  onclick="setMode('q1')"  style="background:transparent;border:1px solid #4a8eff;color:#7aaed5;border-radius:4px;padding:2px 14px;font-size:10px;cursor:pointer;font-family:Inter,sans-serif;">Q1</button>
+        <button id="btn-q2"  onclick="setMode('q2')"  style="background:transparent;border:1px solid #4a8eff;color:#7aaed5;border-radius:4px;padding:2px 14px;font-size:10px;cursor:pointer;font-family:Inter,sans-serif;">Q2</button>
         <button id="btn-ytd" onclick="setMode('ytd')" style="background:transparent;border:1px solid #4a8eff;color:#7aaed5;border-radius:4px;padding:2px 14px;font-size:10px;cursor:pointer;font-family:Inter,sans-serif;">YTD</button>
       </div>
     </div>
@@ -299,16 +300,18 @@ function configureBusinessCards() {
   document.getElementById('datesLabel').textContent = `${f(lastMonday)} – ${f(lastSunday)}`;
 })();
 
-let MODE = 'lw'; // 'lw' or 'ytd'
+let MODE = 'lw';
 
 function setMode(mode) {
   MODE = mode;
-  document.getElementById('btn-lw').style.background  = mode === 'lw'  ? '#1a3360' : 'transparent';
-  document.getElementById('btn-lw').style.color        = mode === 'lw'  ? '#fff'    : '#7aaed5';
-  document.getElementById('btn-ytd').style.background  = mode === 'ytd' ? '#1a3360' : 'transparent';
-  document.getElementById('btn-ytd').style.color        = mode === 'ytd' ? '#fff'    : '#7aaed5';
-  document.getElementById('btn-q1').style.background   = mode === 'q1'  ? '#1a3360' : 'transparent';
-  document.getElementById('btn-q1').style.color         = mode === 'q1'  ? '#fff'    : '#7aaed5';
+  ['lw', 'q1', 'q2', 'ytd'].forEach(key => {
+    const btn = document.getElementById(`btn-${key}`);
+    const active = mode === key;
+    btn.style.background = active ? '#1a3360' : 'transparent';
+    btn.style.color = active ? '#fff' : '#7aaed5';
+    btn.style.boxShadow = active ? 'inset 0 0 0 1px rgba(255,255,255,.18)' : 'none';
+    btn.setAttribute('aria-pressed', String(active));
+  });
   // Re-render allowed cards with stored data
   if (window._allData) {
     const grid = document.getElementById('grid');
@@ -336,10 +339,11 @@ function buildCard(cfg, data) {
   const lw = k?.lw;
   const ytd = k?.ytd;
   const q1  = k?.q1;
-  const period = MODE === 'ytd' ? ytd : MODE === 'q1' ? q1 : lw;
+  const q2  = k?.q2;
+  const period = MODE === 'ytd' ? ytd : MODE === 'q2' ? q2 : MODE === 'q1' ? q1 : lw;
   const hasData = period && period.tons != null;
 
-  const suffix = MODE === 'ytd' ? '_ytd' : MODE === 'q1' ? '_q1' : '';
+  const suffix = MODE === 'ytd' ? '_ytd' : MODE === 'q2' ? '_q2' : MODE === 'q1' ? '_q1' : '';
   const gsaRows   = (data?.['gsaTable'   + suffix] || data?.gsaTable   || []).slice(0, 10);
   const salesRows = (data?.['salesTable' + suffix] || data?.salesTable || []).slice(0, 10);
   const oriRows   = (data?.['oriTable'   + suffix] || data?.oriTable   || []).slice(0, 10);
