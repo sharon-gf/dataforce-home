@@ -206,7 +206,7 @@
       <div class="hdr-title-1" style="color:#7aaed5;font-size:16px;font-weight:500;letter-spacing:1px;margin-bottom:2px;">GSA FORCE SUMMARY</div>
       <div class="hdr-title-2" style="color:#7aaed5;font-size:13px;font-weight:300;letter-spacing:2px;margin-bottom:5px;">FLOWN REPORT</div>
       <div style="display:inline-flex;gap:4px;">
-        <button id="btn-lw" onclick="setMode('lw')" style="background:#1a3360;border:1px solid #4a8eff;color:#fff;border-radius:4px;padding:2px 14px;font-size:10px;cursor:pointer;font-family:Inter,sans-serif;">LAST WEEK</button>
+        <button id="btn-lw" onclick="setMode('lw')" style="background:#f8c34a;border:1px solid #ffd56d;color:#0d1f3c;border-radius:4px;padding:2px 14px;font-size:10px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;box-shadow:0 0 0 2px rgba(248,195,74,.22);">LAST WEEK</button>
         <button id="btn-q1"  onclick="setMode('q1')"  style="background:transparent;border:1px solid #4a8eff;color:#7aaed5;border-radius:4px;padding:2px 14px;font-size:10px;cursor:pointer;font-family:Inter,sans-serif;">Q1</button>
         <button id="btn-q2"  onclick="setMode('q2')"  style="background:transparent;border:1px solid #4a8eff;color:#7aaed5;border-radius:4px;padding:2px 14px;font-size:10px;cursor:pointer;font-family:Inter,sans-serif;">Q2</button>
         <button id="btn-ytd" onclick="setMode('ytd')" style="background:transparent;border:1px solid #4a8eff;color:#7aaed5;border-radius:4px;padding:2px 14px;font-size:10px;cursor:pointer;font-family:Inter,sans-serif;">YTD</button>
@@ -307,9 +307,11 @@ function setMode(mode) {
   ['lw', 'q1', 'q2', 'ytd'].forEach(key => {
     const btn = document.getElementById(`btn-${key}`);
     const active = mode === key;
-    btn.style.background = active ? '#1a3360' : 'transparent';
-    btn.style.color = active ? '#fff' : '#7aaed5';
-    btn.style.boxShadow = active ? 'inset 0 0 0 1px rgba(255,255,255,.18)' : 'none';
+    btn.style.background = active ? '#f8c34a' : 'transparent';
+    btn.style.borderColor = active ? '#ffd56d' : '#4a8eff';
+    btn.style.color = active ? '#0d1f3c' : '#7aaed5';
+    btn.style.fontWeight = active ? '700' : '400';
+    btn.style.boxShadow = active ? '0 0 0 2px rgba(248,195,74,.22)' : 'none';
     btn.setAttribute('aria-pressed', String(active));
   });
   // Re-render allowed cards with stored data
