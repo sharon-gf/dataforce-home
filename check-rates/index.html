@@ -26,6 +26,7 @@
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  body.filter-drawer-open { overflow:hidden; }
   button, input, select { font:inherit; }
   .app { min-height:100vh; padding:8px; }
   .header {
@@ -63,7 +64,10 @@
   .panel-head { background:var(--navy2); color:#c8d8f0; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:38px; }
   .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
   .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+  .mobile-filter-toggle { display:none; height:28px; border:1px solid rgba(200,216,240,.65); background:transparent; color:#fff; border-radius:4px; padding:0 10px; font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
   .filters { padding:10px 12px; display:grid; grid-template-columns:1.6fr minmax(190px,1.1fr) repeat(2,minmax(130px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .filter-backdrop { display:none; }
+  .mobile-filter-head { display:none; }
   .field { min-width:0; }
   label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
   input, select {
@@ -146,6 +150,10 @@
   .table-wrap { overflow:auto; max-height:620px; padding:0 0 12px; }
   table { width:100%; border-collapse:collapse; }
   th { position:sticky; top:0; z-index:1; background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:8px; text-align:center; white-space:nowrap; }
+  th.sortable { cursor:pointer; user-select:none; }
+  th.sortable::after { content:""; display:inline-block; width:10px; color:#8fb5d7; font-size:8px; margin-left:4px; }
+  th.sortable.sort-asc::after { content:"▲"; }
+  th.sortable.sort-desc::after { content:"▼"; }
   td { border-bottom:1px solid var(--border); padding:8px; text-align:center; color:var(--text1); font-size:11px; white-space:nowrap; }
   tbody tr:nth-child(even) td { background:#f0f2f6; }
   tbody tr:hover td { background:#e4ecfb; }
@@ -160,15 +168,31 @@
     .logo-link { margin:auto; align-items:center; }
     .header-right { align-items:center; }
     .range { text-align:center; }
-    .summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .filter-actions { grid-column:1 / -1; justify-content:stretch; }
+    .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+    .metric-card { min-height:58px; padding:8px 6px; }
+    .metric-label { font-size:7px; margin-bottom:6px; }
+    .metric-value { font-size:14px; }
+    .panel { overflow:visible; }
+    .panel-head { border-radius:6px 6px 0 0; flex-wrap:wrap; }
+    .mobile-filter-toggle { display:inline-flex; align-items:center; justify-content:center; margin-left:auto; }
+    .filter-backdrop.is-open { display:block; position:fixed; inset:0; z-index:1090; background:rgba(13,31,60,.45); }
+    .mobile-filter-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+    .mobile-filter-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+    .mobile-filter-close { width:30px; height:30px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--text1); cursor:pointer; font-size:16px; line-height:1; }
+    .filters { position:fixed; top:0; right:0; z-index:1100; width:min(88vw,360px); height:100vh; height:100dvh; display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:14px; border-left:1px solid var(--border); border-bottom:0; box-shadow:-18px 0 45px rgba(13,31,60,.28); overflow-y:auto; transform:translateX(105%); transition:transform .2s ease; }
+    .filters.is-open { transform:translateX(0); }
+    .filter-actions { justify-content:stretch; }
     .filter-actions .tool-btn { flex:1; }
   }
   @media (max-width:520px) {
     .app { padding:6px; }
-    .summary-grid { grid-template-columns:1fr; }
-    .filters { grid-template-columns:1fr; }
+    .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .filter-backdrop.is-open { display:block; position:fixed; inset:0; z-index:1090; background:rgba(13,31,60,.45); }
+    .mobile-filter-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+    .mobile-filter-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+    .mobile-filter-close { width:30px; height:30px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--text1); cursor:pointer; font-size:16px; line-height:1; }
+    .filters { position:fixed; top:0; right:0; z-index:1100; width:min(88vw,360px); height:100vh; height:100dvh; display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:14px; border-left:1px solid var(--border); border-bottom:0; box-shadow:-18px 0 45px rgba(13,31,60,.28); overflow-y:auto; transform:translateX(105%); transition:transform .2s ease; }
+    .filters.is-open { transform:translateX(0); }
     th, td { padding:7px 6px; }
   }
 </style>
@@ -213,8 +237,14 @@
     <div class="panel-head">
       <div class="panel-title">AWBs with P/KG <= 0</div>
       <div class="panel-note" id="resultNote">0 rows</div>
+      <button class="mobile-filter-toggle" id="filterToggle" type="button" aria-expanded="false" aria-controls="ratesFilters">Filters</button>
     </div>
-    <div class="filters">
+    <div class="filter-backdrop" id="filterBackdrop"></div>
+    <div class="filters" id="ratesFilters">
+      <div class="mobile-filter-head">
+        <span class="mobile-filter-title">Filters</span>
+        <button class="mobile-filter-close" id="filterClose" type="button" aria-label="Close filters">x</button>
+      </div>
       <div class="field">
         <label for="searchInput">Search</label>
         <input id="searchInput" type="search" placeholder="AWB, GSA, sales person, customer">
@@ -246,14 +276,14 @@
         <table>
           <thead>
             <tr>
-              <th>AWB</th>
-              <th>GSA</th>
-              <th>Sales Person</th>
-              <th>Customer</th>
-              <th>CHW</th>
-              <th>Rev</th>
-              <th>Profit</th>
-              <th>P/KG</th>
+              <th class="sortable" data-sort="awb">AWB</th>
+              <th class="sortable" data-sort="gsa">GSA</th>
+              <th class="sortable" data-sort="sales_person">Sales Person</th>
+              <th class="sortable" data-sort="customer">Customer</th>
+              <th class="sortable" data-sort="chw">CHW</th>
+              <th class="sortable" data-sort="rev">Rev</th>
+              <th class="sortable" data-sort="profit">Profit</th>
+              <th class="sortable" data-sort="pkg">P/KG</th>
             </tr>
           </thead>
           <tbody id="ratesBody"></tbody>
@@ -292,6 +322,7 @@ let rateRows = [];
 let requestSeq = 0;
 let searchTimer = null;
 let selectedBusinesses = ["ALL"];
+let sortState = {key: "pkg", dir: "asc"};
 
 const els = {
   body: document.getElementById("ratesBody"),
@@ -309,8 +340,14 @@ const els = {
   metricAwbs: document.getElementById("metricAwbs"),
   metricChw: document.getElementById("metricChw"),
   metricRev: document.getElementById("metricRev"),
-  metricProfit: document.getElementById("metricProfit")
+  metricProfit: document.getElementById("metricProfit"),
+  filters: document.getElementById("ratesFilters"),
+  filterToggle: document.getElementById("filterToggle"),
+  filterClose: document.getElementById("filterClose"),
+  filterBackdrop: document.getElementById("filterBackdrop")
 };
+
+const MOBILE_QUERY = window.matchMedia("(max-width:900px)");
 
 function user() {
   return getDataforceUser() || {};
@@ -446,6 +483,26 @@ function toggleBusinessMenu(forceOpen) {
   els.businessTrigger.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
+function openFilterDrawer() {
+  if (!MOBILE_QUERY.matches) return;
+  els.filters.classList.add("is-open");
+  els.filterBackdrop.classList.add("is-open");
+  els.filterToggle.setAttribute("aria-expanded", "true");
+  document.body.classList.add("filter-drawer-open");
+}
+
+function closeFilterDrawer() {
+  els.filters.classList.remove("is-open");
+  els.filterBackdrop.classList.remove("is-open");
+  els.filterToggle.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("filter-drawer-open");
+  toggleBusinessMenu(false);
+}
+
+function syncMobileControls() {
+  if (!MOBILE_QUERY.matches) closeFilterDrawer();
+}
+
 function setStatus(text, ready) {
   els.status.textContent = text;
   els.dot.style.background = ready ? "#22c55e" : "#c97a06";
@@ -460,14 +517,42 @@ function renderSummary(data) {
   els.rangeDates.textContent = `${dateLabel(data && data.date_from)} - ${dateLabel(data && data.date_to)}`;
 }
 
+function sortValue(row, key) {
+  if (key === "awb") return formatAwb(row.awb_no || row.awb, row.pfx);
+  return row[key];
+}
+
+function sortedRateRows() {
+  const {key, dir} = sortState;
+  const direction = dir === "asc" ? 1 : -1;
+  return rateRows.slice().sort((a, b) => {
+    const av = sortValue(a, key);
+    const bv = sortValue(b, key);
+    const an = Number(av);
+    const bn = Number(bv);
+    if (!Number.isNaN(an) && !Number.isNaN(bn)) return (an - bn) * direction;
+    return String(av ?? "").localeCompare(String(bv ?? ""), undefined, {numeric:true, sensitivity:"base"}) * direction;
+  });
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll("th.sortable").forEach(th => {
+    const active = th.dataset.sort === sortState.key;
+    th.classList.toggle("sort-asc", active && sortState.dir === "asc");
+    th.classList.toggle("sort-desc", active && sortState.dir === "desc");
+    th.setAttribute("aria-sort", active ? (sortState.dir === "asc" ? "ascending" : "descending") : "none");
+  });
+}
+
 function renderTable() {
   els.resultNote.textContent = `${rateRows.length} rows`;
+  updateSortHeaders();
   if (!rateRows.length) {
     els.body.innerHTML = '<tr><td colspan="8" class="empty">No AWBs found.</td></tr>';
     return;
   }
 
-  els.body.innerHTML = rateRows.map(row => `
+  els.body.innerHTML = sortedRateRows().map(row => `
     <tr>
       <td class="awb">${esc(formatAwb(row.awb_no || row.awb, row.pfx))}</td>
       <td>${esc(row.gsa)}</td>
@@ -594,15 +679,41 @@ document.addEventListener("click", e => {
   if (!els.businessSelect.contains(e.target)) toggleBusinessMenu(false);
 });
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") toggleBusinessMenu(false);
+  if (e.key === "Escape") {
+    toggleBusinessMenu(false);
+    closeFilterDrawer();
+  }
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.search.value = "";
   setBusinessSelection(["ALL"], false);
   setDefaultDates();
   loadRates();
+  closeFilterDrawer();
 });
 document.getElementById("exportBtn").addEventListener("click", exportCsv);
+document.querySelectorAll("th.sortable").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    sortState = {
+      key,
+      dir: sortState.key === key && sortState.dir === "asc" ? "desc" : "asc"
+    };
+    renderTable();
+  });
+});
+els.filterToggle.addEventListener("click", () => {
+  if (els.filters.classList.contains("is-open")) closeFilterDrawer();
+  else openFilterDrawer();
+});
+els.filterClose.addEventListener("click", closeFilterDrawer);
+els.filterBackdrop.addEventListener("click", closeFilterDrawer);
+if (MOBILE_QUERY.addEventListener) {
+  MOBILE_QUERY.addEventListener("change", syncMobileControls);
+} else {
+  MOBILE_QUERY.addListener(syncMobileControls);
+}
+syncMobileControls();
 
 function initCheckRates() {
   const u = user();
