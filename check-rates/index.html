@@ -161,6 +161,10 @@
   .customer { max-width:260px; overflow:hidden; text-overflow:ellipsis; }
   .negative { color:var(--red); font-weight:600; }
   .zero { color:#92400e; font-weight:600; }
+  .ok-cell { width:52px; }
+  .ok-check { width:16px; height:16px; cursor:pointer; accent-color:var(--green); }
+  .show-ok { display:flex; align-items:center; gap:6px; height:30px; color:var(--text2); font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+  .show-ok input { width:14px; height:14px; cursor:pointer; accent-color:var(--green); }
   .empty { padding:38px 16px; color:var(--text3); text-align:center; font-size:12px; }
 
   @media (max-width:900px) {
@@ -267,6 +271,7 @@
         <input id="dateTo" type="date">
       </div>
       <div class="filter-actions">
+        <label class="show-ok"><input id="showOkFilter" type="checkbox">Show OK</label>
         <button class="tool-btn" id="resetBtn" type="button">Reset</button>
         <button class="tool-btn primary" id="exportBtn" type="button">Export</button>
       </div>
@@ -276,6 +281,7 @@
         <table>
           <thead>
             <tr>
+              <th>OK</th>
               <th class="sortable" data-sort="awb">AWB</th>
               <th class="sortable" data-sort="gsa">GSA</th>
               <th class="sortable" data-sort="sales_person">Sales Person</th>
@@ -319,10 +325,13 @@ const BUSINESS_OPTIONS = [
 ];
 
 let rateRows = [];
+let allRateRows = [];
+let currentData = null;
 let requestSeq = 0;
 let searchTimer = null;
 let selectedBusinesses = ["ALL"];
 let sortState = {key: "pkg", dir: "asc"};
+let handledKeys = new Set();
 
 const els = {
   body: document.getElementById("ratesBody"),
@@ -334,6 +343,7 @@ const els = {
   businessMenu: document.getElementById("businessMenu"),
   from: document.getElementById("dateFrom"),
   to: document.getElementById("dateTo"),
+  showOk: document.getElementById("showOkFilter"),
   rangeDates: document.getElementById("rangeDates"),
   status: document.getElementById("statusText"),
   dot: document.querySelector(".dot"),
@@ -410,6 +420,49 @@ function formatAwb(awb, pfx) {
   if (prefixDigits && numberDigits) return `${padPrefix(prefixDigits)}-${padNumber(numberDigits)}`;
   if (numberDigits.length > 8) return `${padPrefix(numberDigits.slice(0, -8))}-${padNumber(numberDigits.slice(-8))}`;
   return raw;
+}
+
+function rateKey(row) {
+  return formatAwb(row.awb_no || row.awb, row.pfx).toUpperCase();
+}
+
+function loadHandledKeys() {
+  const u = user();
+  return fetch(`${API_BASE}/api/check_rates_ok?email=${encodeURIComponent(u.email || "")}`, {
+    headers: { "x-api-key": API_KEY }
+  })
+    .then(response => {
+      if (!response.ok) throw new Error(`API error ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      handledKeys = new Set((data.keys || []).map(key => String(key).trim().toUpperCase()).filter(Boolean));
+    })
+    .catch(error => {
+      console.error("Failed to load shared Check Rates OK rows:", error);
+      handledKeys = new Set();
+    });
+}
+
+async function setHandledKey(key, checked) {
+  const u = user();
+  const response = await fetch(`${API_BASE}/api/check_rates_ok?email=${encodeURIComponent(u.email || "")}`, {
+    method: "POST",
+    headers: {
+      "x-api-key": API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({rate_key: key, ok: checked})
+  });
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const body = await response.json();
+      detail = body.detail ? `: ${body.detail}` : "";
+    } catch (_) {}
+    throw new Error(`API error ${response.status}${detail}`);
+  }
+  return response.json();
 }
 
 function isoDate(d) {
@@ -509,11 +562,17 @@ function setStatus(text, ready) {
 }
 
 function renderSummary(data) {
-  const summary = data && data.summary ? data.summary : {};
-  els.metricAwbs.textContent = fmt(data ? data.count : 0);
-  els.metricChw.textContent = fmt(summary.chw || 0);
-  els.metricRev.textContent = money(summary.rev || 0);
-  els.metricProfit.textContent = money(summary.profit || 0);
+  const activeRows = data && data.rows ? data.rows : rateRows;
+  const summary = activeRows.reduce((totals, row) => {
+    totals.chw += Number(row.chw || 0);
+    totals.rev += Number(row.rev || 0);
+    totals.profit += Number(row.profit || 0);
+    return totals;
+  }, {chw: 0, rev: 0, profit: 0});
+  els.metricAwbs.textContent = fmt(activeRows.length);
+  els.metricChw.textContent = fmt(summary.chw);
+  els.metricRev.textContent = money(summary.rev);
+  els.metricProfit.textContent = money(summary.profit);
   els.rangeDates.textContent = `${dateLabel(data && data.date_from)} - ${dateLabel(data && data.date_to)}`;
 }
 
@@ -545,15 +604,19 @@ function updateSortHeaders() {
 }
 
 function renderTable() {
-  els.resultNote.textContent = `${rateRows.length} rows`;
+  const visibleTotal = els.showOk.checked ? allRateRows.length : allRateRows.filter(row => !handledKeys.has(rateKey(row))).length;
+  els.resultNote.textContent = allRateRows.length && rateRows.length !== visibleTotal
+    ? `${rateRows.length} of ${visibleTotal} rows`
+    : `${rateRows.length} rows`;
   updateSortHeaders();
   if (!rateRows.length) {
-    els.body.innerHTML = '<tr><td colspan="8" class="empty">No AWBs found.</td></tr>';
+    els.body.innerHTML = '<tr><td colspan="9" class="empty">No AWBs found.</td></tr>';
     return;
   }
 
   els.body.innerHTML = sortedRateRows().map(row => `
     <tr>
+      <td class="ok-cell"><input class="ok-check" type="checkbox" data-key="${esc(rateKey(row))}" ${handledKeys.has(rateKey(row)) ? "checked" : ""} aria-label="Mark rate approved"></td>
       <td class="awb">${esc(formatAwb(row.awb_no || row.awb, row.pfx))}</td>
       <td>${esc(row.gsa)}</td>
       <td>${esc(row.sales_person)}</td>
@@ -566,11 +629,22 @@ function renderTable() {
   `).join("");
 }
 
+function applyOkFilter(data = currentData) {
+  const showOk = els.showOk.checked;
+  rateRows = allRateRows.filter(row => showOk || !handledKeys.has(rateKey(row)));
+  renderSummary({
+    date_from: data && data.date_from,
+    date_to: data && data.date_to,
+    rows: rateRows
+  });
+  renderTable();
+}
+
 async function loadRates() {
   const u = user();
   const seq = ++requestSeq;
   setStatus("Loading", false);
-  els.body.innerHTML = '<tr><td colspan="8" class="empty">Loading AWBs...</td></tr>';
+  els.body.innerHTML = '<tr><td colspan="9" class="empty">Loading AWBs...</td></tr>';
 
   const params = new URLSearchParams({
     email: u.email || "",
@@ -594,17 +668,19 @@ async function loadRates() {
     }
     const data = await response.json();
     if (seq !== requestSeq) return;
-    rateRows = data.rows || [];
-    renderSummary(data);
-    renderTable();
+    currentData = data;
+    allRateRows = data.rows || [];
+    applyOkFilter(data);
     setStatus("Ready", true);
   } catch (e) {
     if (seq !== requestSeq) return;
     console.error("Failed to load Check Rates:", e);
+    allRateRows = [];
     rateRows = [];
+    currentData = null;
     renderSummary({date_from: els.from.value, date_to: els.to.value, count: 0, summary: {}});
     setStatus("Error", false);
-    els.body.innerHTML = `<tr><td colspan="8" class="empty">Could not load AWBs. ${esc(e.message || "")}</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="9" class="empty">Could not load AWBs. ${esc(e.message || "")}</td></tr>`;
   }
 }
 
@@ -688,10 +764,29 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   els.search.value = "";
   setBusinessSelection(["ALL"], false);
   setDefaultDates();
+  els.showOk.checked = false;
   loadRates();
   closeFilterDrawer();
 });
 document.getElementById("exportBtn").addEventListener("click", exportCsv);
+els.showOk.addEventListener("change", () => applyOkFilter());
+els.body.addEventListener("change", event => {
+  if (!event.target.classList.contains("ok-check")) return;
+  const key = event.target.dataset.key;
+  if (!key) return;
+  const checked = event.target.checked;
+  if (checked) handledKeys.add(key);
+  else handledKeys.delete(key);
+  applyOkFilter();
+  setHandledKey(key, checked).catch(error => {
+    console.error("Failed to update shared Check Rates OK row:", error);
+    if (checked) handledKeys.delete(key);
+    else handledKeys.add(key);
+    setStatus("Error", false);
+    alert(`Could not update OK status. ${error.message || ""}`);
+    applyOkFilter();
+  });
+});
 document.querySelectorAll("th.sortable").forEach(th => {
   th.addEventListener("click", () => {
     const key = th.dataset.sort;
@@ -715,9 +810,10 @@ if (MOBILE_QUERY.addEventListener) {
 }
 syncMobileControls();
 
-function initCheckRates() {
+async function initCheckRates() {
   const u = user();
   document.getElementById("userLabel").textContent = u.name || u.email || "";
+  await loadHandledKeys();
   setDefaultDates();
   setBusinessSelection(["ALL"], false);
   renderSummary({date_from: els.from.value, date_to: els.to.value, count: 0, summary: {}});
