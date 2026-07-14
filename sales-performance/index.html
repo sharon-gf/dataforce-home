@@ -256,7 +256,7 @@ function renderCards() {
       </div>
       <div class="card-table-scroll">
         <table>
-          <thead><tr><th>Business</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
+          <thead><tr><th>Sales Person</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
           <tbody>${(card.details || []).length ? card.details.map(row => `
             <tr>
               <td title="${esc(row.label)}">${esc(row.label || row.key || "-")}</td>
@@ -264,7 +264,7 @@ function renderCards() {
               <td>${money(row.profit)}</td>
               <td>${pkg(row.profit_per_kg)}</td>
             </tr>
-          `).join("") : '<tr><td colspan="4" class="empty">No business detail.</td></tr>'}</tbody>
+          `).join("") : '<tr><td colspan="4" class="empty">No sales detail.</td></tr>'}</tbody>
         </table>
       </div>
     </div>
