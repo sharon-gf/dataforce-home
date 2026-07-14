@@ -89,6 +89,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-arrow svg { width:11px; height:11px; }
 .card-dashboard { --card-accent:#1a56db; --card-icon-bg:#eef3fb; }
 .card-my-bookings { --card-accent:#0f766e; --card-icon-bg:#e6f5f3; }
+.card-sales-performance { --card-accent:#1a56db; --card-icon-bg:#e8efff; }
 .card-booking-details { --card-accent:#1a3360; --card-icon-bg:#edf1f7; }
 .card-spot-opportunities { --card-accent:#0b7f8f; --card-icon-bg:#e7f6f8; }
 .card-pending-spots { --card-accent:#c97a06; --card-icon-bg:#fef6e8; }
@@ -179,6 +180,12 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/><path d="M20 7l-4 4-3-3-5 5"/></svg></div>
         <div><div class="card-name">My Bookings (Flown)</div><div class="card-desc">YTD sales KPIs, business mix and customer trends</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#0f766e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+
+      <a class="card card-sales-performance" href="https://dataforce.gsaforce.com/sales-performance/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l3-3 3 2 5-7"/><path d="M17 7h2v2"/></svg></div>
+        <div><div class="card-name">Sales Performance</div><div class="card-desc">Booked week performance, customer movement and flown tons by customer</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
 
       <a class="card card-booking-details" href="https://dataforce.gsaforce.com/booking-details/">
@@ -308,6 +315,7 @@ async function applyModulePermissions() {
       'booked': '.card-booked',
       'flown': '.card-summary',
       'my_bookings': '.card-my-bookings',
+      'sales_performance': '.card-sales-performance',
       'booking_details': '.card-booking-details',
       'spot_opportunities': '.card-spot-opportunities',
       'pending_spots': '.card-pending-spots',
