@@ -1,1 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - Sales Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#e8eaee; --surface:#fff; --surface2:#f5f7fb; --border:#d8dde8;
+    --navy:#0d1f3c; --navy2:#1a3360; --text1:#0d1f3c; --text2:#41536c;
+    --text3:#8391a8; --blue:#1a56db; --teal:#0c9080; --red:#b91c1c;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  body { overflow-x:hidden; }
+  .app { min-height:100vh; padding:8px; }
+  .header { background:var(--navy); border-radius:6px; padding:8px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+  .logo { min-width:180px; }
+  .logo a { display:flex; align-items:center; }
+  .logo img { height:28px; width:auto; display:block; }
+  .hdr-mid-section { flex:1; text-align:center; min-width:0; }
+  .header-title { color:#7aaed5; letter-spacing:.12em; font-size:17px; font-weight:500; white-space:nowrap; margin-bottom:7px; }
+  .filters { display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; }
+  .filters label { color:#8fb5d7; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+  select { min-width:150px; height:26px; border:1px solid #45658d; background:#102847; color:#fff; border-radius:5px; padding:3px 9px; font-size:10px; outline:none; }
+  .toggle { display:flex; border:1px solid #45658d; border-radius:5px; overflow:hidden; height:26px; background:#102847; }
+  .toggle button { border:0; background:transparent; color:#8fb5d7; padding:0 11px; font:inherit; font-size:10px; cursor:pointer; }
+  .toggle button.active { background:#1a56db; color:#fff; }
+  .header-right { min-width:260px; display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:5px; color:#fff; font-size:11px; }
+  .header-actions { display:flex; justify-content:flex-end; align-items:center; gap:12px; }
+  .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:7px; height:7px; border-radius:999px; background:#c97a06; }
+  .dot.ready { background:#22c55e; }
+  .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font:inherit; font-size:10px; }
+  .range { color:#8fb5d7; text-align:right; line-height:1.35; font-size:10px; }
+  .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:block; }
 
+  .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
+  .mobile-kpi-toggle { display:none; width:100%; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:6px; padding:9px 12px; margin-bottom:8px; font:inherit; font-weight:600; text-align:left; cursor:pointer; }
+  .kpi-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
+  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:86px; }
+  .kpi-head { height:30px; border-top:4px solid var(--teal); padding:5px 10px 0; display:flex; align-items:center; }
+  .kpi-card.total .kpi-head { border-top-color:var(--blue); }
+  .kpi-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .kpi-body { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:8px 8px 10px; }
+  .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; text-align:center; }
+  .metric-value { color:var(--text1); font-size:14px; font-weight:500; line-height:1.15; white-space:nowrap; text-align:center; }
+
+  .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
+  .panel-head { background:var(--navy2); color:#c8d8f0; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:38px; }
+  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+  .trend { padding:6px 10px 8px; min-height:342px; }
+  .chart-wrap { position:relative; width:100%; height:314px; }
+  .trend-legend { display:flex; justify-content:flex-end; gap:14px; color:var(--text2); font-size:10px; margin-bottom:2px; }
+  .legend-item { display:flex; align-items:center; gap:5px; }
+  .legend-swatch { width:18px; height:3px; border-radius:99px; background:#1a56db; }
+  .legend-swatch.prev { background:#e05555; }
+
+  table { width:100%; border-collapse:collapse; }
+  th { background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:7px 8px; text-align:right; white-space:nowrap; }
+  th:first-child, td:first-child { text-align:left; }
+  td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:right; color:var(--text1); font-size:11px; white-space:nowrap; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  .table-scroll { max-height:322px; overflow:auto; }
+  .matrix-panel { min-height:420px; }
+  .matrix-scroll { max-height:430px; overflow:auto; }
+  .matrix-table { min-width:760px; }
+  .matrix-table th:first-child, .matrix-table td:first-child { position:sticky; left:0; z-index:2; min-width:220px; max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  .matrix-table th:first-child { z-index:4; background:var(--navy2); }
+  .matrix-table tbody tr:nth-child(even) td:first-child { background:#f0f2f6; }
+  .matrix-table tbody tr:nth-child(odd) td:first-child { background:#fff; }
+  .empty, .loading { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
+
+  @media (max-width:980px) {
+    .header { flex-wrap:wrap; padding:10px 12px; }
+    .logo { order:1; flex:1 1 45%; min-width:0; }
+    .logo img { height:30px; }
+    .header-right { order:2; flex:1 1 45%; min-width:0; }
+    .header-actions { flex-wrap:wrap; row-gap:5px; }
+    .hdr-mid-section { order:3; flex:1 1 100%; margin-top:10px; }
+    .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .content-grid { grid-template-columns:1fr; }
+  }
+  @media (max-width:560px) {
+    .filters { width:100%; }
+    select { width:100%; }
+    .toggle { width:100%; }
+    .toggle button { flex:1; }
+    .header-title { font-size:15px; }
+    .header-right { align-items:center; }
+    .range { text-align:center; }
+    .mobile-kpi-toggle { display:block; }
+    .kpi-grid { grid-template-columns:1fr; display:none; }
+    .kpi-grid.open { display:grid; }
+    .chart-wrap { height:260px; }
+  }
+</style>
+<link rel="stylesheet" href="../dataforce-shell.css">
+<script>window.DATAFORCE_SHELL = {"title":"Sales Performance","controls":[".filters"],"meta":[".range"],"userNameId":"userLabel"};</script>
+<script src="../dataforce-shell.js"></script>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="logo"><a href="/" aria-label="Back to DATAFORCE home"><img src="../dataforce-logo.png" alt="DATAFORCE"></a></div>
+    <div class="hdr-mid-section">
+      <div class="header-title">SALES PERFORMANCE</div>
+      <div class="filters">
+        <label for="salesSelect">Sales Person</label>
+        <select id="salesSelect"></select>
+        <div class="toggle" aria-label="Week mode">
+          <button type="button" id="lastWeekBtn" data-mode="last">Last Week</button>
+          <button type="button" id="thisWeekBtn" data-mode="current" class="active">This Week</button>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-actions">
+        <span id="userLabel"></span>
+        <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading</span></span>
+        <button class="logout" onclick="signOut()">Sign out</button>
+      </div>
+      <div class="range"><span class="range-main" id="rangeTitle">-</span><span id="rangeDates">-</span></div>
+    </div>
+  </header>
+
+  <div class="error" id="errorBox"></div>
+  <button class="mobile-kpi-toggle" type="button" id="kpiToggle">Booked Summary</button>
+  <section class="kpi-grid" id="bookedCards"><div class="loading">Loading booked summary...</div></section>
+
+  <section class="content-grid">
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Booked Tons By Week</div><div class="panel-note" id="trendNote">YTD</div></div>
+      <div class="trend" id="trendBox"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Dropping Customers</div><div class="panel-note">Booked 10 weeks</div></div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
+          <tbody id="droppingBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel matrix-panel">
+    <div class="panel-head"><div class="panel-title">Flown Tons By Week By Customer</div><div class="panel-note">YTD / last 10 weeks</div></div>
+    <div class="matrix-scroll">
+      <table class="matrix-table">
+        <thead id="matrixHead"></thead>
+        <tbody id="matrixBody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-production.up.railway.app";
+const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+let currentData = null;
+let trendChart = null;
+let weekMode = "current";
+let requestSeq = 0;
+
+function user() {
+  try { return JSON.parse(sessionStorage.getItem("df_user") || "{}"); }
+  catch (e) { return {}; }
+}
+function signOut() {
+  sessionStorage.removeItem("df_user");
+  sessionStorage.removeItem("df_permissions");
+  window.location.href = "https://dataforce.gsaforce.com/";
+}
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+function num(value, digits = 0) {
+  return Number(value || 0).toLocaleString(undefined, { maximumFractionDigits:digits, minimumFractionDigits:digits });
+}
+function money(value) {
+  const n = Number(value || 0);
+  const abs = Math.abs(n);
+  if (abs >= 1000000) return `${(n / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
+  if (abs >= 1000) return `${Math.round(n / 1000)}K`;
+  return n.toLocaleString(undefined, { maximumFractionDigits:0 });
+}
+function pkg(value) {
+  const n = Number(value || 0);
+  return n ? n.toFixed(2) : "-";
+}
+function shortCustomer(value) {
+  const text = String(value || "-");
+  return text.length > 26 ? `${text.slice(0, 23)}...` : text;
+}
+function formatDate(value) {
+  if (!value) return "-";
+  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+function setStatus(text, ready) {
+  document.getElementById("statusText").textContent = text;
+  document.getElementById("statusDot").classList.toggle("ready", Boolean(ready));
+}
+function showError(message) {
+  const box = document.getElementById("errorBox");
+  box.textContent = message || "";
+  box.style.display = message ? "block" : "none";
+}
+
+function renderSalesSelect() {
+  const select = document.getElementById("salesSelect");
+  const people = currentData.salesPersons || [];
+  const locked = currentData.lockedSalesPerson;
+  const selected = currentData.selectedSalesPerson || "ALL";
+  const options = locked ? people : ["ALL"].concat(people);
+  select.innerHTML = options.map(person => `<option value="${esc(person)}">${person === "ALL" ? "All Sales Persons" : esc(person)}</option>`).join("");
+  select.value = selected;
+  select.disabled = Boolean(locked);
+}
+
+function renderCards() {
+  const cards = currentData.bookedCards || [];
+  document.getElementById("bookedCards").innerHTML = cards.length ? cards.map((card, index) => `
+    <div class="kpi-card ${index === 0 ? "total" : ""}">
+      <div class="kpi-head"><div class="kpi-title" title="${esc(card.label)}">${esc(card.label || card.key || "-")}</div></div>
+      <div class="kpi-body">
+        <div><div class="metric-label"># Bkgs</div><div class="metric-value">${num(card.bookings)}</div></div>
+        <div><div class="metric-label">Tons</div><div class="metric-value">${num(card.tons, 1)}</div></div>
+        <div><div class="metric-label">Rev</div><div class="metric-value">${money(card.revenue || card.rev)}</div></div>
+        <div><div class="metric-label">P/KG</div><div class="metric-value">${pkg(card.profit_per_kg)}</div></div>
+      </div>
+    </div>
+  `).join("") : '<div class="empty">No booked data for this period.</div>';
+}
+
+function renderTrend() {
+  const rows = currentData.trend || [];
+  const prevRows = currentData.trendPrev || [];
+  const box = document.getElementById("trendBox");
+  const max = Math.max(...rows.concat(prevRows).map(r => Number(r.tons || 0)), 0);
+  if (!rows.length || max <= 0) {
+    if (trendChart) trendChart.destroy();
+    trendChart = null;
+    box.innerHTML = '<div class="empty">No booked trend data.</div>';
+    return;
+  }
+  const year = new Date().getFullYear();
+  const labels = Array.from({ length:52 }, (_, i) => `W${i + 1}`);
+  const toSeries = source => {
+    const values = Array(52).fill(null);
+    source.forEach(r => {
+      const week = Number(r.period_week || 0);
+      if (week >= 1 && week <= 52) values[week - 1] = Number(r.tons || 0);
+    });
+    return values;
+  };
+  box.innerHTML = `
+    <div class="trend-legend">
+      <span class="legend-item"><span class="legend-swatch"></span>${year}</span>
+      ${prevRows.length ? `<span class="legend-item"><span class="legend-swatch prev"></span>${year - 1}</span>` : ""}
+    </div>
+    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  `;
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById("trendChart"), {
+    type:"line",
+    data:{ labels, datasets:[
+      { label:String(year), data:toSeries(rows), borderColor:"#4a8eff", borderWidth:1.5, pointRadius:1, pointHoverRadius:5, tension:0.3, fill:false, spanGaps:false },
+      ...(prevRows.length ? [{ label:String(year - 1), data:toSeries(prevRows), borderColor:"#e05555", borderWidth:1.5, pointRadius:1, pointHoverRadius:4, tension:0.3, fill:false, spanGaps:false }] : [])
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false, interaction:{mode:"index", intersect:false},
+      plugins:{ legend:{display:false}, tooltip:{backgroundColor:"#0d1f3c", titleColor:"#7aaae8", bodyColor:"#d8e4f4", padding:8} },
+      scales:{
+        x:{grid:{color:"rgba(0,0,0,.05)"}, ticks:{color:"#8896aa", font:{size:8}, maxRotation:45, autoSkip:false, callback:function(value, index){ return index % 2 ? "" : this.getLabelForValue(value); }}},
+        y:{grid:{color:"rgba(0,0,0,.05)"}, ticks:{color:"#8896aa", font:{size:8}}, beginAtZero:true}
+      }
+    }
+  });
+}
+
+function renderDropping() {
+  const rows = (currentData.droppingCustomers || []).slice(0, 30);
+  document.getElementById("droppingBody").innerHTML = rows.length ? rows.map(c => `
+    <tr>
+      <td title="${esc(c.customer)}">${esc(shortCustomer(c.customer))}</td>
+      <td>${num(c.prior_avg_tons, 2)}</td>
+      <td>${num(c.recent_avg_tons, 2)}</td>
+      <td>${num(c.change_tons, 2)}</td>
+    </tr>
+  `).join("") : '<tr><td colspan="4" class="empty">No dropping customers.</td></tr>';
+}
+
+function renderMatrix() {
+  const matrix = currentData.flownCustomerWeeks || {};
+  const columns = matrix.columns || [];
+  const rows = matrix.rows || [];
+  document.getElementById("matrixHead").innerHTML = `<tr><th>Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join("")}<th>Total</th></tr>`;
+  if (!columns.length || !rows.length) {
+    document.getElementById("matrixBody").innerHTML = `<tr><td colspan="${columns.length + 2}" class="empty">No flown customer data.</td></tr>`;
+    return;
+  }
+  document.getElementById("matrixBody").innerHTML = rows.map(row => `
+    <tr>
+      <td title="${esc(row.customer)}">${esc(row.customer)}</td>
+      ${columns.map(col => `<td>${Number((row.values || {})[col.key] || 0) ? num(Number((row.values || {})[col.key]) / 1000, 2) : "-"}</td>`).join("")}
+      <td>${num(Number(row.totalKg || 0) / 1000, 2)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderAll() {
+  renderSalesSelect();
+  document.getElementById("rangeTitle").textContent = `${currentData.periodLabel || ""} Booked`.toUpperCase();
+  document.getElementById("rangeDates").textContent = `${formatDate(currentData.start)} - ${formatDate(currentData.end)}`;
+  document.getElementById("trendNote").textContent = currentData.selectedSalesPerson === "ALL" ? "All sales persons" : currentData.selectedSalesPerson;
+  renderCards();
+  renderTrend();
+  renderDropping();
+  renderMatrix();
+}
+
+async function loadReport() {
+  const u = user();
+  const salesPerson = document.getElementById("salesSelect").value || "ALL";
+  const seq = ++requestSeq;
+  setStatus("Loading reports", false);
+  showError("");
+  try {
+    const params = new URLSearchParams({ email:u.email || "", sales_person:salesPerson, week_mode:weekMode });
+    const r = await fetch(`${API_BASE}/api/sales_performance?${params.toString()}`, { headers:{ "x-api-key":API_KEY } });
+    if (!r.ok) {
+      let detail = "";
+      try { detail = (await r.json()).detail || ""; } catch (_) {}
+      throw new Error(detail || `API error ${r.status}`);
+    }
+    const data = await r.json();
+    if (seq !== requestSeq) return;
+    currentData = data;
+    renderAll();
+    showError((data.errors || []).join(" · "));
+    setStatus("Ready", true);
+  } catch (e) {
+    if (seq !== requestSeq) return;
+    console.error("Failed to load Sales Performance:", e);
+    setStatus("Error", false);
+    showError(`Could not load Sales Performance. ${e.message || "Please refresh or contact an administrator."}`);
+  }
+}
+
+function bindEvents() {
+  document.getElementById("salesSelect").addEventListener("change", loadReport);
+  document.querySelectorAll(".toggle button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      weekMode = btn.dataset.mode;
+      document.querySelectorAll(".toggle button").forEach(b => b.classList.toggle("active", b === btn));
+      loadReport();
+    });
+  });
+  document.getElementById("kpiToggle").addEventListener("click", () => {
+    document.getElementById("bookedCards").classList.toggle("open");
+  });
+}
+
+function initSalesPerformance() {
+  const u = user();
+  document.getElementById("userLabel").textContent = u.name || (u.email ? u.email.split("@")[0] : "");
+  document.getElementById("salesSelect").innerHTML = '<option value="ALL">All Sales Persons</option>';
+  bindEvents();
+  loadReport();
+}
+
+checkModuleAccess("sales_performance", initSalesPerformance);
+</script>
+</body>
+</html>
