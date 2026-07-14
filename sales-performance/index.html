@@ -145,11 +145,11 @@
 
   <section class="content-grid">
     <div class="panel">
-      <div class="panel-head"><div class="panel-title">Booked Tons By Week</div><div class="panel-note" id="trendNote">YTD</div></div>
+      <div class="panel-head"><div class="panel-title">Flown Tons By Week</div><div class="panel-note" id="trendNote">Flight date YTD</div></div>
       <div class="trend" id="trendBox"></div>
     </div>
     <div class="panel">
-      <div class="panel-head"><div class="panel-title">Dropping Customers</div><div class="panel-note">Booked 10 weeks</div></div>
+      <div class="panel-head"><div class="panel-title">Dropping Customers</div><div class="panel-note">Flight date 10 weeks</div></div>
       <div class="table-scroll">
         <table>
           <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
@@ -178,6 +178,7 @@ let currentData = null;
 let trendChart = null;
 let weekMode = "current";
 let requestSeq = 0;
+let activeRequest = null;
 
 function user() {
   try { return JSON.parse(sessionStorage.getItem("df_user") || "{}"); }
@@ -366,11 +367,16 @@ async function loadReport() {
   const salesPerson = document.getElementById("salesSelect").value || "ALL";
   const business = document.getElementById("businessSelect").value || "ALL";
   const seq = ++requestSeq;
+  if (activeRequest) activeRequest.abort();
+  activeRequest = new AbortController();
   setStatus("Loading reports", false);
   showError("");
   try {
     const params = new URLSearchParams({ email:u.email || "", sales_person:salesPerson, business, week_mode:weekMode });
-    const r = await fetch(`${API_BASE}/api/sales_performance?${params.toString()}`, { headers:{ "x-api-key":API_KEY } });
+    const r = await fetch(`${API_BASE}/api/sales_performance?${params.toString()}`, {
+      headers:{ "x-api-key":API_KEY },
+      signal:activeRequest.signal
+    });
     if (!r.ok) {
       let detail = "";
       try { detail = (await r.json()).detail || ""; } catch (_) {}
@@ -384,9 +390,12 @@ async function loadReport() {
     setStatus("Ready", true);
   } catch (e) {
     if (seq !== requestSeq) return;
+    if (e.name === "AbortError") return;
     console.error("Failed to load Sales Performance:", e);
     setStatus("Error", false);
     showError(`Could not load Sales Performance. ${e.message || "Please refresh or contact an administrator."}`);
+  } finally {
+    if (seq === requestSeq) activeRequest = null;
   }
 }
 
