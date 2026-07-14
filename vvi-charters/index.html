@@ -91,6 +91,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
   text-align:right; color:#c8d8f0; font-weight:500;
   font-size:8px; letter-spacing:0.05em; text-transform:uppercase;
   padding:5px 7px; background:var(--navy-hdr); white-space:nowrap;
+  position:sticky; top:0; z-index:3;
 }
 .dtbl th:first-child { text-align:left; }
 .dtbl td {
@@ -103,6 +104,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 .dtbl tbody tr:nth-child(odd)  td { background:var(--surface); }
 .dtbl tbody tr:last-child td   { border-bottom:none; }
 .dtbl tbody tr:hover td        { background:#e8edf7 !important; }
+.dtbl tbody tr.clickable-row { cursor:pointer; }
 .dtbl tr.total td {
   font-weight:500; color:var(--navy2);
   background:var(--surface2) !important;
@@ -130,7 +132,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
   max-width:250px;
 }
 .matrix-table th.sales-col,
-.matrix-table th.customer-col { z-index:4; background:var(--navy-hdr); }
+.matrix-table th.customer-col { z-index:5; background:var(--navy-hdr); }
 .matrix-table tbody tr:nth-child(even) .sales-col,
 .matrix-table tbody tr:nth-child(even) .customer-col { background:var(--stripe); }
 .matrix-table tbody tr:nth-child(odd) .sales-col,
@@ -155,6 +157,23 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 }
 @keyframes spin { to { transform:rotate(360deg); } }
 .load-text { font-size:11px; color:#6a82a0; letter-spacing:0.06em; }
+.modal-backdrop {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.6);
+  z-index:1000; align-items:center; justify-content:center; padding:18px;
+}
+.modal-card {
+  background:#fff; border-radius:8px; width:min(920px,96vw); max-height:82vh;
+  display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+.modal-head {
+  background:var(--navy); color:#fff; padding:12px 16px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.modal-title { color:#fff; font-size:13px; font-weight:500; letter-spacing:.04em; }
+.modal-close { background:transparent; border:0; color:#fff; cursor:pointer; font-size:18px; line-height:1; padding:0 4px; }
+.modal-body { overflow:auto; flex:1; }
+.modal-table td { font-size:11px; }
+.modal-footer { padding:8px 16px; background:#f5f7fb; color:var(--text2); border-top:1px solid var(--border); font-size:11px; }
 
 /* ══ MOBILE ══ */
 @media (max-width:600px) {
@@ -278,7 +297,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
       <div class="tbl-wrap">
         <table class="dtbl">
           <thead>
-            <tr><th>Sales</th><th>Kg</th><th>#Bkg</th><th>Rev</th><th>$/Kg</th><th>P/Kg</th></tr>
+            <tr><th>Sales</th><th>Kg</th><th>#Bkg</th><th>Profit</th><th>$/Kg</th><th>P/Kg</th></tr>
           </thead>
           <tbody id="tbody-sales">
             <tr class="nodata-cell"><td colspan="6">Loading…</td></tr>
@@ -295,7 +314,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
       <div class="tbl-wrap">
         <table class="dtbl">
           <thead>
-            <tr><th>Customer</th><th>Kg</th><th>#Bkg</th><th>Rev</th><th>$/Kg</th><th>P/Kg</th></tr>
+            <tr><th>Customer</th><th>Kg</th><th>#Bkg</th><th>Profit</th><th>$/Kg</th><th>P/Kg</th></tr>
           </thead>
           <tbody id="tbody-cust">
             <tr class="nodata-cell"><td colspan="6">Loading…</td></tr>
@@ -320,10 +339,10 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Revenue per Flight</span>
+        <span class="card-title">Profit per Flight</span>
       </div>
       <div class="chart-wrap">
-        <canvas id="chartRev" role="img" aria-label="Revenue per VVI charter flight">Revenue per VVI charter flight.</canvas>
+        <canvas id="chartRev" role="img" aria-label="Profit per VVI charter flight">Profit per VVI charter flight.</canvas>
       </div>
     </div>
 
@@ -353,6 +372,24 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
   </div>
 
 </main>
+
+<div class="modal-backdrop" id="awbModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-title" id="awbModalTitle">AWB Detail</div>
+      <button class="modal-close" type="button" onclick="closeAwbModal()">x</button>
+    </div>
+    <div class="modal-body">
+      <table class="dtbl modal-table">
+        <thead>
+          <tr><th>PFX</th><th>AWB</th><th>Sales</th><th>Customer</th><th>KG</th><th>Profit</th><th>$/KG</th><th>P/KG</th></tr>
+        </thead>
+        <tbody id="awbModalBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer" id="awbModalFooter"></div>
+  </div>
+</div>
 
 <script src="../permission-guard.js"></script>
 <script>
@@ -405,6 +442,7 @@ function esc(s){ if(!s)return'—'; return String(s).replace(/&/g,'&amp;').repla
 
 // ─── CHART INSTANCES ─────────────────────────────────────────────────────────
 let chartTonsInst=null, chartRevInst=null;
+let currentAwbs = [];
 
 // ─── DOWNLOAD AWBs ───────────────────────────────────────────────────────────
 async function downloadAWBs() {
@@ -430,7 +468,7 @@ async function downloadAWBs() {
     }
     
     // Create CSV content
-    const headers = ['Pfx', 'AWB', 'Sales Person', 'Customer', 'KG', 'REV', '$/KG', 'P/KG'];
+    const headers = ['Pfx', 'AWB', 'Sales Person', 'Customer', 'KG', 'PROFIT', '$/KG', 'P/KG'];
     let csv = headers.join(',') + '\n';
     
     awbData.forEach(row => {
@@ -439,11 +477,11 @@ async function downloadAWBs() {
       const salesperson = String(row.salesperson || '').replace(/,/g, ';');
       const customer = String(row.customer || '').replace(/,/g, ';');
       const kg = Number(row.kg || 0).toFixed(2);
-      const rev = Number(row.revenue || 0).toFixed(2);
+      const profit = Number(row.profit || 0).toFixed(2);
       const pkkg = Number(row.price_per_kg || 0).toFixed(2);
       const ppkg = Number(row.profit_per_kg || 0).toFixed(2);
       
-      csv += `${pfx},${awb},"${salesperson}","${customer}",${kg},${rev},${pkkg},${ppkg}\n`;
+      csv += `${pfx},${awb},"${salesperson}","${customer}",${kg},${profit},${pkkg},${ppkg}\n`;
     });
     
     // Trigger download
@@ -476,6 +514,7 @@ async function load() {
   try {
     const res  = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}&email=${encodeURIComponent(userEmail)}`);
     const data = await res.json();
+    currentAwbs = data.awbs || [];
     renderKPIs(data.kpis);
     renderSalesTable(data.byAgent    || []);
     renderCustTable (data.byCustomer || []);
@@ -483,6 +522,7 @@ async function load() {
     renderCustomerWeeks(data.customerWeeks || {});
   } catch(err) {
     console.error('VVI Charters load error:', err);
+    currentAwbs = [];
     ['kpi-tons','kpi-profit','kpi-pkg'].forEach(id => document.getElementById(id).textContent='err');
     renderSalesTable([]);
     renderCustTable([]);
@@ -502,7 +542,7 @@ function renderKPIs(k) {
 }
 
 // ─── TABLE BUILDER ───────────────────────────────────────────────────────────
-function buildTableBody(rows, tbodyId) {
+function buildTableBody(rows, tbodyId, scope) {
   const tbody = document.getElementById(tbodyId);
   if(!rows.length){
     tbody.innerHTML='<tr class="nodata-cell"><td colspan="6">No data for this flight</td></tr>';
@@ -516,11 +556,11 @@ function buildTableBody(rows, tbodyId) {
   const totRateKg=totTons>0?totRev   /(totTons*1000):null;
 
   const rows_html = rows.map(r=>`
-    <tr>
+    <tr class="clickable-row" data-detail-scope="${scope}" data-detail-name="${esc(r.name)}">
       <td>${esc(r.name)}</td>
       <td>${fmtKg(r.tons)}</td>
       <td>${r.bkg??'—'}</td>
-      <td>${fmtMoneyK(r.rev)}</td>
+      <td>${fmtMoneyK(r.profit)}</td>
       <td>${fmtPkgSm(r.rate_kg)}</td>
       <td>${fmtPkgSm(r.pkg)}</td>
     </tr>`).join('');
@@ -530,14 +570,56 @@ function buildTableBody(rows, tbodyId) {
       <td><strong>Total</strong></td>
       <td><strong>${fmtKg(totTons)}</strong></td>
       <td><strong>${totBkg}</strong></td>
-      <td><strong>${fmtMoneyK(totRev)}</strong></td>
+      <td><strong>${fmtMoneyK(totProfit)}</strong></td>
       <td><strong>${fmtPkgSm(totRateKg)}</strong></td>
       <td><strong>${fmtPkgSm(totPkg)}</strong></td>
     </tr>`;
   tbody.innerHTML = rows_html + tot_html;
+  tbody.querySelectorAll('.clickable-row').forEach(row => {
+    row.addEventListener('click', () => showAwbModal(row.dataset.detailScope, row.dataset.detailName));
+  });
 }
-function renderSalesTable(rows){ buildTableBody(rows,'tbody-sales'); }
-function renderCustTable(rows) { buildTableBody(rows,'tbody-cust');  }
+function renderSalesTable(rows){ buildTableBody(rows,'tbody-sales','salesperson'); }
+function renderCustTable(rows) { buildTableBody(rows,'tbody-cust','customer');  }
+
+function closeAwbModal() {
+  document.getElementById('awbModal').style.display = 'none';
+}
+
+document.getElementById('awbModal').addEventListener('click', e => {
+  if (e.target.id === 'awbModal') closeAwbModal();
+});
+
+function showAwbModal(scope, name) {
+  const modal = document.getElementById('awbModal');
+  const body = document.getElementById('awbModalBody');
+  const footer = document.getElementById('awbModalFooter');
+  const label = scope === 'salesperson' ? 'Sales' : 'Customer';
+  const rows = currentAwbs.filter(row => String(row[scope] || '') === String(name || ''));
+  document.getElementById('awbModalTitle').textContent = `AWB Detail - ${label}: ${name || '-'}`;
+  if (!rows.length) {
+    body.innerHTML = '<tr class="nodata-cell"><td colspan="8">No AWBs found.</td></tr>';
+    footer.textContent = '';
+    modal.style.display = 'flex';
+    return;
+  }
+  body.innerHTML = rows.map(row => `
+    <tr>
+      <td>${esc(row.pfx || '-')}</td>
+      <td>${esc(row.awb || '-')}</td>
+      <td title="${esc(row.salesperson || '')}">${esc(row.salesperson || '-')}</td>
+      <td title="${esc(row.customer || '')}">${esc(row.customer || '-')}</td>
+      <td>${Number(row.kg || 0).toLocaleString('en-US',{maximumFractionDigits:0})}</td>
+      <td>${fmtMoneyK(row.profit)}</td>
+      <td>${fmtPkgSm(row.price_per_kg)}</td>
+      <td>${fmtPkgSm(row.profit_per_kg)}</td>
+    </tr>
+  `).join('');
+  const totalKgs = rows.reduce((sum, row) => sum + Number(row.kg || 0), 0);
+  const totalProfit = rows.reduce((sum, row) => sum + Number(row.profit || 0), 0);
+  footer.textContent = `${rows.length} AWBs - Total ${totalKgs.toLocaleString('en-US',{maximumFractionDigits:0})} kgs / ${fmtMoneyK(totalProfit)} profit`;
+  modal.style.display = 'flex';
+}
 
 function renderCustomerWeeks(matrix) {
   const columns = matrix.columns || [];
@@ -566,7 +648,7 @@ function renderCustomerWeeks(matrix) {
 function renderCharts(flights) {
   const labels = flights.map(f=>f.label||f.date);
   const tons   = flights.map(f=>parseFloat((f.tons||0).toFixed(1)));
-  const revs   = flights.map(f=>Math.round(f.rev||0));
+  const profits = flights.map(f=>Math.round(f.profit||0));
 
   const baseOpts = {
     responsive:true, maintainAspectRatio:false,
@@ -589,7 +671,7 @@ function renderCharts(flights) {
   if(chartRevInst) chartRevInst.destroy();
   chartRevInst = new Chart(document.getElementById('chartRev'),{
     type:'bar',
-    data:{ labels, datasets:[{label:'Revenue',data:revs,backgroundColor:'#0c9080',borderRadius:3,borderSkipped:false}] },
+    data:{ labels, datasets:[{label:'Profit',data:profits,backgroundColor:'#0c9080',borderRadius:3,borderSkipped:false}] },
     options:{ ...baseOpts, scales:{ ...baseOpts.scales,
       y:{ ...baseOpts.scales.y, ticks:{ ...baseOpts.scales.y.ticks,
         callback:v=>{ if(v>=1e6)return'$'+(v/1e6).toFixed(1)+'M'; if(v>=1e3)return'$'+(v/1e3).toFixed(0)+'K'; return'$'+v; }
