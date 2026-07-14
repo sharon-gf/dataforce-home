@@ -40,21 +40,16 @@
 
   .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
   .mobile-kpi-toggle { display:none; width:100%; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:6px; padding:9px 12px; margin-bottom:8px; font:inherit; font-weight:600; text-align:left; cursor:pointer; }
-  .kpi-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
-  .kpi-card { background:#fff; border:1px solid #d0d4dc; border-radius:5px; overflow:hidden; min-height:210px; }
+  .kpi-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
+  .kpi-card { background:#fff; border:1px solid #d0d4dc; border-radius:5px; overflow:hidden; min-height:78px; }
   .kpi-card.nodata { opacity:.55; }
-  .kpi-head { background:#fff; padding:8px 10px; border-bottom:2px solid #093c71; display:flex; align-items:center; min-height:38px; }
-  .kpi-card.total .kpi-head { border-bottom-color:var(--blue); }
+  .kpi-head { background:#fff; height:30px; border-top:4px solid var(--teal); padding:5px 10px 0; display:flex; align-items:center; }
+  .kpi-card.total .kpi-head { border-top-color:var(--blue); }
   .kpi-title { color:#093c71; font-size:12px; font-weight:600; letter-spacing:.03em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .kpi-body { display:flex; padding:5px 6px; border-bottom:1px solid #eee; background:#f8f9fc; gap:2px; }
+  .kpi-body { display:flex; padding:5px 6px 7px; background:#f8f9fc; gap:2px; }
   .kpi-metric { flex:1; text-align:center; min-width:0; }
   .metric-label { color:#aaa; font-size:7.5px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:2px; }
   .metric-value { color:#0d1f3c; font-size:12px; font-weight:500; line-height:1.3; white-space:nowrap; }
-  .card-table-scroll { max-height:128px; overflow:auto; }
-  .card-table-scroll th { position:sticky; top:0; z-index:2; background:#fff; color:#093c71; border-bottom:1.5px solid #093c71; padding:4px 6px; font-size:9px; }
-  .card-table-scroll td { padding:3px 6px; font-size:9.5px; }
-  .card-table-scroll td:first-child { max-width:90px; overflow:hidden; text-overflow:ellipsis; }
-  .card-table-scroll .empty { padding:12px 8px; font-size:10px; }
 
   .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
   .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
@@ -253,19 +248,6 @@ function renderCards() {
         <div class="kpi-metric"><div class="metric-label">Tons</div><div class="metric-value">${num(card.tons, 1)}</div></div>
         <div class="kpi-metric"><div class="metric-label">Rev</div><div class="metric-value">${money(card.revenue || card.rev)}</div></div>
         <div class="kpi-metric"><div class="metric-label">P/KG</div><div class="metric-value">${pkg(card.profit_per_kg)}</div></div>
-      </div>
-      <div class="card-table-scroll">
-        <table>
-          <thead><tr><th>Sales Person</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
-          <tbody>${(card.details || []).length ? card.details.map(row => `
-            <tr>
-              <td title="${esc(row.label)}">${esc(row.label || row.key || "-")}</td>
-              <td>${num(row.tons, 2)}</td>
-              <td>${money(row.profit)}</td>
-              <td>${pkg(row.profit_per_kg)}</td>
-            </tr>
-          `).join("") : '<tr><td colspan="4" class="empty">No sales detail.</td></tr>'}</tbody>
-        </table>
       </div>
     </div>
   `).join("") : '<div class="empty">No booked data for this period.</div>';
