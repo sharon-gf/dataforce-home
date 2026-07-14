@@ -39,8 +39,11 @@
   .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:block; }
 
   .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
-  .mobile-kpi-toggle { display:none; width:100%; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:6px; padding:9px 12px; margin-bottom:8px; font:inherit; font-weight:600; text-align:left; cursor:pointer; }
+  .kpi-toggle { width:100%; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:6px; padding:7px 12px; margin-bottom:8px; font:inherit; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; text-align:left; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+  .kpi-toggle::after { content:"Hide"; color:var(--text3); font-size:10px; }
+  .kpi-toggle.collapsed::after { content:"Show"; }
   .kpi-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
+  .kpi-grid.collapsed { display:none; }
   .kpi-card { background:#fff; border:1px solid #d0d4dc; border-radius:5px; overflow:hidden; min-height:78px; }
   .kpi-card.nodata { opacity:.55; }
   .kpi-head { background:#fff; height:30px; border-top:4px solid var(--teal); padding:5px 10px 0; display:flex; align-items:center; }
@@ -97,9 +100,7 @@
     .header-title { font-size:15px; }
     .header-right { align-items:center; }
     .range { text-align:center; }
-    .mobile-kpi-toggle { display:block; }
-    .kpi-grid { grid-template-columns:1fr; display:none; }
-    .kpi-grid.open { display:grid; }
+    .kpi-grid { grid-template-columns:1fr; }
     .chart-wrap { height:260px; }
   }
 </style>
@@ -135,7 +136,7 @@
   </header>
 
   <div class="error" id="errorBox"></div>
-  <button class="mobile-kpi-toggle" type="button" id="kpiToggle">Booked Summary</button>
+  <button class="kpi-toggle" type="button" id="kpiToggle" aria-expanded="true">Booked Summary</button>
   <section class="kpi-grid" id="bookedCards"><div class="loading">Loading booked summary...</div></section>
 
   <section class="content-grid">
@@ -392,7 +393,11 @@ function bindEvents() {
     });
   });
   document.getElementById("kpiToggle").addEventListener("click", () => {
-    document.getElementById("bookedCards").classList.toggle("open");
+    const cards = document.getElementById("bookedCards");
+    const button = document.getElementById("kpiToggle");
+    const collapsed = cards.classList.toggle("collapsed");
+    button.classList.toggle("collapsed", collapsed);
+    button.setAttribute("aria-expanded", String(!collapsed));
   });
 }
 
