@@ -53,6 +53,13 @@
   .kpi-metric { flex:1; text-align:center; min-width:0; }
   .metric-label { color:#aaa; font-size:7.5px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:2px; }
   .metric-value { color:#0d1f3c; font-size:12px; font-weight:500; line-height:1.3; white-space:nowrap; }
+  .customer-kpi-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
+  .customer-kpi-grid.collapsed { display:none; }
+  .customer-kpi { background:#fff; border:1px solid #d0d4dc; border-radius:5px; padding:11px 13px; min-height:78px; }
+  .customer-kpi.risk { border-color:#ef9a9a; }
+  .customer-kpi .metric-value { text-align:left; font-size:22px; margin-top:8px; }
+  .customer-kpi .metric-note { color:var(--text3); font-size:10px; margin-top:5px; }
+  .customer-kpi.risk .metric-value { color:#d62828; }
 
   .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
   .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
@@ -65,6 +72,21 @@
   .legend-item { display:flex; align-items:center; gap:5px; }
   .legend-swatch { width:18px; height:3px; border-radius:99px; background:#1a56db; }
   .legend-swatch.prev { background:#e05555; }
+  .pie-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px; }
+  .pie-box { min-height:154px; }
+  .pie-box .chart-wrap { height:132px; }
+  .priority-legend { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; padding:0 10px 10px; font-size:10px; color:var(--text2); }
+  .dot-priority { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:4px; }
+  .risk-red { color:#d62828; font-weight:600; }
+  .risk-orange { color:#d97706; font-weight:600; }
+  .risk-yellow { color:#b08900; font-weight:600; }
+  .risk-green { color:#17803d; font-weight:600; }
+  .badge { display:inline-block; min-width:48px; text-align:center; border-radius:5px; padding:3px 7px; font-size:10px; font-weight:600; }
+  .badge.red { color:#d62828; background:#fde8e8; }
+  .badge.orange { color:#d97706; background:#fff1dc; }
+  .badge.yellow { color:#9a7600; background:#fff8cc; }
+  .badge.green { color:#17803d; background:#e5f6ea; }
+  .action { color:#1a56db; font-weight:600; }
 
   table { width:100%; border-collapse:collapse; }
   th { background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:7px 8px; text-align:right; white-space:nowrap; }
@@ -90,6 +112,7 @@
     .header-actions { flex-wrap:wrap; row-gap:5px; }
     .hdr-mid-section { order:3; flex:1 1 100%; margin-top:10px; }
     .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .customer-kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .content-grid { grid-template-columns:1fr; }
   }
   @media (max-width:560px) {
@@ -101,6 +124,8 @@
     .header-right { align-items:center; }
     .range { text-align:center; }
     .kpi-grid { grid-template-columns:1fr; }
+    .customer-kpi-grid { grid-template-columns:1fr; }
+    .pie-grid { grid-template-columns:1fr; }
     .chart-wrap { height:260px; }
   }
 </style>
@@ -138,6 +163,8 @@
   <div class="error" id="errorBox"></div>
   <button class="kpi-toggle" type="button" id="kpiToggle" aria-expanded="true">Booked Summary</button>
   <section class="kpi-grid" id="bookedCards"><div class="loading">Loading booked summary...</div></section>
+  <button class="kpi-toggle" type="button" id="customerToggle" aria-expanded="true">Customer Opportunity Summary</button>
+  <section class="customer-kpi-grid" id="customerCards"><div class="loading">Loading customer summary...</div></section>
 
   <section class="content-grid">
     <div class="panel">
@@ -145,22 +172,21 @@
       <div class="trend" id="trendBox"></div>
     </div>
     <div class="panel">
-      <div class="panel-head"><div class="panel-title">Dropping Customers</div><div class="panel-note">Flight date 10 weeks</div></div>
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
-          <tbody id="droppingBody"></tbody>
-        </table>
+      <div class="panel-head"><div class="panel-title">Priority Distribution</div><div class="panel-note">Customer health</div></div>
+      <div class="pie-grid">
+        <div class="pie-box"><div class="chart-wrap"><canvas id="priorityChart"></canvas></div></div>
+        <div class="pie-box"><div class="chart-wrap"><canvas id="riskChart"></canvas></div></div>
       </div>
+      <div class="priority-legend" id="priorityLegend"></div>
     </div>
   </section>
 
   <section class="panel matrix-panel">
-    <div class="panel-head"><div class="panel-title">Flown Tons By Week By Customer</div><div class="panel-note">YTD / last 10 weeks</div></div>
+    <div class="panel-head"><div class="panel-title">Customer Opportunity Map</div><div class="panel-note" id="opportunityNote">Prior 8 weeks vs recent 2 weeks</div></div>
     <div class="matrix-scroll">
       <table class="matrix-table">
-        <thead id="matrixHead"></thead>
-        <tbody id="matrixBody"></tbody>
+        <thead id="opportunityHead"></thead>
+        <tbody id="opportunityBody"></tbody>
       </table>
     </div>
   </section>
@@ -172,6 +198,8 @@ const API_BASE = "https://dataforce-api-production.up.railway.app";
 const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 let currentData = null;
 let trendChart = null;
+let priorityChart = null;
+let riskChart = null;
 let weekMode = "current";
 let requestSeq = 0;
 let activeRequest = null;
@@ -300,34 +328,87 @@ function renderTrend() {
   });
 }
 
-function renderDropping() {
-  const rows = (currentData.droppingCustomers || []).slice(0, 30);
-  document.getElementById("droppingBody").innerHTML = rows.length ? rows.map(c => `
-    <tr>
-      <td title="${esc(c.customer)}">${esc(shortCustomer(c.customer))}</td>
-      <td>${num(c.prior_avg_tons, 2)}</td>
-      <td>${num(c.recent_avg_tons, 2)}</td>
-      <td>${num(c.change_tons, 2)}</td>
-    </tr>
-  `).join("") : '<tr><td colspan="4" class="empty">No dropping customers.</td></tr>';
+function priorityColor(key) {
+  return { red:"#d62828", orange:"#f28c18", yellow:"#e6c229", green:"#2eaa4f" }[key] || "#8391a8";
+}
+function priorityClass(key) {
+  return { red:"risk-red", orange:"risk-orange", yellow:"risk-yellow", green:"risk-green" }[key] || "";
+}
+function formatPct(value) {
+  return `${num(value, 1)}%`;
 }
 
-function renderMatrix() {
-  const matrix = currentData.flownCustomerWeeks || {};
-  const columns = matrix.columns || [];
-  const rows = matrix.rows || [];
-  document.getElementById("matrixHead").innerHTML = `<tr><th>Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join("")}<th>YTD</th></tr>`;
-  if (!columns.length || !rows.length) {
-    document.getElementById("matrixBody").innerHTML = `<tr><td colspan="${columns.length + 2}" class="empty">No flown customer data.</td></tr>`;
-    return;
-  }
-  document.getElementById("matrixBody").innerHTML = rows.map(row => `
-    <tr>
-      <td title="${esc(row.customer)}">${esc(row.customer)}</td>
-      ${columns.map(col => `<td>${Number((row.values || {})[col.key] || 0) ? num(Number((row.values || {})[col.key]) / 1000, 2) : "-"}</td>`).join("")}
-      <td>${num(Number(row.totalKg || 0) / 1000, 2)}</td>
-    </tr>
+function renderCustomerCards() {
+  const analysis = currentData.opportunityAnalysis || {};
+  const s = analysis.summary || {};
+  document.getElementById("customerCards").innerHTML = `
+    <div class="customer-kpi"><div class="metric-label">Active Customers</div><div class="metric-value">${num(s.activeCustomers)}</div><div class="metric-note">With YTD flown cargo</div></div>
+    <div class="customer-kpi risk"><div class="metric-label">Customers At Risk</div><div class="metric-value">${num(s.atRiskCustomers)}</div><div class="metric-note">Red, orange or yellow</div></div>
+    <div class="customer-kpi"><div class="metric-label">% At Risk</div><div class="metric-value">${num(s.atRiskPct, 1)}%</div><div class="metric-note">Of active customers</div></div>
+    <div class="customer-kpi risk"><div class="metric-label">Tons At Risk</div><div class="metric-value">${num(s.tonsRisk, 1)}</div><div class="metric-note">Weekly avg gap</div></div>
+    <div class="customer-kpi"><div class="metric-label">Avg Weeks Since</div><div class="metric-value">${num(s.avgWeeksSinceLast, 1)}</div><div class="metric-note">At-risk customers</div></div>
+  `;
+}
+
+function renderOpportunityCharts() {
+  const analysis = currentData.opportunityAnalysis || {};
+  const rows = analysis.prioritySummary || [];
+  const labels = rows.map(r => r.label);
+  const colors = rows.map(r => priorityColor(r.key));
+  const counts = rows.map(r => Number(r.count || 0));
+  const tons = rows.map(r => Number(r.tonsRisk || 0));
+  const chartOptions = title => ({
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{ display:false },
+      title:{ display:true, text:title, color:"#0d1f3c", font:{ size:11, weight:"600" } },
+      tooltip:{ backgroundColor:"#0d1f3c", titleColor:"#7aaae8", bodyColor:"#d8e4f4", padding:8 }
+    },
+    cutout:"62%"
+  });
+  if (priorityChart) priorityChart.destroy();
+  if (riskChart) riskChart.destroy();
+  priorityChart = new Chart(document.getElementById("priorityChart"), {
+    type:"doughnut",
+    data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:0 }] },
+    options:chartOptions("Customers")
+  });
+  riskChart = new Chart(document.getElementById("riskChart"), {
+    type:"doughnut",
+    data:{ labels, datasets:[{ data:tons, backgroundColor:colors, borderWidth:0 }] },
+    options:chartOptions("Tons at risk")
+  });
+  document.getElementById("priorityLegend").innerHTML = rows.map(r => `
+    <span><span class="dot-priority" style="background:${priorityColor(r.key)}"></span>${esc(r.label)} ${num(r.count)}</span>
   `).join("");
+}
+
+function renderOpportunityTable() {
+  const analysis = currentData.opportunityAnalysis || {};
+  const rows = analysis.rows || [];
+  document.getElementById("opportunityNote").textContent = `Prior ${analysis.priorWeeks || 8} weeks vs recent ${analysis.recentWeeks || 2} weeks · zero check ${analysis.zeroWindowWeeks || 5} weeks`;
+  document.getElementById("opportunityHead").innerHTML = `
+    <tr>
+      <th>Priority</th><th>Customer</th><th>Prior Avg</th><th>Recent Avg</th><th>Drop</th><th>Tons Risk</th><th>Zero Wks</th><th>Weeks Since</th><th>Last Shipment</th><th>Likely Reason</th><th>Potential</th><th>Action</th>
+    </tr>
+  `;
+  document.getElementById("opportunityBody").innerHTML = rows.length ? rows.map(row => `
+    <tr>
+      <td><span class="${priorityClass(row.priority)}">${esc(row.priorityLabel)}</span></td>
+      <td title="${esc(row.customer)}">${esc(shortCustomer(row.customer))}</td>
+      <td>${num(row.priorAvgTons, 2)}</td>
+      <td>${num(row.recentAvgTons, 2)}</td>
+      <td>${formatPct(row.dropPct)}</td>
+      <td>${num(row.tonsRisk, 2)}</td>
+      <td>${num(row.zeroWeeks)}</td>
+      <td>${row.weeksSinceLast == null ? "-" : num(row.weeksSinceLast)}</td>
+      <td>${row.lastShipment ? formatDate(row.lastShipment) : "-"}</td>
+      <td title="${esc(row.reason)}">${esc(row.reason)}</td>
+      <td><span class="badge ${esc(row.priority)}">${esc(row.potential)}</span></td>
+      <td class="action">${esc(row.action)}</td>
+    </tr>
+  `).join("") : '<tr><td colspan="12" class="empty">No customer health data.</td></tr>';
 }
 
 function renderAll() {
@@ -340,9 +421,10 @@ function renderAll() {
   const bizLabel = currentData.selectedBusiness === "ALL" ? "All businesses" : (selectedBiz?.label || currentData.selectedBusiness);
   document.getElementById("trendNote").textContent = `${salesLabel} · ${bizLabel}`;
   renderCards();
+  renderCustomerCards();
   renderTrend();
-  renderDropping();
-  renderMatrix();
+  renderOpportunityCharts();
+  renderOpportunityTable();
 }
 
 async function loadReport() {
@@ -395,6 +477,13 @@ function bindEvents() {
   document.getElementById("kpiToggle").addEventListener("click", () => {
     const cards = document.getElementById("bookedCards");
     const button = document.getElementById("kpiToggle");
+    const collapsed = cards.classList.toggle("collapsed");
+    button.classList.toggle("collapsed", collapsed);
+    button.setAttribute("aria-expanded", String(!collapsed));
+  });
+  document.getElementById("customerToggle").addEventListener("click", () => {
+    const cards = document.getElementById("customerCards");
+    const button = document.getElementById("customerToggle");
     const collapsed = cards.classList.toggle("collapsed");
     button.classList.toggle("collapsed", collapsed);
     button.setAttribute("aria-expanded", String(!collapsed));
