@@ -40,14 +40,21 @@
 
   .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
   .mobile-kpi-toggle { display:none; width:100%; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:6px; padding:9px 12px; margin-bottom:8px; font:inherit; font-weight:600; text-align:left; cursor:pointer; }
-  .kpi-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
-  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:86px; }
-  .kpi-head { height:30px; border-top:4px solid var(--teal); padding:5px 10px 0; display:flex; align-items:center; }
-  .kpi-card.total .kpi-head { border-top-color:var(--blue); }
-  .kpi-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .kpi-body { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:8px 8px 10px; }
-  .metric-label { color:var(--text3); font-size:8px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; text-align:center; }
-  .metric-value { color:var(--text1); font-size:14px; font-weight:500; line-height:1.15; white-space:nowrap; text-align:center; }
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
+  .kpi-card { background:#fff; border:1px solid #d0d4dc; border-radius:5px; overflow:hidden; min-height:210px; }
+  .kpi-card.nodata { opacity:.55; }
+  .kpi-head { background:#fff; padding:8px 10px; border-bottom:2px solid #093c71; display:flex; align-items:center; min-height:38px; }
+  .kpi-card.total .kpi-head { border-bottom-color:var(--blue); }
+  .kpi-title { color:#093c71; font-size:12px; font-weight:600; letter-spacing:.03em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .kpi-body { display:flex; padding:5px 6px; border-bottom:1px solid #eee; background:#f8f9fc; gap:2px; }
+  .kpi-metric { flex:1; text-align:center; min-width:0; }
+  .metric-label { color:#aaa; font-size:7.5px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:2px; }
+  .metric-value { color:#0d1f3c; font-size:12px; font-weight:500; line-height:1.3; white-space:nowrap; }
+  .card-table-scroll { max-height:128px; overflow:auto; }
+  .card-table-scroll th { position:sticky; top:0; z-index:2; background:#fff; color:#093c71; border-bottom:1.5px solid #093c71; padding:4px 6px; font-size:9px; }
+  .card-table-scroll td { padding:3px 6px; font-size:9.5px; }
+  .card-table-scroll td:first-child { max-width:90px; overflow:hidden; text-overflow:ellipsis; }
+  .card-table-scroll .empty { padding:12px 8px; font-size:10px; }
 
   .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
   .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
@@ -70,8 +77,9 @@
   .matrix-panel { min-height:420px; }
   .matrix-scroll { max-height:430px; overflow:auto; }
   .matrix-table { min-width:760px; }
+  .matrix-table thead th { position:sticky; top:0; z-index:3; background:var(--navy2); }
   .matrix-table th:first-child, .matrix-table td:first-child { position:sticky; left:0; z-index:2; min-width:220px; max-width:260px; overflow:hidden; text-overflow:ellipsis; }
-  .matrix-table th:first-child { z-index:4; background:var(--navy2); }
+  .matrix-table th:first-child { z-index:5; background:var(--navy2); }
   .matrix-table tbody tr:nth-child(even) td:first-child { background:#f0f2f6; }
   .matrix-table tbody tr:nth-child(odd) td:first-child { background:#fff; }
   .empty, .loading { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
@@ -113,6 +121,8 @@
       <div class="filters">
         <label for="salesSelect">Sales Person</label>
         <select id="salesSelect"></select>
+        <label for="businessSelect">Business</label>
+        <select id="businessSelect"></select>
         <div class="toggle" aria-label="Week mode">
           <button type="button" id="lastWeekBtn" data-mode="last">Last Week</button>
           <button type="button" id="thisWeekBtn" data-mode="current" class="active">This Week</button>
@@ -224,16 +234,37 @@ function renderSalesSelect() {
   select.disabled = Boolean(locked);
 }
 
+function renderBusinessSelect() {
+  const select = document.getElementById("businessSelect");
+  const options = currentData.businessOptions || [{ key:"ALL", label:"All" }];
+  const selected = currentData.selectedBusiness || "ALL";
+  select.innerHTML = options.map(biz => `<option value="${esc(biz.key)}">${biz.key === "ALL" ? "All Businesses" : esc(biz.label || biz.key)}</option>`).join("");
+  select.value = selected;
+}
+
 function renderCards() {
   const cards = currentData.bookedCards || [];
   document.getElementById("bookedCards").innerHTML = cards.length ? cards.map((card, index) => `
-    <div class="kpi-card ${index === 0 ? "total" : ""}">
+    <div class="kpi-card ${card.total || index === 0 ? "total" : ""} ${Number(card.tons || 0) ? "" : "nodata"}">
       <div class="kpi-head"><div class="kpi-title" title="${esc(card.label)}">${esc(card.label || card.key || "-")}</div></div>
       <div class="kpi-body">
-        <div><div class="metric-label"># Bkgs</div><div class="metric-value">${num(card.bookings)}</div></div>
-        <div><div class="metric-label">Tons</div><div class="metric-value">${num(card.tons, 1)}</div></div>
-        <div><div class="metric-label">Rev</div><div class="metric-value">${money(card.revenue || card.rev)}</div></div>
-        <div><div class="metric-label">P/KG</div><div class="metric-value">${pkg(card.profit_per_kg)}</div></div>
+        <div class="kpi-metric"><div class="metric-label"># Bkgs</div><div class="metric-value">${num(card.bookings)}</div></div>
+        <div class="kpi-metric"><div class="metric-label">Tons</div><div class="metric-value">${num(card.tons, 1)}</div></div>
+        <div class="kpi-metric"><div class="metric-label">Rev</div><div class="metric-value">${money(card.revenue || card.rev)}</div></div>
+        <div class="kpi-metric"><div class="metric-label">P/KG</div><div class="metric-value">${pkg(card.profit_per_kg)}</div></div>
+      </div>
+      <div class="card-table-scroll">
+        <table>
+          <thead><tr><th>Business</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
+          <tbody>${(card.details || []).length ? card.details.map(row => `
+            <tr>
+              <td title="${esc(row.label)}">${esc(row.label || row.key || "-")}</td>
+              <td>${num(row.tons, 2)}</td>
+              <td>${money(row.profit)}</td>
+              <td>${pkg(row.profit_per_kg)}</td>
+            </tr>
+          `).join("") : '<tr><td colspan="4" class="empty">No business detail.</td></tr>'}</tbody>
+        </table>
       </div>
     </div>
   `).join("") : '<div class="empty">No booked data for this period.</div>';
@@ -317,9 +348,13 @@ function renderMatrix() {
 
 function renderAll() {
   renderSalesSelect();
+  renderBusinessSelect();
   document.getElementById("rangeTitle").textContent = `${currentData.periodLabel || ""} Booked`.toUpperCase();
   document.getElementById("rangeDates").textContent = `${formatDate(currentData.start)} - ${formatDate(currentData.end)}`;
-  document.getElementById("trendNote").textContent = currentData.selectedSalesPerson === "ALL" ? "All sales persons" : currentData.selectedSalesPerson;
+  const salesLabel = currentData.selectedSalesPerson === "ALL" ? "All sales persons" : currentData.selectedSalesPerson;
+  const selectedBiz = (currentData.businessOptions || []).find(biz => biz.key === currentData.selectedBusiness);
+  const bizLabel = currentData.selectedBusiness === "ALL" ? "All businesses" : (selectedBiz?.label || currentData.selectedBusiness);
+  document.getElementById("trendNote").textContent = `${salesLabel} · ${bizLabel}`;
   renderCards();
   renderTrend();
   renderDropping();
@@ -329,11 +364,12 @@ function renderAll() {
 async function loadReport() {
   const u = user();
   const salesPerson = document.getElementById("salesSelect").value || "ALL";
+  const business = document.getElementById("businessSelect").value || "ALL";
   const seq = ++requestSeq;
   setStatus("Loading reports", false);
   showError("");
   try {
-    const params = new URLSearchParams({ email:u.email || "", sales_person:salesPerson, week_mode:weekMode });
+    const params = new URLSearchParams({ email:u.email || "", sales_person:salesPerson, business, week_mode:weekMode });
     const r = await fetch(`${API_BASE}/api/sales_performance?${params.toString()}`, { headers:{ "x-api-key":API_KEY } });
     if (!r.ok) {
       let detail = "";
@@ -356,6 +392,7 @@ async function loadReport() {
 
 function bindEvents() {
   document.getElementById("salesSelect").addEventListener("change", loadReport);
+  document.getElementById("businessSelect").addEventListener("change", loadReport);
   document.querySelectorAll(".toggle button").forEach(btn => {
     btn.addEventListener("click", () => {
       weekMode = btn.dataset.mode;
@@ -372,6 +409,7 @@ function initSalesPerformance() {
   const u = user();
   document.getElementById("userLabel").textContent = u.name || (u.email ? u.email.split("@")[0] : "");
   document.getElementById("salesSelect").innerHTML = '<option value="ALL">All Sales Persons</option>';
+  document.getElementById("businessSelect").innerHTML = '<option value="ALL">All Businesses</option>';
   bindEvents();
   loadReport();
 }
