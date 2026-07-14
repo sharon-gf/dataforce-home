@@ -193,7 +193,7 @@
               <th>Seg Ori</th>
               <th>Seg Des</th>
               <th>CHW</th>
-              <th>Seg Bkg Cost</th>
+              <th>Seg Cost/Kg</th>
               <th>SpotRef</th>
               <th>FlightDate</th>
               <th>Seg St</th>
@@ -260,7 +260,7 @@ function fmt(n, digits = 0) {
   });
 }
 
-function money(value) {
+function moneyRate(value) {
   if (value === null || value === undefined || value === "") return "-";
   const n = Number(value || 0);
   const sign = n < 0 ? "-$" : "$";
@@ -374,7 +374,7 @@ function renderTable() {
       <td class="route">${esc(row.seg_ori)}</td>
       <td class="route">${esc(row.seg_des)}</td>
       <td>${fmt(row.chw)}</td>
-      <td>${money(row.seg_bkg_cost)}</td>
+      <td>${moneyRate(row.seg_bkg_cost)}</td>
       <td class="spotref" title="${esc(row.spotref)}">${esc(row.spotref)}</td>
       <td>${esc(dateLabel(row.flight_date))}</td>
       <td>${esc(row.seg_st)}</td>
@@ -438,7 +438,7 @@ async function loadPendingSpots() {
 }
 
 function exportCsv() {
-  const csv = ["Seg_Carrier,AWB number,seg_ori,seg_des,chw,seg_bkg_cost,spotref,flightDate,seg_st,GSAName,Sales_Person"]
+  const csv = ["Seg_Carrier,AWB number,seg_ori,seg_des,chw,seg_cost_kg,spotref,flightDate,seg_st,GSAName,Sales_Person"]
     .concat(rows.map(r => [
       r.seg_carrier,
       formatAwb(r.awb_no || r.awb, r.pfx),
