@@ -130,10 +130,25 @@
   .recent-panel { min-height:360px; }
   .recent-panel .table-scroll { max-height:322px; overflow:hidden; }
   .customer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-  .customer-panel { min-height:368px; }
-  .customer-panel .table-scroll { max-height:330px; overflow:auto; }
-  .customer-panel th { position:sticky; top:0; z-index:2; }
-  .customer-panel td { padding:3px 6px; font-size:9.5px; line-height:1.15; }
+  .customer-panel { height:368px; min-height:0; display:flex; flex-direction:column; }
+  .customer-panel .table-scroll {
+    flex:1;
+    min-height:0;
+    max-height:none;
+    overflow-y:auto;
+    overflow-x:hidden;
+    scrollbar-gutter:stable;
+    scrollbar-width:thin;
+    scrollbar-color:#91a0b5 #eef2f7;
+  }
+  .customer-panel .table-scroll::-webkit-scrollbar { width:8px; }
+  .customer-panel .table-scroll::-webkit-scrollbar-track { background:#eef2f7; }
+  .customer-panel .table-scroll::-webkit-scrollbar-thumb { background:#91a0b5; border-radius:99px; border:2px solid #eef2f7; }
+  .customer-panel table { table-layout:fixed; }
+  .customer-panel th { position:sticky; top:0; z-index:2; box-shadow:0 1px 0 var(--border); }
+  .customer-panel th, .customer-panel td { padding:3px 6px; font-size:9px; line-height:1.1; height:17px; }
+  .customer-panel th:first-child, .customer-panel td:first-child { width:54%; overflow:hidden; text-overflow:ellipsis; }
+  .customer-panel th:not(:first-child), .customer-panel td:not(:first-child) { width:15.333%; }
   .empty { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
   .loading { padding:42px 16px; text-align:center; color:var(--text3); }
   .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
@@ -501,9 +516,16 @@ function renderDetail() {
 }
 
 function renderCustomers() {
-  const top = ((currentData.customers && currentData.customers.top) || []).slice(0, 30);
-  const growing = ((currentData.customers && currentData.customers.growing) || []).slice(0, 30);
-  const dropping = ((currentData.customers && currentData.customers.dropping) || []).slice(0, 30);
+  const customerData = currentData.customers || {};
+  const top = (customerData.top || []).slice(0, 30);
+  const growing = (customerData.growing || [])
+    .slice()
+    .sort((a, b) => Number(b.change_tons || 0) - Number(a.change_tons || 0))
+    .slice(0, 30);
+  const dropping = (customerData.dropping || [])
+    .slice()
+    .sort((a, b) => Math.abs(Number(b.change_tons || 0)) - Math.abs(Number(a.change_tons || 0)))
+    .slice(0, 30);
 
   document.getElementById("topCustomersTable").innerHTML = `
     <thead><tr><th>Customer</th><th>Tons</th><th>Rev</th><th>SOW</th></tr></thead>
