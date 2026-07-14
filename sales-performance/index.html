@@ -26,9 +26,6 @@
   .filters { display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; }
   .filters label { color:#8fb5d7; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
   select { min-width:150px; height:26px; border:1px solid #45658d; background:#102847; color:#fff; border-radius:5px; padding:3px 9px; font-size:10px; outline:none; }
-  .toggle { display:flex; border:1px solid #45658d; border-radius:5px; overflow:hidden; height:26px; background:#102847; }
-  .toggle button { border:0; background:transparent; color:#8fb5d7; padding:0 11px; font:inherit; font-size:10px; cursor:pointer; }
-  .toggle button.active { background:#1a56db; color:#fff; }
   .header-right { min-width:260px; display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:5px; color:#fff; font-size:11px; }
   .header-actions { display:flex; justify-content:flex-end; align-items:center; gap:12px; }
   .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
@@ -61,7 +58,7 @@
   .customer-kpi .metric-note { color:var(--text3); font-size:10px; margin-top:5px; }
   .customer-kpi.risk .metric-value { color:#d62828; }
 
-  .content-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:8px; margin-bottom:8px; }
+  .content-grid { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(300px,.55fr) minmax(320px,.65fr); gap:8px; margin-bottom:8px; }
   .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:260px; }
   .panel-head { background:var(--navy2); color:#c8d8f0; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:38px; }
   .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
@@ -72,10 +69,13 @@
   .legend-item { display:flex; align-items:center; gap:5px; }
   .legend-swatch { width:18px; height:3px; border-radius:99px; background:#1a56db; }
   .legend-swatch.prev { background:#e05555; }
-  .pie-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px; min-height:314px; align-items:center; }
-  .pie-box { min-height:210px; display:flex; align-items:center; }
-  .pie-box .chart-wrap { height:190px; }
-  .priority-legend { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; padding:0 10px 10px; font-size:10px; color:var(--text2); }
+  .chart-card-body { padding:12px; min-height:342px; display:flex; flex-direction:column; justify-content:center; }
+  .pie-box { min-height:224px; display:flex; align-items:center; justify-content:center; }
+  .pie-box .chart-wrap { height:224px; }
+  .bar-box .chart-wrap { height:228px; }
+  .priority-legend, .risk-legend { display:grid; gap:9px; padding:8px 4px 0; font-size:10px; color:var(--text2); }
+  .legend-row { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:8px; }
+  .legend-total { display:flex; justify-content:space-between; border-top:1px solid var(--border); margin-top:6px; padding-top:10px; color:var(--text1); font-weight:600; }
   .dot-priority { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:4px; }
   .priority-cell { display:inline-flex; align-items:center; justify-content:center; gap:7px; font-weight:600; }
   .priority-dot { width:11px; height:11px; border-radius:50%; display:inline-block; box-shadow:0 0 0 2px rgba(255,255,255,.7); }
@@ -111,7 +111,9 @@
   .opportunity-table th, .opportunity-table td { text-align:center; }
   .opportunity-table th:nth-child(2), .opportunity-table td:nth-child(2) { text-align:left; }
   .opportunity-table th:first-child, .opportunity-table td:first-child { position:static; min-width:auto; max-width:none; }
-  .opportunity-table th[title] { cursor:help; text-decoration:underline dotted rgba(200,216,240,.7); text-underline-offset:3px; }
+  .help-tip { position:relative; display:inline-flex; align-items:center; justify-content:center; width:13px; height:13px; margin-left:4px; border:1px solid rgba(200,216,240,.7); border-radius:50%; color:#c8d8f0; font-size:8px; line-height:1; cursor:help; vertical-align:middle; }
+  .help-tip::after { content:attr(data-tip); position:absolute; left:50%; top:calc(100% + 8px); transform:translateX(-50%); width:210px; padding:8px 9px; border-radius:5px; background:#0d1f3c; color:#fff; font-size:10px; line-height:1.35; letter-spacing:0; text-transform:none; white-space:normal; opacity:0; pointer-events:none; box-shadow:0 8px 22px rgba(13,31,60,.22); z-index:20; }
+  .help-tip:hover::after, .help-tip:focus::after { opacity:1; }
   .empty, .loading { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
 
   @media (max-width:980px) {
@@ -128,14 +130,11 @@
   @media (max-width:560px) {
     .filters { width:100%; }
     select { width:100%; }
-    .toggle { width:100%; }
-    .toggle button { flex:1; }
     .header-title { font-size:15px; }
     .header-right { align-items:center; }
     .range { text-align:center; }
     .kpi-grid { grid-template-columns:1fr; }
     .customer-kpi-grid { grid-template-columns:1fr; }
-    .pie-grid { grid-template-columns:1fr; }
     .chart-wrap { height:260px; }
   }
 </style>
@@ -154,10 +153,6 @@
         <select id="salesSelect"></select>
         <label for="businessSelect">Business</label>
         <select id="businessSelect"></select>
-        <div class="toggle" aria-label="Week mode">
-          <button type="button" id="lastWeekBtn" data-mode="last">Last Week</button>
-          <button type="button" id="thisWeekBtn" data-mode="current" class="active">This Week</button>
-        </div>
       </div>
     </div>
     <div class="header-right">
@@ -171,8 +166,8 @@
   </header>
 
   <div class="error" id="errorBox"></div>
-  <button class="kpi-toggle" type="button" id="kpiToggle" aria-expanded="true">Booked Summary</button>
-  <section class="kpi-grid" id="bookedCards"><div class="loading">Loading booked summary...</div></section>
+  <button class="kpi-toggle" type="button" id="kpiToggle" aria-expanded="true">YTD Flown Summary</button>
+  <section class="kpi-grid" id="bookedCards"><div class="loading">Loading YTD flown summary...</div></section>
   <button class="kpi-toggle" type="button" id="customerToggle" aria-expanded="true">Customer Opportunity Summary</button>
   <section class="customer-kpi-grid" id="customerCards"><div class="loading">Loading customer summary...</div></section>
 
@@ -183,11 +178,17 @@
     </div>
     <div class="panel">
       <div class="panel-head"><div class="panel-title">Priority Distribution</div><div class="panel-note">Customer health</div></div>
-      <div class="pie-grid">
+      <div class="chart-card-body">
         <div class="pie-box"><div class="chart-wrap"><canvas id="priorityChart"></canvas></div></div>
-        <div class="pie-box"><div class="chart-wrap"><canvas id="riskChart"></canvas></div></div>
+        <div class="priority-legend" id="priorityLegend"></div>
       </div>
-      <div class="priority-legend" id="priorityLegend"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Tons At Risk By Priority</div><div class="panel-note">Weekly avg gap</div></div>
+      <div class="chart-card-body bar-box">
+        <div class="chart-wrap"><canvas id="riskChart"></canvas></div>
+        <div class="risk-legend" id="riskLegend"></div>
+      </div>
     </div>
   </section>
 
@@ -210,7 +211,6 @@ let currentData = null;
 let trendChart = null;
 let priorityChart = null;
 let riskChart = null;
-let weekMode = "current";
 let requestSeq = 0;
 let activeRequest = null;
 
@@ -289,7 +289,7 @@ function renderCards() {
         <div class="kpi-metric"><div class="metric-label">P/KG</div><div class="metric-value">${pkg(card.profit_per_kg)}</div></div>
       </div>
     </div>
-  `).join("") : '<div class="empty">No booked data for this period.</div>';
+  `).join("") : '<div class="empty">No YTD flown data for this period.</div>';
 }
 
 function renderTrend() {
@@ -300,7 +300,7 @@ function renderTrend() {
   if (!rows.length || max <= 0) {
     if (trendChart) trendChart.destroy();
     trendChart = null;
-    box.innerHTML = '<div class="empty">No booked trend data.</div>';
+    box.innerHTML = '<div class="empty">No flown trend data.</div>';
     return;
   }
   const year = new Date().getFullYear();
@@ -351,6 +351,9 @@ function formatDrop(value) {
   const drop = Number(value || 0);
   return drop > 0 ? `-${num(drop, 1)}% ↓` : "0.0%";
 }
+function helpTip(text) {
+  return `<span class="help-tip" tabindex="0" data-tip="${esc(text)}">?</span>`;
+}
 
 function renderCustomerCards() {
   const analysis = currentData.opportunityAnalysis || {};
@@ -360,7 +363,7 @@ function renderCustomerCards() {
     <div class="customer-kpi risk"><div class="metric-label">Customers At Risk</div><div class="metric-value">${num(s.atRiskCustomers)}</div><div class="metric-note">Red, orange or yellow</div></div>
     <div class="customer-kpi"><div class="metric-label">% At Risk</div><div class="metric-value">${num(s.atRiskPct, 1)}%</div><div class="metric-note">Of active customers</div></div>
     <div class="customer-kpi risk"><div class="metric-label">Tons At Risk</div><div class="metric-value">${num(s.tonsRisk, 1)}</div><div class="metric-note">Weekly avg gap</div></div>
-    <div class="customer-kpi"><div class="metric-label">Avg Weeks Since</div><div class="metric-value">${num(s.avgWeeksSinceLast, 1)}</div><div class="metric-note">At-risk customers</div></div>
+    <div class="customer-kpi"><div class="metric-label">Healthy Customers</div><div class="metric-value">${num(s.healthyCustomers)}</div><div class="metric-note">OK priority</div></div>
   `;
 }
 
@@ -371,50 +374,67 @@ function renderOpportunityCharts() {
   const colors = rows.map(r => priorityColor(r.key));
   const counts = rows.map(r => Number(r.count || 0));
   const tons = rows.map(r => Number(r.tonsRisk || 0));
-  const chartOptions = title => ({
+  const totalCount = counts.reduce((sum, value) => sum + value, 0);
+  const totalTons = tons.reduce((sum, value) => sum + value, 0);
+  const pieOptions = {
     responsive:true,
     maintainAspectRatio:false,
     plugins:{
       legend:{ display:false },
-      title:{ display:true, text:title, color:"#0d1f3c", font:{ size:11, weight:"600" } },
+      title:{ display:true, text:"Customers", color:"#0d1f3c", font:{ size:11, weight:"600" } },
       tooltip:{ backgroundColor:"#0d1f3c", titleColor:"#7aaae8", bodyColor:"#d8e4f4", padding:8 }
     },
     cutout:"62%"
-  });
+  };
+  const barOptions = {
+    indexAxis:"y",
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{ display:false },
+      tooltip:{ backgroundColor:"#0d1f3c", titleColor:"#7aaae8", bodyColor:"#d8e4f4", padding:8 }
+    },
+    scales:{
+      x:{ beginAtZero:true, grid:{color:"rgba(0,0,0,.06)"}, ticks:{color:"#8391a8", font:{size:9}} },
+      y:{ grid:{display:false}, ticks:{color:"#0d1f3c", font:{size:10}} }
+    }
+  };
   if (priorityChart) priorityChart.destroy();
   if (riskChart) riskChart.destroy();
   priorityChart = new Chart(document.getElementById("priorityChart"), {
     type:"doughnut",
     data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:0 }] },
-    options:chartOptions("Customers")
+    options:pieOptions
   });
   riskChart = new Chart(document.getElementById("riskChart"), {
-    type:"doughnut",
-    data:{ labels, datasets:[{ data:tons, backgroundColor:colors, borderWidth:0 }] },
-    options:chartOptions("Tons at risk")
+    type:"bar",
+    data:{ labels, datasets:[{ data:tons, backgroundColor:colors, borderWidth:0, borderRadius:3, barThickness:22 }] },
+    options:barOptions
   });
   document.getElementById("priorityLegend").innerHTML = rows.map(r => `
-    <span><span class="dot-priority" style="background:${priorityColor(r.key)}"></span>${esc(r.label)} ${num(r.count)}</span>
-  `).join("");
+    <div class="legend-row"><span class="dot-priority" style="background:${priorityColor(r.key)}"></span><span>${esc(r.label)}</span><strong>${num(r.count)} (${totalCount ? num((Number(r.count || 0) / totalCount) * 100, 0) : 0}%)</strong></div>
+  `).join("") + `<div class="legend-total"><span>Total</span><span>${num(totalCount)} customers</span></div>`;
+  document.getElementById("riskLegend").innerHTML = rows.map(r => `
+    <div class="legend-row"><span class="dot-priority" style="background:${priorityColor(r.key)}"></span><span>${esc(r.label)}</span><strong>${num(r.tonsRisk, 1)} tons</strong></div>
+  `).join("") + `<div class="legend-total"><span>Total</span><span>${num(totalTons, 1)} tons</span></div>`;
 }
 
 function renderOpportunityTable() {
   const analysis = currentData.opportunityAnalysis || {};
   const rows = analysis.rows || [];
-  document.getElementById("opportunityNote").textContent = `Prior ${analysis.priorWeeks || 8} weeks vs recent ${analysis.recentWeeks || 2} weeks · zero weeks = weeks since last shipment`;
+  document.getElementById("opportunityNote").textContent = `Prior ${analysis.priorWeeks || 8} weeks vs recent ${analysis.recentWeeks || 2} weeks`;
   document.getElementById("opportunityHead").innerHTML = `
     <tr>
-      <th title="Risk color is based on drop percent or weeks since the last shipment.">Priority</th>
+      <th>Priority ${helpTip("Risk color is based on drop percent or weeks since the last shipment.")}</th>
       <th>Customer</th>
-      <th title="Average flown tons per week during the prior baseline period.">Prior Avg</th>
-      <th title="Average flown tons per week during the most recent period.">Recent Avg</th>
-      <th title="Percent decline from prior average to recent average.">Drop</th>
-      <th title="Prior average tons minus recent average tons. OK customers are not counted in total tons at risk.">Tons Risk</th>
-      <th title="Weeks with zero flown cargo since the latest shipment. This matches Weeks Since.">Zero Wks</th>
-      <th title="Completed weeks since the customer's latest shipment flight date.">Weeks Since</th>
-      <th title="Most recent flight date for this customer.">Last Shipment</th>
-      <th title="Rule-based explanation using drop percent and shipment gap.">Likely Reason</th>
-      <th title="Commercial priority from the risk category.">Potential</th>
+      <th>Prior Avg ${helpTip("Average flown tons per week during the prior baseline period.")}</th>
+      <th>Recent Avg ${helpTip("Average flown tons per week during the most recent period.")}</th>
+      <th>Drop ${helpTip("Percent decline from prior average to recent average.")}</th>
+      <th>Tons Risk ${helpTip("Prior average tons minus recent average tons. OK customers are not counted in total tons at risk.")}</th>
+      <th>Weeks Since ${helpTip("Completed weeks since the customer's latest shipment flight date.")}</th>
+      <th>Last Shipment ${helpTip("Most recent flight date for this customer.")}</th>
+      <th>Likely Reason ${helpTip("Rule-based explanation using drop percent and shipment gap.")}</th>
+      <th>Potential ${helpTip("Commercial priority from the risk category.")}</th>
     </tr>
   `;
   document.getElementById("opportunityBody").innerHTML = rows.length ? rows.map(row => `
@@ -429,19 +449,18 @@ function renderOpportunityTable() {
       <td>${num(row.recentAvgTons, 2)}</td>
       <td class="${Number(row.dropPct || 0) > 0 ? "drop-cell" : ""}">${formatDrop(row.dropPct)}</td>
       <td>${num(row.tonsRisk, 2)}</td>
-      <td>${num(row.zeroWeeks)}</td>
       <td>${row.weeksSinceLast == null ? "-" : num(row.weeksSinceLast)}</td>
       <td>${row.lastShipment ? formatDate(row.lastShipment) : "-"}</td>
       <td title="${esc(row.reason)}">${esc(row.reason)}</td>
       <td><span class="badge ${esc(row.priority)}">${esc(row.potential)}</span></td>
     </tr>
-  `).join("") : '<tr><td colspan="11" class="empty">No customer health data.</td></tr>';
+  `).join("") : '<tr><td colspan="10" class="empty">No customer health data.</td></tr>';
 }
 
 function renderAll() {
   renderSalesSelect();
   renderBusinessSelect();
-  document.getElementById("rangeTitle").textContent = `${currentData.periodLabel || ""} Booked`.toUpperCase();
+  document.getElementById("rangeTitle").textContent = `${currentData.periodLabel || "YTD"} Flown`.toUpperCase();
   document.getElementById("rangeDates").textContent = `${formatDate(currentData.start)} - ${formatDate(currentData.end)}`;
   const salesLabel = currentData.selectedSalesPerson === "ALL" ? "All sales persons" : currentData.selectedSalesPerson;
   const selectedBiz = (currentData.businessOptions || []).find(biz => biz.key === currentData.selectedBusiness);
@@ -464,7 +483,7 @@ async function loadReport() {
   setStatus("Loading reports", false);
   showError("");
   try {
-    const params = new URLSearchParams({ email:u.email || "", sales_person:salesPerson, business, week_mode:weekMode });
+    const params = new URLSearchParams({ email:u.email || "", sales_person:salesPerson, business });
     const r = await fetch(`${API_BASE}/api/sales_performance?${params.toString()}`, {
       headers:{ "x-api-key":API_KEY },
       signal:activeRequest.signal
@@ -494,13 +513,6 @@ async function loadReport() {
 function bindEvents() {
   document.getElementById("salesSelect").addEventListener("change", loadReport);
   document.getElementById("businessSelect").addEventListener("change", loadReport);
-  document.querySelectorAll(".toggle button").forEach(btn => {
-    btn.addEventListener("click", () => {
-      weekMode = btn.dataset.mode;
-      document.querySelectorAll(".toggle button").forEach(b => b.classList.toggle("active", b === btn));
-      loadReport();
-    });
-  });
   document.getElementById("kpiToggle").addEventListener("click", () => {
     const cards = document.getElementById("bookedCards");
     const button = document.getElementById("kpiToggle");
