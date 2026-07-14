@@ -131,7 +131,9 @@
   .recent-panel .table-scroll { max-height:322px; overflow:hidden; }
   .customer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
   .customer-panel { min-height:368px; }
-  .customer-panel .table-scroll { max-height:330px; }
+  .customer-panel .table-scroll { max-height:330px; overflow:auto; }
+  .customer-panel th { position:sticky; top:0; z-index:2; }
+  .customer-panel td { padding:3px 6px; font-size:9.5px; line-height:1.15; }
   .empty { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
   .loading { padding:42px 16px; text-align:center; color:var(--text3); }
   .error { background:#fff5f5; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:12px; margin-bottom:8px; display:none; }
@@ -499,9 +501,9 @@ function renderDetail() {
 }
 
 function renderCustomers() {
-  const top = ((currentData.customers && currentData.customers.top) || []).slice(0, 10);
-  const growing = ((currentData.customers && currentData.customers.growing) || []).slice(0, 10);
-  const dropping = ((currentData.customers && currentData.customers.dropping) || []).slice(0, 10);
+  const top = ((currentData.customers && currentData.customers.top) || []).slice(0, 30);
+  const growing = ((currentData.customers && currentData.customers.growing) || []).slice(0, 30);
+  const dropping = ((currentData.customers && currentData.customers.dropping) || []).slice(0, 30);
 
   document.getElementById("topCustomersTable").innerHTML = `
     <thead><tr><th>Customer</th><th>Tons</th><th>Rev</th><th>SOW</th></tr></thead>
