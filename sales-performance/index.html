@@ -316,7 +316,7 @@ function renderMatrix() {
   const matrix = currentData.flownCustomerWeeks || {};
   const columns = matrix.columns || [];
   const rows = matrix.rows || [];
-  document.getElementById("matrixHead").innerHTML = `<tr><th>Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join("")}<th>Total</th></tr>`;
+  document.getElementById("matrixHead").innerHTML = `<tr><th>Customer</th>${columns.map(col => `<th>${esc(col.label)}</th>`).join("")}<th>YTD</th></tr>`;
   if (!columns.length || !rows.length) {
     document.getElementById("matrixBody").innerHTML = `<tr><td colspan="${columns.length + 2}" class="empty">No flown customer data.</td></tr>`;
     return;
