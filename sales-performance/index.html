@@ -72,11 +72,17 @@
   .legend-item { display:flex; align-items:center; gap:5px; }
   .legend-swatch { width:18px; height:3px; border-radius:99px; background:#1a56db; }
   .legend-swatch.prev { background:#e05555; }
-  .pie-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px; }
-  .pie-box { min-height:154px; }
-  .pie-box .chart-wrap { height:132px; }
+  .pie-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px; min-height:314px; align-items:center; }
+  .pie-box { min-height:210px; display:flex; align-items:center; }
+  .pie-box .chart-wrap { height:190px; }
   .priority-legend { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; padding:0 10px 10px; font-size:10px; color:var(--text2); }
   .dot-priority { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:4px; }
+  .priority-cell { display:inline-flex; align-items:center; justify-content:center; gap:7px; font-weight:600; }
+  .priority-dot { width:11px; height:11px; border-radius:50%; display:inline-block; box-shadow:0 0 0 2px rgba(255,255,255,.7); }
+  .priority-dot.red { background:#d62828; }
+  .priority-dot.orange { background:#f28c18; }
+  .priority-dot.yellow { background:#e6c229; }
+  .priority-dot.green { background:#2eaa4f; }
   .risk-red { color:#d62828; font-weight:600; }
   .risk-orange { color:#d97706; font-weight:600; }
   .risk-yellow { color:#b08900; font-weight:600; }
@@ -86,7 +92,7 @@
   .badge.orange { color:#d97706; background:#fff1dc; }
   .badge.yellow { color:#9a7600; background:#fff8cc; }
   .badge.green { color:#17803d; background:#e5f6ea; }
-  .action { color:#1a56db; font-weight:600; }
+  .drop-cell { color:#d62828; font-weight:600; }
 
   table { width:100%; border-collapse:collapse; }
   th { background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:7px 8px; text-align:right; white-space:nowrap; }
@@ -102,6 +108,10 @@
   .matrix-table th:first-child { z-index:5; background:var(--navy2); }
   .matrix-table tbody tr:nth-child(even) td:first-child { background:#f0f2f6; }
   .matrix-table tbody tr:nth-child(odd) td:first-child { background:#fff; }
+  .opportunity-table th, .opportunity-table td { text-align:center; }
+  .opportunity-table th:nth-child(2), .opportunity-table td:nth-child(2) { text-align:left; }
+  .opportunity-table th:first-child, .opportunity-table td:first-child { position:static; min-width:auto; max-width:none; }
+  .opportunity-table th[title] { cursor:help; text-decoration:underline dotted rgba(200,216,240,.7); text-underline-offset:3px; }
   .empty, .loading { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
 
   @media (max-width:980px) {
@@ -184,7 +194,7 @@
   <section class="panel matrix-panel">
     <div class="panel-head"><div class="panel-title">Customer Opportunity Map</div><div class="panel-note" id="opportunityNote">Prior 8 weeks vs recent 2 weeks</div></div>
     <div class="matrix-scroll">
-      <table class="matrix-table">
+      <table class="matrix-table opportunity-table">
         <thead id="opportunityHead"></thead>
         <tbody id="opportunityBody"></tbody>
       </table>
@@ -337,6 +347,10 @@ function priorityClass(key) {
 function formatPct(value) {
   return `${num(value, 1)}%`;
 }
+function formatDrop(value) {
+  const drop = Number(value || 0);
+  return drop > 0 ? `-${num(drop, 1)}% ↓` : "0.0%";
+}
 
 function renderCustomerCards() {
   const analysis = currentData.opportunityAnalysis || {};
@@ -387,28 +401,41 @@ function renderOpportunityCharts() {
 function renderOpportunityTable() {
   const analysis = currentData.opportunityAnalysis || {};
   const rows = analysis.rows || [];
-  document.getElementById("opportunityNote").textContent = `Prior ${analysis.priorWeeks || 8} weeks vs recent ${analysis.recentWeeks || 2} weeks · zero check ${analysis.zeroWindowWeeks || 5} weeks`;
+  document.getElementById("opportunityNote").textContent = `Prior ${analysis.priorWeeks || 8} weeks vs recent ${analysis.recentWeeks || 2} weeks · zero weeks = weeks since last shipment`;
   document.getElementById("opportunityHead").innerHTML = `
     <tr>
-      <th>Priority</th><th>Customer</th><th>Prior Avg</th><th>Recent Avg</th><th>Drop</th><th>Tons Risk</th><th>Zero Wks</th><th>Weeks Since</th><th>Last Shipment</th><th>Likely Reason</th><th>Potential</th><th>Action</th>
+      <th title="Risk color is based on drop percent or weeks since the last shipment.">Priority</th>
+      <th>Customer</th>
+      <th title="Average flown tons per week during the prior baseline period.">Prior Avg</th>
+      <th title="Average flown tons per week during the most recent period.">Recent Avg</th>
+      <th title="Percent decline from prior average to recent average.">Drop</th>
+      <th title="Prior average tons minus recent average tons. OK customers are not counted in total tons at risk.">Tons Risk</th>
+      <th title="Weeks with zero flown cargo since the latest shipment. This matches Weeks Since.">Zero Wks</th>
+      <th title="Completed weeks since the customer's latest shipment flight date.">Weeks Since</th>
+      <th title="Most recent flight date for this customer.">Last Shipment</th>
+      <th title="Rule-based explanation using drop percent and shipment gap.">Likely Reason</th>
+      <th title="Commercial priority from the risk category.">Potential</th>
     </tr>
   `;
   document.getElementById("opportunityBody").innerHTML = rows.length ? rows.map(row => `
     <tr>
-      <td><span class="${priorityClass(row.priority)}">${esc(row.priorityLabel)}</span></td>
+      <td>
+        <span class="priority-cell ${priorityClass(row.priority)}">
+          <span class="priority-dot ${esc(row.priority)}"></span>${esc(row.priorityLabel)}
+        </span>
+      </td>
       <td title="${esc(row.customer)}">${esc(shortCustomer(row.customer))}</td>
       <td>${num(row.priorAvgTons, 2)}</td>
       <td>${num(row.recentAvgTons, 2)}</td>
-      <td>${formatPct(row.dropPct)}</td>
+      <td class="${Number(row.dropPct || 0) > 0 ? "drop-cell" : ""}">${formatDrop(row.dropPct)}</td>
       <td>${num(row.tonsRisk, 2)}</td>
       <td>${num(row.zeroWeeks)}</td>
       <td>${row.weeksSinceLast == null ? "-" : num(row.weeksSinceLast)}</td>
       <td>${row.lastShipment ? formatDate(row.lastShipment) : "-"}</td>
       <td title="${esc(row.reason)}">${esc(row.reason)}</td>
       <td><span class="badge ${esc(row.priority)}">${esc(row.potential)}</span></td>
-      <td class="action">${esc(row.action)}</td>
     </tr>
-  `).join("") : '<tr><td colspan="12" class="empty">No customer health data.</td></tr>';
+  `).join("") : '<tr><td colspan="11" class="empty">No customer health data.</td></tr>';
 }
 
 function renderAll() {
