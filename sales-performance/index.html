@@ -108,10 +108,11 @@
   .matrix-table th:first-child { z-index:5; background:var(--navy2); }
   .matrix-table tbody tr:nth-child(even) td:first-child { background:#f0f2f6; }
   .matrix-table tbody tr:nth-child(odd) td:first-child { background:#fff; }
-  .opportunity-table th, .opportunity-table td { text-align:center; }
-  .opportunity-table th:nth-child(2), .opportunity-table td:nth-child(2) { text-align:left; }
-  .opportunity-table thead th:first-child { position:sticky; top:0; z-index:4; min-width:auto; max-width:none; overflow:visible; background:var(--navy2); }
-  .opportunity-table tbody td:first-child { position:static; min-width:auto; max-width:none; }
+  .matrix-table.opportunity-table thead th { position:sticky; top:0; z-index:20; background:var(--navy2); overflow:visible; }
+  .matrix-table.opportunity-table th, .matrix-table.opportunity-table td { text-align:center; }
+  .matrix-table.opportunity-table th:nth-child(2), .matrix-table.opportunity-table td:nth-child(2) { text-align:left; }
+  .matrix-table.opportunity-table th:first-child { left:auto; min-width:auto; max-width:none; }
+  .matrix-table.opportunity-table tbody td:first-child { position:static; left:auto; z-index:auto; min-width:auto; max-width:none; }
   .help-tip { position:relative; display:inline-flex; align-items:center; justify-content:center; width:13px; height:13px; margin-left:4px; border:1px solid rgba(200,216,240,.7); border-radius:50%; color:#c8d8f0; font-size:8px; line-height:1; cursor:help; vertical-align:middle; }
   .help-tip::after { content:attr(data-tip); position:absolute; left:50%; top:calc(100% + 8px); transform:translateX(-50%); width:210px; padding:8px 9px; border-radius:5px; background:#0d1f3c; color:#fff; font-size:10px; line-height:1.35; letter-spacing:0; text-transform:none; white-space:normal; opacity:0; pointer-events:none; box-shadow:0 8px 22px rgba(13,31,60,.22); z-index:20; }
   .help-tip:hover::after, .help-tip:focus::after { opacity:1; }
