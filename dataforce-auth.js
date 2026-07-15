@@ -41,7 +41,11 @@
     const storage = remember === undefined ? activeStorage() : (remember ? localStorage : sessionStorage);
     const other = storage === localStorage ? sessionStorage : localStorage;
     safeSet(storage, key, value);
-    safeRemove(other, key);
+    if (storage === localStorage) {
+      safeSet(sessionStorage, key, value);
+    } else {
+      safeRemove(other, key);
+    }
     if (key === USER_KEY) {
       if (storage === localStorage) safeSet(localStorage, REMEMBER_KEY, "true");
       else safeRemove(localStorage, REMEMBER_KEY);

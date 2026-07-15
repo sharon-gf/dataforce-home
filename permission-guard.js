@@ -5,7 +5,9 @@
 
 function getDataforceUser() {
   try {
-    const saved = sessionStorage.getItem('df_user');
+    const saved = window.DataforceAuth
+      ? DataforceAuth.getItem('df_user')
+      : (localStorage.getItem('df_user') || sessionStorage.getItem('df_user'));
     return saved ? JSON.parse(saved) : null;
   } catch (e) {
     return null;
@@ -41,7 +43,11 @@ async function checkModuleAccess(moduleName, initFunction) {
     if (!resp.ok) throw new Error('Permission check failed');
 
     const data = await resp.json();
-    sessionStorage.setItem('df_permissions', JSON.stringify(data));
+    if (window.DataforceAuth) {
+      DataforceAuth.setItem('df_permissions', JSON.stringify(data));
+    } else {
+      sessionStorage.setItem('df_permissions', JSON.stringify(data));
+    }
     const modules = (data.modules || []).map(m => String(m).toLowerCase().replace(/-/g, '_'));
     const normalized = String(moduleName).toLowerCase().replace(/-/g, '_');
 

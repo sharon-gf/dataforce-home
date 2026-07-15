@@ -62,7 +62,10 @@
       if (typeof window.getDataforceUser === "function") return window.getDataforceUser() || {};
     } catch (e) {}
     try {
-      return JSON.parse(sessionStorage.getItem("df_user") || "{}");
+      const saved = window.DataforceAuth
+        ? DataforceAuth.getItem("df_user")
+        : (localStorage.getItem("df_user") || sessionStorage.getItem("df_user"));
+      return JSON.parse(saved || "{}");
     } catch (e) {
       return {};
     }
@@ -74,8 +77,15 @@
   }
 
   function defaultSignOut() {
-    sessionStorage.removeItem("df_user");
-    sessionStorage.removeItem("df_permissions");
+    if (window.DataforceAuth) {
+      DataforceAuth.clear();
+    } else {
+      localStorage.removeItem("df_user");
+      localStorage.removeItem("df_permissions");
+      localStorage.removeItem("df_remember_login");
+      sessionStorage.removeItem("df_user");
+      sessionStorage.removeItem("df_permissions");
+    }
     window.location.href = HOME_URL;
   }
 
