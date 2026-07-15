@@ -153,6 +153,8 @@
         <select id="salesSelect"></select>
         <label for="businessSelect">Business</label>
         <select id="businessSelect"></select>
+        <label for="gsaSelect">GSA</label>
+        <select id="gsaSelect"></select>
       </div>
     </div>
     <div class="header-right">
@@ -193,7 +195,7 @@
   </section>
 
   <section class="panel matrix-panel">
-    <div class="panel-head"><div class="panel-title">Customer Opportunity Map</div><div class="panel-note" id="opportunityNote">Prior 8 weeks vs recent 2 weeks</div></div>
+    <div class="panel-head"><div class="panel-title">Customer Opportunity Map</div><div class="panel-note" id="opportunityNote">Prior 7 weeks vs recent 3 weeks</div></div>
     <div class="matrix-scroll">
       <table class="matrix-table opportunity-table">
         <thead id="opportunityHead"></thead>
@@ -275,6 +277,17 @@ function renderBusinessSelect() {
   const selected = currentData.selectedBusiness || "ALL";
   select.innerHTML = options.map(biz => `<option value="${esc(biz.key)}">${biz.key === "ALL" ? "All Businesses" : esc(biz.label || biz.key)}</option>`).join("");
   select.value = selected;
+}
+
+function renderGsaSelect() {
+  const select = document.getElementById("gsaSelect");
+  const options = currentData.gsaOptions || [];
+  const selected = currentData.selectedGsa || "ALL";
+  select.innerHTML = [`<option value="ALL">All GSAs</option>`].concat(
+    options.map(gsa => `<option value="${esc(gsa)}">${esc(gsa)}</option>`)
+  ).join("");
+  select.value = selected;
+  select.disabled = options.length === 0;
 }
 
 function renderCards() {
@@ -422,7 +435,7 @@ function renderOpportunityCharts() {
 function renderOpportunityTable() {
   const analysis = currentData.opportunityAnalysis || {};
   const rows = analysis.rows || [];
-  document.getElementById("opportunityNote").textContent = `Prior ${analysis.priorWeeks || 8} weeks vs recent ${analysis.recentWeeks || 2} weeks`;
+  document.getElementById("opportunityNote").textContent = `Prior ${analysis.priorWeeks || 7} weeks vs recent ${analysis.recentWeeks || 3} weeks`;
   document.getElementById("opportunityHead").innerHTML = `
     <tr>
       <th>Priority ${helpTip("Risk color is based on drop percent or weeks since the last shipment.")}</th>
@@ -460,12 +473,14 @@ function renderOpportunityTable() {
 function renderAll() {
   renderSalesSelect();
   renderBusinessSelect();
+  renderGsaSelect();
   document.getElementById("rangeTitle").textContent = `${currentData.periodLabel || "YTD"} Flown`.toUpperCase();
   document.getElementById("rangeDates").textContent = `${formatDate(currentData.start)} - ${formatDate(currentData.end)}`;
   const salesLabel = currentData.selectedSalesPerson === "ALL" ? "All sales persons" : currentData.selectedSalesPerson;
   const selectedBiz = (currentData.businessOptions || []).find(biz => biz.key === currentData.selectedBusiness);
   const bizLabel = currentData.selectedBusiness === "ALL" ? "All businesses" : (selectedBiz?.label || currentData.selectedBusiness);
-  document.getElementById("trendNote").textContent = `${salesLabel} · ${bizLabel}`;
+  const gsaLabel = currentData.selectedGsa === "ALL" ? "All GSAs" : currentData.selectedGsa;
+  document.getElementById("trendNote").textContent = `${salesLabel} · ${bizLabel} · ${gsaLabel}`;
   renderCards();
   renderCustomerCards();
   renderTrend();
@@ -477,13 +492,14 @@ async function loadReport() {
   const u = user();
   const salesPerson = document.getElementById("salesSelect").value || "ALL";
   const business = document.getElementById("businessSelect").value || "ALL";
+  const gsa = document.getElementById("gsaSelect").value || "ALL";
   const seq = ++requestSeq;
   if (activeRequest) activeRequest.abort();
   activeRequest = new AbortController();
   setStatus("Loading reports", false);
   showError("");
   try {
-    const params = new URLSearchParams({ email:u.email || "", sales_person:salesPerson, business });
+    const params = new URLSearchParams({ email:u.email || "", sales_person:salesPerson, business, gsa });
     const r = await fetch(`${API_BASE}/api/sales_performance?${params.toString()}`, {
       headers:{ "x-api-key":API_KEY },
       signal:activeRequest.signal
@@ -513,6 +529,7 @@ async function loadReport() {
 function bindEvents() {
   document.getElementById("salesSelect").addEventListener("change", loadReport);
   document.getElementById("businessSelect").addEventListener("change", loadReport);
+  document.getElementById("gsaSelect").addEventListener("change", loadReport);
   document.getElementById("kpiToggle").addEventListener("click", () => {
     const cards = document.getElementById("bookedCards");
     const button = document.getElementById("kpiToggle");
@@ -534,6 +551,7 @@ function initSalesPerformance() {
   document.getElementById("userLabel").textContent = u.name || (u.email ? u.email.split("@")[0] : "");
   document.getElementById("salesSelect").innerHTML = '<option value="ALL">All Sales Persons</option>';
   document.getElementById("businessSelect").innerHTML = '<option value="ALL">All Businesses</option>';
+  document.getElementById("gsaSelect").innerHTML = '<option value="ALL">All GSAs</option>';
   bindEvents();
   loadReport();
 }
