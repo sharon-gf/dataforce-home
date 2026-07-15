@@ -131,6 +131,13 @@
   .recent-panel .table-scroll { max-height:322px; overflow:hidden; }
   .customer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
   .customer-panel { height:368px; min-height:0; display:flex; flex-direction:column; }
+  .pie-body { flex:1; min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:8px; padding:10px; }
+  .pie-wrap { position:relative; min-height:0; height:238px; }
+  .pie-legend { display:grid; gap:4px; max-height:82px; overflow:auto; scrollbar-width:thin; }
+  .pie-legend-row { display:grid; grid-template-columns:10px minmax(0,1fr) auto; align-items:center; gap:6px; color:var(--text2); font-size:10px; line-height:1.2; }
+  .pie-dot { width:8px; height:8px; border-radius:99px; }
+  .pie-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pie-value { color:var(--text1); font-variant-numeric:tabular-nums; }
   .customer-panel .table-scroll {
     flex:1;
     min-height:0;
@@ -188,6 +195,7 @@
 
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script>window.DATAFORCE_SHELL = {"title":"My Bookings (Flown)","controls":[".filters"],"meta":[".range"],"userNameId":"userLabel"};</script>
+<script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -251,29 +259,32 @@
   <section class="customer-grid">
     <div class="panel customer-panel">
       <div class="panel-head">
-        <div class="panel-title">Top Customers</div>
-        <div class="panel-note">SOW</div>
+        <div class="panel-title">Customers</div>
+        <div class="panel-note">Tons share</div>
       </div>
-      <div class="table-scroll">
-        <table id="topCustomersTable"></table>
-      </div>
-    </div>
-    <div class="panel customer-panel">
-      <div class="panel-head">
-        <div class="panel-title">Growing</div>
-        <div class="panel-note">10 weeks</div>
-      </div>
-      <div class="table-scroll">
-        <table id="growingCustomersTable"></table>
+      <div class="pie-body">
+        <div class="pie-wrap"><canvas id="customersPieChart"></canvas></div>
+        <div class="pie-legend" id="customersPieLegend"></div>
       </div>
     </div>
     <div class="panel customer-panel">
       <div class="panel-head">
-        <div class="panel-title">Dropping</div>
-        <div class="panel-note">10 weeks</div>
+        <div class="panel-title">Carriers</div>
+        <div class="panel-note">Airline only</div>
       </div>
-      <div class="table-scroll">
-        <table id="droppingCustomersTable"></table>
+      <div class="pie-body">
+        <div class="pie-wrap"><canvas id="carriersPieChart"></canvas></div>
+        <div class="pie-legend" id="carriersPieLegend"></div>
+      </div>
+    </div>
+    <div class="panel customer-panel">
+      <div class="panel-head">
+        <div class="panel-title">Destinations</div>
+        <div class="panel-note">Tons share</div>
+      </div>
+      <div class="pie-body">
+        <div class="pie-wrap"><canvas id="destinationsPieChart"></canvas></div>
+        <div class="pie-legend" id="destinationsPieLegend"></div>
       </div>
     </div>
   </section>
@@ -333,22 +344,23 @@ const BUSINESS_OPTIONS = [
 const MY_BOOKINGS_MODE = "ytd_flown";
 let currentData = null;
 let trendChart = null;
+const pieCharts = {};
 const reportCache = new Map();
 let requestSeq = 0;
 
 function user() {
-  try { return JSON.parse(sessionStorage.getItem("df_user") || "{}"); }
+  try { return JSON.parse(DataforceAuth.getItem("df_user") || "{}"); }
   catch (e) { return {}; }
 }
 
 function permissions() {
-  try { return JSON.parse(sessionStorage.getItem("df_permissions") || "{}"); }
+  try { return JSON.parse(DataforceAuth.getItem("df_permissions") || "{}"); }
   catch (e) { return {}; }
 }
 
 function signOut() {
-  sessionStorage.removeItem("df_user");
-  sessionStorage.removeItem("df_permissions");
+  DataforceAuth.removeItem("df_user");
+  DataforceAuth.removeItem("df_permissions");
   window.location.href = "https://dataforce.gsaforce.com/";
 }
 
@@ -515,55 +527,85 @@ function renderDetail() {
   });
 }
 
-function renderCustomers() {
-  const customerData = currentData.customers || {};
-  const top = (customerData.top || []).slice(0, 30);
-  const growing = (customerData.growing || [])
-    .slice()
-    .sort((a, b) => Number(b.change_tons || 0) - Number(a.change_tons || 0))
-    .slice(0, 30);
-  const dropping = (customerData.dropping || [])
-    .slice()
-    .sort((a, b) => Math.abs(Number(b.change_tons || 0)) - Math.abs(Number(a.change_tons || 0)))
-    .slice(0, 30);
+const PIE_COLORS = ["#1a56db", "#0c9080", "#c97a06", "#b91c1c", "#6d5dfc", "#0f766e", "#d97706", "#be123c", "#2563eb", "#16a34a", "#9333ea", "#64748b"];
 
-  document.getElementById("topCustomersTable").innerHTML = `
-    <thead><tr><th>Customer</th><th>Tons</th><th>Rev</th><th>SOW</th></tr></thead>
-    <tbody>${top.length ? top.map(c => `
-      <tr class="clickable-row" data-detail-scope="customer" data-customer="${esc(c.customer)}">
-        <td title="${esc(c.customer)}">${esc(shortCustomer(c.customer))}</td>
-        <td>${num(c.tons, 2)}</td>
-        <td>${shortMoney(c.revenue)}</td>
-        <td>${num(c.share, 1)}%</td>
-      </tr>
-    `).join("") : '<tr><td colspan="4" class="empty">No customer data.</td></tr>'}</tbody>
-  `;
+function renderPieChart(key, rows, options = {}) {
+  const canvas = document.getElementById(`${key}PieChart`);
+  const legend = document.getElementById(`${key}PieLegend`);
+  if (pieCharts[key]) {
+    pieCharts[key].destroy();
+    pieCharts[key] = null;
+  }
 
-  const movementRows = rows => rows.map(c => `
-    <tr class="clickable-row" data-detail-scope="customer_recent10" data-customer="${esc(c.customer)}">
-      <td title="${esc(c.customer)}">${esc(shortCustomer(c.customer))}</td>
-      <td>${num(c.prior_avg_tons, 2)}</td>
-      <td>${num(c.recent_avg_tons, 2)}</td>
-      <td>${num(c.change_tons, 2)}</td>
-    </tr>
+  const dataRows = (rows || []).filter(row => Number(row.tons || 0) > 0).slice(0, 12);
+  if (!dataRows.length) {
+    legend.innerHTML = '<div class="empty">No data for this selection.</div>';
+    return;
+  }
+
+  const labels = dataRows.map(row => row.label || row.customer || row.carrier || row.destination || "Unknown");
+  const values = dataRows.map(row => Number(row.tons || 0));
+  const colors = dataRows.map((_, index) => PIE_COLORS[index % PIE_COLORS.length]);
+
+  legend.innerHTML = dataRows.map((row, index) => `
+    <div class="pie-legend-row" title="${esc(labels[index])}">
+      <span class="pie-dot" style="background:${colors[index]}"></span>
+      <span class="pie-name">${esc(labels[index])}</span>
+      <span class="pie-value">${num(row.share, 1)}%</span>
+    </div>
   `).join("");
 
-  document.getElementById("growingCustomersTable").innerHTML = `
-    <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
-    <tbody>${growing.length ? movementRows(growing) : '<tr><td colspan="4" class="empty">No growing customers.</td></tr>'}</tbody>
-  `;
-
-  document.getElementById("droppingCustomersTable").innerHTML = `
-    <thead><tr><th>Customer</th><th>Prior</th><th>Recent</th><th>+/-</th></tr></thead>
-    <tbody>${dropping.length ? movementRows(dropping) : '<tr><td colspan="4" class="empty">No dropping customers.</td></tr>'}</tbody>
-  `;
-  document.querySelectorAll("#topCustomersTable .clickable-row, #growingCustomersTable .clickable-row, #droppingCustomersTable .clickable-row").forEach(row => {
-    row.addEventListener("click", () => showAwbDetail({
-      scope: row.dataset.detailScope,
-      customer: row.dataset.customer,
-      title: `AWB Detail - ${row.dataset.customer}`
-    }));
+  pieCharts[key] = new Chart(canvas.getContext("2d"), {
+    type:"pie",
+    data:{
+      labels,
+      datasets:[{
+        data:values,
+        backgroundColor:colors,
+        borderColor:"#fff",
+        borderWidth:1
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:"#0d1f3c",
+          borderColor:"#243a5c",
+          borderWidth:1,
+          titleColor:"#7aaae8",
+          bodyColor:"#d8e4f4",
+          padding:8,
+          callbacks:{
+            label:function(ctx) {
+              const row = dataRows[ctx.dataIndex] || {};
+              return ` ${num(row.tons, 2)} tons / ${num(row.share, 1)}%`;
+            }
+          }
+        }
+      },
+      onClick:function(_, elements) {
+        if (!options.clickable || !elements.length) return;
+        const row = dataRows[elements[0].index];
+        const customer = row && (row.customer || row.label);
+        if (!customer) return;
+        showAwbDetail({
+          scope:"customer",
+          customer,
+          title:`AWB Detail - ${customer}`
+        });
+      }
+    }
   });
+}
+
+function renderBreakdowns() {
+  const breakdowns = currentData.breakdowns || {};
+  renderPieChart("customers", breakdowns.customers || (currentData.customers || {}).top || [], { clickable:true });
+  renderPieChart("carriers", breakdowns.carriers || []);
+  renderPieChart("destinations", breakdowns.destinations || []);
 }
 
 function closeAwbModal() {
@@ -638,7 +680,7 @@ function renderAll() {
   renderFixedCards();
   renderTrend();
   renderDetail();
-  renderCustomers();
+  renderBreakdowns();
 }
 
 function setStatus(text, ready) {
