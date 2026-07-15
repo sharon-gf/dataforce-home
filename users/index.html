@@ -450,9 +450,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 
     <div class="form-group">
       <label>GSA access</label>
-      <select id="formGsa">
-        <option value="">— All GSAs</option>
-      </select>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllGsas()">Select All</button>
+      <div class="checkbox-group" id="gsasCheckboxes"></div>
     </div>
 
     <div class="form-group">
@@ -581,7 +580,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       if (!r.ok) throw new Error(`API error: ${r.status}`);
       const data = await r.json();
       allGsas = data.gsas || [];
-      populateGsaSelect();
+      populateGsaCheckboxes();
+      if (allUsers.length) renderTable();
     } catch (e) {
       console.error('Failed to load GSAs:', e);
     }
@@ -650,14 +650,17 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     });
   }
 
-  function populateGsaSelect() {
-    const select = document.getElementById('formGsa');
-    select.innerHTML = '<option value="">— All GSAs</option>';
-    allGsas.forEach(gsa => {
-      const option = document.createElement('option');
-      option.value = gsa;
-      option.textContent = gsa;
-      select.appendChild(option);
+  function populateGsaCheckboxes() {
+    const container = document.getElementById('gsasCheckboxes');
+    container.innerHTML = '';
+    allGsas.forEach((gsa, index) => {
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = `
+        <input type="checkbox" id="gsa-${index}" value="${escapeHtml(gsa)}" onchange="updateSelectAllGsas()" />
+        <label for="gsa-${index}">${escapeHtml(gsa)}</label>
+      `;
+      container.appendChild(div);
     });
   }
 
@@ -689,6 +692,20 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     btn.textContent = allChecked ? 'Deselect All' : 'Select All';
   }
 
+  function toggleSelectAllGsas() {
+    const checkboxes = document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]');
+    const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateSelectAllGsas();
+  }
+
+  function updateSelectAllGsas() {
+    const checkboxes = document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]');
+    const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    const btn = document.querySelector('#gsasCheckboxes').previousElementSibling;
+    btn.textContent = allChecked ? 'Deselect All' : 'Select All';
+  }
+
   function asList(value) {
     return Array.isArray(value) ? value : [];
   }
@@ -717,7 +734,10 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 
   function formatGsaSummary(value) {
     const gsas = asList(value);
-    return gsas.length ? gsas[0] : 'ALL';
+    if (gsas.length === 0 || gsas.includes('ALL') || (allGsas.length > 0 && gsas.length >= allGsas.length)) {
+      return 'ALL';
+    }
+    return String(gsas.length);
   }
 
   function renderTable() {
@@ -819,13 +839,14 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     document.getElementById('formName').value = '';
     document.getElementById('formEmail').value = '';
     document.getElementById('formSalesPerson').value = '';
-    document.getElementById('formGsa').value = '';
     document.getElementById('formStatus').value = 'active';
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Create';
     updateSelectAllModules();
     updateSelectAllBusinesses();
+    updateSelectAllGsas();
   }
 
   function openRequestUserModal(requestId, email) {
@@ -844,7 +865,6 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     document.getElementById('formName').value = user.name || '';
     document.getElementById('formEmail').value = user.email || '';
     document.getElementById('formSalesPerson').value = user.sales_person || '';
-    document.getElementById('formGsa').value = (user.allowed_gsas || [])[0] || '';
     document.getElementById('formStatus').value = user.status || 'active';
 
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => {
@@ -855,10 +875,17 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       cb.checked = (user.allowed_businesses || []).includes(cb.value);
     });
 
+    const allowedGsas = asList(user.allowed_gsas);
+    const unrestrictedGsas = allowedGsas.length === 0 || allowedGsas.includes('ALL');
+    document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]').forEach(cb => {
+      cb.checked = unrestrictedGsas || allowedGsas.includes(cb.value);
+    });
+
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Save';
     updateSelectAllModules();
     updateSelectAllBusinesses();
+    updateSelectAllGsas();
   }
 
   function closeEditModal() {
@@ -871,8 +898,9 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     const modules = Array.from(document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     const businesses = Array.from(document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     const salesPerson = document.getElementById('formSalesPerson').value || null;
-    const gsa = document.getElementById('formGsa').value || '';
-    const gsas = gsa ? [gsa] : [];
+    const gsaCheckboxes = Array.from(document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]'));
+    const selectedGsas = gsaCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+    const gsas = selectedGsas.length === 0 || selectedGsas.length === gsaCheckboxes.length ? [] : selectedGsas;
     const status = document.getElementById('formStatus').value;
 
     if (!name || !email) {
