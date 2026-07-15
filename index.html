@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="DataForce">
   
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="dataforce-auth.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -49,6 +50,23 @@ html, body { width:100%; min-height:100%; font-family:'Inter',sans-serif; backgr
 .login-sub {
   font-size: 12px; color: var(--text3);
   text-align: center; line-height: 1.6;
+}
+.remember-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: stretch;
+  color: var(--text2);
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+}
+.remember-option input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--blue);
+  flex: 0 0 auto;
 }
 #login-error {
   font-size: 11px; color: #dc2626;
@@ -138,6 +156,10 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
       data-logo_alignment="left"
       data-width="256">
     </div>
+    <label class="remember-option">
+      <input type="checkbox" id="remember-login" checked>
+      <span>Remember me on this browser</span>
+    </label>
     <div id="login-error">⚠️ Access restricted to @gsaforce.com accounts only.</div>
   </div>
 </div>
@@ -274,7 +296,8 @@ function handleCredentialResponse(response) {
   // Store email for later use
   currentUserEmail = email;
   
-  sessionStorage.setItem('df_user', JSON.stringify({ email, name }));
+  const remember = document.getElementById('remember-login')?.checked !== false;
+  DataforceAuth.setUser({ email, name }, remember);
   showApp(name);
 }
 
@@ -407,16 +430,19 @@ async function applyModulePermissions() {
 
 function signOut() {
   currentUserEmail = '';
-  sessionStorage.removeItem('df_user');
+  DataforceAuth.clear();
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-error').style.display = 'none';
 }
 
 window.addEventListener('load', () => {
-  const saved = sessionStorage.getItem('df_user');
+  const rememberLogin = document.getElementById('remember-login');
+  if (rememberLogin) rememberLogin.checked = DataforceAuth.isRemembered();
+
+  const saved = DataforceAuth.getUser();
   if (saved) { 
-    const { name, email } = JSON.parse(saved); 
+    const { name, email } = saved; 
     currentUserEmail = email;
     showApp(name); 
   }
