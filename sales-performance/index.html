@@ -101,7 +101,7 @@
   tbody tr:nth-child(even) td { background:#f0f2f6; }
   .table-scroll { max-height:322px; overflow:auto; }
   .matrix-panel { min-height:420px; }
-  .matrix-scroll { max-height:430px; overflow:auto; }
+  .matrix-scroll { max-height:430px; overflow-y:auto; overflow-x:hidden; }
   .matrix-table { min-width:760px; }
   .matrix-table thead th { position:sticky; top:0; z-index:3; background:var(--navy2); }
   .matrix-table th:first-child, .matrix-table td:first-child { position:sticky; left:0; z-index:2; min-width:220px; max-width:260px; overflow:hidden; text-overflow:ellipsis; }
@@ -109,12 +109,25 @@
   .matrix-table tbody tr:nth-child(even) td:first-child { background:#f0f2f6; }
   .matrix-table tbody tr:nth-child(odd) td:first-child { background:#fff; }
   .matrix-table.opportunity-table thead th { position:sticky; top:0; z-index:20; background:var(--navy2); overflow:visible; }
-  .matrix-table.opportunity-table th, .matrix-table.opportunity-table td { text-align:center; }
+  .matrix-table.opportunity-table { width:100%; min-width:0; table-layout:fixed; }
+  .matrix-table.opportunity-table th, .matrix-table.opportunity-table td { text-align:center; overflow:hidden; text-overflow:ellipsis; }
   .matrix-table.opportunity-table th:nth-child(2), .matrix-table.opportunity-table td:nth-child(2) { text-align:left; }
   .matrix-table.opportunity-table th:first-child { left:auto; min-width:auto; max-width:none; }
   .matrix-table.opportunity-table tbody td:first-child { position:static; left:auto; z-index:auto; min-width:auto; max-width:none; }
+  .matrix-table.opportunity-table th:nth-child(1), .matrix-table.opportunity-table td:nth-child(1) { width:8%; }
+  .matrix-table.opportunity-table th:nth-child(2), .matrix-table.opportunity-table td:nth-child(2) { width:21%; }
+  .matrix-table.opportunity-table th:nth-child(3), .matrix-table.opportunity-table td:nth-child(3),
+  .matrix-table.opportunity-table th:nth-child(4), .matrix-table.opportunity-table td:nth-child(4) { width:9%; }
+  .matrix-table.opportunity-table th:nth-child(5), .matrix-table.opportunity-table td:nth-child(5),
+  .matrix-table.opportunity-table th:nth-child(6), .matrix-table.opportunity-table td:nth-child(6),
+  .matrix-table.opportunity-table th:nth-child(7), .matrix-table.opportunity-table td:nth-child(7) { width:8%; }
+  .matrix-table.opportunity-table th:nth-child(8), .matrix-table.opportunity-table td:nth-child(8) { width:10%; }
+  .matrix-table.opportunity-table th:nth-child(9), .matrix-table.opportunity-table td:nth-child(9) { width:13%; }
+  .matrix-table.opportunity-table th:nth-child(10), .matrix-table.opportunity-table td:nth-child(10) { width:6%; }
   .help-tip { position:relative; display:inline-flex; align-items:center; justify-content:center; width:13px; height:13px; margin-left:4px; border:1px solid rgba(200,216,240,.7); border-radius:50%; color:#c8d8f0; font-size:8px; line-height:1; cursor:help; vertical-align:middle; }
   .help-tip::after { content:attr(data-tip); position:absolute; left:50%; top:calc(100% + 8px); transform:translateX(-50%); width:210px; padding:8px 9px; border-radius:5px; background:#0d1f3c; color:#fff; font-size:10px; line-height:1.35; letter-spacing:0; text-transform:none; white-space:normal; opacity:0; pointer-events:none; box-shadow:0 8px 22px rgba(13,31,60,.22); z-index:20; }
+  .matrix-table.opportunity-table th:first-child .help-tip::after { left:0; transform:none; }
+  .matrix-table.opportunity-table th:last-child .help-tip::after { left:auto; right:0; transform:none; }
   .help-tip:hover::after, .help-tip:focus::after { opacity:1; }
   .empty, .loading { padding:34px 16px; color:var(--text3); text-align:center; font-size:12px; }
 
@@ -142,6 +155,7 @@
 </style>
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script>window.DATAFORCE_SHELL = {"title":"Sales Performance","controls":[".filters"],"meta":[".range"],"userNameId":"userLabel"};</script>
+<script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -219,12 +233,12 @@ let requestSeq = 0;
 let activeRequest = null;
 
 function user() {
-  try { return JSON.parse(sessionStorage.getItem("df_user") || "{}"); }
+  try { return JSON.parse(DataforceAuth.getItem("df_user") || "{}"); }
   catch (e) { return {}; }
 }
 function signOut() {
-  sessionStorage.removeItem("df_user");
-  sessionStorage.removeItem("df_permissions");
+  DataforceAuth.removeItem("df_user");
+  DataforceAuth.removeItem("df_permissions");
   window.location.href = "https://dataforce.gsaforce.com/";
 }
 function esc(value) {
@@ -442,8 +456,8 @@ function renderOpportunityTable() {
     <tr>
       <th>Priority ${helpTip("Risk color is based on drop percent or weeks since the last shipment.")}</th>
       <th>Customer</th>
-      <th>Prior Avg ${helpTip("Average flown tons per week during the prior 7 weeks.")}</th>
-      <th>Recent Avg ${helpTip("Average flown tons per week during the most recent 3 weeks.")}</th>
+      <th>Prior Avg Kg ${helpTip("Average flown kilos per week during the prior 7 weeks.")}</th>
+      <th>Recent Avg Kg ${helpTip("Average flown kilos per week during the most recent 3 weeks.")}</th>
       <th>Drop ${helpTip("Percent decline from prior average to recent average.")}</th>
       <th>Tons Risk ${helpTip("Prior average tons minus recent average tons. OK customers are not counted in total tons at risk.")}</th>
       <th>Weeks Since ${helpTip("Completed weeks since the customer's latest shipment flight date.")}</th>
@@ -460,8 +474,8 @@ function renderOpportunityTable() {
         </span>
       </td>
       <td title="${esc(row.customer)}">${esc(shortCustomer(row.customer))}</td>
-      <td>${num(row.priorAvgTons, 2)}</td>
-      <td>${num(row.recentAvgTons, 2)}</td>
+      <td>${num(Number(row.priorAvgTons || 0) * 1000)}</td>
+      <td>${num(Number(row.recentAvgTons || 0) * 1000)}</td>
       <td class="${Number(row.dropPct || 0) > 0 ? "drop-cell" : ""}">${formatDrop(row.dropPct)}</td>
       <td>${num(row.tonsRisk, 2)}</td>
       <td>${row.weeksSinceLast == null ? "-" : num(row.weeksSinceLast)}</td>
