@@ -52,7 +52,7 @@
   .metric-value { color:#0d1f3c; font-size:12px; font-weight:500; line-height:1.3; white-space:nowrap; }
   .customer-kpi-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
   .customer-kpi-grid.collapsed { display:none; }
-  .customer-kpi { background:#fff; border:1px solid #d0d4dc; border-radius:5px; padding:11px 13px; min-height:78px; }
+  .customer-kpi { background:#fff; border:1px solid var(--navy2); border-radius:5px; padding:11px 13px; min-height:78px; }
   .customer-kpi.risk { border-color:#ef9a9a; }
   .customer-kpi .metric-value { text-align:left; font-size:22px; margin-top:8px; }
   .customer-kpi .metric-note { color:var(--text3); font-size:10px; margin-top:5px; }
@@ -440,8 +440,8 @@ function renderOpportunityTable() {
     <tr>
       <th>Priority ${helpTip("Risk color is based on drop percent or weeks since the last shipment.")}</th>
       <th>Customer</th>
-      <th>Prior Avg ${helpTip("Average flown tons per week during the prior 7 weekd.")}</th>
-      <th>Recent Avg ${helpTip("Average flown tons per week during the most recent 3 weeks.")}</th>
+      <th>Prior Avg ${helpTip("Average flown tons per week during the prior baseline period.")}</th>
+      <th>Recent Avg ${helpTip("Average flown tons per week during the most recent period.")}</th>
       <th>Drop ${helpTip("Percent decline from prior average to recent average.")}</th>
       <th>Tons Risk ${helpTip("Prior average tons minus recent average tons. OK customers are not counted in total tons at risk.")}</th>
       <th>Weeks Since ${helpTip("Completed weeks since the customer's latest shipment flight date.")}</th>
