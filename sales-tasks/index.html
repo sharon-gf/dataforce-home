@@ -1,1 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - Sales Tasks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e8eaee; --surface:#fff; --surface2:#f5f7fb; --border:#d8dde8;
+    --navy:#0d1f3c; --navy2:#1a3360; --text1:#0d1f3c; --text2:#41536c;
+    --text3:#8391a8; --blue:#1a56db; --red:#d62828; --orange:#f28c18;
+    --yellow:#e6c229; --green:#2eaa4f;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  body { overflow-x:hidden; }
+  button, input, select { font:inherit; }
+  .app { min-height:100vh; padding:8px; }
+  .header { background:var(--navy); border-radius:6px; padding:8px 16px; display:grid; grid-template-columns:minmax(180px,1fr) minmax(360px,1.4fr) minmax(250px,1fr); align-items:center; gap:10px; margin-bottom:8px; }
+  .logo a { display:flex; align-items:center; width:max-content; }
+  .logo img { height:28px; width:auto; display:block; }
+  .hdr-mid { text-align:center; min-width:0; }
+  .header-title { color:#7aaed5; letter-spacing:.12em; font-size:17px; font-weight:500; white-space:nowrap; }
+  .header-subtitle { color:#8fb5d7; font-size:10px; margin-top:4px; letter-spacing:.05em; }
+  .header-right { color:#fff; display:flex; flex-direction:column; align-items:flex-end; gap:6px; font-size:11px; min-width:0; }
+  .header-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; max-width:100%; }
+  .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:7px; height:7px; border-radius:99px; background:#c97a06; }
+  .dot.ready { background:#22c55e; }
+  .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font-size:10px; }
+  .back-link { color:#8fb5d7; text-decoration:none; font-size:10px; }
+  .back-link:hover { color:#fff; }
 
+  .summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:8px; }
+  .summary-card { background:#fff; border:1px solid var(--navy2); border-radius:5px; padding:11px 13px; min-height:76px; }
+  .summary-card.warn { border-color:#ef9a9a; }
+  .metric-label { color:#9aa5b5; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; }
+  .metric-value { color:var(--text1); font-size:23px; line-height:1.2; margin-top:8px; }
+  .summary-card.warn .metric-value { color:var(--red); }
+  .metric-note { color:var(--text3); font-size:10px; margin-top:4px; }
+
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; min-height:520px; }
+  .panel-head { background:var(--navy2); color:#c8d8f0; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:38px; }
+  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+  .filters { padding:10px 12px; display:grid; grid-template-columns:minmax(180px,.6fr) minmax(160px,.5fr) minmax(160px,.5fr) minmax(220px,1fr) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
+  input, select { width:100%; height:30px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--text1); padding:5px 8px; outline:none; }
+  input:focus, select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
+  .tool-btn { height:30px; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:4px; padding:0 10px; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  .tool-btn.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .tool-btn:disabled { opacity:.6; cursor:wait; }
+  .table-wrap { overflow:auto; max-height:650px; }
+  table { width:100%; min-width:1040px; border-collapse:collapse; }
+  th { position:sticky; top:0; z-index:1; background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:7px 8px; text-align:left; white-space:nowrap; }
+  td { border-bottom:1px solid var(--border); padding:7px 8px; color:var(--text1); font-size:11px; white-space:nowrap; vertical-align:middle; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  tbody tr:hover td { background:#e4ecfb !important; }
+  .customer-cell { max-width:250px; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+  .notes-cell { max-width:260px; overflow:hidden; text-overflow:ellipsis; color:var(--text2); }
+  .badge { display:inline-flex; align-items:center; justify-content:center; min-width:54px; border-radius:5px; padding:3px 7px; font-size:10px; font-weight:600; }
+  .badge.status-open { color:#0d3f78; background:#edf5ff; }
+  .badge.status-done { color:#16783a; background:#e8f7ed; }
+  .badge.red { color:#d62828; background:#fde8e8; }
+  .badge.orange { color:#d97706; background:#fff1dc; }
+  .badge.yellow { color:#9a7600; background:#fff8cc; }
+  .badge.green { color:#17803d; background:#e5f6ea; }
+  .row-btn { height:26px; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:4px; padding:0 9px; cursor:pointer; font-size:9px; font-weight:600; white-space:nowrap; }
+  .row-btn.done { background:#e8f7ed; border-color:#94c6a3; color:#16783a; }
+  .row-btn.reopen { background:#edf5ff; border-color:#7aaed5; color:#0d3f78; }
+  .empty, .loading { padding:38px 16px; color:var(--text3); text-align:center; font-size:12px; }
+  .toast { position:fixed; right:14px; bottom:14px; z-index:1000; min-width:220px; max-width:min(360px,calc(100vw - 28px)); background:#0d1f3c; color:#fff; border:1px solid rgba(122,174,213,.45); border-radius:6px; padding:10px 12px; box-shadow:0 18px 50px rgba(13,31,60,.28); opacity:0; transform:translateY(8px); pointer-events:none; transition:opacity .16s ease, transform .16s ease; }
+  .toast.show { opacity:1; transform:translateY(0); }
+  .toast.error-toast { background:#991b1b; border-color:#fecaca; }
+
+  @media (max-width:920px) {
+    .header { grid-template-columns:1fr; text-align:center; }
+    .logo a { margin:auto; }
+    .header-right { align-items:center; }
+    .header-actions { justify-content:center; flex-wrap:wrap; }
+    .summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .filters { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:560px) {
+    .summary-grid, .filters { grid-template-columns:1fr; }
+    .header-title { white-space:normal; font-size:15px; }
+  }
+</style>
+<link rel="stylesheet" href="../dataforce-shell.css">
+<script>window.DATAFORCE_SHELL = {"title":"Sales Tasks","controls":[".back-link"],"userNameId":"userLabel"};</script>
+<script src="../dataforce-auth.js"></script>
+<script src="../dataforce-shell.js"></script>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="logo"><a href="/" aria-label="Back to DATAFORCE home"><img src="../dataforce-logo.png" alt="DATAFORCE"></a></div>
+    <div class="hdr-mid">
+      <div class="header-title">SALES TASK MANAGER</div>
+      <div class="header-subtitle">Follow-ups created from Sales Performance</div>
+    </div>
+    <div class="header-right">
+      <div class="header-actions">
+        <a class="back-link" href="../sales-performance/">Back to Sales Performance</a>
+        <span id="userLabel"></span>
+        <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading</span></span>
+        <button class="logout" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="summary-grid" id="summaryGrid">
+    <div class="summary-card"><div class="metric-label">Open Tasks</div><div class="metric-value">-</div><div class="metric-note">Waiting follow-up</div></div>
+    <div class="summary-card"><div class="metric-label">Done Tasks</div><div class="metric-value">-</div><div class="metric-note">Completed follow-ups</div></div>
+    <div class="summary-card warn"><div class="metric-label">High Priority</div><div class="metric-value">-</div><div class="metric-note">Open high-risk customers</div></div>
+    <div class="summary-card"><div class="metric-label">Total Tasks</div><div class="metric-value">-</div><div class="metric-note">Current filtered data</div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Task Administration</div>
+      <div class="panel-note" id="taskCount">-</div>
+    </div>
+    <div class="filters">
+      <div>
+        <label for="statusFilter">Status</label>
+        <select id="statusFilter">
+          <option value="open">Open</option>
+          <option value="done">Done</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+      <div>
+        <label for="priorityFilter">Priority</label>
+        <select id="priorityFilter">
+          <option value="ALL">All Priorities</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+      <div>
+        <label for="salesFilter">Sales Person</label>
+        <select id="salesFilter"><option value="ALL">All Sales Persons</option></select>
+      </div>
+      <div>
+        <label for="searchFilter">Search</label>
+        <input id="searchFilter" type="search" placeholder="Customer, GSA, origin, notes">
+      </div>
+      <button class="tool-btn primary" type="button" id="refreshBtn">Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Customer</th>
+            <th>Sales Person</th>
+            <th>Business</th>
+            <th>GSA</th>
+            <th>Origin</th>
+            <th>Notes</th>
+            <th>Created</th>
+            <th>Completed</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="taskBody"><tr><td colspan="11" class="loading">Loading tasks...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-production.up.railway.app";
+const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+let allTasks = [];
+
+function user() {
+  try { return JSON.parse(DataforceAuth.getItem("df_user") || "{}"); }
+  catch (e) { return {}; }
+}
+function signOut() {
+  DataforceAuth.removeItem("df_user");
+  DataforceAuth.removeItem("df_permissions");
+  window.location.href = "https://dataforce.gsaforce.com/";
+}
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+function num(value) {
+  return Number(value || 0).toLocaleString();
+}
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(String(value).replace(" ", "T"));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString(undefined, { month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
+}
+function setStatus(text, ready) {
+  document.getElementById("statusText").textContent = text;
+  document.getElementById("statusDot").classList.toggle("ready", Boolean(ready));
+}
+function priorityKey(label) {
+  const value = String(label || "").toLowerCase();
+  if (value.includes("high")) return "red";
+  if (value.includes("medium")) return "orange";
+  if (value.includes("low")) return "yellow";
+  return "green";
+}
+function showToast(message, isError=false) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.toggle("error-toast", Boolean(isError));
+  toast.classList.add("show");
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 2600);
+}
+function filteredTasks() {
+  const priority = document.getElementById("priorityFilter").value;
+  const sales = document.getElementById("salesFilter").value;
+  const q = document.getElementById("searchFilter").value.trim().toLowerCase();
+  return allTasks.filter(task => {
+    if (priority !== "ALL" && String(task.priority || "").toLowerCase() !== priority.toLowerCase()) return false;
+    if (sales !== "ALL" && String(task.sales_person || "") !== sales) return false;
+    if (!q) return true;
+    return [task.customer, task.sales_person, task.business, task.gsa, task.origin, task.notes, task.created_by]
+      .some(value => String(value || "").toLowerCase().includes(q));
+  });
+}
+function renderSalesFilter() {
+  const select = document.getElementById("salesFilter");
+  const current = select.value || "ALL";
+  const people = [...new Set(allTasks.map(task => task.sales_person).filter(Boolean))].sort();
+  select.innerHTML = ['<option value="ALL">All Sales Persons</option>'].concat(
+    people.map(person => `<option value="${esc(person)}">${esc(person)}</option>`)
+  ).join("");
+  select.value = people.includes(current) ? current : "ALL";
+}
+function renderSummary(rows) {
+  const open = allTasks.filter(task => task.status === "open").length;
+  const done = allTasks.filter(task => task.status === "done").length;
+  const highOpen = allTasks.filter(task => task.status === "open" && priorityKey(task.priority) === "red").length;
+  document.getElementById("summaryGrid").innerHTML = `
+    <div class="summary-card"><div class="metric-label">Open Tasks</div><div class="metric-value">${num(open)}</div><div class="metric-note">Waiting follow-up</div></div>
+    <div class="summary-card"><div class="metric-label">Done Tasks</div><div class="metric-value">${num(done)}</div><div class="metric-note">Completed follow-ups</div></div>
+    <div class="summary-card warn"><div class="metric-label">High Priority</div><div class="metric-value">${num(highOpen)}</div><div class="metric-note">Open high-risk customers</div></div>
+    <div class="summary-card"><div class="metric-label">Showing</div><div class="metric-value">${num(rows.length)}</div><div class="metric-note">After filters</div></div>
+  `;
+}
+function renderTasks() {
+  const rows = filteredTasks();
+  renderSummary(rows);
+  document.getElementById("taskCount").textContent = `${num(rows.length)} tasks`;
+  document.getElementById("taskBody").innerHTML = rows.length ? rows.map(task => {
+    const status = String(task.status || "open").toLowerCase();
+    const nextStatus = status === "done" ? "open" : "done";
+    return `
+      <tr>
+        <td><span class="badge status-${esc(status)}">${esc(status)}</span></td>
+        <td><span class="badge ${priorityKey(task.priority)}">${esc(task.priority || "-")}</span></td>
+        <td class="customer-cell" title="${esc(task.customer)}">${esc(task.customer)}</td>
+        <td>${esc(task.sales_person || "-")}</td>
+        <td>${esc(task.business || "-")}</td>
+        <td>${esc(task.gsa || "-")}</td>
+        <td>${esc(task.origin || "-")}</td>
+        <td class="notes-cell" title="${esc(task.notes)}">${esc(task.notes || "-")}</td>
+        <td>${formatDateTime(task.created_at)}</td>
+        <td>${formatDateTime(task.completed_at)}</td>
+        <td><button class="row-btn ${nextStatus === "done" ? "done" : "reopen"}" type="button" onclick="setTaskStatus(${Number(task.id)}, '${nextStatus}')">${nextStatus === "done" ? "Done" : "Reopen"}</button></td>
+      </tr>
+    `;
+  }).join("") : '<tr><td colspan="11" class="empty">No tasks match these filters.</td></tr>';
+}
+async function loadTasks() {
+  const u = user();
+  const refreshBtn = document.getElementById("refreshBtn");
+  refreshBtn.disabled = true;
+  setStatus("Loading", false);
+  try {
+    const status = document.getElementById("statusFilter").value || "open";
+    const params = new URLSearchParams({ email:u.email || "", status });
+    const r = await fetch(`${API_BASE}/api/sales_performance/tasks?${params.toString()}`, { headers:{ "x-api-key":API_KEY } });
+    if (!r.ok) throw new Error(`Task API ${r.status}`);
+    const data = await r.json();
+    allTasks = data.tasks || [];
+    renderSalesFilter();
+    renderTasks();
+    setStatus("Ready", true);
+  } catch (e) {
+    console.error("Failed to load tasks:", e);
+    setStatus("Error", false);
+    document.getElementById("taskBody").innerHTML = '<tr><td colspan="11" class="empty">Could not load tasks.</td></tr>';
+    showToast("Could not load tasks.", true);
+  } finally {
+    refreshBtn.disabled = false;
+  }
+}
+async function setTaskStatus(id, status) {
+  const u = user();
+  const previous = allTasks.slice();
+  const now = new Date().toISOString();
+  allTasks = allTasks.map(task => Number(task.id) === Number(id)
+    ? { ...task, status, completed_at: status === "done" ? now : null, completed_by: status === "done" ? (u.email || "") : null }
+    : task
+  );
+  if (document.getElementById("statusFilter").value !== "all") {
+    allTasks = allTasks.filter(task => task.status === document.getElementById("statusFilter").value);
+  }
+  renderSalesFilter();
+  renderTasks();
+  try {
+    const params = new URLSearchParams({ email:u.email || "" });
+    const r = await fetch(`${API_BASE}/api/sales_performance/tasks/${id}?${params.toString()}`, {
+      method:"PATCH",
+      headers:{ "x-api-key":API_KEY, "Content-Type":"application/json" },
+      body:JSON.stringify({ status })
+    });
+    if (!r.ok) throw new Error(`Task API ${r.status}`);
+    showToast(status === "done" ? "Task marked done." : "Task reopened.");
+    await loadTasks();
+  } catch (e) {
+    console.error("Failed to update task:", e);
+    allTasks = previous;
+    renderSalesFilter();
+    renderTasks();
+    showToast("Could not update task.", true);
+  }
+}
+function bindEvents() {
+  document.getElementById("statusFilter").addEventListener("change", loadTasks);
+  document.getElementById("priorityFilter").addEventListener("change", renderTasks);
+  document.getElementById("salesFilter").addEventListener("change", renderTasks);
+  document.getElementById("searchFilter").addEventListener("input", renderTasks);
+  document.getElementById("refreshBtn").addEventListener("click", loadTasks);
+}
+function initSalesTasks() {
+  const u = user();
+  document.getElementById("userLabel").textContent = u.name || (u.email ? u.email.split("@")[0] : "");
+  bindEvents();
+  loadTasks();
+}
+checkModuleAccess("sales_performance", initSalesTasks);
+</script>
+</body>
+</html>
