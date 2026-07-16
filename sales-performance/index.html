@@ -261,7 +261,7 @@
       <div class="panel-title">Sales Task Manager</div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="panel-note" id="taskNote">Open follow-ups</div>
-        <a class="panel-action" href="../sales-tasks/">Open Admin</a>
+        <a class="panel-action" id="taskAdminLink" href="../sales-tasks/" style="display:none;">Open Admin</a>
       </div>
     </div>
     <div class="task-list" id="taskList"><div class="loading">Loading tasks...</div></div>
@@ -332,6 +332,15 @@ function showError(message) {
   const box = document.getElementById("errorBox");
   box.textContent = message || "";
   box.style.display = message ? "block" : "none";
+}
+function userHasModule(moduleName) {
+  try {
+    const data = JSON.parse(DataforceAuth.getItem("df_permissions") || "{}");
+    const modules = (data.modules || []).map(module => String(module).toLowerCase().replace(/-/g, "_"));
+    return modules.includes(String(moduleName).toLowerCase().replace(/-/g, "_"));
+  } catch (e) {
+    return false;
+  }
 }
 
 function renderSalesSelect() {
@@ -777,6 +786,7 @@ function initSalesPerformance() {
   document.getElementById("businessSelect").innerHTML = '<option value="ALL">All Businesses</option>';
   document.getElementById("gsaSelect").innerHTML = '<option value="ALL">All GSAs</option>';
   document.getElementById("originSelect").innerHTML = '<option value="ALL">All Origins</option>';
+  document.getElementById("taskAdminLink").style.display = userHasModule("sales_tasks") ? "inline-block" : "none";
   bindEvents();
   loadReport();
 }
