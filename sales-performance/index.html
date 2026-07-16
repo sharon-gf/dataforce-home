@@ -115,15 +115,16 @@
   .matrix-table.opportunity-table th:first-child { left:auto; min-width:auto; max-width:none; }
   .matrix-table.opportunity-table tbody td:first-child { position:static; left:auto; z-index:auto; min-width:auto; max-width:none; }
   .matrix-table.opportunity-table th:nth-child(1), .matrix-table.opportunity-table td:nth-child(1) { width:7%; }
-  .matrix-table.opportunity-table th:nth-child(2), .matrix-table.opportunity-table td:nth-child(2) { width:28%; }
+  .matrix-table.opportunity-table th:nth-child(2), .matrix-table.opportunity-table td:nth-child(2) { width:25%; }
   .matrix-table.opportunity-table th:nth-child(3), .matrix-table.opportunity-table td:nth-child(3),
   .matrix-table.opportunity-table th:nth-child(4), .matrix-table.opportunity-table td:nth-child(4) { width:8%; }
   .matrix-table.opportunity-table th:nth-child(5), .matrix-table.opportunity-table td:nth-child(5),
   .matrix-table.opportunity-table th:nth-child(6), .matrix-table.opportunity-table td:nth-child(6),
   .matrix-table.opportunity-table th:nth-child(7), .matrix-table.opportunity-table td:nth-child(7) { width:7%; }
   .matrix-table.opportunity-table th:nth-child(8), .matrix-table.opportunity-table td:nth-child(8) { width:9%; }
-  .matrix-table.opportunity-table th:nth-child(9), .matrix-table.opportunity-table td:nth-child(9) { width:12%; }
-  .matrix-table.opportunity-table th:nth-child(10), .matrix-table.opportunity-table td:nth-child(10) { width:6%; }
+  .matrix-table.opportunity-table th:nth-child(9), .matrix-table.opportunity-table td:nth-child(9) { width:11%; }
+  .matrix-table.opportunity-table th:nth-child(10), .matrix-table.opportunity-table td:nth-child(10) { width:5%; }
+  .matrix-table.opportunity-table th:nth-child(11), .matrix-table.opportunity-table td:nth-child(11) { width:4%; }
   .help-tip { position:relative; display:inline-flex; align-items:center; justify-content:center; width:13px; height:13px; margin-left:4px; border:1px solid rgba(200,216,240,.7); border-radius:50%; color:#c8d8f0; font-size:8px; line-height:1; cursor:help; vertical-align:middle; }
   .help-tip::after { content:attr(data-tip); position:absolute; left:50%; top:calc(100% + 8px); transform:translateX(-50%); width:210px; padding:8px 9px; border-radius:5px; background:#0d1f3c; color:#fff; font-size:10px; line-height:1.35; letter-spacing:0; text-transform:none; white-space:normal; opacity:0; pointer-events:none; box-shadow:0 8px 22px rgba(13,31,60,.22); z-index:20; }
   .matrix-table.opportunity-table th:first-child .help-tip::after { left:0; transform:none; }
@@ -131,6 +132,15 @@
   .help-tip:hover::after, .help-tip:focus::after { opacity:1; }
   .customer-link { border:0; background:transparent; color:var(--text1); font:inherit; font-weight:600; cursor:pointer; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; text-align:left; padding:0; }
   .customer-link:hover { color:var(--blue); text-decoration:underline; }
+  .task-add { border:1px solid #7aaed5; background:#edf5ff; color:#0d3f78; border-radius:4px; width:24px; height:22px; cursor:pointer; font-weight:600; line-height:1; }
+  .task-add:hover { background:#dbeafe; }
+  .task-panel { min-height:120px; margin-top:8px; }
+  .task-list { display:grid; gap:7px; padding:10px 12px; max-height:220px; overflow:auto; }
+  .task-row { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:10px; padding:8px; border:1px solid var(--border); border-radius:5px; background:#fff; }
+  .task-main { min-width:0; }
+  .task-customer { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .task-meta { color:var(--text3); font-size:10px; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .task-done { border:1px solid #94c6a3; background:#e8f7ed; color:#16783a; border-radius:4px; padding:4px 8px; cursor:pointer; font:inherit; font-size:10px; }
   .modal-backdrop { position:fixed; inset:0; background:rgba(13,31,60,.46); display:none; align-items:center; justify-content:center; padding:16px; z-index:1000; }
   .modal-backdrop.open { display:flex; }
   .customer-modal { width:min(620px,100%); background:#fff; border-radius:6px; box-shadow:0 24px 70px rgba(13,31,60,.35); overflow:hidden; }
@@ -169,8 +179,10 @@
     .customer-kpi-grid { grid-template-columns:1fr; }
     .chart-wrap { height:260px; }
     .matrix-scroll { overflow-x:auto; }
-    .matrix-table.opportunity-table { min-width:920px; table-layout:auto; }
+    .matrix-table.opportunity-table { min-width:980px; table-layout:auto; }
     .summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .task-row { grid-template-columns:1fr auto; }
+    .task-row .badge { display:none; }
   }
 </style>
 <link rel="stylesheet" href="../dataforce-shell.css">
@@ -241,6 +253,11 @@
       </table>
     </div>
   </section>
+
+  <section class="panel task-panel">
+    <div class="panel-head"><div class="panel-title">Sales Task Manager</div><div class="panel-note" id="taskNote">Open follow-ups</div></div>
+    <div class="task-list" id="taskList"><div class="loading">Loading tasks...</div></div>
+  </section>
 </div>
 
 <div class="modal-backdrop" id="customerModal" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
@@ -263,6 +280,7 @@ let priorityChart = null;
 let riskChart = null;
 let requestSeq = 0;
 let activeRequest = null;
+let salesTasks = [];
 
 function user() {
   try { return JSON.parse(DataforceAuth.getItem("df_user") || "{}"); }
@@ -435,9 +453,9 @@ function showCustomerModal(index) {
   document.getElementById("customerModalTitle").textContent = row.customer || "Customer Summary";
   document.getElementById("customerModalBody").innerHTML = `
     <div class="summary-grid">
-      <div class="summary-item"><div class="metric-label">YTD Kilos</div><div class="metric-value">${num(summary.kilos)}</div></div>
       <div class="summary-item"><div class="metric-label">Bookings</div><div class="metric-value">${num(summary.bookings)}</div></div>
-      <div class="summary-item"><div class="metric-label">Revenue</div><div class="metric-value">${money(summary.revenue)}</div></div>
+      <div class="summary-item"><div class="metric-label">Tons</div><div class="metric-value">${num(summary.tons, 1)}</div></div>
+      <div class="summary-item"><div class="metric-label">Profit</div><div class="metric-value">${money(summary.profit)}</div></div>
       <div class="summary-item"><div class="metric-label">P/KG</div><div class="metric-value">${pkg(summary.profitPerKg)}</div></div>
     </div>
     <div class="panel-title" style="color:#0d1f3c;margin-bottom:8px;">Main Destinations</div>
@@ -455,6 +473,96 @@ function showCustomerModal(index) {
 
 function closeCustomerModal() {
   document.getElementById("customerModal").classList.remove("open");
+}
+
+function renderTasks() {
+  const list = document.getElementById("taskList");
+  const note = document.getElementById("taskNote");
+  note.textContent = `${num(salesTasks.length)} open follow-ups`;
+  list.innerHTML = salesTasks.length ? salesTasks.map(task => `
+    <div class="task-row">
+      <div class="task-main">
+        <div class="task-customer" title="${esc(task.customer)}">${esc(task.customer)}</div>
+        <div class="task-meta">${esc(task.notes || "Follow up")} · ${esc(task.business || "All businesses")}${task.gsa ? ` · ${esc(task.gsa)}` : ""}${task.origin ? ` · ${esc(task.origin)}` : ""}</div>
+      </div>
+      <span class="badge ${priorityKey(task.priority)}">${esc(task.priority || "TASK")}</span>
+      <button class="task-done" type="button" onclick="completeTask(${Number(task.id)})">Done</button>
+    </div>
+  `).join("") : '<div class="empty">No open sales tasks.</div>';
+}
+
+async function loadTasks() {
+  const u = user();
+  try {
+    const params = new URLSearchParams({ email:u.email || "", status:"open" });
+    const r = await fetch(`${API_BASE}/api/sales_performance/tasks?${params.toString()}`, { headers:{ "x-api-key":API_KEY } });
+    if (!r.ok) throw new Error(`Task API ${r.status}`);
+    const data = await r.json();
+    salesTasks = data.tasks || [];
+    renderTasks();
+  } catch (e) {
+    console.error("Failed to load Sales Performance tasks:", e);
+    document.getElementById("taskList").innerHTML = '<div class="empty">Could not load tasks.</div>';
+  }
+}
+
+function priorityKey(label) {
+  const value = String(label || "").toLowerCase();
+  if (value.includes("high")) return "red";
+  if (value.includes("medium")) return "orange";
+  if (value.includes("low")) return "yellow";
+  return "green";
+}
+
+async function addTask(index) {
+  const row = (currentData?.opportunityAnalysis?.rows || [])[index];
+  if (!row) return;
+  const u = user();
+  const payload = {
+    customer: row.customer,
+    priority: row.priorityLabel,
+    notes: `Follow up: ${row.reason || "Customer opportunity"}`,
+    business: currentData.selectedBusiness,
+    gsa: currentData.selectedGsa,
+    origin: currentData.selectedOrigin,
+    sales_person: currentData.selectedSalesPerson,
+    context: {
+      tonsRisk: row.tonsRisk,
+      dropPct: row.dropPct,
+      weeksSinceLast: row.weeksSinceLast,
+      lastShipment: row.lastShipment
+    }
+  };
+  try {
+    const params = new URLSearchParams({ email:u.email || "" });
+    const r = await fetch(`${API_BASE}/api/sales_performance/tasks?${params.toString()}`, {
+      method:"POST",
+      headers:{ "x-api-key":API_KEY, "Content-Type":"application/json" },
+      body:JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error(`Task API ${r.status}`);
+    await loadTasks();
+  } catch (e) {
+    console.error("Failed to add task:", e);
+    showError("Could not add task. Please try again.");
+  }
+}
+
+async function completeTask(id) {
+  const u = user();
+  try {
+    const params = new URLSearchParams({ email:u.email || "" });
+    const r = await fetch(`${API_BASE}/api/sales_performance/tasks/${id}?${params.toString()}`, {
+      method:"PATCH",
+      headers:{ "x-api-key":API_KEY, "Content-Type":"application/json" },
+      body:JSON.stringify({ status:"done" })
+    });
+    if (!r.ok) throw new Error(`Task API ${r.status}`);
+    await loadTasks();
+  } catch (e) {
+    console.error("Failed to complete task:", e);
+    showError("Could not update task. Please try again.");
+  }
 }
 
 function renderCustomerCards() {
@@ -537,6 +645,7 @@ function renderOpportunityTable() {
       <th>Last Shipment ${helpTip("Most recent flight date for this customer.")}</th>
       <th>Likely Reason ${helpTip("Rule-based explanation using drop percent and shipment gap.")}</th>
       <th>Potential ${helpTip("Commercial priority from the risk category.")}</th>
+      <th>Task</th>
     </tr>
   `;
   document.getElementById("opportunityBody").innerHTML = rows.length ? rows.map((row, index) => `
@@ -555,8 +664,9 @@ function renderOpportunityTable() {
       <td>${row.lastShipment ? formatDate(row.lastShipment) : "-"}</td>
       <td title="${esc(row.reason)}">${esc(row.reason)}</td>
       <td><span class="badge ${esc(row.priority)}">${esc(row.potential)}</span></td>
+      <td><button class="task-add" type="button" title="Add task" onclick="addTask(${index})">+</button></td>
     </tr>
-  `).join("") : '<tr><td colspan="10" class="empty">No customer health data.</td></tr>';
+  `).join("") : '<tr><td colspan="11" class="empty">No customer health data.</td></tr>';
 }
 
 function renderAll() {
@@ -605,6 +715,7 @@ async function loadReport() {
     if (seq !== requestSeq) return;
     currentData = data;
     renderAll();
+    loadTasks();
     showError((data.errors || []).join(" · "));
     setStatus("Ready", true);
   } catch (e) {
