@@ -98,6 +98,33 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 }
 .dtbl th.module-col, .dtbl th.summary-col, .dtbl th.status-col { text-align:center; }
 .dtbl th.actions-col { text-align:right; }
+.dtbl th.module-info-header { position:relative; cursor:help; outline:none; }
+.dtbl th.module-info-header::after {
+  content:attr(data-tip);
+  position:absolute;
+  left:50%;
+  top:calc(100% + 8px);
+  transform:translateX(-50%);
+  width:220px;
+  padding:8px 9px;
+  border-radius:5px;
+  background:#0d1f3c;
+  color:#fff;
+  font-size:10px;
+  line-height:1.35;
+  letter-spacing:0;
+  text-align:left;
+  text-transform:none;
+  white-space:normal;
+  opacity:0;
+  pointer-events:none;
+  box-shadow:0 8px 22px rgba(13,31,60,.22);
+  z-index:30;
+}
+.dtbl th.module-info-header:hover::after,
+.dtbl th.module-info-header:focus::after,
+.dtbl th.module-info-header.tooltip-open::after { opacity:1; }
+.dtbl th.module-info-header:nth-last-child(-n+6)::after { left:auto; right:0; transform:none; }
 .dtbl td {
   text-align:left; padding:6px 8px; color:var(--text1); font-size:9.5px; border-bottom:1px solid var(--border); white-space:nowrap;
 }
@@ -332,22 +359,22 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
           <tr>
             <th>Name</th>
             <th class="desktop-col">Email</th>
-            <th class="module-col desktop-col">BKD</th>
-            <th class="module-col desktop-col">FLWN</th>
-            <th class="module-col desktop-col">DASHB</th>
-            <th class="module-col desktop-col">MYBK</th>
-            <th class="module-col desktop-col">SALES</th>
-            <th class="module-col desktop-col">TASKS</th>
-            <th class="module-col desktop-col">BKDTL</th>
-            <th class="module-col desktop-col">SPOT</th>
-            <th class="module-col desktop-col">PEND</th>
-            <th class="module-col desktop-col">RATE</th>
-            <th class="module-col desktop-col">FIN</th>
-            <th class="module-col desktop-col">QUOTE</th>
-            <th class="module-col desktop-col">UP</th>
-            <th class="module-col desktop-col">VVI</th>
-            <th class="module-col desktop-col">CUST</th>
-            <th class="module-col desktop-col">ADMIN</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Booked Report: booked cargo KPIs and breakdowns using booking creation dates.">BKD</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Flown Report: flown cargo KPIs and breakdowns using flight dates.">FLWN</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Dashboard: executive cargo dashboard with YTD KPIs, trends, business mix, and detail drilldowns.">DASHB</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="My Bookings: scoped booking performance for the user's assigned sales person, businesses, and GSAs.">MYBK</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Sales Performance: customer and sales route map for follow-up, risk, YTD trends, and task creation.">SALES</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Sales Tasks: shared follow-up task list connected to Sales Performance customers.">TASKS</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Booking Details: searchable AWB-level booking detail and shipment drilldown.">BKDTL</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Spot Opportunities: potential spot cargo opportunities based on current booking data.">SPOT</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Pending Spots: pending spot opportunities and open items that need review.">PEND</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Check Rates: rate checking workflow for reviewing customer rates and marking reviewed items.">RATE</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Finance: finance module access for revenue and financial reporting views.">FIN</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Quote: quote module access for quoting workflows.">QUOTE</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Upload Data: upload cargo data files into DATAFORCE.">UP</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="VVI Charters: VVI charter KPIs, bookings, and customer matrix.">VVI</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Customers: customer master data management and import tools.">CUST</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Admin: user administration, access requests, permissions, and user scope management.">ADMIN</th>
             <th class="summary-col desktop-col">Biz</th>
             <th class="summary-col desktop-col">GSA</th>
             <th class="summary-col desktop-col">Sales Person</th>
@@ -540,6 +567,36 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       "x-api-key": API_KEY,
       "x-user-email": email
     };
+  }
+
+  function closeHeaderTips() {
+    document.querySelectorAll('.module-info-header.tooltip-open').forEach(header => {
+      header.classList.remove('tooltip-open');
+    });
+  }
+
+  function setupModuleHeaderTips() {
+    document.querySelectorAll('.module-info-header').forEach(header => {
+      header.addEventListener('click', event => {
+        event.stopPropagation();
+        const wasOpen = header.classList.contains('tooltip-open');
+        closeHeaderTips();
+        if (!wasOpen) header.classList.add('tooltip-open');
+      });
+
+      header.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          header.click();
+        }
+        if (event.key === 'Escape') {
+          closeHeaderTips();
+          header.blur();
+        }
+      });
+    });
+
+    document.addEventListener('click', closeHeaderTips);
   }
 
   function startAdminApp() {
@@ -1176,6 +1233,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       const { name, email } = JSON.parse(saved);
       currentUserEmail = email;
       document.getElementById('userName').textContent = name;
+      setupModuleHeaderTips();
       startAdminApp();
     } catch (e) {
       DataforceAuth.removeItem('df_user');
