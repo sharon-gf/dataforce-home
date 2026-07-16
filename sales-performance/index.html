@@ -135,6 +135,8 @@
   .task-add { border:1px solid #7aaed5; background:#edf5ff; color:#0d3f78; border-radius:4px; width:24px; height:22px; cursor:pointer; font-weight:600; line-height:1; }
   .task-add:hover { background:#dbeafe; }
   .task-panel { min-height:120px; margin-top:8px; }
+  .panel-action { border:1px solid #7aaed5; color:#c8d8f0; background:transparent; border-radius:4px; padding:5px 9px; text-decoration:none; font-size:10px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+  .panel-action:hover { background:#17345d; }
   .task-list { display:grid; gap:7px; padding:10px 12px; max-height:220px; overflow:auto; }
   .task-row { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:10px; padding:8px; border:1px solid var(--border); border-radius:5px; background:#fff; }
   .task-main { min-width:0; }
@@ -255,7 +257,13 @@
   </section>
 
   <section class="panel task-panel">
-    <div class="panel-head"><div class="panel-title">Sales Task Manager</div><div class="panel-note" id="taskNote">Open follow-ups</div></div>
+    <div class="panel-head">
+      <div class="panel-title">Sales Task Manager</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="panel-note" id="taskNote">Open follow-ups</div>
+        <a class="panel-action" href="../sales-tasks/">Open Admin</a>
+      </div>
+    </div>
     <div class="task-list" id="taskList"><div class="loading">Loading tasks...</div></div>
   </section>
 </div>
@@ -550,7 +558,10 @@ async function addTask(index) {
 
 async function completeTask(id) {
   const u = user();
+  const previousTasks = salesTasks.slice();
   try {
+    salesTasks = salesTasks.filter(task => Number(task.id) !== Number(id));
+    renderTasks();
     const params = new URLSearchParams({ email:u.email || "" });
     const r = await fetch(`${API_BASE}/api/sales_performance/tasks/${id}?${params.toString()}`, {
       method:"PATCH",
@@ -561,6 +572,8 @@ async function completeTask(id) {
     await loadTasks();
   } catch (e) {
     console.error("Failed to complete task:", e);
+    salesTasks = previousTasks;
+    renderTasks();
     showError("Could not update task. Please try again.");
   }
 }
