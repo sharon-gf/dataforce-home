@@ -75,7 +75,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 .page-desc { color:var(--text3); font-size:9px; font-weight:300; margin:0; }
 
 /* ── CONTROLS ── */
-.controls-row { display:grid; grid-template-columns:minmax(220px,1fr) minmax(150px,auto) auto; gap:8px; margin-bottom:8px; align-items:center; }
+.controls-row { display:grid; grid-template-columns:minmax(220px,1fr) minmax(140px,auto) minmax(150px,auto) auto; gap:8px; margin-bottom:8px; align-items:center; }
 .search-box { min-width:0; }
 .search-box input { width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px; font-size:10px; background:var(--surface); }
 .search-box input:focus { outline:none; border-color:var(--blue); }
@@ -108,6 +108,17 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 .dtbl tbody tr:hover td { background:#e8edf7 !important; }
 .dtbl tbody tr.user-row { cursor:pointer; }
 .dtbl tbody tr.user-row:focus-visible { outline:2px solid var(--blue); outline-offset:-2px; }
+.dtbl tbody tr.type-row td {
+  background:#fff !important;
+  border-top:2px solid var(--border);
+  border-bottom:1px solid #b7c4d8;
+  color:var(--navy);
+  font-size:13px;
+  font-weight:500;
+  padding:8px 12px 6px 16px;
+  text-transform:none;
+}
+.dtbl tbody tr.type-row:first-child td { border-top:0; }
 .name-cell strong { display:block; overflow:hidden; text-overflow:ellipsis; }
 .status-col { width:96px; }
 .actions-col, .actions-cell { width:128px; }
@@ -265,6 +276,9 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="Search by name…" onkeyup="filterTable()" />
       </div>
+      <select id="typeFilter" class="filter-select" onchange="filterTable()">
+        <option value="">All types</option>
+      </select>
       <select id="moduleFilter" class="filter-select" onchange="filterTable()">
         <option value="">All modules</option>
         <option value="booked">Booked</option>
@@ -362,6 +376,12 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     <div class="form-group">
       <label>Email</label>
       <input type="email" id="formEmail" />
+    </div>
+
+    <div class="form-group">
+      <label>Type</label>
+      <input type="text" id="formType" list="typeOptions" placeholder="Sales, Manager, Operations…" />
+      <datalist id="typeOptions"></datalist>
     </div>
 
     <div class="form-group">
@@ -511,6 +531,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     { key: 'admin', label: 'ADMIN' }
   ];
 
+  const DEFAULT_USER_TYPES = ['Business Manager', 'Operations', 'Sales', 'Manager', 'C-Level'];
+
   function adminHeaders() {
     const user = getDataforceUser();
     const email = currentUserEmail || (user && user.email) || '';
@@ -550,6 +572,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       if (!r.ok) throw new Error(`API error: ${r.status}`);
       const data = await r.json();
       allUsers = data.users || [];
+      populateTypeControls();
       renderTable();
       updateStats();
       populateBusinessCheckboxes();
@@ -711,6 +734,50 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     return Array.isArray(value) ? value : [];
   }
 
+  function userType(user) {
+    return String(user?.type || user?.user_type || '').trim() || 'Unassigned';
+  }
+
+  function typeKey(type) {
+    return String(type || 'Unassigned').trim().toLowerCase();
+  }
+
+  function availableTypes() {
+    const seen = new Set();
+    return [...DEFAULT_USER_TYPES, ...allUsers.map(userType)]
+      .map(type => String(type || '').trim())
+      .filter(Boolean)
+      .filter(type => {
+        const key = typeKey(type);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }
+
+  function populateTypeControls() {
+    const selectedType = document.getElementById('typeFilter').value;
+    const filter = document.getElementById('typeFilter');
+    const datalist = document.getElementById('typeOptions');
+    const types = availableTypes();
+
+    filter.innerHTML = '<option value="">All types</option>';
+    datalist.innerHTML = '';
+
+    types.forEach(type => {
+      const filterOption = document.createElement('option');
+      filterOption.value = type;
+      filterOption.textContent = type;
+      filter.appendChild(filterOption);
+
+      const dataOption = document.createElement('option');
+      dataOption.value = type;
+      datalist.appendChild(dataOption);
+    });
+
+    filter.value = types.includes(selectedType) ? selectedType : '';
+  }
+
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({
       '&': '&amp;',
@@ -770,66 +837,91 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       return;
     }
 
-    allUsers.forEach(user => {
-      const row = document.createElement('tr');
-      const modules = asList(user.modules);
-      const moduleCells = MODULE_COLUMNS.map(module =>
-        moduleCellHtml(user, module, modules)
-      ).join('');
-      const bizSummary = formatBizSummary(user.allowed_businesses);
-      const gsaSummary = formatGsaSummary(user.allowed_gsas);
-      const salesPerson = formatSalesPerson(user.sales_person);
-      const status = user.status || 'active';
-      const statusLabel = status === 'inactive' ? 'Inactive' : 'Active';
-      const displayName = user.name || '—';
-      const email = user.email || '';
-      row.className = 'user-row';
-      row.tabIndex = 0;
-      row.setAttribute('role', 'button');
-      row.setAttribute('aria-label', `Open details for ${displayName !== '—' ? displayName : email || 'user'}`);
-      row.dataset.modules = modules.join(' ').toLowerCase();
-      row.dataset.search = `${displayName} ${email}`.toLowerCase();
+    const groupedUsers = new Map();
+    allUsers
+      .slice()
+      .sort((a, b) => {
+        const typeCompare = userType(a).localeCompare(userType(b), undefined, { sensitivity: 'base' });
+        if (typeCompare) return typeCompare;
+        return String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), undefined, { sensitivity: 'base' });
+      })
+      .forEach(user => {
+        const type = userType(user);
+        if (!groupedUsers.has(type)) groupedUsers.set(type, []);
+        groupedUsers.get(type).push(user);
+      });
 
-      row.addEventListener('click', () => editUser(user.id));
-      row.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
+    const columnCount = document.querySelectorAll('.dtbl thead th').length || 23;
+    groupedUsers.forEach((users, type) => {
+      const typeRow = document.createElement('tr');
+      typeRow.className = 'type-row';
+      typeRow.dataset.type = typeKey(type);
+      typeRow.innerHTML = `<td colspan="${columnCount}">${escapeHtml(type)}</td>`;
+      tbody.appendChild(typeRow);
+
+      users.forEach(user => {
+        const row = document.createElement('tr');
+        const modules = asList(user.modules);
+        const moduleCells = MODULE_COLUMNS.map(module =>
+          moduleCellHtml(user, module, modules)
+        ).join('');
+        const bizSummary = formatBizSummary(user.allowed_businesses);
+        const gsaSummary = formatGsaSummary(user.allowed_gsas);
+        const salesPerson = formatSalesPerson(user.sales_person);
+        const status = user.status || 'active';
+        const statusLabel = status === 'inactive' ? 'Inactive' : 'Active';
+        const displayName = user.name || '—';
+        const email = user.email || '';
+        row.className = 'user-row';
+        row.tabIndex = 0;
+        row.setAttribute('role', 'button');
+        row.setAttribute('aria-label', `Open details for ${displayName !== '—' ? displayName : email || 'user'}`);
+        row.dataset.modules = modules.join(' ').toLowerCase();
+        row.dataset.type = typeKey(type);
+        row.dataset.search = `${displayName} ${email} ${type}`.toLowerCase();
+
+        row.addEventListener('click', () => editUser(user.id));
+        row.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            editUser(user.id);
+          }
+        });
+
+        row.innerHTML = `
+          <td class="name-cell"><strong>${escapeHtml(displayName)}</strong></td>
+          <td class="desktop-col">${escapeHtml(email)}</td>
+          ${moduleCells}
+          <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(bizSummary)}</span></td>
+          <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(gsaSummary)}</span></td>
+          <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(salesPerson)}</span></td>
+          <td class="status-cell"><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${statusLabel}</span></td>
+          <td class="actions-cell">
+            <button type="button" class="btn-edit">Edit</button>
+            <button type="button" class="btn-delete">Del</button>
+          </td>
+        `;
+        row.querySelector('.btn-edit').addEventListener('click', event => {
+          event.stopPropagation();
           editUser(user.id);
-        }
+        });
+        row.querySelector('.btn-delete').addEventListener('click', event => {
+          event.stopPropagation();
+          deleteUser(user.id);
+        });
+        row.querySelectorAll('.module-toggle').forEach(input => {
+          input.addEventListener('click', event => event.stopPropagation());
+          input.addEventListener('keydown', event => event.stopPropagation());
+          input.addEventListener('change', event => updateUserModuleAccess(event.currentTarget));
+        });
+        tbody.appendChild(row);
       });
-
-      row.innerHTML = `
-        <td class="name-cell"><strong>${escapeHtml(displayName)}</strong></td>
-        <td class="desktop-col">${escapeHtml(email)}</td>
-        ${moduleCells}
-        <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(bizSummary)}</span></td>
-        <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(gsaSummary)}</span></td>
-        <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(salesPerson)}</span></td>
-        <td class="status-cell"><span class="status-badge ${status === 'active' ? 'status-active' : 'status-inactive'}">${statusLabel}</span></td>
-        <td class="actions-cell">
-          <button type="button" class="btn-edit">Edit</button>
-          <button type="button" class="btn-delete">Del</button>
-        </td>
-      `;
-      row.querySelector('.btn-edit').addEventListener('click', event => {
-        event.stopPropagation();
-        editUser(user.id);
-      });
-      row.querySelector('.btn-delete').addEventListener('click', event => {
-        event.stopPropagation();
-        deleteUser(user.id);
-      });
-      row.querySelectorAll('.module-toggle').forEach(input => {
-        input.addEventListener('click', event => event.stopPropagation());
-        input.addEventListener('keydown', event => event.stopPropagation());
-        input.addEventListener('change', event => updateUserModuleAccess(event.currentTarget));
-      });
-      tbody.appendChild(row);
     });
 
     document.getElementById('loadingSpinner').style.display = 'none';
     document.getElementById('tableContainer').style.display = 'block';
     document.getElementById('emptyState').style.display = 'none';
+    filterTable();
   }
 
   async function updateUserModuleAccess(input) {
@@ -884,17 +976,35 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 
   function filterTable() {
     const search = document.getElementById('searchInput').value.toLowerCase();
+    const rawTypeFilter = document.getElementById('typeFilter').value;
+    const selectedType = rawTypeFilter ? typeKey(rawTypeFilter) : '';
     const module = document.getElementById('moduleFilter').value;
 
-    const rows = document.querySelectorAll('#tableBody tr');
+    const rows = Array.from(document.querySelectorAll('#tableBody tr'));
     rows.forEach(row => {
+      if (row.classList.contains('type-row')) return;
       const searchText = row.dataset.search || '';
       const modules = row.dataset.modules || '';
+      const rowType = row.dataset.type || '';
 
       const matchesSearch = searchText.includes(search);
+      const matchesType = !selectedType || rowType === selectedType;
       const matchesModule = !module || modules.includes(module);
 
-      row.style.display = matchesSearch && matchesModule ? '' : 'none';
+      row.style.display = matchesSearch && matchesType && matchesModule ? '' : 'none';
+    });
+
+    rows.forEach((row, index) => {
+      if (!row.classList.contains('type-row')) return;
+      let hasVisibleUser = false;
+      for (let i = index + 1; i < rows.length; i += 1) {
+        if (rows[i].classList.contains('type-row')) break;
+        if (rows[i].style.display !== 'none') {
+          hasVisibleUser = true;
+          break;
+        }
+      }
+      row.style.display = hasVisibleUser ? '' : 'none';
     });
   }
 
@@ -904,6 +1014,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     document.getElementById('modalTitle').textContent = 'Create new user';
     document.getElementById('formName').value = '';
     document.getElementById('formEmail').value = '';
+    document.getElementById('formType').value = '';
     document.getElementById('formSalesPerson').value = '';
     document.getElementById('formStatus').value = 'active';
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -930,6 +1041,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     document.getElementById('modalTitle').textContent = 'Edit user';
     document.getElementById('formName').value = user.name || '';
     document.getElementById('formEmail').value = user.email || '';
+    document.getElementById('formType').value = userType(user) === 'Unassigned' ? '' : userType(user);
     document.getElementById('formSalesPerson').value = user.sales_person || '';
     document.getElementById('formStatus').value = user.status || 'active';
 
@@ -961,6 +1073,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   async function saveUser() {
     const name = document.getElementById('formName').value.trim();
     const email = document.getElementById('formEmail').value.trim();
+    const type = document.getElementById('formType').value.trim();
     const modules = Array.from(document.querySelectorAll('#modulesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     const businesses = Array.from(document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     const salesPerson = document.getElementById('formSalesPerson').value || null;
@@ -991,8 +1104,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       const isNew = !currentEditingUser;
       const method = isNew ? 'POST' : 'PUT';
       const url = isNew 
-        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}`
-        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}`;
+        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}`
+        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}`;
 
       const r = await fetch(url, {
         method,
