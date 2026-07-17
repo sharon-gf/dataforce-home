@@ -32,6 +32,19 @@
   .conn-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #888; margin-right: 4px; }
   .conn-dot.live { background: #22c55e; }
   .conn-label { color: #7aaed5; font-size: 9px; }
+  .week-toggle { display:flex; justify-content:center; gap:6px; margin-top:6px; }
+  .week-toggle button {
+    background:transparent;
+    border:1px solid #31547f;
+    color:#7aaed5;
+    border-radius:4px;
+    padding:4px 12px;
+    font-size:10px;
+    font-weight:500;
+    letter-spacing:.04em;
+    cursor:pointer;
+  }
+  .week-toggle button.active { background:#1a56db; border-color:#4a85ff; color:#fff; box-shadow:0 0 0 1px rgba(122,174,213,.25); }
 
   /* GRID */
   .grid {
@@ -191,7 +204,7 @@
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
-<script>window.DATAFORCE_SHELL = {"title":"Booked Report","meta":["#weekLabel","#datesLabel"],"statusText":"Connecting..."
+<script>window.DATAFORCE_SHELL = {"title":"Booked Report","controls":[".week-toggle"],"meta":["#weekLabel","#datesLabel"],"statusText":"Connecting..."
                                  };</script>
 <script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
@@ -207,6 +220,10 @@
     <div class="hdr-mid-section" style="text-align:center;">
       <div class="hdr-title-1" style="color:#7aaed5;font-size:16px;font-weight:500;letter-spacing:1px;margin-bottom:2px;">GSA FORCE SUMMARY</div>
       <div class="hdr-title-2" style="color:#7aaed5;font-size:13px;font-weight:300;letter-spacing:2px;margin-bottom:5px;">BOOKED REPORT</div>
+      <div class="week-toggle" aria-label="Booked date range">
+        <button id="btn-this-week" type="button" class="active" onclick="setWeekMode('current')">THIS WEEK</button>
+        <button id="btn-last-week" type="button" onclick="setWeekMode('last')">LAST WEEK</button>
+      </div>
 
     </div>
     <div class="hdr-right">
@@ -225,10 +242,12 @@
 
 function getUserEmail() {
   try {
-    const saved = DataforceAuth.getItem('df_user');
+    const saved = window.DataforceAuth
+      ? DataforceAuth.getItem('df_user')
+      : (localStorage.getItem('df_user') || sessionStorage.getItem('df_user'));
     if (saved) {
       const user = JSON.parse(saved);
-      console.log('Got email from sessionStorage:', user.email);
+      console.log('Got email:', user.email);
       return user.email || '';
     }
   } catch(e) {
@@ -289,7 +308,9 @@ let ACTIVE_BIZ_CONFIG = BIZ_CONFIG;
 
 function readStoredPermissions() {
   try {
-    const saved = DataforceAuth.getItem('df_permissions');
+    const saved = window.DataforceAuth
+      ? DataforceAuth.getItem('df_permissions')
+      : (localStorage.getItem('df_permissions') || sessionStorage.getItem('df_permissions'));
     return saved ? JSON.parse(saved) : null;
   } catch(e) {
     return null;
@@ -313,36 +334,66 @@ function configureBusinessCards() {
 }
 
 // Week header calculation — CURRENT week (Mon → Sun) for booked view
-(function(){
+let WEEK_MODE = 'current';
+
+function weekBounds(mode = WEEK_MODE) {
   const now = new Date();
   const dow = now.getDay(); // 0=Sun, 1=Mon, ... 6=Sat
   // Days back to this week's Monday: Sun=6, Mon=0, Tue=1 ... Sat=5
   const dBack = dow === 0 ? 6 : dow - 1;
   const thisMonday = new Date(now); thisMonday.setHours(0,0,0,0); thisMonday.setDate(now.getDate()-dBack);
-  const thisSunday = new Date(thisMonday); thisSunday.setDate(thisMonday.getDate()+6);
+  const monday = new Date(thisMonday);
+  if (mode === 'last') monday.setDate(monday.getDate() - 7);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
   // ISO week via Thursday
-  const thursday = new Date(thisMonday); thursday.setDate(thisMonday.getDate()+3);
+  const thursday = new Date(monday); thursday.setDate(monday.getDate()+3);
   const jan1 = new Date(thursday.getFullYear(),0,1);
   const wk = Math.ceil((((thursday-jan1)/86400000)+1)/7);
+  return { monday, sunday, week: wk, year: thursday.getFullYear() };
+}
+
+function updateWeekHeader() {
+  const { monday, sunday, week, year } = weekBounds();
   const f = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  document.getElementById('weekLabel').textContent = `WEEK ${wk} / ${thursday.getFullYear()}`;
-  document.getElementById('datesLabel').textContent = `${f(thisMonday)} – ${f(thisSunday)}`;
-})();
+  document.getElementById('weekLabel').textContent = `WEEK ${week} / ${year}`;
+  document.getElementById('datesLabel').textContent = `${f(monday)} – ${f(sunday)}`;
+}
+
+function setWeekMode(mode) {
+  WEEK_MODE = mode === 'last' ? 'last' : 'current';
+  document.getElementById('btn-this-week')?.classList.toggle('active', WEEK_MODE === 'current');
+  document.getElementById('btn-last-week')?.classList.toggle('active', WEEK_MODE === 'last');
+  updateWeekHeader();
+  window._allData = null;
+  document.getElementById('grid').innerHTML = `<div class="loading" style="grid-column:1/-1;">Loading data...</div>`;
+  loadSummary();
+}
+
+updateWeekHeader();
 
 let MODE = 'lw'; // 'lw' or 'ytd'
 
 function setMode(mode) {
   MODE = mode;
-  document.getElementById('btn-lw').style.background  = mode === 'lw'  ? '#1a3360' : 'transparent';
-  document.getElementById('btn-lw').style.color        = mode === 'lw'  ? '#fff'    : '#7aaed5';
-  document.getElementById('btn-ytd').style.background  = mode === 'ytd' ? '#1a3360' : 'transparent';
-  document.getElementById('btn-ytd').style.color        = mode === 'ytd' ? '#fff'    : '#7aaed5';
-  document.getElementById('btn-q1').style.background   = mode === 'q1'  ? '#1a3360' : 'transparent';
-  document.getElementById('btn-q1').style.color         = mode === 'q1'  ? '#fff'    : '#7aaed5';
+  const btnLw = document.getElementById('btn-lw');
+  const btnYtd = document.getElementById('btn-ytd');
+  const btnQ1 = document.getElementById('btn-q1');
+  if (btnLw) {
+    btnLw.style.background  = mode === 'lw'  ? '#1a3360' : 'transparent';
+    btnLw.style.color       = mode === 'lw'  ? '#fff'    : '#7aaed5';
+  }
+  if (btnYtd) {
+    btnYtd.style.background = mode === 'ytd' ? '#1a3360' : 'transparent';
+    btnYtd.style.color      = mode === 'ytd' ? '#fff'    : '#7aaed5';
+  }
+  if (btnQ1) {
+    btnQ1.style.background  = mode === 'q1'  ? '#1a3360' : 'transparent';
+    btnQ1.style.color       = mode === 'q1'  ? '#fff'    : '#7aaed5';
+  }
   // Re-render allowed cards with stored data
   if (window._allData) {
     const grid = document.getElementById('grid');
-    grid.innerHTML = ACTIVE_BIZ_CONFIG.map((cfg, i) => buildCard(cfg, window._allData[i])).join('');
+    grid.innerHTML = renderReportCards(ACTIVE_BIZ_CONFIG, window._allData);
   }
 }
 
@@ -420,6 +471,34 @@ function buildCard(cfg, data) {
   </div>`;
 }
 
+function buildFallbackCard(cfg, message) {
+  return `
+  <div class="card nodata" id="card-${cfg.key}">
+    <div class="card-hdr">
+      <div class="biz-name">${cfg.name}</div>
+      ${cfg.logo ? `<img class="biz-logo" src="${cfg.logo}" alt="${cfg.name}">` : ''}
+    </div>
+    <div class="loading" style="color:#64748b;padding:24px 12px;">${message || 'No data returned'}</div>
+  </div>`;
+}
+
+function renderReportCards(configs, dataRows) {
+  const cards = configs.map((cfg, i) => {
+    const data = dataRows[i];
+    if (!data) return buildFallbackCard(cfg, 'Unable to load');
+    try {
+      return buildCard(cfg, data);
+    } catch(e) {
+      console.error('Card render failed:', cfg.key, e);
+      return buildFallbackCard(cfg, 'Render error');
+    }
+  }).join('');
+
+  return cards.trim()
+    ? cards
+    : `<div class="loading" style="grid-column:1/-1;color:#b91c1c;">Booked report returned data, but no cards were rendered.</div>`;
+}
+
 async function loadSummary() {
   const grid = document.getElementById('grid');
   const connDot = document.getElementById('connDot');
@@ -448,7 +527,7 @@ async function loadSummary() {
     const results = await Promise.all(
       configs.map(async cfg => {
         try {
-          const r = await fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=current&email=${encodeURIComponent(userEmail)}&module=booked`, {headers:{"x-api-key":API_KEY}});
+          const r = await fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=${WEEK_MODE}&email=${encodeURIComponent(userEmail)}&module=booked`, {headers:{"x-api-key":API_KEY}});
           if (!r.ok) return { data: null, error: `${cfg.key}: HTTP ${r.status}` };
           return { data: await r.json(), error: null };
         } catch(e) {
@@ -477,11 +556,15 @@ async function loadSummary() {
     
     // If we got here, user has access - show data
     window._allData = dataRows;
-    grid.innerHTML = configs
-      .map((cfg, i) => dataRows[i] ? buildCard(cfg, dataRows[i]) : `<div class="card nodata"><div class="card-hdr"><div class="biz-name">${cfg.name}</div></div><div class="loading" style="color:#b91c1c;">Unable to load</div></div>`)
-      .join('');
+    grid.innerHTML = renderReportCards(configs, dataRows);
+    if (!grid.querySelector('.card')) {
+      connDot.classList.remove('live');
+      connLabel.textContent = 'Connection failed';
+      return;
+    }
+
     connDot.classList.add('live');
-    connLabel.textContent = 'Live · MySQL';
+    connLabel.textContent = `Live · MySQL (${successfulRows}/${configs.length})`;
   } catch(e) {
     console.error('Error loading data:', e);
     connDot.classList.remove('live');
@@ -548,7 +631,7 @@ async function showAwbDetail(groupCol, groupVal, label, rowElement) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=Bkg_CreaDate&week_mode=current&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=booked`;
+    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=Bkg_CreaDate&week_mode=${WEEK_MODE}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=booked`;
     console.log('=== AWB Detail Request ===');
     console.log('biz:', biz);
     console.log('groupCol:', groupCol);
