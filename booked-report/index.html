@@ -193,6 +193,7 @@
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script>window.DATAFORCE_SHELL = {"title":"Booked Report","meta":["#weekLabel","#datesLabel"],"statusText":"Connecting..."
                                  };</script>
+<script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -224,7 +225,7 @@
 
 function getUserEmail() {
   try {
-    const saved = sessionStorage.getItem('df_user');
+    const saved = DataforceAuth.getItem('df_user');
     if (saved) {
       const user = JSON.parse(saved);
       console.log('Got email from sessionStorage:', user.email);
@@ -288,7 +289,7 @@ let ACTIVE_BIZ_CONFIG = BIZ_CONFIG;
 
 function readStoredPermissions() {
   try {
-    const saved = sessionStorage.getItem('df_permissions');
+    const saved = DataforceAuth.getItem('df_permissions');
     return saved ? JSON.parse(saved) : null;
   } catch(e) {
     return null;
@@ -421,11 +422,22 @@ function buildCard(cfg, data) {
 
 async function loadSummary() {
   const grid = document.getElementById('grid');
+  const connDot = document.getElementById('connDot');
+  const connLabel = document.getElementById('connLabel');
   const userEmail = getUserEmail();
   console.log('User email:', userEmail);
   
   try {
+    if (!userEmail) {
+      connDot.classList.remove('live');
+      connLabel.textContent = 'Connection failed';
+      grid.innerHTML = `<div class="loading" style="grid-column:1/-1;color:#b91c1c;">Could not load your user session. Please sign out and sign back in.</div>`;
+      return;
+    }
+
     if (!configureBusinessCards()) {
+      connDot.classList.remove('live');
+      connLabel.textContent = 'No access';
       grid.innerHTML = `<div class="loading" style="grid-column:1/-1;color:#64748b;">No businesses assigned to your user.</div>`;
       return;
     }
@@ -434,28 +446,46 @@ async function loadSummary() {
 
     // Load allowed businesses in parallel
     const results = await Promise.all(
-      configs.map(cfg =>
-        fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=current&email=${encodeURIComponent(userEmail)}`, {headers:{"x-api-key":API_KEY}})
-          .then(r => r.ok ? r.json() : null)
-          .catch(() => null)
-      )
+      configs.map(async cfg => {
+        try {
+          const r = await fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=current&email=${encodeURIComponent(userEmail)}&module=booked`, {headers:{"x-api-key":API_KEY}});
+          if (!r.ok) return { data: null, error: `${cfg.key}: HTTP ${r.status}` };
+          return { data: await r.json(), error: null };
+        } catch(e) {
+          return { data: null, error: `${cfg.key}: ${e?.message || 'request failed'}` };
+        }
+      })
     );
     
     // Check if user has access - validate AFTER getting response
-    if (results[0] && results[0].allowed === false) {
+    if (results[0]?.data && results[0].data.allowed === false) {
+      connDot.classList.remove('live');
+      connLabel.textContent = 'Access denied';
       grid.innerHTML = `<div class="loading" style="grid-column:1/-1;color:#b91c1c;font-size:14px;padding:20px;text-align:center;">❌ Access Denied<br><small>You do not have permission to view this module.</small></div>`;
+      return;
+    }
+
+    const dataRows = results.map(result => result.data);
+    const successfulRows = dataRows.filter(Boolean).length;
+    if (!successfulRows) {
+      const firstError = results.find(result => result.error)?.error || 'No report data returned.';
+      connDot.classList.remove('live');
+      connLabel.textContent = 'Connection failed';
+      grid.innerHTML = `<div class="loading" style="grid-column:1/-1;color:#b91c1c;">Could not load booked report data.<br><small>${firstError}</small></div>`;
       return;
     }
     
     // If we got here, user has access - show data
-    window._allData = results;
+    window._allData = dataRows;
     grid.innerHTML = configs
-      .map((cfg, i) => results[i] ? buildCard(cfg, results[i]) : '')
+      .map((cfg, i) => dataRows[i] ? buildCard(cfg, dataRows[i]) : `<div class="card nodata"><div class="card-hdr"><div class="biz-name">${cfg.name}</div></div><div class="loading" style="color:#b91c1c;">Unable to load</div></div>`)
       .join('');
-    document.getElementById('connDot').classList.add('live');
-    document.getElementById('connLabel').textContent = 'Live · MySQL';
+    connDot.classList.add('live');
+    connLabel.textContent = 'Live · MySQL';
   } catch(e) {
     console.error('Error loading data:', e);
+    connDot.classList.remove('live');
+    connLabel.textContent = 'Connection failed';
     grid.innerHTML = `<div class="loading" style="grid-column:1/-1;color:#b91c1c;">❌ Error loading data. Please refresh.</div>`;
   }
 }
