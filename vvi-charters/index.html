@@ -240,6 +240,7 @@ main { padding:8px 12px 24px; display:flex; flex-direction:column; gap:8px; }
 
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script>window.DATAFORCE_SHELL = {"title":"VVI Charters","meta":[".next-flight-label","#nextFlightDate"],"statusText":"Ready"};</script>
+<script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -398,7 +399,7 @@ const API = "https://dataforce-api-production.up.railway.app";
 
 function getUserEmail() {
   try {
-    const saved = sessionStorage.getItem('df_user');
+    const saved = DataforceAuth.getItem('df_user');
     if (saved) {
       const user = JSON.parse(saved);
       return user.email || '';
@@ -439,6 +440,9 @@ const fmtMatrixKg = v => {
   return value ? value.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) : '—';
 };
 function esc(s){ if(!s)return'—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function vviUrl(flightISO, userEmail) {
+  return `${API}/api/vvi_charters?flight_date=${flightISO}&email=${encodeURIComponent(userEmail)}&_=${Date.now()}`;
+}
 
 // ─── CHART INSTANCES ─────────────────────────────────────────────────────────
 let chartTonsInst=null, chartRevInst=null;
@@ -452,7 +456,7 @@ async function downloadAWBs() {
   
   try {
     // Fetch fresh AWB data from API
-    const res = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}&email=${encodeURIComponent(userEmail)}`);
+    const res = await fetch(vviUrl(flightISO, userEmail), { cache: 'no-store' });
     
     if (!res.ok) {
       alert('Error fetching AWB data');
@@ -512,7 +516,7 @@ async function load() {
   document.getElementById('downloadAwbBtn').addEventListener('click', downloadAWBs);
 
   try {
-    const res  = await fetch(`${API}/api/vvi_charters?flight_date=${flightISO}&email=${encodeURIComponent(userEmail)}`);
+    const res  = await fetch(vviUrl(flightISO, userEmail), { cache: 'no-store' });
     const data = await res.json();
     currentAwbs = data.awbs || [];
     renderKPIs(data.kpis);
