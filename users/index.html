@@ -272,7 +272,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     grid-template-columns:minmax(88px,1.05fr) minmax(126px,1.35fr) 64px 92px;
     width:100%;
   }
-  .dtbl th, .dtbl td { padding:9px 8px; font-size:10px; min-width:0; }
+  .dtbl th, .dtbl td { padding:6px 8px; font-size:9.5px; min-width:0; }
   .dtbl th.desktop-col, .dtbl td.desktop-col { display:none !important; }
   .dtbl th.module-col, .dtbl td.module-cell,
   .dtbl th.summary-col, .dtbl td.summary-cell { display:none !important; }
@@ -296,13 +296,13 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   .dtbl tbody tr.type-row td {
     display:block;
     width:100%;
-    padding:10px 14px;
+    padding:8px 12px 6px 16px;
     font-size:13px;
     background:#fff !important;
   }
-  .status-badge { padding:4px 6px; font-size:8px; }
+  .status-badge { padding:3px 6px; font-size:8px; }
   .actions-cell { display:flex; justify-content:flex-end; gap:4px; }
-  .btn-edit, .btn-delete { min-width:40px; padding:6px 5px; font-size:8px; }
+  .btn-edit, .btn-delete { min-width:40px; padding:4px 6px; font-size:8px; }
 }
 
 @media (max-width:360px) {
@@ -312,8 +312,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   .dtbl tbody tr.user-row {
     grid-template-columns:minmax(76px,1fr) minmax(102px,1.25fr) 58px 80px;
   }
-  .dtbl th, .dtbl td { padding:8px 6px; }
-  .btn-edit, .btn-delete { min-width:36px; padding:5px 3px; }
+  .dtbl th, .dtbl td { padding:6px 6px; }
+  .btn-edit, .btn-delete { min-width:36px; padding:4px 4px; }
 }
 </style>
 </head>
