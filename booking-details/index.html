@@ -240,7 +240,7 @@
   th.sortable.sort-asc::after { content:"▲"; }
   th.sortable.sort-desc::after { content:"▼"; }
   td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:center; color:var(--text1); font-size:11px; white-space:nowrap; }
-  .booking-table { width:100%; margin:0 auto; }
+  .booking-table { width:100%; min-width:1080px; margin:0 auto; }
   tbody tr:nth-child(even) td { background:#f0f2f6; }
   tbody tr { cursor:pointer; }
   tbody tr:hover td, tbody tr.active td { background:#e4ecfb !important; }
@@ -362,6 +362,7 @@
 
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script>window.DATAFORCE_SHELL = {"title":"Booking Details","meta":[".range"],"userNameId":"userLabel"};</script>
+<script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -463,6 +464,7 @@
               <th class="sortable" data-sort="booked_date">Booked</th>
               <th class="sortable" data-sort="awb">AWB</th>
               <th class="sortable" data-sort="business">Business</th>
+              <th class="sortable" data-sort="sales_person">Sales Person</th>
               <th class="sortable" data-sort="customer">Customer</th>
               <th class="sortable" data-sort="ori">Ori</th>
               <th class="sortable" data-sort="des">Des</th>
@@ -542,8 +544,8 @@ function user() {
 }
 
 function signOut() {
-  sessionStorage.removeItem("df_user");
-  sessionStorage.removeItem("df_permissions");
+  DataforceAuth.removeItem("df_user");
+  DataforceAuth.removeItem("df_permissions");
   window.location.href = "https://dataforce.gsaforce.com/";
 }
 
@@ -869,7 +871,7 @@ function renderTable() {
   els.resultNote.textContent = `${fmt(totals.bookings)} bookings | ${fmt(totals.chw)} kg | $${fullMoney(totals.rev)} rev | ${pkg(totals.pkg)} p/kg`;
   updateSortHeaders();
   if (!bookingRows.length) {
-    els.body.innerHTML = '<tr><td colspan="11" class="empty">No bookings match this filter.</td></tr>';
+    els.body.innerHTML = '<tr><td colspan="12" class="empty">No bookings match this filter.</td></tr>';
     return;
   }
   const displayRows = sortedBookingRows();
@@ -878,6 +880,7 @@ function renderTable() {
       <td>${dateLabel(row.booked_date)}</td>
       <td class="awb">${esc(formatAwb(row.awb_no || row.awb, row.pfx))}</td>
       <td>${esc(row.business)}</td>
+      <td>${esc(row.sales_person || "Unknown")}</td>
       <td class="customer" title="${esc(row.customer)}">${esc(row.customer)}</td>
       <td>${esc(row.ori)}</td>
       <td>${esc(row.des)}</td>
@@ -904,7 +907,7 @@ async function loadBookings() {
   const u = user();
   const seq = ++requestSeq;
   setStatus("Loading", false);
-  els.body.innerHTML = '<tr><td colspan="11" class="empty">Loading bookings...</td></tr>';
+  els.body.innerHTML = '<tr><td colspan="12" class="empty">Loading bookings...</td></tr>';
 
   const params = new URLSearchParams({
     email: u.email || "",
@@ -944,7 +947,7 @@ async function loadBookings() {
     if (seq !== requestSeq) return;
     console.error("Failed to load Booking Details:", e);
     setStatus("Error", false);
-    els.body.innerHTML = `<tr><td colspan="11" class="empty">Could not load bookings. ${esc(e.message || "")}</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="12" class="empty">Could not load bookings. ${esc(e.message || "")}</td></tr>`;
   }
 }
 
