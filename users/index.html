@@ -90,12 +90,14 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 .stat-value { font-size:18px; font-weight:500; color:var(--blue); }
 
 /* ── TABLE ── */
-.tbl-wrap { overflow-x:auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; }
+.tbl-wrap { overflow:auto; max-height:calc(100vh - 248px); background:var(--surface); border:1px solid var(--border); border-radius:6px; }
 .dtbl { width:100%; border-collapse:collapse; }
 .dtbl th {
   text-align:left; color:#c8d8f0; font-weight:500; font-size:8px; letter-spacing:0.05em; text-transform:uppercase;
   padding:6px 8px; background:var(--navy-hdr); white-space:nowrap;
+  position:sticky; top:0; z-index:20;
 }
+.name-col, .name-cell { min-width:150px; }
 .dtbl th.module-col, .dtbl th.summary-col, .dtbl th.status-col { text-align:center; }
 .dtbl th.actions-col { text-align:right; }
 .dtbl th.module-info-header { position:relative; cursor:help; outline:none; }
@@ -263,14 +265,20 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   .desktop-col { display:none; }
   .dtbl { table-layout:fixed; }
   .dtbl th, .dtbl td { padding:8px 7px; font-size:9px; }
-  .actions-col, .actions-cell { width:112px; }
-  .btn-edit, .btn-delete { padding:5px 7px; }
+  .tbl-wrap { max-height:calc(100vh - 315px); overflow-x:hidden; }
+  .name-col, .name-cell { width:auto; min-width:0; }
+  .name-cell strong { white-space:normal; overflow:visible; text-overflow:clip; line-height:1.25; }
+  .status-col, .status-cell { width:76px; }
+  .actions-col, .actions-cell { width:92px; }
+  .btn-edit, .btn-delete { min-width:36px; padding:5px 5px; font-size:8px; }
 }
 
 @media (max-width:360px) {
   .logo-svg { max-width:120px; }
   #userName { max-width:54px; }
-  .actions-col, .actions-cell { width:100px; }
+  .status-col, .status-cell { width:68px; }
+  .actions-col, .actions-cell { width:82px; }
+  .btn-edit, .btn-delete { min-width:32px; padding:5px 4px; }
 }
 </style>
 </head>
@@ -357,7 +365,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       <table class="dtbl">
         <thead>
           <tr>
-            <th>Name</th>
+            <th class="name-col">Name</th>
             <th class="desktop-col">Email</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Booked Report: booked cargo KPIs and breakdowns using booking creation dates.">BKD</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Flown Report: flown cargo KPIs and breakdowns using flight dates.">FLWN</th>
