@@ -98,6 +98,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   position:sticky; top:0; z-index:20;
 }
 .name-col, .name-cell { min-width:150px; }
+.email-col, .email-cell { min-width:190px; }
 .dtbl th.module-col, .dtbl th.summary-col, .dtbl th.status-col { text-align:center; }
 .dtbl th.actions-col { text-align:right; }
 .dtbl th.module-info-header { position:sticky; top:0; z-index:21; cursor:help; outline:none; }
@@ -263,46 +264,22 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   .filter-select { min-width:0; }
   .add-btn { grid-column:1 / -1; justify-self:stretch; }
   .desktop-col { display:none; }
-  .tbl-wrap { max-height:calc(100vh - 315px); overflow-x:hidden; }
-  .dtbl, .dtbl tbody { display:block; width:100%; }
-  .dtbl thead { display:none; }
-  .dtbl tbody tr.user-row {
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    grid-template-areas:
-      "name status"
-      "name actions";
-    align-items:center;
-    gap:7px 10px;
-    width:100%;
-    padding:10px 12px;
-    border-bottom:1px solid var(--border);
-  }
-  .dtbl tbody tr.user-row:nth-child(even) { background:var(--stripe); }
-  .dtbl tbody tr.user-row:nth-child(odd) { background:var(--surface); }
-  .dtbl tbody tr.user-row:hover { background:#e8edf7; }
-  .dtbl tbody tr.user-row td {
-    display:block;
-    padding:0;
-    border:0;
-    background:transparent !important;
-    white-space:normal;
-    font-size:10px;
-  }
-  .dtbl tbody tr.user-row td.desktop-col { display:none !important; }
-  .dtbl tbody tr.type-row { display:block; width:100%; }
+  .tbl-wrap { max-height:calc(100vh - 315px); overflow:auto; }
+  .dtbl { table-layout:fixed; min-width:680px; }
+  .dtbl th, .dtbl td { padding:9px 10px; font-size:10px; }
+  .dtbl th.desktop-col, .dtbl td.desktop-col { display:none !important; }
+  .dtbl th.module-col, .dtbl td.module-cell,
+  .dtbl th.summary-col, .dtbl td.summary-cell { display:none !important; }
+  .name-col, .name-cell { width:30%; min-width:150px; }
+  .email-col, .email-cell { display:table-cell !important; width:32%; min-width:190px; }
+  .status-col, .status-cell { width:110px; text-align:center; }
+  .actions-col, .actions-cell { width:150px; text-align:right; }
+  .name-cell strong { white-space:normal; overflow:visible; text-overflow:clip; line-height:1.2; font-size:10px; }
   .dtbl tbody tr.type-row td {
-    display:block;
-    width:100%;
     padding:10px 14px;
     font-size:13px;
     background:#fff !important;
   }
-  .name-col, .name-cell { width:auto; min-width:0; }
-  .name-cell { grid-area:name; }
-  .name-cell strong { white-space:normal; overflow:visible; text-overflow:clip; line-height:1.2; font-size:11px; }
-  .status-cell { grid-area:status; width:auto; justify-self:end; text-align:right; }
-  .actions-cell { grid-area:actions; width:auto; justify-self:end; display:flex !important; gap:6px; text-align:right; }
   .status-badge { padding:4px 8px; font-size:9px; }
   .btn-edit, .btn-delete { min-width:44px; padding:6px 8px; font-size:9px; }
 }
@@ -310,9 +287,10 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 @media (max-width:360px) {
   .logo-svg { max-width:120px; }
   #userName { max-width:54px; }
-  .dtbl tbody tr.user-row { grid-template-columns:1fr; grid-template-areas:"name" "status" "actions"; align-items:start; }
-  .status-cell, .actions-cell { justify-self:start; text-align:left; }
-  .btn-edit, .btn-delete { min-width:42px; padding:6px 7px; }
+  .dtbl { min-width:620px; }
+  .dtbl th, .dtbl td { padding:8px 8px; }
+  .actions-col, .actions-cell { width:132px; }
+  .btn-edit, .btn-delete { min-width:40px; padding:5px 6px; }
 }
 </style>
 </head>
@@ -400,7 +378,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
         <thead>
           <tr>
             <th class="name-col">Name</th>
-            <th class="desktop-col">Email</th>
+            <th class="email-col">Email</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Booked Report: booked cargo KPIs and breakdowns using booking creation dates.">BKD</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Flown Report: flown cargo KPIs and breakdowns using flight dates.">FLWN</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Dashboard: executive cargo dashboard with YTD KPIs, trends, business mix, and detail drilldowns.">DASHB</th>
@@ -989,7 +967,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 
         row.innerHTML = `
           <td class="name-cell"><strong>${escapeHtml(displayName)}</strong></td>
-          <td class="desktop-col">${escapeHtml(email)}</td>
+          <td class="email-cell">${escapeHtml(email)}</td>
           ${moduleCells}
           <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(bizSummary)}</span></td>
           <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(gsaSummary)}</span></td>
