@@ -328,6 +328,7 @@ main {
 
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script>window.DATAFORCE_SHELL = {"title":"Dashboard","controls":["#bizSelect","#toggle-805",".date-toggle"],"meta":["#weekLabel","#datesLabel"],"statusText":"Ready"};</script>
+<script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -575,7 +576,7 @@ const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 
 function getUserEmail() {
   try {
-    const saved = sessionStorage.getItem('df_user');
+    const saved = DataforceAuth.getItem('df_user');
     if (saved) {
       const user = JSON.parse(saved);
       return user.email || '';
@@ -954,6 +955,8 @@ async function loadData(){
   // If already cached locally, apply instantly
   if(ALL_DATA[DATE_COL] && ALL_DATA[DATE_COL][biz]){
     applyData(ALL_DATA[DATE_COL][biz]);
+    connDot.classList.add('live');
+    connLbl.textContent = 'Ready';
     return;
   }
 
@@ -967,8 +970,13 @@ async function loadData(){
     if(!ALL_DATA[DATE_COL]) ALL_DATA[DATE_COL] = {};
     ALL_DATA[DATE_COL][biz] = data;
     applyData(data);
+    connDot.classList.add('live');
+    connLbl.textContent = 'Ready';
   }catch(e){
-    if (!_isWarming) connLbl.textContent = 'Connection failed';
+    if (!_isWarming) {
+      connDot.classList.remove('live');
+      connLbl.textContent = 'Connection failed';
+    }
     applyData(DEMO);
   }
 }
@@ -990,7 +998,7 @@ let IS_805 = false;
 
 function readStoredPermissions() {
   try {
-    const saved = sessionStorage.getItem('df_permissions');
+    const saved = DataforceAuth.getItem('df_permissions');
     return saved ? JSON.parse(saved) : null;
   } catch(e) {
     return null;
@@ -1007,7 +1015,7 @@ async function getDashboardPermissions() {
   const r = await fetch(`${API_BASE}/api/user_modules?email=${encodeURIComponent(userEmail)}`);
   if (!r.ok) return null;
   const data = await r.json();
-  sessionStorage.setItem('df_permissions', JSON.stringify(data));
+  DataforceAuth.setItem('df_permissions', JSON.stringify(data));
   return data;
 }
 
@@ -1103,8 +1111,7 @@ async function warmCache() {
   const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'].filter(canAccessEffectiveBusiness);
 
   _isWarming = true;
-  if (connDot) { connDot.classList.remove('live'); connDot.style.background = '#c97a06'; }
-  if (connLbl) connLbl.textContent = 'Loading reports';
+  if (connLbl && connLbl.textContent !== 'Ready') connLbl.textContent = 'Loading reports';
 
   try {
     const flown = await loadAllData('FlightDate');
@@ -1133,8 +1140,8 @@ async function initDashboard(){
   const permissions = await getDashboardPermissions();
   if (!configureBusinessAccess(permissions)) return;
   updateBusinessControls(false);
-  warmCache();      // runs in background — sets dot amber + "Loading X/17" immediately
-  await loadData(); // load current business
+  await loadData(); // load current business first, before warming the rest
+  setTimeout(warmCache, 0);
 }
 
 const MERCURY_BIZ = new Set(["MERC_LOCAL", "MERC_GSA", "MERC_ALL"]);
