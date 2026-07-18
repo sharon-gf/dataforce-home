@@ -435,7 +435,7 @@ function buildCard(cfg, data) {
   const tableRows = rows.length > 0
     ? rows.map(r => {
         const nameB64 = btoa(unescape(encodeURIComponent(r.name ?? '')));
-        return `<tr onclick="showAwbDetail('${cfg.dbCol}', atob('${nameB64}'), '${(r.name ?? '').replace(/'/g, "\\'").replace(/"/g, '\\"')}', this)" style="cursor:pointer;" onmouseover="this.style.background='#f0f5ff';" onmouseout="this.style.background=''"><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(Math.round(r.tons*1000*r.pkg),0)}</td><td>${n(r.pkg)}</td></tr>`;
+        return `<tr onclick="showAwbDetail('${cfg.dbCol}', atob('${nameB64}'), '${(r.name ?? '').replace(/'/g, "\\'").replace(/"/g, '\\"')}', this)" style="cursor:pointer;" onmouseover="this.style.background='#f0f5ff';" onmouseout="this.style.background=''"><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(r.profit,0)}</td><td>${n(r.pkg)}</td></tr>`;
       }).join('')
     : `<tr><td colspan="4" class="nodata-cell">No data this week</td></tr>`;
 
