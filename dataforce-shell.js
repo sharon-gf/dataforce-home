@@ -8,6 +8,24 @@
   const DEFAULT_FAVICON_HREF = SCRIPT_URL ? new URL("favicon.jpg", SCRIPT_URL).href : "favicon.jpg";
   const DEFAULT_FAVICON_TYPE = "image/jpeg";
   const DEFAULT_APP_LOGO_URL = SCRIPT_URL ? new URL("app-logo.png", SCRIPT_URL).href : "app-logo.png";
+  const MODULES = [
+    { key: "dashboard", label: "Dashboard", href: "https://dataforce.gsaforce.com/dashboard/" },
+    { key: "flown", label: "Flown", href: "https://dataforce.gsaforce.com/flown-report/" },
+    { key: "booked", label: "Booked", href: "https://dataforce.gsaforce.com/booked-report/" },
+    { key: "my_bookings", label: "My Bookings", href: "https://dataforce.gsaforce.com/my-bookings/" },
+    { key: "sales_performance", label: "Sales Performance", href: "https://dataforce.gsaforce.com/sales-performance/" },
+    { key: "sales_tasks", label: "Sales Tasks", href: "https://dataforce.gsaforce.com/sales-tasks/" },
+    { key: "booking_details", label: "Booking Details", href: "https://dataforce.gsaforce.com/booking-details/" },
+    { key: "spot_opportunities", label: "Spot Opportunities", href: "https://dataforce.gsaforce.com/spot-opportunities/" },
+    { key: "pending_spots", label: "Pending Spots", href: "https://dataforce.gsaforce.com/pending-spots/" },
+    { key: "check_rates", label: "Check Rates", href: "https://dataforce.gsaforce.com/check-rates/" },
+    { key: "finance", label: "Finance", href: "https://dataforce.gsaforce.com/finance/" },
+    { key: "quote", label: "Quote", href: "https://prd-pal-connect.lovable.app/", external: true },
+    { key: "vvi_charters", label: "VVI Charters", href: "https://dataforce.gsaforce.com/vvi-charters/" },
+    { key: "upload", label: "Upload Data", href: "https://dataforce.gsaforce.com/upload-data/" },
+    { key: "customers", label: "Customers", href: "https://dataforce.gsaforce.com/customers/" },
+    { key: "admin", label: "Users", href: "https://dataforce.gsaforce.com/users/" }
+  ];
 
  
 
@@ -71,6 +89,38 @@
     }
   }
 
+  function readPermissions() {
+    try {
+      const saved = window.DataforceAuth
+        ? DataforceAuth.getItem("df_permissions")
+        : (localStorage.getItem("df_permissions") || sessionStorage.getItem("df_permissions"));
+      return JSON.parse(saved || "null");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function permittedModules() {
+    const permissions = readPermissions();
+    const modules = permissions && Array.isArray(permissions.modules) ? permissions.modules : null;
+    if (!modules) return MODULES.filter((module) => module.key !== "admin");
+
+    const allowed = new Set(
+      modules.map((name) => String(name).toLowerCase().replace(/-/g, "_"))
+    );
+    if (allowed.has("admin")) {
+      allowed.add("check_rates");
+      allowed.add("spot_opportunities");
+      allowed.add("pending_spots");
+      allowed.add("customers");
+    }
+    return MODULES.filter((module) => allowed.has(module.key));
+  }
+
+  function currentPath() {
+    return window.location.pathname.replace(/\/+$/, "") || "/";
+  }
+
   function displayName() {
     const user = readUser();
     return user.name || user.email || "";
@@ -104,6 +154,20 @@
     };
     link.appendChild(img);
     return link;
+  }
+
+  function makeMenuButton() {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "df-shell-menu-button";
+    button.setAttribute("aria-label", "Open module menu");
+    button.setAttribute("aria-controls", "dfShellDrawer");
+    button.setAttribute("aria-expanded", "false");
+    button.innerHTML = "<span></span><span></span><span></span>";
+    button.addEventListener("click", function () {
+      setDrawerOpen(!document.body.classList.contains("df-shell-drawer-open"));
+    });
+    return button;
   }
 
   function makeLogoFallback() {
@@ -193,6 +257,74 @@
     });
   }
 
+  function setDrawerOpen(open) {
+    const button = document.querySelector(".df-shell-menu-button");
+    const drawer = document.getElementById("dfShellDrawer");
+    const overlay = document.getElementById("dfShellDrawerOverlay");
+    document.body.classList.toggle("df-shell-drawer-open", open);
+    if (button) {
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+      button.setAttribute("aria-label", open ? "Close module menu" : "Open module menu");
+    }
+    if (drawer) drawer.setAttribute("aria-hidden", open ? "false" : "true");
+    if (overlay) overlay.hidden = !open;
+  }
+
+  function buildDrawer() {
+    if (document.getElementById("dfShellDrawer")) return;
+
+    const overlay = document.createElement("button");
+    overlay.id = "dfShellDrawerOverlay";
+    overlay.className = "df-shell-drawer-overlay";
+    overlay.type = "button";
+    overlay.hidden = true;
+    overlay.setAttribute("aria-label", "Close module menu");
+    overlay.addEventListener("click", function () {
+      setDrawerOpen(false);
+    });
+
+    const drawer = document.createElement("aside");
+    drawer.id = "dfShellDrawer";
+    drawer.className = "df-shell-drawer";
+    drawer.setAttribute("aria-hidden", "true");
+    drawer.setAttribute("aria-label", "Module menu");
+
+    const logo = document.createElement("a");
+    logo.className = "df-shell-drawer-logo";
+    logo.href = HOME_URL;
+    logo.setAttribute("aria-label", "Back to DATAFORCE home");
+    const img = document.createElement("img");
+    img.src = cfg().logoSrc || DEFAULT_LOGO_URL;
+    img.alt = "DATAFORCE";
+    logo.appendChild(img);
+
+    const nav = document.createElement("nav");
+    nav.className = "df-shell-drawer-nav";
+
+    const path = currentPath();
+    permittedModules().forEach((module) => {
+      const link = document.createElement("a");
+      link.href = module.href;
+      link.textContent = module.label;
+      link.className = "df-shell-drawer-link";
+      if (module.external) {
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+      }
+      if (!module.external && new URL(module.href).pathname.replace(/\/+$/, "") === path) {
+        link.classList.add("active");
+        link.setAttribute("aria-current", "page");
+      }
+      link.addEventListener("click", function () {
+        setDrawerOpen(false);
+      });
+      nav.appendChild(link);
+    });
+
+    drawer.append(logo, nav);
+    document.body.append(overlay, drawer);
+  }
+
   function ensureHiddenLastUpdate() {
     if (document.getElementById("lastUpdateLabel")) return;
     const hidden = document.createElement("span");
@@ -214,7 +346,10 @@
 
     const top = document.createElement("div");
     top.className = "df-shell-top";
-    top.append(makeLogo(oldHeader), makeTitle(oldHeader), makeUser(oldHeader));
+    const brand = document.createElement("div");
+    brand.className = "df-shell-brand";
+    brand.append(makeMenuButton(), makeLogo(oldHeader));
+    top.append(brand, makeTitle(oldHeader), makeUser(oldHeader));
 
     const sub = document.createElement("div");
     sub.className = "df-shell-sub";
@@ -230,6 +365,7 @@
     sub.append(controls, meta);
     header.append(top, sub);
     oldHeader.replaceWith(header);
+    buildDrawer();
     ensureHiddenLastUpdate();
     syncUserName();
   }
@@ -308,5 +444,8 @@
     buildHeader();
     buildFooter();
     loadFooterStatus();
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") setDrawerOpen(false);
+    });
   });
 })();
