@@ -202,6 +202,7 @@
 </style>
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script>window.DATAFORCE_SHELL = {"title":"Check Rates","meta":[".range"],"userNameId":"userLabel"};</script>
+<script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -323,13 +324,16 @@ const BUSINESS_OPTIONS = [
   {key:"10_VIRGIN_805", label:"VIRGIN-805"},
   {key:"11_ULTRACN", label:"CN-ULTRA"}
 ];
+const BUSINESS_KEYS = BUSINESS_OPTIONS
+  .map(option => option.key)
+  .filter(key => key !== "ALL");
 
 let rateRows = [];
 let allRateRows = [];
 let currentData = null;
 let requestSeq = 0;
 let searchTimer = null;
-let selectedBusinesses = ["ALL"];
+let selectedBusinesses = [...BUSINESS_KEYS];
 let sortState = {key: "pkg", dir: "asc"};
 let handledKeys = new Set();
 
@@ -364,8 +368,8 @@ function user() {
 }
 
 function signOut() {
-  sessionStorage.removeItem("df_user");
-  sessionStorage.removeItem("df_permissions");
+  DataforceAuth.removeItem("df_user");
+  DataforceAuth.removeItem("df_permissions");
   window.location.href = "https://dataforce.gsaforce.com/";
 }
 
@@ -490,12 +494,15 @@ function businessLabel(key) {
 }
 
 function selectedBusinessParam() {
-  return selectedBusinesses.includes("ALL") ? "ALL" : selectedBusinesses.join(",");
+  if (!selectedBusinesses.length) return "__NONE__";
+  return selectedBusinesses.length === BUSINESS_KEYS.length ? "ALL" : selectedBusinesses.join(",");
 }
 
 function renderBusinessTrigger() {
-  if (selectedBusinesses.includes("ALL")) {
+  if (selectedBusinesses.length === BUSINESS_KEYS.length) {
     els.businessTriggerText.textContent = "All businesses";
+  } else if (!selectedBusinesses.length) {
+    els.businessTriggerText.textContent = "No businesses";
   } else if (selectedBusinesses.length === 1) {
     els.businessTriggerText.textContent = businessLabel(selectedBusinesses[0]);
   } else {
@@ -505,25 +512,21 @@ function renderBusinessTrigger() {
 
 function renderBusinessMenu() {
   els.businessMenu.innerHTML = BUSINESS_OPTIONS.map(option => `
-    <label class="multi-option" role="option" aria-selected="${selectedBusinesses.includes(option.key)}">
-      <input type="checkbox" value="${esc(option.key)}" ${selectedBusinesses.includes(option.key) ? "checked" : ""}>
+    <label class="multi-option" role="option" aria-selected="${option.key === "ALL" ? selectedBusinesses.length === BUSINESS_KEYS.length : selectedBusinesses.includes(option.key)}">
+      <input type="checkbox" value="${esc(option.key)}" ${option.key === "ALL" ? selectedBusinesses.length === BUSINESS_KEYS.length ? "checked" : "" : selectedBusinesses.includes(option.key) ? "checked" : ""}>
       <span>${esc(option.label)}</span>
     </label>
   `).join("");
 }
 
 function setBusinessSelection(keys, shouldLoad = true) {
-  const valid = new Set(BUSINESS_OPTIONS.map(option => option.key));
+  const valid = new Set(BUSINESS_KEYS);
   const clean = [];
   keys.forEach(key => {
     if (valid.has(key) && !clean.includes(key)) clean.push(key);
   });
 
-  if (!clean.length || clean.includes("ALL")) {
-    selectedBusinesses = ["ALL"];
-  } else {
-    selectedBusinesses = clean;
-  }
+  selectedBusinesses = clean;
 
   renderBusinessTrigger();
   renderBusinessMenu();
@@ -724,7 +727,7 @@ async function checkRatesAccess(initFunction) {
     });
     if (!response.ok) throw new Error("Permission check failed");
     const data = await response.json();
-    sessionStorage.setItem("df_permissions", JSON.stringify(data));
+    DataforceAuth.setItem("df_permissions", JSON.stringify(data));
     const modules = (data.modules || []).map(m => String(m).toLowerCase().replace(/-/g, "_"));
     if (!modules.includes("check_rates") && !modules.includes("admin")) {
       showNoAccess("Your account is signed in, but this module has not been assigned to you.");
@@ -742,8 +745,8 @@ els.search.addEventListener("input", debouncedLoad);
 els.businessTrigger.addEventListener("click", () => toggleBusinessMenu());
 els.businessMenu.addEventListener("change", e => {
   if (!e.target.matches('input[type="checkbox"]')) return;
-  if (e.target.value === "ALL" && e.target.checked) {
-    setBusinessSelection(["ALL"]);
+  if (e.target.value === "ALL") {
+    setBusinessSelection(e.target.checked ? BUSINESS_KEYS : []);
     return;
   }
   const checked = Array.from(els.businessMenu.querySelectorAll('input[type="checkbox"]:checked'))
