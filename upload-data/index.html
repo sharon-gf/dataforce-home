@@ -157,6 +157,29 @@
   }
   .btn:hover:not(:disabled) { background: #162d52; }
   .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn.secondary {
+    background: #fff;
+    border: 1px solid #0d1f3c;
+    color: #0d1f3c;
+  }
+  .btn.secondary:hover:not(:disabled) { background: #eef2fb; }
+  .upload-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 10px;
+    color: #8896aa;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .upload-divider::before,
+  .upload-divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid #dde0e8;
+  }
 
   /* ── RESULT ── */
   .result {
@@ -192,11 +215,16 @@
     margin-right: 6px;
     vertical-align: middle;
   }
+  .secondary .spinner {
+    border-color: rgba(13,31,60,0.2);
+    border-top-color: #0d1f3c;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script>window.DATAFORCE_SHELL = {"title":"Upload Data","statusText":"Ready"};</script>
+<script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
 <body>
@@ -232,7 +260,11 @@
         <input type="password" id="secretKey" placeholder="••••••••••••">
       </div>
 
-      <button class="btn" id="uploadBtn" onclick="doUpload()" disabled>Upload</button>
+      <button class="btn" id="uploadBtn" onclick="doUpload()" disabled>Upload File</button>
+
+      <div class="upload-divider">or</div>
+
+      <button class="btn secondary" id="autoUploadBtn" onclick="doAutoUpload()" disabled>Update From Auto Upload</button>
 
       <div class="result" id="result"></div>
 
@@ -247,6 +279,7 @@
   const fileInput  = document.getElementById('fileInput');
   const fileChosen = document.getElementById('fileChosen');
   const uploadBtn  = document.getElementById('uploadBtn');
+  const autoUploadBtn = document.getElementById('autoUploadBtn');
   const dropZone   = document.getElementById('dropZone');
   const result     = document.getElementById('result');
 
@@ -259,6 +292,7 @@
     const hasFile = fileInput.files.length > 0;
     const hasKey  = document.getElementById('secretKey').value.trim().length > 0;
     uploadBtn.disabled = !(hasFile && hasKey);
+    autoUploadBtn.disabled = !hasKey;
   }
 
   function showError(msg) {
@@ -274,9 +308,25 @@
       return 'File could not be read. Check it is a valid .xlsx or .csv.';
     if (raw.includes('Invalid upload key'))
       return 'Incorrect password.';
+    if (raw.includes('Auto upload is not configured'))
+      return 'Auto upload is not configured yet. Ask an admin to add the GitHub dispatch settings.';
+    if (raw.includes('Could not start auto upload') || raw.includes('Could not reach GitHub'))
+      return 'Could not start the auto upload. Please try again or run the scheduled refresh.';
     if (raw.includes('DB error') || raw.includes('rolled back'))
       return 'Database error. No data was changed — please try again.';
     return 'Something went wrong. Please try again.';
+  }
+
+  function setBusy(button, label) {
+    uploadBtn.disabled = true;
+    autoUploadBtn.disabled = true;
+    button.innerHTML = '<span class="spinner"></span>' + label;
+    result.className = 'result';
+  }
+
+  function clearBusy(button, label) {
+    button.textContent = label;
+    checkReady();
   }
 
   fileInput.addEventListener('change', () => {
@@ -326,9 +376,7 @@
     const file = fileInput.files[0];
     if (!file || !key) return;
 
-    uploadBtn.disabled = true;
-    uploadBtn.innerHTML = '<span class="spinner"></span>Processing…';
-    result.className = 'result';
+    setBusy(uploadBtn, 'Processing...');
 
     const form = new FormData();
     form.append('file', file);
@@ -356,8 +404,36 @@
       showError('Could not reach the server. Check your connection and try again.');
     }
 
-    uploadBtn.disabled = false;
-    uploadBtn.textContent = 'Upload';
+    clearBusy(uploadBtn, 'Upload File');
+  }
+
+  async function doAutoUpload() {
+    const key = document.getElementById('secretKey').value.trim();
+    if (!key) return;
+
+    setBusy(autoUploadBtn, 'Starting...');
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/upload_cargo/auto?email=${encodeURIComponent(getUserEmail())}`, {
+        method: 'POST',
+        headers: { 'x-upload-key': key }
+      });
+
+      const data = await resp.json();
+
+      if (resp.ok) {
+        result.className = 'result success';
+        result.innerHTML =
+          '✓ &nbsp;Auto upload started<br>' +
+          'The system is downloading the latest Report_Details file and will update the data when it finishes.';
+      } else {
+        showError(cleanError(data.detail || ''));
+      }
+    } catch (_) {
+      showError('Could not reach the server. Check your connection and try again.');
+    }
+
+    clearBusy(autoUploadBtn, 'Update From Auto Upload');
   }
 
   checkModuleAccess('upload');
