@@ -111,6 +111,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-my-bookings { --card-accent:#0f766e; --card-icon-bg:#e6f5f3; }
 .card-sales-performance { --card-accent:#1a56db; --card-icon-bg:#e8efff; }
 .card-sales-tasks { --card-accent:#1a3360; --card-icon-bg:#edf1f7; }
+.card-bookings-table { --card-accent:#1a3360; --card-icon-bg:#edf1f7; }
 .card-booking-details { --card-accent:#1a3360; --card-icon-bg:#edf1f7; }
 .card-spot-opportunities { --card-accent:#0b7f8f; --card-icon-bg:#e7f6f8; }
 .card-pending-spots { --card-accent:#c97a06; --card-icon-bg:#fef6e8; }
@@ -220,6 +221,12 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a3360" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
 
+      <a class="card card-bookings-table" href="https://dataforce.gsaforce.com/bookings-table/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a3360" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18"/><path d="M3 12h18"/><path d="M3 19h18"/><path d="M8 5v14"/><path d="M16 5v14"/></svg></div>
+        <div><div class="card-name">Bookings Table</div><div class="card-desc">YTD flown kilos by sales person, customer and week</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a3360" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+
       <a class="card card-booking-details" href="https://dataforce.gsaforce.com/booking-details/">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a3360" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></div>
         <div><div class="card-name">Booking Details</div><div class="card-desc">Search bookings and view full segment detail</div></div>
@@ -326,13 +333,17 @@ async function applyModulePermissions() {
   if (!currentUserEmail) return;
   
   try {
-    const r = await fetch(
-      `${API_BASE}/api/user_modules?email=${encodeURIComponent(currentUserEmail)}`,
-      { headers: { "x-api-key": API_KEY } }
-    );
-    if (!r.ok) throw new Error();
-    
-    const data = await r.json();
+    let data;
+    if (window.DataforceAuth && DataforceAuth.isLocalPreview && DataforceAuth.isLocalPreview()) {
+      data = DataforceAuth.getPermissions();
+    } else {
+      const r = await fetch(
+        `${API_BASE}/api/user_modules?email=${encodeURIComponent(currentUserEmail)}`,
+        { headers: { "x-api-key": API_KEY } }
+      );
+      if (!r.ok) throw new Error();
+      data = await r.json();
+    }
     const allowedModules = data.modules || [];
     
     console.log('Allowed modules:', allowedModules);
@@ -350,6 +361,7 @@ async function applyModulePermissions() {
       'my_bookings': '.card-my-bookings',
       'sales_performance': '.card-sales-performance',
       'sales_tasks': '.card-sales-tasks',
+      'bookings_table': '.card-bookings-table',
       'booking_details': '.card-booking-details',
       'spot_opportunities': '.card-spot-opportunities',
       'pending_spots': '.card-pending-spots',
