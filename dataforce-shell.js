@@ -15,6 +15,7 @@
     { key: "my_bookings", label: "My Bookings", href: "https://dataforce.gsaforce.com/my-bookings/" },
     { key: "sales_performance", label: "Sales Performance", href: "https://dataforce.gsaforce.com/sales-performance/" },
     { key: "sales_tasks", label: "Sales Tasks", href: "https://dataforce.gsaforce.com/sales-tasks/" },
+    { key: "bookings_table", label: "Bookings Table", href: "https://dataforce.gsaforce.com/bookings-table/" },
     { key: "booking_details", label: "Booking Details", href: "https://dataforce.gsaforce.com/booking-details/" },
     { key: "spot_opportunities", label: "Spot Opportunities", href: "https://dataforce.gsaforce.com/spot-opportunities/" },
     { key: "pending_spots", label: "Pending Spots", href: "https://dataforce.gsaforce.com/pending-spots/" },
