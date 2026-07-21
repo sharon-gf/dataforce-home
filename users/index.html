@@ -357,6 +357,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
         <option value="my_bookings">My Bookings</option>
         <option value="sales_performance">Sales Performance</option>
         <option value="sales_tasks">Sales Tasks</option>
+        <option value="bookings_table">Bookings Table</option>
         <option value="booking_details">Booking Details</option>
         <option value="spot_opportunities">Spot Opportunities</option>
         <option value="pending_spots">Pending Spots</option>
@@ -408,6 +409,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="My Bookings: scoped booking performance for the user's assigned sales person, businesses, and GSAs.">MYBK</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Sales Performance: customer and sales route map for follow-up, risk, YTD trends, and task creation.">SALES</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Sales Tasks: shared follow-up task list connected to Sales Performance customers.">TASKS</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Bookings Table: YTD flown kilos pivot by sales person, customer, and week.">BKTBL</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Booking Details: searchable AWB-level booking detail and shipment drilldown.">BKDTL</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Spot Opportunities: potential spot cargo opportunities based on current booking data.">SPOT</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Pending Spots: pending spot opportunities and open items that need review.">PEND</th>
@@ -481,6 +483,10 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
         <div class="checkbox-item">
           <input type="checkbox" id="mod-sales-tasks" value="sales_tasks" onchange="updateSelectAllModules()" />
           <label for="mod-sales-tasks">Sales Tasks</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="mod-bookings-table" value="bookings_table" onchange="updateSelectAllModules()" />
+          <label for="mod-bookings-table">Bookings Table</label>
         </div>
         <div class="checkbox-item">
           <input type="checkbox" id="mod-booking-details" value="booking_details" onchange="updateSelectAllModules()" />
@@ -589,6 +595,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     { key: 'my_bookings', label: 'MYBK' },
     { key: 'sales_performance', label: 'SALES' },
     { key: 'sales_tasks', label: 'TASKS' },
+    { key: 'bookings_table', label: 'BKTBL' },
     { key: 'booking_details', label: 'BKDTL' },
     { key: 'spot_opportunities', label: 'SPOT' },
     { key: 'pending_spots', label: 'PEND' },
