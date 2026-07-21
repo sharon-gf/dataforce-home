@@ -1,1 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - Bookings Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e8eaee;
+    --surface:#fff;
+    --surface2:#f5f7fb;
+    --border:#d8dde8;
+    --navy:#0d1f3c;
+    --navy2:#1a3360;
+    --text1:#0d1f3c;
+    --text2:#41536c;
+    --text3:#8391a8;
+    --blue:#1a56db;
+    --teal:#0c9080;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  button, select { font:inherit; }
+  .app { min-height:100vh; padding:8px; }
+  .header {
+    background:var(--navy);
+    border-radius:6px;
+    padding:8px 16px;
+    display:grid;
+    grid-template-columns:minmax(180px,1fr) minmax(260px,1.4fr) minmax(250px,1fr);
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .logo-link { color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:9px; width:max-content; }
+  .df-mark { width:28px; height:28px; border:1px solid rgba(122,174,213,.7); border-radius:4px; display:grid; place-items:center; color:#7aaed5; font-size:12px; font-weight:700; letter-spacing:0; }
+  .logo-word { display:flex; flex-direction:column; gap:1px; }
+  .logo-main { font-size:18px; letter-spacing:.13em; font-weight:600; line-height:1; }
+  .logo-sub { color:#7aaed5; font-size:9px; letter-spacing:.24em; text-transform:uppercase; }
+  .hdr-mid { text-align:center; min-width:0; }
+  .header-title { color:#7aaed5; letter-spacing:.12em; font-size:17px; font-weight:500; white-space:nowrap; }
+  .header-right { color:#fff; display:flex; align-items:center; justify-content:flex-end; gap:12px; font-size:11px; min-width:0; }
+  .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:7px; height:7px; border-radius:99px; background:var(--teal); }
+  .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font-size:10px; }
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+  .filters { padding:10px 12px; display:grid; grid-template-columns:repeat(2,minmax(180px,280px)) 1fr auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .field { min-width:0; }
+  label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
+  select {
+    width:100%;
+    height:30px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    background:#fff;
+    color:var(--text1);
+    padding:5px 8px;
+    outline:none;
+  }
+  select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
+  .summary { align-self:center; justify-self:end; color:var(--text2); font-size:11px; white-space:nowrap; }
+  .tool-btn { height:30px; border:1px solid var(--navy); background:var(--navy); color:#fff; border-radius:4px; padding:0 12px; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  .matrix-wrap { height:calc(100vh - 122px); min-height:520px; overflow:auto; }
+  table { border-collapse:collapse; min-width:960px; width:100%; }
+  th {
+    position:sticky;
+    top:0;
+    z-index:2;
+    background:var(--navy2);
+    color:#c8d8f0;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    padding:8px;
+    text-align:center;
+    white-space:nowrap;
+  }
+  td { border-bottom:1px solid var(--border); padding:7px 8px; text-align:center; color:var(--text1); font-size:11px; white-space:nowrap; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  tbody tr:nth-child(odd) td { background:#fff; }
+  tbody tr:hover td { background:#e4ecfb; }
+  .sales-col, .customer-col {
+    position:sticky;
+    z-index:1;
+    text-align:left;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .sales-col { left:0; min-width:130px; max-width:150px; }
+  .customer-col { left:130px; min-width:240px; max-width:300px; }
+  th.sales-col, th.customer-col { z-index:3; background:var(--navy2); }
+  tbody tr:nth-child(even) .sales-col, tbody tr:nth-child(even) .customer-col { background:#f0f2f6; }
+  tbody tr:nth-child(odd) .sales-col, tbody tr:nth-child(odd) .customer-col { background:#fff; }
+  .week-col { min-width:72px; }
+  .total-col { min-width:84px; font-weight:600; color:var(--navy2); }
+  th.total-col { color:#c8d8f0; font-weight:700; }
+  .empty { padding:42px 16px; color:var(--text3); text-align:center; font-size:12px; }
+  @media (max-width:760px) {
+    .header { grid-template-columns:1fr; text-align:center; }
+    .logo-link { margin:auto; }
+    .header-right { justify-content:center; flex-wrap:wrap; }
+    .filters { grid-template-columns:1fr; }
+    .summary { justify-self:start; }
+    .matrix-wrap { height:calc(100vh - 240px); min-height:420px; }
+    .sales-col { min-width:110px; max-width:130px; }
+    .customer-col { left:110px; min-width:170px; max-width:210px; }
+  }
+</style>
+<link rel="stylesheet" href="../dataforce-shell.css">
+<script>window.DATAFORCE_SHELL = {"title":"Bookings Table","controls":["#salesFilter","#businessFilter"],"userNameId":"userLabel","statusTextId":"statusText","statusText":"Ready"};</script>
+<script src="../dataforce-auth.js"></script>
+<script src="../dataforce-shell.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <a class="logo-link" href="https://dataforce.gsaforce.com/">
+      <span class="df-mark">DF</span>
+      <span class="logo-word"><span class="logo-main">DATAFORCE</span><span class="logo-sub">GSA Force</span></span>
+    </a>
+    <div class="hdr-mid"><div class="header-title">BOOKINGS TABLE</div></div>
+    <div class="header-right">
+      <span id="userLabel"></span>
+      <span class="status"><span class="dot"></span><span id="statusText">Loading</span></span>
+      <button class="logout" type="button" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
 
+  <main class="panel">
+    <div class="filters">
+      <div class="field">
+        <label for="salesFilter">Sales Person</label>
+        <select id="salesFilter"><option value="ALL">All sales people</option></select>
+      </div>
+      <div class="field">
+        <label for="businessFilter">Business</label>
+        <select id="businessFilter"><option value="ALL">All businesses</option></select>
+      </div>
+      <div class="summary" id="summaryText">Loading bookings...</div>
+      <button class="tool-btn" type="button" id="reloadBtn">Refresh</button>
+    </div>
+    <div class="matrix-wrap">
+      <table>
+        <thead id="matrixHead">
+          <tr><th class="sales-col">Sales</th><th class="customer-col">Customer</th><th class="total-col">Total</th></tr>
+        </thead>
+        <tbody id="matrixBody">
+          <tr><td class="empty" colspan="3">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-production.up.railway.app";
+
+const els = {
+  sales: document.getElementById("salesFilter"),
+  business: document.getElementById("businessFilter"),
+  summary: document.getElementById("summaryText"),
+  status: document.getElementById("statusText"),
+  head: document.getElementById("matrixHead"),
+  body: document.getElementById("matrixBody"),
+  reload: document.getElementById("reloadBtn")
+};
+
+function getUserEmail() {
+  try {
+    const saved = window.DataforceAuth ? DataforceAuth.getItem("df_user") : localStorage.getItem("df_user");
+    const user = saved ? JSON.parse(saved) : {};
+    return user.email || "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function esc(value) {
+  if (value == null || value === "") return "-";
+  return String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function fmtKg(value) {
+  const num = Number(value || 0);
+  return num ? num.toLocaleString("en-US", { maximumFractionDigits:0 }) : "-";
+}
+
+function isLocalPreview() {
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1" || host === "";
+}
+
+function localPreviewData() {
+  const columns = Array.from({ length: 10 }, (_, index) => {
+    const week = index + 20;
+    return { key:`2026-W${String(week).padStart(2, "0")}`, label:`W${String(week).padStart(2, "0")}`, year:2026, week };
+  });
+  const customers = [
+    { salesPerson:"AL", customer:"ACME LOGISTICS", base:12800 },
+    { salesPerson:"AL", customer:"BLUE SKY FOODS", base:9600 },
+    { salesPerson:"AL", customer:"GLOBAL TECH SUPPLY", base:7200 },
+    { salesPerson:"HA", customer:"NOVA MEDICAL CARGO", base:15400 },
+    { salesPerson:"HA", customer:"PACIFIC FLOWERS", base:11200 },
+    { salesPerson:"HA", customer:"SOUTHERN TEXTILES", base:6800 },
+    { salesPerson:"MV", customer:"ATLAS AUTO PARTS", base:18400 },
+    { salesPerson:"MV", customer:"FRESH MARKET GROUP", base:13200 },
+    { salesPerson:"MV", customer:"ORBIT ELECTRONICS", base:8700 },
+    { salesPerson:"SR", customer:"ANDES SEAFOOD", base:14100 },
+    { salesPerson:"SR", customer:"LIMA PHARMA", base:10300 },
+    { salesPerson:"SR", customer:"SUNRISE IMPORTS", base:7900 }
+  ];
+  const rows = customers.map((item, rowIndex) => {
+    const values = {};
+    columns.forEach((col, colIndex) => {
+      const active = (rowIndex + colIndex) % 4 !== 0;
+      values[col.key] = active ? Math.round(item.base * (0.45 + ((rowIndex + colIndex) % 5) * 0.12)) : 0;
+    });
+    return {
+      salesPerson:item.salesPerson,
+      customer:item.customer,
+      values,
+      totalKg:Object.values(values).reduce((sum, value) => sum + value, 0)
+    };
+  }).sort((a, b) => Number(b.totalKg || 0) - Number(a.totalKg || 0) || a.salesPerson.localeCompare(b.salesPerson) || a.customer.localeCompare(b.customer));
+  return {
+    businessOptions:[
+      { key:"MERC_LOCAL", label:"MA-LOCAL" },
+      { key:"MERC_GSA", label:"MA-GSA" },
+      { key:"01_CXOFF", label:"CX-OFF" },
+      { key:"02_ET", label:"ET-USA" }
+    ],
+    salesPersonOptions:["AL", "HA", "MV", "SR"],
+    selectedBusiness:"ALL",
+    selectedSalesPerson:"ALL",
+    customerWeeks:{ columns, rows }
+  };
+}
+
+function syncSelect(select, options, allLabel, selected) {
+  const current = selected || select.value || "ALL";
+  const filteredOptions = (options || []).filter(option => {
+    const value = typeof option === "string" ? option : option.key;
+    return String(value || "").toUpperCase() !== "ALL";
+  });
+  select.innerHTML = [`<option value="ALL">${esc(allLabel)}</option>`]
+    .concat(filteredOptions.map(option => {
+      const value = typeof option === "string" ? option : option.key;
+      const label = typeof option === "string" ? option : option.label;
+      return `<option value="${esc(value)}">${esc(label)}</option>`;
+    }))
+    .join("");
+  select.value = Array.from(select.options).some(option => option.value === current) ? current : "ALL";
+}
+
+function renderMatrix(matrix) {
+  const columns = matrix.columns || [];
+  const rows = matrix.rows || [];
+  els.head.innerHTML = `<tr><th class="sales-col">Sales</th><th class="customer-col">Customer</th>${columns.map(col => `<th class="week-col">${esc(col.label)}</th>`).join("")}<th class="total-col">YTD</th></tr>`;
+
+  if (!rows.length) {
+    els.body.innerHTML = `<tr><td class="empty" colspan="${columns.length + 3}">No flown kilos found for these filters.</td></tr>`;
+    els.summary.textContent = "0 customers";
+    return;
+  }
+
+  els.body.innerHTML = rows.map(row => `
+    <tr>
+      <td class="sales-col" title="${esc(row.salesPerson)}">${esc(row.salesPerson)}</td>
+      <td class="customer-col" title="${esc(row.customer)}">${esc(row.customer)}</td>
+      ${columns.map(col => `<td class="week-col">${fmtKg((row.values || {})[col.key])}</td>`).join("")}
+      <td class="total-col">${fmtKg(row.totalKg)}</td>
+    </tr>
+  `).join("");
+
+  const totalKg = rows.reduce((sum, row) => sum + Number(row.totalKg || 0), 0);
+  els.summary.textContent = `${rows.length.toLocaleString("en-US")} customers / ${fmtKg(totalKg)} kg`;
+}
+
+async function loadBookingsTable() {
+  const email = getUserEmail();
+  const params = new URLSearchParams({
+    email,
+    business: els.business.value || "ALL",
+    sales_person: els.sales.value || "ALL",
+    _: Date.now()
+  });
+  els.status.textContent = "Loading";
+  els.summary.textContent = "Loading bookings...";
+  try {
+    const response = await fetch(`${API_BASE}/api/bookings_table?${params.toString()}`, { cache:"no-store" });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    syncSelect(els.business, data.businessOptions || [], "All businesses", data.selectedBusiness || "ALL");
+    syncSelect(els.sales, data.salesPersonOptions || [], "All sales people", data.selectedSalesPerson || "ALL");
+    renderMatrix(data.customerWeeks || {});
+    els.status.textContent = "Ready";
+  } catch (error) {
+    console.error("Bookings Table load error:", error);
+    if (isLocalPreview()) {
+      const data = localPreviewData();
+      syncSelect(els.business, data.businessOptions || [], "All businesses", els.business.value || "ALL");
+      syncSelect(els.sales, data.salesPersonOptions || [], "All sales people", els.sales.value || "ALL");
+      const selectedSales = els.sales.value || "ALL";
+      const selectedBusiness = els.business.value || "ALL";
+      const rows = (data.customerWeeks.rows || []).filter(row => selectedSales === "ALL" || row.salesPerson === selectedSales);
+      renderMatrix({ columns:data.customerWeeks.columns || [], rows });
+      els.status.textContent = "Preview";
+      els.summary.textContent += selectedBusiness === "ALL" ? " / sample data" : ` / ${selectedBusiness} sample`;
+      return;
+    }
+    els.status.textContent = "Error";
+    els.summary.textContent = "Could not load bookings";
+    els.body.innerHTML = '<tr><td class="empty" colspan="3">Could not load bookings table.</td></tr>';
+  }
+}
+
+els.sales.addEventListener("change", loadBookingsTable);
+els.business.addEventListener("change", () => {
+  els.sales.value = "ALL";
+  loadBookingsTable();
+});
+els.reload.addEventListener("click", loadBookingsTable);
+
+checkModuleAccess("bookings_table", loadBookingsTable);
+</script>
+</body>
+</html>
