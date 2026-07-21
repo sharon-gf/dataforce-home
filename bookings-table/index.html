@@ -167,10 +167,17 @@ const els = {
   business: document.getElementById("businessFilter"),
   summary: document.getElementById("summaryText"),
   status: document.getElementById("statusText"),
+  statusDot: document.querySelector(".status .dot"),
   head: document.getElementById("matrixHead"),
   body: document.getElementById("matrixBody"),
   reload: document.getElementById("reloadBtn")
 };
+
+function setStatus(text, ready) {
+  els.status.textContent = text;
+  const dot = document.querySelector(".df-shell-status .dot") || els.statusDot;
+  if (dot) dot.classList.toggle("ready", Boolean(ready));
+}
 
 function getUserEmail() {
   try {
@@ -291,7 +298,7 @@ async function loadBookingsTable() {
     sales_person: els.sales.value || "ALL",
     _: Date.now()
   });
-  els.status.textContent = "Loading";
+  setStatus("Loading", false);
   els.summary.textContent = "Loading bookings...";
   try {
     const response = await fetch(`${API_BASE}/api/bookings_table?${params.toString()}`, { cache:"no-store" });
@@ -303,7 +310,7 @@ async function loadBookingsTable() {
     syncSelect(els.business, data.businessOptions || [], "All businesses", data.selectedBusiness || "ALL");
     syncSelect(els.sales, data.salesPersonOptions || [], "All sales people", data.selectedSalesPerson || "ALL");
     renderMatrix(data.customerWeeks || {});
-    els.status.textContent = "Ready";
+    setStatus("Ready", true);
   } catch (error) {
     console.error("Bookings Table load error:", error);
     if (isLocalPreview()) {
@@ -314,11 +321,11 @@ async function loadBookingsTable() {
       const selectedBusiness = els.business.value || "ALL";
       const rows = (data.customerWeeks.rows || []).filter(row => selectedSales === "ALL" || row.salesPerson === selectedSales);
       renderMatrix({ columns:data.customerWeeks.columns || [], rows });
-      els.status.textContent = "Preview";
+      setStatus("Preview", true);
       els.summary.textContent += selectedBusiness === "ALL" ? " / sample data" : ` / ${selectedBusiness} sample`;
       return;
     }
-    els.status.textContent = "Error";
+    setStatus("Error", false);
     els.summary.textContent = "Could not load bookings";
     els.body.innerHTML = '<tr><td class="empty" colspan="3">Could not load bookings table.</td></tr>';
   }
