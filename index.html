@@ -121,6 +121,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-vvi       { --card-accent:#b91c1c; --card-icon-bg:#fef2f2; }
 .card-check-rates { --card-accent:#7c3aed; --card-icon-bg:#f3e8ff; }
 .card-finance { --card-accent:#0f766e; --card-icon-bg:#e6f5f3; }
+.card-jet-fuel { --card-accent:#1a3360; --card-icon-bg:#edf4fb; }
 .card-quote { --card-accent:#2563eb; --card-icon-bg:#eef4ff; }
 .hub-footer { margin-top:28px; font-size:9px; color:var(--text3); letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
 .hub-footer span { width:16px; height:1px; background:var(--border); display:inline-block; }
@@ -257,6 +258,12 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#0f766e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
 
+      <a class="card card-jet-fuel" href="https://dataforce.gsaforce.com/jet-fuel/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a3360" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 16l4-5 4 3 4-7"/><path d="M16 7h2v2"/><path d="M5 4h3"/><path d="M5 8h2"/></svg></div>
+        <div><div class="card-name">Jet Fuel</div><div class="card-desc">Monitor fuel price, weekly movement and future market indices</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a3360" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+
       <a class="card card-quote" href="https://prd-pal-connect.lovable.app/" target="_blank" rel="noopener noreferrer">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg></div>
         <div><div class="card-name">Quote</div><div class="card-desc">Open quote workspace in a new tab</div></div>
@@ -368,6 +375,7 @@ async function applyModulePermissions() {
       'vvi_charters': '.card-vvi',
       'check_rates': '.card-check-rates',
       'finance': '.card-finance',
+      'jet_fuel': '.card-jet-fuel',
       'quote': '.card-quote',
       'upload': '.card-upload',
       'customers': '.card-customers',
