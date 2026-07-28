@@ -364,6 +364,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
         <option value="check_rates">Check Rates</option>
         <option value="finance">Finance</option>
         <option value="jet_fuel">Jet Fuel</option>
+        <option value="industry_monitor">Industry Monitor</option>
         <option value="quote">Quote</option>
         <option value="vvi_charters">VVI Charters</option>
         <option value="customers">Customers</option>
@@ -417,6 +418,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Check Rates: rate checking workflow for reviewing customer rates and marking reviewed items.">RATE</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Finance: finance module access for revenue and financial reporting views.">FIN</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Jet Fuel: jet fuel price monitor, weekly movement, alerts, and market index tracking.">FUEL</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Industry Monitor: weekly market news, economic indicators, logistics indexes, and customer impact briefing.">IND</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Quote: quote module access for quoting workflows.">QUOTE</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Upload Data: upload cargo data files into DATAFORCE.">UP</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="VVI Charters: VVI charter KPIs, bookings, and customer matrix.">VVI</th>
@@ -515,6 +517,10 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
           <label for="mod-jet-fuel">Jet Fuel</label>
         </div>
         <div class="checkbox-item">
+          <input type="checkbox" id="mod-industry-monitor" value="industry_monitor" onchange="updateSelectAllModules()" />
+          <label for="mod-industry-monitor">Industry Monitor</label>
+        </div>
+        <div class="checkbox-item">
           <input type="checkbox" id="mod-quote" value="quote" onchange="updateSelectAllModules()" />
           <label for="mod-quote">Quote</label>
         </div>
@@ -608,6 +614,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     { key: 'check_rates', label: 'RATE' },
     { key: 'finance', label: 'FIN' },
     { key: 'jet_fuel', label: 'FUEL' },
+    { key: 'industry_monitor', label: 'IND' },
     { key: 'quote', label: 'QUOTE' },
     { key: 'upload', label: 'UP' },
     { key: 'vvi_charters', label: 'VVI' },

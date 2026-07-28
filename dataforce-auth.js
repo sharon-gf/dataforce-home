@@ -18,6 +18,7 @@
     "check_rates",
     "finance",
     "jet_fuel",
+    "industry_monitor",
     "quote",
     "vvi_charters",
     "upload",

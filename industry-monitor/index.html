@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Industry Monitor - DATAFORCE</title>
+<link rel="stylesheet" href="../dataforce-shell.css">
+<style>
+:root {
+  --navy: #0d1f3c;
+  --navy2: #132b4d;
+  --navy3: #1a3360;
+  --bg: #e8eaee;
+  --surface: #ffffff;
+  --surface2: #f4f5f8;
+  --border: #dde0e8;
+  --text1: #0d1f3c;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #1a56db;
+  --teal: #0c9080;
+  --amber: #c97a06;
+  --red: #b91c1c;
+  --green: #15803d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text1);
+  font-family: Inter, Arial, sans-serif;
+}
+
+.app { min-height: 100vh; }
+header { height: 64px; }
+
+main {
+  width: min(1440px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 14px 0 88px;
+}
+
+.monitor-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.monitor-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.eyebrow,
+.label,
+.micro {
+  color: var(--text3);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-heading {
+  margin-top: 3px;
+  color: var(--text1);
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.btn {
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text1);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn.primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.tab-btn {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text3);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  border-color: rgba(26, 86, 219, 0.25);
+  background: #eef4ff;
+  color: var(--blue);
+}
+
+.view { display: none; }
+.view.active { display: block; }
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+  gap: 10px;
+}
+
+.panel,
+.metric-card,
+.news-card,
+.editor-card {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 8px 10px;
+  background: var(--navy3);
+  color: #c8d8f0;
+}
+
+.panel-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.panel-sub {
+  color: #8fb5d7;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.panel-body {
+  padding: 10px;
+}
+
+.summary-text {
+  min-height: 92px;
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.indicator-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metric-card {
+  min-height: 96px;
+  padding: 10px;
+  border-top: 3px solid var(--blue);
+}
+
+.metric-card.watch { border-top-color: var(--amber); }
+.metric-card.alert { border-top-color: var(--red); }
+.metric-card.good { border-top-color: var(--teal); }
+
+.metric-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.metric-name {
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.metric-value {
+  margin-bottom: 4px;
+  color: var(--text1);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.metric-change {
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.impact-list {
+  display: grid;
+  gap: 7px;
+}
+
+.impact-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface2);
+}
+
+.impact-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: var(--blue);
+}
+
+.impact-item.high .impact-dot { background: var(--red); }
+.impact-item.medium .impact-dot { background: var(--amber); }
+.impact-item.low .impact-dot { background: var(--teal); }
+
+.impact-title {
+  margin-bottom: 3px;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.impact-copy {
+  color: var(--text3);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.news-card {
+  padding: 10px;
+  min-height: 128px;
+  border-top: 3px solid var(--teal);
+}
+
+.news-card.high { border-top-color: var(--red); }
+.news-card.medium { border-top-color: var(--amber); }
+
+.news-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #edf4fb;
+  color: var(--navy);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.news-title {
+  margin-bottom: 6px;
+  color: var(--text1);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.news-summary,
+.news-impact {
+  color: var(--text3);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.news-impact {
+  margin-top: 7px;
+  color: var(--text2);
+}
+
+.news-source {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.newsletter-page {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.newsletter-head {
+  padding: 24px 30px 20px;
+  border-bottom: 4px solid var(--amber);
+  background: var(--navy);
+  color: #ffffff;
+  text-align: center;
+}
+
+.newsletter-brand {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.newsletter-sub {
+  margin-top: 8px;
+  color: #c8d8f0;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.newsletter-body {
+  padding: 24px 30px 30px;
+}
+
+.newsletter-body h2 {
+  margin: 0 0 8px;
+  color: var(--text1);
+  font-size: 19px;
+}
+
+.newsletter-body h3 {
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--navy);
+  font-size: 15px;
+}
+
+.newsletter-body p,
+.newsletter-body li {
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.newsletter-body ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.indicator-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.indicator-table th,
+.indicator-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 12px;
+  vertical-align: top;
+}
+
+.indicator-table th {
+  background: var(--surface2);
+  color: var(--text3);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.editor-card {
+  padding: 12px;
+}
+
+.editor-title {
+  margin-bottom: 10px;
+  color: var(--text1);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.field-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.field-grid.two {
+  grid-template-columns: 1fr 1fr;
+}
+
+label {
+  display: grid;
+  gap: 4px;
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--text1);
+  font-size: 12px;
+}
+
+input,
+select {
+  height: 32px;
+  padding: 0 9px;
+}
+
+textarea {
+  min-height: 88px;
+  padding: 8px 9px;
+  resize: vertical;
+}
+
+.stack {
+  display: grid;
+  gap: 8px;
+}
+
+.editable-list {
+  display: grid;
+  gap: 7px;
+  max-height: 560px;
+  overflow: auto;
+}
+
+.editable-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface2);
+}
+
+.editable-row-title {
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.editable-row-sub {
+  margin-top: 3px;
+  color: var(--text3);
+  font-size: 10px;
+}
+
+.danger {
+  color: var(--red);
+}
+
+@media (max-width: 1000px) {
+  .dash-grid,
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .indicator-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  main {
+    width: min(100% - 16px, 560px);
+    padding-top: 10px;
+  }
+
+  .monitor-top {
+    grid-template-columns: 1fr;
+  }
+
+  .top-actions {
+    justify-content: flex-start;
+  }
+
+  .tabs,
+  .news-grid,
+  .indicator-grid,
+  .field-grid.two {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    display: grid;
+  }
+
+  .newsletter-head,
+  .newsletter-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+</style>
+<script>window.DATAFORCE_SHELL = {"title":"Industry Monitor","userNameId":"userLabel","statusText":"Ready"};</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo-area"><a href="https://dataforce.gsaforce.com/"><img src="../dataforce-logo.png" alt="DATAFORCE"></a></div>
+    <h1 class="page-title">Industry Monitor</h1>
+    <div class="user-info"><span id="userLabel"></span> <button class="logout-btn" onclick="signOut()">Sign out</button></div>
+  </header>
+
+  <main>
+    <section class="monitor-shell">
+      <div class="monitor-top">
+        <div>
+          <div class="eyebrow">Weekly intelligence</div>
+          <div class="page-heading" id="editionTitle">Industry Monitor</div>
+          <div class="micro" id="editionRange">Week overview</div>
+        </div>
+        <div class="top-actions">
+          <button class="btn" type="button" id="copyNewsletterBtn">Copy newsletter</button>
+          <button class="btn" type="button" id="resetDemoBtn">Reset sample</button>
+          <button class="btn primary" type="button" data-tab-target="editor">Edit edition</button>
+        </div>
+      </div>
+
+      <nav class="tabs" aria-label="Industry monitor views">
+        <button class="tab-btn active" type="button" data-tab-target="dashboard">Dashboard</button>
+        <button class="tab-btn" type="button" data-tab-target="newsletter">Newsletter</button>
+        <button class="tab-btn" type="button" data-tab-target="editor">Editor</button>
+      </nav>
+
+      <section class="view active" id="dashboardView">
+        <div class="dash-grid">
+          <div class="stack">
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">Weekly Summary</div>
+                <div class="panel-sub" id="summaryStatus">Draft</div>
+              </div>
+              <div class="panel-body">
+                <div class="summary-text" id="summaryText"></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">Market Indicators</div>
+                <div class="panel-sub">Manual snapshot</div>
+              </div>
+              <div class="panel-body">
+                <div class="indicator-grid" id="indicatorGrid"></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">Industry News</div>
+                <div class="panel-sub" id="newsCount">0 items</div>
+              </div>
+              <div class="panel-body">
+                <div class="news-grid" id="newsGrid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">Customer Impact</div>
+                <div class="panel-sub">High signal</div>
+              </div>
+              <div class="panel-body">
+                <div class="impact-list" id="impactList"></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">In One Glance</div>
+                <div class="panel-sub">Newsletter bullets</div>
+              </div>
+              <div class="panel-body">
+                <div class="impact-list" id="glanceList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="newsletterView">
+        <article class="newsletter-page" id="newsletterPage"></article>
+      </section>
+
+      <section class="view" id="editorView">
+        <div class="editor-grid">
+          <div class="editor-card">
+            <div class="editor-title">Edition Details</div>
+            <div class="field-grid">
+              <label>Title
+                <input id="editTitle" type="text">
+              </label>
+              <label>Date range
+                <input id="editDateRange" type="text">
+              </label>
+              <label>Status
+                <select id="editStatus">
+                  <option value="Draft">Draft</option>
+                  <option value="Review">Review</option>
+                  <option value="Published">Published</option>
+                </select>
+              </label>
+              <label>Weekly summary
+                <textarea id="editSummary"></textarea>
+              </label>
+              <label>In one glance bullets, one per line
+                <textarea id="editGlance"></textarea>
+              </label>
+              <button class="btn primary" type="button" id="saveEditionBtn">Save edition</button>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="editor-card">
+              <div class="editor-title">Add Indicator</div>
+              <div class="field-grid two">
+                <label>Name <input id="indicatorName" type="text" placeholder="Jet Fuel"></label>
+                <label>Value <input id="indicatorValue" type="text" placeholder="$160.06/bbl"></label>
+                <label>Weekly change <input id="indicatorChange" type="text" placeholder="+7.1%"></label>
+                <label>Source <input id="indicatorSource" type="text" placeholder="IATA"></label>
+              </div>
+              <div class="field-grid" style="margin-top:8px;">
+                <label>Why it matters <textarea id="indicatorWhy"></textarea></label>
+                <button class="btn" type="button" id="addIndicatorBtn">Add indicator</button>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <div class="editor-title">Add News Item</div>
+              <div class="field-grid two">
+                <label>Category <input id="newsCategory" type="text" placeholder="Logistics"></label>
+                <label>Priority
+                  <select id="newsPriority">
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </label>
+                <label>Source <input id="newsSource" type="text" placeholder="Source"></label>
+                <label>URL <input id="newsUrl" type="url" placeholder="https://"></label>
+              </div>
+              <div class="field-grid" style="margin-top:8px;">
+                <label>Headline <input id="newsHeadline" type="text"></label>
+                <label>Short summary <textarea id="newsSummary"></textarea></label>
+                <label>Impact for customers <textarea id="newsImpact"></textarea></label>
+                <button class="btn" type="button" id="addNewsBtn">Add news item</button>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <div class="editor-title">Current Items</div>
+              <div class="editable-list" id="editableList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+</div>
+
+<script src="../dataforce-auth.js"></script>
+<script src="../permission-guard.js"></script>
+<script src="../dataforce-shell.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-production.up.railway.app";
+const STORAGE_KEY = "df_industry_monitor_edition";
+
+const SAMPLE_EDITION = {
+  title: "Industry Monitor - Week 30",
+  dateRange: "July 20-26, 2026",
+  status: "Draft",
+  summary: "The week combined higher fuel pressure, tariff risk, port disruption, and strong demand signals in perishables. For cargo customers, the main watch points are fuel surcharge exposure, contract review for U.S.-bound exports, and operational buffers around weather or port restrictions.",
+  glance: [
+    "Jet fuel rose sharply week over week on the latest IATA monitor.",
+    "Trade policy and tariff risk remain important for U.S.-bound perishables.",
+    "Port and weather disruption should be watched for reefer cargo planning.",
+    "Ocean and air cargo indexes belong in the same weekly snapshot."
+  ],
+  indicators: [
+    { name: "Jet Fuel", value: "$160.06/bbl", change: "+7.1%", source: "IATA / Platts", why: "Core input for air cargo fuel surcharge pressure.", tone: "alert" },
+    { name: "Brent Crude", value: "Add feed", change: "Watch", source: "Market source", why: "Useful proxy for broad fuel and bunker cost movement.", tone: "watch" },
+    { name: "USD / CLP", value: "Add value", change: "Weekly", source: "FX source", why: "Affects export invoicing, local costs, and customer margins.", tone: "good" },
+    { name: "Baltic Dry Index", value: "Add value", change: "Weekly", source: "Shipping source", why: "Reference signal for dry bulk freight cost pressure.", tone: "watch" }
+  ],
+  news: [
+    {
+      category: "Trade",
+      priority: "high",
+      headline: "U.S. tariff risk creates contract review need for Chilean exports",
+      source: "Newsletter source",
+      url: "",
+      summary: "New tariff measures could affect selected Chilean export categories and increase landed-cost uncertainty.",
+      impact: "Review active quotes, contract clauses, and destination alternatives for affected customers."
+    },
+    {
+      category: "Logistics",
+      priority: "medium",
+      headline: "Port and weather disruption remains a planning risk",
+      source: "Newsletter source",
+      url: "",
+      summary: "Weather events can restrict port operations and force schedule changes for cargo movements.",
+      impact: "Build extra buffer into time-sensitive reefer and air cargo plans."
+    },
+    {
+      category: "Air Cargo",
+      priority: "medium",
+      headline: "Air cargo rate pressure belongs on the weekly watchlist",
+      source: "Industry source",
+      url: "",
+      summary: "Capacity, fuel, and regional disruption can quickly flow into air cargo pricing.",
+      impact: "Use the monitor to flag early surcharge and rate-change conversations."
+    },
+    {
+      category: "Perishables",
+      priority: "low",
+      headline: "Perishable export demand remains a key cargo signal",
+      source: "Industry source",
+      url: "",
+      summary: "Fresh food, salmon, fruit, and pharma-sensitive lanes should remain visible in the weekly view.",
+      impact: "Track demand signals by commodity so sales teams know where space pressure may build."
+    }
+  ]
+};
+
+let edition = loadEdition();
+
+function signOut() {
+  DataforceAuth.removeItem("df_user");
+  DataforceAuth.removeItem("df_permissions");
+  window.location.href = "https://dataforce.gsaforce.com/";
+}
+
+function initIndustryMonitor() {
+  const user = getDataforceUser();
+  const userLabel = document.getElementById("userLabel");
+  if (userLabel && user) userLabel.textContent = user.name || user.email || "";
+  bindEvents();
+  renderAll();
+}
+
+function loadEdition() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : structuredClone(SAMPLE_EDITION);
+  } catch (e) {
+    return JSON.parse(JSON.stringify(SAMPLE_EDITION));
+  }
+}
+
+function saveEdition() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(edition));
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[char]));
+}
+
+function bindEvents() {
+  document.querySelectorAll("[data-tab-target]").forEach(button => {
+    button.addEventListener("click", () => showTab(button.dataset.tabTarget));
+  });
+  document.getElementById("saveEditionBtn").addEventListener("click", updateEditionDetails);
+  document.getElementById("addIndicatorBtn").addEventListener("click", addIndicator);
+  document.getElementById("addNewsBtn").addEventListener("click", addNewsItem);
+  document.getElementById("resetDemoBtn").addEventListener("click", resetSample);
+  document.getElementById("copyNewsletterBtn").addEventListener("click", copyNewsletter);
+}
+
+function showTab(name) {
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tabTarget === name);
+  });
+  document.querySelectorAll(".view").forEach(view => view.classList.remove("active"));
+  document.getElementById(`${name}View`).classList.add("active");
+}
+
+function renderAll() {
+  document.getElementById("editionTitle").textContent = edition.title;
+  document.getElementById("editionRange").textContent = edition.dateRange;
+  document.getElementById("summaryStatus").textContent = edition.status;
+  document.getElementById("summaryText").textContent = edition.summary;
+  renderIndicators();
+  renderNews();
+  renderImpact();
+  renderNewsletter();
+  renderEditor();
+}
+
+function renderIndicators() {
+  const grid = document.getElementById("indicatorGrid");
+  grid.innerHTML = edition.indicators.map(item => `
+    <div class="metric-card ${escapeHtml(item.tone || "watch")}">
+      <div class="metric-top">
+        <div class="metric-name">${escapeHtml(item.name)}</div>
+        <span class="pill">${escapeHtml(item.source || "Source")}</span>
+      </div>
+      <div class="metric-value">${escapeHtml(item.value)}</div>
+      <div class="metric-change">${escapeHtml(item.change)}</div>
+      <div class="news-summary" style="margin-top:7px;">${escapeHtml(item.why)}</div>
+    </div>
+  `).join("");
+}
+
+function renderNews() {
+  const grid = document.getElementById("newsGrid");
+  document.getElementById("newsCount").textContent = `${edition.news.length} items`;
+  grid.innerHTML = edition.news.map(item => `
+    <article class="news-card ${escapeHtml(item.priority)}">
+      <div class="news-meta">
+        <span class="pill">${escapeHtml(item.category)}</span>
+        <span class="pill">${escapeHtml(item.priority)}</span>
+      </div>
+      <div class="news-title">${escapeHtml(item.headline)}</div>
+      <div class="news-summary">${escapeHtml(item.summary)}</div>
+      <div class="news-impact"><strong>Impact:</strong> ${escapeHtml(item.impact)}</div>
+      ${item.url ? `<a class="news-source" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.source || "Open source")}</a>` : `<div class="news-source">${escapeHtml(item.source || "Source pending")}</div>`}
+    </article>
+  `).join("");
+}
+
+function renderImpact() {
+  const impactList = document.getElementById("impactList");
+  const topNews = edition.news.slice(0, 5);
+  impactList.innerHTML = topNews.map(item => `
+    <div class="impact-item ${escapeHtml(item.priority)}">
+      <span class="impact-dot"></span>
+      <div>
+        <div class="impact-title">${escapeHtml(item.category)}: ${escapeHtml(item.headline)}</div>
+        <div class="impact-copy">${escapeHtml(item.impact)}</div>
+      </div>
+    </div>
+  `).join("");
+
+  const glanceList = document.getElementById("glanceList");
+  glanceList.innerHTML = edition.glance.map(text => `
+    <div class="impact-item low">
+      <span class="impact-dot"></span>
+      <div class="impact-copy">${escapeHtml(text)}</div>
+    </div>
+  `).join("");
+}
+
+function renderNewsletter() {
+  const grouped = edition.news.reduce((acc, item) => {
+    const key = item.category || "General";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+
+  const newsSections = Object.entries(grouped).map(([category, items]) => `
+    <h3>${escapeHtml(category)}</h3>
+    ${items.map(item => `
+      <p><strong>${escapeHtml(item.headline)}</strong></p>
+      <p>${escapeHtml(item.summary)}</p>
+      <p><strong>Impact for customers:</strong> ${escapeHtml(item.impact)}</p>
+      <p><strong>Source:</strong> ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.source || "Open source")}</a>` : escapeHtml(item.source || "Source pending")}</p>
+    `).join("")}
+  `).join("");
+
+  document.getElementById("newsletterPage").innerHTML = `
+    <div class="newsletter-head">
+      <div class="newsletter-brand">DATAFORCE</div>
+      <div class="newsletter-sub">Industry Monitor</div>
+    </div>
+    <div class="newsletter-body">
+      <h2>${escapeHtml(edition.title)}</h2>
+      <p><strong>${escapeHtml(edition.dateRange)}</strong></p>
+      <h3>Weekly Summary</h3>
+      <p>${escapeHtml(edition.summary)}</p>
+      ${newsSections}
+      <h3>Market Indicators</h3>
+      <table class="indicator-table">
+        <thead><tr><th>Indicator</th><th>Value</th><th>Change</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          ${edition.indicators.map(item => `<tr><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.value)}</td><td>${escapeHtml(item.change)}</td><td>${escapeHtml(item.why)}</td></tr>`).join("")}
+        </tbody>
+      </table>
+      <h3>In One Glance</h3>
+      <ul>${edition.glance.map(text => `<li>${escapeHtml(text)}</li>`).join("")}</ul>
+    </div>
+  `;
+}
+
+function renderEditor() {
+  document.getElementById("editTitle").value = edition.title;
+  document.getElementById("editDateRange").value = edition.dateRange;
+  document.getElementById("editStatus").value = edition.status;
+  document.getElementById("editSummary").value = edition.summary;
+  document.getElementById("editGlance").value = edition.glance.join("\\n");
+
+  const rows = [
+    ...edition.indicators.map((item, index) => ({ type: "indicator", index, title: item.name, sub: `${item.value} · ${item.change}` })),
+    ...edition.news.map((item, index) => ({ type: "news", index, title: item.headline, sub: `${item.category} · ${item.priority}` }))
+  ];
+
+  document.getElementById("editableList").innerHTML = rows.map(row => `
+    <div class="editable-row">
+      <div>
+        <div class="editable-row-title">${escapeHtml(row.title)}</div>
+        <div class="editable-row-sub">${escapeHtml(row.sub)}</div>
+      </div>
+      <button class="btn danger" type="button" data-remove-type="${row.type}" data-remove-index="${row.index}">Remove</button>
+    </div>
+  `).join("");
+
+  document.querySelectorAll("[data-remove-type]").forEach(button => {
+    button.addEventListener("click", () => removeItem(button.dataset.removeType, Number(button.dataset.removeIndex)));
+  });
+}
+
+function updateEditionDetails() {
+  edition.title = document.getElementById("editTitle").value.trim() || "Industry Monitor";
+  edition.dateRange = document.getElementById("editDateRange").value.trim() || "Date range";
+  edition.status = document.getElementById("editStatus").value;
+  edition.summary = document.getElementById("editSummary").value.trim();
+  edition.glance = document.getElementById("editGlance").value.split("\\n").map(item => item.trim()).filter(Boolean);
+  saveEdition();
+  renderAll();
+}
+
+function addIndicator() {
+  const item = {
+    name: document.getElementById("indicatorName").value.trim(),
+    value: document.getElementById("indicatorValue").value.trim(),
+    change: document.getElementById("indicatorChange").value.trim(),
+    source: document.getElementById("indicatorSource").value.trim(),
+    why: document.getElementById("indicatorWhy").value.trim(),
+    tone: "watch"
+  };
+  if (!item.name || !item.value) return;
+  edition.indicators.push(item);
+  ["indicatorName", "indicatorValue", "indicatorChange", "indicatorSource", "indicatorWhy"].forEach(id => document.getElementById(id).value = "");
+  saveEdition();
+  renderAll();
+}
+
+function addNewsItem() {
+  const item = {
+    category: document.getElementById("newsCategory").value.trim() || "General",
+    priority: document.getElementById("newsPriority").value,
+    headline: document.getElementById("newsHeadline").value.trim(),
+    source: document.getElementById("newsSource").value.trim(),
+    url: document.getElementById("newsUrl").value.trim(),
+    summary: document.getElementById("newsSummary").value.trim(),
+    impact: document.getElementById("newsImpact").value.trim()
+  };
+  if (!item.headline) return;
+  edition.news.push(item);
+  ["newsCategory", "newsHeadline", "newsSource", "newsUrl", "newsSummary", "newsImpact"].forEach(id => document.getElementById(id).value = "");
+  saveEdition();
+  renderAll();
+}
+
+function removeItem(type, index) {
+  if (type === "indicator") edition.indicators.splice(index, 1);
+  if (type === "news") edition.news.splice(index, 1);
+  saveEdition();
+  renderAll();
+}
+
+function resetSample() {
+  edition = JSON.parse(JSON.stringify(SAMPLE_EDITION));
+  saveEdition();
+  renderAll();
+}
+
+async function copyNewsletter() {
+  const text = [
+    edition.title,
+    edition.dateRange,
+    "",
+    "Weekly Summary",
+    edition.summary,
+    "",
+    "In One Glance",
+    ...edition.glance.map(item => `- ${item}`),
+    "",
+    "Market Indicators",
+    ...edition.indicators.map(item => `- ${item.name}: ${item.value} (${item.change}) - ${item.why}`),
+    "",
+    "News",
+    ...edition.news.map(item => `- ${item.category}: ${item.headline}\\n  Summary: ${item.summary}\\n  Impact: ${item.impact}\\n  Source: ${item.source}${item.url ? ` - ${item.url}` : ""}`)
+  ].join("\\n");
+  try {
+    await navigator.clipboard.writeText(text);
+    document.getElementById("copyNewsletterBtn").textContent = "Copied";
+    setTimeout(() => document.getElementById("copyNewsletterBtn").textContent = "Copy newsletter", 1400);
+  } catch (e) {
+    window.prompt("Copy newsletter text", text);
+  }
+}
+
+checkModuleAccess("industry_monitor", initIndustryMonitor);
+</script>
+</body>
+</html>

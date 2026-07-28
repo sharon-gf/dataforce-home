@@ -22,6 +22,7 @@
     { key: "check_rates", label: "Check Rates", href: "https://dataforce.gsaforce.com/check-rates/" },
     { key: "finance", label: "Finance", href: "https://dataforce.gsaforce.com/finance/" },
     { key: "jet_fuel", label: "Jet Fuel", href: "https://dataforce.gsaforce.com/jet-fuel/" },
+    { key: "industry_monitor", label: "Industry Monitor", href: "https://dataforce.gsaforce.com/industry-monitor/" },
     { key: "quote", label: "Quote", href: "https://prd-pal-connect.lovable.app/", external: true },
     { key: "vvi_charters", label: "VVI Charters", href: "https://dataforce.gsaforce.com/vvi-charters/" },
     { key: "upload", label: "Upload Data", href: "https://dataforce.gsaforce.com/upload-data/" },
