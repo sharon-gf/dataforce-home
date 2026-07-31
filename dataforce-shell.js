@@ -2,7 +2,7 @@
   "use strict";
 
   const HOME_URL = "https://dataforce.gsaforce.com/";
-  const DEFAULT_API_BASE = "https://dataforce-api-production.up.railway.app";
+  const DEFAULT_API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
   const SCRIPT_URL = document.currentScript && document.currentScript.src ? document.currentScript.src : "";
   const DEFAULT_LOGO_URL = SCRIPT_URL ? new URL("dataforce-logo.png", SCRIPT_URL).href : "dataforce-logo.png";
   const DEFAULT_FAVICON_HREF = SCRIPT_URL ? new URL("favicon.jpg", SCRIPT_URL).href : "favicon.jpg";
