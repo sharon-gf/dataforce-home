@@ -765,7 +765,7 @@ document.addEventListener("keydown", e => {
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.search.value = "";
-  setBusinessSelection(["ALL"], false);
+  setBusinessSelection(BUSINESS_KEYS, false);
   setDefaultDates();
   els.showOk.checked = false;
   loadRates();
@@ -818,7 +818,7 @@ async function initCheckRates() {
   document.getElementById("userLabel").textContent = u.name || u.email || "";
   await loadHandledKeys();
   setDefaultDates();
-  setBusinessSelection(["ALL"], false);
+  setBusinessSelection(BUSINESS_KEYS, false);
   renderSummary({date_from: els.from.value, date_to: els.to.value, count: 0, summary: {}});
   loadRates();
 }
