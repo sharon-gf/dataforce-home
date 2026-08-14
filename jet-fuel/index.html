@@ -38,19 +38,16 @@ body {
 header { height: 64px; }
 
 main {
-  width: min(100% - 24px, 520px);
+  width: min(100% - 24px, 760px);
   margin: 0 auto;
   padding: 18px 0 88px;
 }
 
 .portrait-board {
   width: 100%;
-  aspect-ratio: 9 / 16;
-  min-height: 880px;
   display: grid;
-  grid-template-rows: 58px 112px 186px 186px 154px 1fr 70px 58px;
-  gap: 9px;
-  padding: 10px;
+  gap: 12px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface2);
@@ -108,8 +105,8 @@ main {
 
 .hero-kpis {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 9px;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .kpi {
@@ -122,8 +119,10 @@ main {
 
 .kpi.alert { border-top-color: var(--red); }
 
+.kpi.alert.down { border-top-color: #047857; }
+
 .kpi-value {
-  font-size: 29px;
+  font-size: 38px;
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1;
@@ -136,19 +135,20 @@ main {
 }
 
 .delta {
-  display: inline-flex;
-  align-items: center;
-  width: max-content;
-  padding: 4px 7px;
-  border-radius: 5px;
-  background: #fef2f2;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--red);
-  font-size: 12px;
+  font-size: 38px;
   font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .delta.down {
-  background: #ecfdf5;
+  background: transparent;
   color: #047857;
 }
 
@@ -182,7 +182,7 @@ main {
 .iata-chart-panel img {
   display: block;
   width: 100%;
-  height: 132px;
+  height: 280px;
 }
 
 .iata-chart-panel img {
@@ -215,7 +215,7 @@ main {
 
 .source-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.35fr 0.75fr 0.9fr;
   gap: 7px;
 }
 
@@ -253,135 +253,18 @@ main {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 6px;
-  color: var(--text3);
-  font-size: 9px;
-  line-height: 1.3;
-}
-
-.history-list {
-  display: grid;
-  gap: 6px;
-}
-
-.history-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
-  align-items: center;
-  padding: 7px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface2);
-}
-
-.history-date,
-.history-price {
-  color: var(--text2);
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.history-change {
-  color: var(--red);
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.watch-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.index-slot {
-  min-height: 74px;
-  padding: 9px;
-  border-top: 3px solid var(--teal);
-}
-
-.index-slot.empty {
-  border-top-color: var(--border);
-  border-style: dashed;
-  background: #f8fafc;
-}
-
-.index-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.index-name {
-  color: var(--text2);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.index-tag {
-  color: var(--amber);
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.spark {
-  width: 100%;
-  height: 24px;
-}
-
-.spark polyline {
-  fill: none;
-  stroke: var(--teal);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.placeholder {
-  height: 8px;
   margin-top: 8px;
-  border-radius: 999px;
-  background: #d7dce5;
-}
-
-.placeholder.short { width: 62%; }
-
-.actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
-}
-
-.action-card {
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--surface);
-}
-
-.action-title {
-  margin-bottom: 6px;
-  color: var(--text2);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.action-copy {
   color: var(--text3);
   font-size: 10px;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 .footer-strip {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 8px;
+  gap: 14px;
   align-items: center;
-  padding: 9px 10px;
+  padding: 12px;
   border-radius: 7px;
   background: var(--navy);
   color: #c8d8f0;
@@ -391,7 +274,27 @@ main {
   display: block;
   margin-top: 2px;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 13px;
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(200, 216, 240, 0.42);
+  border-radius: 5px;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.footer-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  text-decoration: none;
 }
 
 .status-dot {
@@ -410,16 +313,21 @@ main {
   }
 
   .portrait-board {
-    min-height: 840px;
-    grid-template-rows: 58px 104px 174px 174px 148px 1fr 68px 56px;
-    gap: 7px;
+    gap: 9px;
     padding: 8px;
   }
 
+  .hero-kpis { gap: 8px; }
+  .source-grid { grid-template-columns: 1fr; }
   .title { font-size: 15px; }
-  .kpi-value { font-size: 25px; }
+  .kpi-value,
+  .delta { font-size: 28px; }
   .iata-chart-panel svg,
-  .iata-chart-panel img { height: 122px; }
+  .iata-chart-panel img { height: 210px; }
+
+  .footer-strip {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 <script>window.DATAFORCE_SHELL = {"title":"Jet Fuel","userNameId":"userLabel","statusText":"Ready"};</script>
@@ -495,7 +403,7 @@ main {
 
       <div class="panel">
         <div class="panel-head">
-          <div class="panel-title">Source And License Posture</div>
+          <div class="panel-title">Source And Last Check</div>
           <div class="panel-sub">Current data</div>
         </div>
         <div class="panel-body source-grid">
@@ -508,56 +416,18 @@ main {
             <a class="source-link" href="https://www.iata.org/en/publications/economics/fuel-monitor/" target="_blank" rel="noopener noreferrer">Open official page</a>
           </div>
           <div class="source-card">
-            <div class="source-name">Historical data</div>
-            <div class="source-copy" id="fuelSourceNote">IATA says historical data is not provided directly.</div>
-          </div>
-          <div class="source-card">
             <div class="source-name">Last checked</div>
             <div class="source-copy" id="fuelLastChecked">Waiting for source check.</div>
           </div>
         </div>
       </div>
 
-      <div class="watch-grid">
-        <div class="index-slot">
-          <div class="index-head"><span class="index-name">Brent crude</span><span class="index-tag">Next</span></div>
-          <svg class="spark" viewBox="0 0 160 28" aria-hidden="true"><polyline points="2,22 24,17 46,19 68,12 90,14 112,8 136,10 156,4"></polyline></svg>
-          <div class="micro">Reserved feed slot</div>
-        </div>
-        <div class="index-slot">
-          <div class="index-head"><span class="index-name">FX exposure</span><span class="index-tag">Next</span></div>
-          <svg class="spark" viewBox="0 0 160 28" aria-hidden="true"><polyline points="2,15 26,12 50,16 74,9 98,13 122,10 156,12"></polyline></svg>
-          <div class="micro">USD / local currency</div>
-        </div>
-        <div class="index-slot empty">
-          <div class="index-head"><span class="index-name">Future index</span><span class="index-tag">Open</span></div>
-          <div class="placeholder"></div>
-          <div class="placeholder short"></div>
-        </div>
-        <div class="index-slot empty">
-          <div class="index-head"><span class="index-name">Future data</span><span class="index-tag">Open</span></div>
-          <div class="placeholder"></div>
-          <div class="placeholder short"></div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <div class="action-card">
-          <div class="action-title">Saved observation</div>
-          <div class="action-copy" id="savedObservationCopy">Loading latest saved snapshot.</div>
-        </div>
-        <div class="action-card">
-          <div class="action-title">Next automation</div>
-          <div class="action-copy">Refresh scheduled Tuesdays at 9:00am New York time.</div>
-        </div>
-      </div>
-
       <div class="footer-strip">
         <div>
-          <span class="status-dot"></span><span class="micro">Connection design</span>
-          <strong>IATA sourced snapshots with attribution</strong>
+          <span class="status-dot"></span><span class="micro">Official source</span>
+          <strong>IATA Jet Fuel Price Monitor / S&amp;P Global Platts</strong>
         </div>
-        <div class="micro">9:16</div>
+        <a class="footer-link" href="https://www.iata.org/en/publications/economics/fuel-monitor/" target="_blank" rel="noopener noreferrer">Open IATA page</a>
       </div>
     </section>
   </main>
@@ -596,7 +466,6 @@ async function loadFuelSnapshots() {
     const change = Number(latest.week_over_week_change_pct);
     const captureDate = latest.capture_date || "latest capture";
     const sourceText = latest.source_text_reference || "Latest IATA Fuel Price Analysis loaded.";
-    const sourceNotes = source.notes || "IATA publishes the monitor under license from S&P Global Energy Platts.";
     const lastChecked = data.last_checked_at || captureDate;
 
     if (Number.isFinite(price)) {
@@ -606,12 +475,11 @@ async function loadFuelSnapshots() {
       const weeklyMove = document.getElementById("fuelWeeklyMove");
       weeklyMove.textContent = `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`;
       weeklyMove.classList.toggle("down", change < 0);
+      weeklyMove.closest(".kpi")?.classList.toggle("down", change < 0);
     }
     document.getElementById("fuelCaptureDate").textContent = `Captured ${captureDate} from IATA`;
     document.getElementById("fuelSourceText").textContent = sourceText;
-    document.getElementById("fuelSourceNote").textContent = sourceNotes;
     document.getElementById("fuelLastChecked").textContent = `Checked ${lastChecked}; source: IATA / S&P Global Platts.`;
-    document.getElementById("savedObservationCopy").textContent = `${captureDate} capture stored as snapshot ${snapshots.length}.`;
   } catch (e) {
     console.warn("Unable to load jet fuel snapshot file:", e);
     document.getElementById("fuelSourceText").textContent = "Unable to load the local snapshot. Use the official IATA source link.";
