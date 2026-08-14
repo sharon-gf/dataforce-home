@@ -1,0 +1,48 @@
+name: Update Jet Fuel Snapshot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 13,14 * * 2"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check New York schedule
+        id: schedule
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          ny_hour="$(TZ=America/New_York date +%H)"
+          if [ "$ny_hour" = "09" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.schedule.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Refresh IATA snapshot
+        if: steps.schedule.outputs.run == 'true'
+        run: python3 scripts/update_jet_fuel.py
+
+      - name: Commit updated snapshot
+        if: steps.schedule.outputs.run == 'true'
+        run: |
+          if git diff --quiet -- jet-fuel/fuel-snapshots.json; then
+            echo "No jet fuel snapshot changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jet-fuel/fuel-snapshots.json
+          git commit -m "Update jet fuel snapshot"
+          git push

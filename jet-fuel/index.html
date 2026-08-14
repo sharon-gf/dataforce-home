@@ -147,6 +147,11 @@ main {
   font-weight: 800;
 }
 
+.delta.down {
+  background: #ecfdf5;
+  color: #047857;
+}
+
 .panel-head {
   display: flex;
   align-items: center;
@@ -428,7 +433,7 @@ main {
   </header>
 
   <main>
-    <section class="portrait-board" aria-label="Jet fuel portrait dashboard mockup">
+    <section class="portrait-board" aria-label="Jet fuel price monitor">
       <div class="toolbar">
         <div>
           <div class="eyebrow">Energy market monitor</div>
@@ -441,16 +446,16 @@ main {
         <div class="kpi">
           <div>
             <div class="label">Global average</div>
-            <div class="kpi-value" id="fuelPriceValue">$160.06</div>
+            <div class="kpi-value" id="fuelPriceValue">Loading</div>
           </div>
           <div class="kpi-note">USD per barrel, latest reported week</div>
         </div>
         <div class="kpi alert">
           <div>
             <div class="label">Weekly move</div>
-            <div class="delta" id="fuelWeeklyMove">+7.1%</div>
+            <div class="delta" id="fuelWeeklyMove">Loading</div>
           </div>
-          <div class="kpi-note">From IATA Fuel Price Analysis</div>
+          <div class="kpi-note" id="fuelCaptureDate">From IATA Fuel Price Analysis</div>
         </div>
       </div>
 
@@ -496,7 +501,7 @@ main {
         <div class="panel-body source-grid">
           <div class="source-card">
             <div class="source-name">Current headline</div>
-            <div class="source-copy">Display visible IATA Fuel Price Analysis with attribution.</div>
+            <div class="source-copy" id="fuelSourceText">Loading latest IATA Fuel Price Analysis.</div>
           </div>
           <div class="source-card">
             <div class="source-name">IATA charts</div>
@@ -504,11 +509,11 @@ main {
           </div>
           <div class="source-card">
             <div class="source-name">Historical data</div>
-            <div class="source-copy">IATA says historical data is not provided directly.</div>
+            <div class="source-copy" id="fuelSourceNote">IATA says historical data is not provided directly.</div>
           </div>
           <div class="source-card">
-            <div class="source-name">Dataforce history</div>
-            <div class="source-copy">Replace chart with internal trend once enough snapshots exist.</div>
+            <div class="source-name">Last checked</div>
+            <div class="source-copy" id="fuelLastChecked">Waiting for source check.</div>
           </div>
         </div>
       </div>
@@ -539,18 +544,18 @@ main {
       <div class="actions">
         <div class="action-card">
           <div class="action-title">Saved observation</div>
-          <div class="action-copy" id="savedObservationCopy">2026-07-28 capture stored as the first weekly snapshot.</div>
+          <div class="action-copy" id="savedObservationCopy">Loading latest saved snapshot.</div>
         </div>
         <div class="action-card">
           <div class="action-title">Next automation</div>
-          <div class="action-copy">Schedule weekly capture into the Dataforce API.</div>
+          <div class="action-copy">Refresh scheduled Tuesdays at 9:00am New York time.</div>
         </div>
       </div>
 
       <div class="footer-strip">
         <div>
           <span class="status-dot"></span><span class="micro">Connection design</span>
-          <strong>IATA sourced snapshots + Dataforce history</strong>
+          <strong>IATA sourced snapshots with attribution</strong>
         </div>
         <div class="micro">9:16</div>
       </div>
@@ -582,6 +587,7 @@ async function loadFuelSnapshots() {
     const response = await fetch("fuel-snapshots.json", { cache: "no-store" });
     if (!response.ok) throw new Error("Snapshot file unavailable");
     const data = await response.json();
+    const source = data.source || {};
     const snapshots = Array.isArray(data.snapshots) ? data.snapshots : [];
     const latest = snapshots[snapshots.length - 1];
     if (!latest) return;
@@ -589,16 +595,26 @@ async function loadFuelSnapshots() {
     const price = Number(latest.global_average_usd_per_bbl);
     const change = Number(latest.week_over_week_change_pct);
     const captureDate = latest.capture_date || "latest capture";
+    const sourceText = latest.source_text_reference || "Latest IATA Fuel Price Analysis loaded.";
+    const sourceNotes = source.notes || "IATA publishes the monitor under license from S&P Global Energy Platts.";
+    const lastChecked = data.last_checked_at || captureDate;
 
     if (Number.isFinite(price)) {
       document.getElementById("fuelPriceValue").textContent = `$${price.toFixed(2)}`;
     }
     if (Number.isFinite(change)) {
-      document.getElementById("fuelWeeklyMove").textContent = `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`;
+      const weeklyMove = document.getElementById("fuelWeeklyMove");
+      weeklyMove.textContent = `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`;
+      weeklyMove.classList.toggle("down", change < 0);
     }
+    document.getElementById("fuelCaptureDate").textContent = `Captured ${captureDate} from IATA`;
+    document.getElementById("fuelSourceText").textContent = sourceText;
+    document.getElementById("fuelSourceNote").textContent = sourceNotes;
+    document.getElementById("fuelLastChecked").textContent = `Checked ${lastChecked}; source: IATA / S&P Global Platts.`;
     document.getElementById("savedObservationCopy").textContent = `${captureDate} capture stored as snapshot ${snapshots.length}.`;
   } catch (e) {
-    console.warn("Using embedded jet fuel mockup values:", e);
+    console.warn("Unable to load jet fuel snapshot file:", e);
+    document.getElementById("fuelSourceText").textContent = "Unable to load the local snapshot. Use the official IATA source link.";
   }
 }
 
