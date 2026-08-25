@@ -558,6 +558,7 @@ main {
 <script>
 let DATE_COL = "FlightDate";
 let ALL_DATA = {}; // Stores all business data locally for instant switching
+const REPORT_PARAMS = new URLSearchParams(window.location.search);
 
 function setDateMode(col) {
   DATE_COL = col;
@@ -874,6 +875,7 @@ function setComp(id, pct) {
 }
   
 function applyData(d){
+  window.DATAFORCE_DASHBOARD_READY = false;
   // KPIs
   if (d.kpis) {
     const k = d.kpis;
@@ -914,6 +916,7 @@ function applyData(d){
   renderDTable('oriBody',d.oriTable);
   renderLine(d.lineChart);
   renderWeeklyBar(d.weeklyBreakdown);
+  window.DATAFORCE_DASHBOARD_READY = true;
 }
 
 // Title for each selector value
@@ -1156,12 +1159,28 @@ async function initDashboard(){
   if(!API_BASE){ applyData(DEMO); document.getElementById('connLabel').textContent='Demo mode'; return; }
   const permissions = await getDashboardPermissions();
   if (!configureBusinessAccess(permissions)) return;
+  applyReportParams();
   updateBusinessControls(false);
   await loadData(); // load current business first, before warming the rest
   setTimeout(warmCache, 0);
 }
 
 const MERCURY_BIZ = new Set(["MERC_LOCAL", "MERC_GSA", "MERC_ALL"]);
+
+function applyReportParams() {
+  const reportBiz = REPORT_PARAMS.get('biz');
+  const reportDateCol = REPORT_PARAMS.get('date_col');
+  const select = document.getElementById('bizSelect');
+  if (reportBiz && select && Array.from(select.options).some(opt => opt.value === reportBiz) && canAccessBusinessOption(reportBiz)) {
+    select.value = reportBiz;
+    IS_805 = false;
+  }
+  if (reportDateCol === "FlightDate" || reportDateCol === "Bkg_CreaDate") {
+    DATE_COL = reportDateCol;
+  }
+  document.getElementById("btn-flown").classList.toggle("active", DATE_COL === "FlightDate");
+  document.getElementById("btn-booked").classList.toggle("active", DATE_COL === "Bkg_CreaDate");
+}
 
 function updateBusinessControls(shouldLoad=true){
   const biz = document.getElementById('bizSelect').value;
