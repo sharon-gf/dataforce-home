@@ -1131,14 +1131,9 @@ async function warmCache() {
   const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'].filter(canAccessEffectiveBusiness);
 
   _isWarming = true;
-  if (connLbl && connLbl.textContent !== 'Ready') connLbl.textContent = 'Loading reports';
+  const originalStatus = connLbl ? connLbl.textContent : '';
 
   try {
-    const flown = await loadAllData('FlightDate');
-    if (flown && typeof flown === 'object') {
-      ALL_DATA.FlightDate = { ...(ALL_DATA.FlightDate || {}), ...flown };
-    }
-
     await Promise.allSettled(mercBiz.map(async (biz) => {
       const data = await fetchBiz(biz, 'Bkg_CreaDate');
       if (data) {
@@ -1151,7 +1146,7 @@ async function warmCache() {
   } finally {
     _isWarming = false;
     if (connDot) { connDot.style.background = ''; connDot.classList.add('live'); }
-    if (connLbl) connLbl.textContent = 'Ready';
+    if (connLbl) connLbl.textContent = originalStatus || 'Ready';
   }
 }
 
@@ -1162,7 +1157,7 @@ async function initDashboard(){
   applyReportParams();
   updateBusinessControls(false);
   await loadData(); // load current business first, before warming the rest
-  setTimeout(warmCache, 0);
+  if (!REPORT_PARAMS.get('report')) setTimeout(warmCache, 0);
 }
 
 const MERCURY_BIZ = new Set(["MERC_LOCAL", "MERC_GSA", "MERC_ALL"]);
