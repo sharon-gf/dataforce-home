@@ -523,18 +523,29 @@ async function loadSummary() {
 
     const configs = ACTIVE_BIZ_CONFIG;
 
-    // Load allowed businesses in parallel
-    const results = await Promise.all(
-      configs.map(async cfg => {
+    const fetchCardData = async (cfg, attempts=3) => {
+      for (let i = 0; i < attempts; i++) {
         try {
           const r = await fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=${WEEK_MODE}&email=${encodeURIComponent(userEmail)}&module=booked`, {headers:{"x-api-key":API_KEY}});
-          if (!r.ok) return { data: null, error: `${cfg.key}: HTTP ${r.status}` };
-          return { data: await r.json(), error: null };
+          if (r.ok) return { data: await r.json(), error: null };
+          if (i === attempts - 1) return { data: null, error: `${cfg.key}: HTTP ${r.status}` };
         } catch(e) {
-          return { data: null, error: `${cfg.key}: ${e?.message || 'request failed'}` };
+          if (i === attempts - 1) return { data: null, error: `${cfg.key}: ${e?.message || 'request failed'}` };
         }
-      })
-    );
+        await new Promise(resolve => setTimeout(resolve, 700 * (i + 1)));
+      }
+      return { data: null, error: `${cfg.key}: request failed` };
+    };
+
+    const results = new Array(configs.length);
+    let nextIndex = 0;
+    const worker = async () => {
+      while (nextIndex < configs.length) {
+        const index = nextIndex++;
+        results[index] = await fetchCardData(configs[index]);
+      }
+    };
+    await Promise.all(Array.from({length: Math.min(3, configs.length)}, worker));
     
     // Check if user has access - validate AFTER getting response
     if (results[0]?.data && results[0].data.allowed === false) {
