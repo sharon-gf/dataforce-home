@@ -4,7 +4,7 @@
     "url": "https://www.iata.org/en/publications/economics/fuel-monitor/",
     "notes": "IATA publishes current fuel monitor data under license from S&P Global Energy Platts and states that historical price data is not provided directly."
   },
-  "last_checked_at": "2026-08-18",
+  "last_checked_at": "2026-08-25",
   "snapshots": [
     {
       "capture_date": "2026-07-28",
@@ -26,6 +26,13 @@
       "global_average_usd_per_bbl": 158.91,
       "week_over_week_change_pct": 8.2,
       "source_text_reference": "The global average jet fuel price last week rose 8.2% compared to the week before to $158.91/bbl."
+    },
+    {
+      "capture_date": "2026-08-25",
+      "reported_period": "latest reported week",
+      "global_average_usd_per_bbl": 163.87,
+      "week_over_week_change_pct": 3.1,
+      "source_text_reference": "The global average jet fuel price last week rose 3.1% compared to the week before to $163.87/bbl."
     }
   ]
 }
