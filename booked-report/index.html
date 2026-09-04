@@ -449,11 +449,11 @@ function buildCard(cfg, data) {
   const suffix = MODE === 'ytd' ? '_ytd' : MODE === 'q1' ? '_q1' : '';
   const gsaRows   = (data?.['gsaTable'   + suffix] || data?.gsaTable   || []).slice(0, 10);
   const salesRows = (data?.['salesTable' + suffix] || data?.salesTable || []).slice(0, 10);
-  const segOriRows = (data?.['segOriTable' + suffix] || data?.segOriTable || []).slice(0, 10);
+  const segOriLggRows = (data?.['segOriTable_lgg' + suffix] || data?.segOriTable_lgg || []).slice(0, 10);
 
   let rows = [];
   if (cfg.dbCol === 'GSA_SName') rows = gsaRows;
-  else if (cfg.dbCol === 'Bkg_SalesPerson') rows = appendLggAsSalesRow(cfg, salesRows, segOriRows);
+  else if (cfg.dbCol === 'Bkg_SalesPerson') rows = appendLggAsSalesRow(cfg, salesRows, segOriLggRows);
   else if (cfg.dbCol === 'Bkg_Ori') rows = (data?.['oriTable' + suffix] || data?.oriTable || []).slice(0, 10);
 
   const tableRows = rows.length > 0

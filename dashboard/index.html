@@ -893,7 +893,6 @@ function setComp(id, pct) {
   
 function applyData(d){
   window.DATAFORCE_DASHBOARD_READY = false;
-  const effectiveBiz = getEffectiveBiz();
   // KPIs
   if (d.kpis) {
     const k = d.kpis;
@@ -930,14 +929,14 @@ function applyData(d){
   }
   renderWeekly(d.weeklyBreakdown);
   renderDTable('gsaBody',d.gsaTable);
-  const segOriRows = (d.segOriTable || []).slice(0, 10);
+  const segOriLggRows = (d.segOriTable_lgg || []).slice(0, 10);
   renderDTable('salesBody', d.salesTable);
   const lggWrap = document.getElementById('etLggWrap');
-  const lggRows = segOriRows.filter(row => String(row?.name || '').trim() === 'LGG');
+  const lggRows = segOriLggRows.filter(row => String(row?.name || '').trim() === 'LGG');
   if (lggWrap) {
-    lggWrap.style.display = effectiveBiz === '02_ET_LGG' && lggRows.length ? 'block' : 'none';
+    lggWrap.style.display = document.getElementById('bizSelect').value === '02_ET' && IS_805 && lggRows.length ? 'block' : 'none';
   }
-  renderDTable('lggBody', effectiveBiz === '02_ET_LGG' ? lggRows : []);
+  renderDTable('lggBody', document.getElementById('bizSelect').value === '02_ET' && IS_805 ? lggRows : []);
   renderDTable('oriBody',d.oriTable);
   renderLine(d.lineChart);
   renderWeeklyBar(d.weeklyBreakdown);
@@ -1129,6 +1128,7 @@ function configureBusinessAccess(permissions) {
 
 function getEffectiveBiz() {
   const biz = document.getElementById('bizSelect').value;
+  if (biz === "02_ET") return "02_ET";
   return (IS_805 && HAS_805_BIZ.has(biz)) ? getVariantBiz(biz) : biz;
 }
 
