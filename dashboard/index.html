@@ -538,6 +538,11 @@ main {
       <div class="card-body np bottom-table-body">
         <table class="dtbl"><thead><tr><th>Sales Person</th><th>Tons</th><th>#Bk</th><th>Rev</th><th>$/kg</th><th>P/kg</th></tr></thead>
         <tbody id="salesBody"></tbody></table>
+        <div id="etLggWrap" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);">
+          <div class="sec-lbl" style="margin-bottom:4px;">LGG</div>
+          <table class="dtbl"><thead><tr><th>Seg Ori</th><th>Tons</th><th>#Bk</th><th>Rev</th><th>$/kg</th><th>P/kg</th></tr></thead>
+          <tbody id="lggBody"></tbody></table>
+        </div>
       </div>
     </div>
 
@@ -732,6 +737,7 @@ async function showWeekDetail(week, year) {
 const TABLE_GROUP_COLS = {
   'gsaBody': 'GSA_SName',
   'salesBody': 'Bkg_SalesPerson',
+  'lggBody': 'Seg_Ori',
   'oriBody': 'Bkg_Ori'
 };
 
@@ -760,15 +766,6 @@ function renderDTable(id, data){
       showAwbDetail(row.dataset.group, row.dataset.val, row.dataset.label);
     });
   });
-}
-
-function addEtLggRowToSales(salesRows, segOriRows) {
-  const rows = Array.isArray(salesRows) ? salesRows.map(row => ({ ...row })) : [];
-  const lggRow = (segOriRows || []).find(row => String(row?.name || '').trim() === 'LGG');
-  if (!lggRow) return rows;
-  if (rows.some(row => String(row?.name || '').trim() === 'LGG')) return rows;
-  rows.push({ ...lggRow, groupCol: 'Seg_Ori' });
-  return rows;
 }
 
 function hasSeriesData(series) {
@@ -934,10 +931,13 @@ function applyData(d){
   renderWeekly(d.weeklyBreakdown);
   renderDTable('gsaBody',d.gsaTable);
   const segOriRows = (d.segOriTable || []).slice(0, 10);
-  const salesRows = effectiveBiz === '02_ET_LGG'
-    ? addEtLggRowToSales(d.salesTable, segOriRows)
-    : d.salesTable;
-  renderDTable('salesBody', salesRows);
+  renderDTable('salesBody', d.salesTable);
+  const lggWrap = document.getElementById('etLggWrap');
+  const lggRows = segOriRows.filter(row => String(row?.name || '').trim() === 'LGG');
+  if (lggWrap) {
+    lggWrap.style.display = effectiveBiz === '02_ET_LGG' && lggRows.length ? 'block' : 'none';
+  }
+  renderDTable('lggBody', effectiveBiz === '02_ET_LGG' ? lggRows : []);
   renderDTable('oriBody',d.oriTable);
   renderLine(d.lineChart);
   renderWeeklyBar(d.weeklyBreakdown);
