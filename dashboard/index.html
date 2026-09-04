@@ -1128,7 +1128,6 @@ function configureBusinessAccess(permissions) {
 
 function getEffectiveBiz() {
   const biz = document.getElementById('bizSelect').value;
-  if (biz === "02_ET") return "02_ET";
   return (IS_805 && HAS_805_BIZ.has(biz)) ? getVariantBiz(biz) : biz;
 }
 

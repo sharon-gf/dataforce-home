@@ -422,20 +422,6 @@ const pct = v => {
   return `<span class="${cls}">${arr}${Math.abs(v).toFixed(1)}%</span>`;
 };
 
-function appendLggAsSalesRow(cfg, salesRows, segOriRows) {
-  if (cfg.key !== '02_ET') return salesRows;
-  if (salesRows.some(row => String(row?.name || '').trim().toUpperCase() === 'LGG')) return salesRows;
-
-  const lggRow = segOriRows.find(row => String(row?.name || '').trim().toUpperCase() === 'LGG');
-  if (!lggRow) return salesRows;
-
-  return [...salesRows, {
-    ...lggRow,
-    name: 'LGG',
-    groupCol: 'Seg_Ori',
-  }];
-}
-
 function buildCard(cfg, data) {
   const k = data?.kpis;
   const lw = k?.lw;
@@ -453,7 +439,7 @@ function buildCard(cfg, data) {
 
   let rows = [];
   if (cfg.dbCol === 'GSA_SName') rows = gsaRows;
-  else if (cfg.dbCol === 'Bkg_SalesPerson') rows = appendLggAsSalesRow(cfg, salesRows, segOriLggRows);
+  else if (cfg.dbCol === 'Bkg_SalesPerson') rows = salesRows;
   else if (cfg.dbCol === 'Bkg_Ori') rows = (data?.['oriTable' + suffix] || data?.oriTable || []).slice(0, 10);
 
   const tableRows = rows.length > 0
@@ -492,6 +478,18 @@ function buildCard(cfg, data) {
         <thead><tr><th>${cfg.col}</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
+      ${cfg.key === '02_ET' && segOriLggRows.length ? `
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(13,31,60,0.14);">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.04em;color:#1a3360;margin:0 0 4px 2px;">LGG</div>
+          <table>
+            <thead><tr><th>Seg Ori</th><th>Tons</th><th>Profit</th><th>P/KG</th></tr></thead>
+            <tbody>${segOriLggRows.map(r => {
+              const nameB64 = btoa(unescape(encodeURIComponent(r.name ?? '')));
+              return `<tr onclick="showAwbDetail('Seg_Ori', atob('${nameB64}'), '${(r.name ?? '').replace(/'/g, "\\'").replace(/"/g, '\\"')}', this)" style="cursor:pointer;" onmouseover="this.style.background='#f0f5ff';" onmouseout="this.style.background=''"><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(r.profit,0)}</td><td>${n(r.pkg)}</td></tr>`;
+            }).join('')}</tbody>
+          </table>
+        </div>
+      ` : ''}
     </div>
   </div>`;
 }
