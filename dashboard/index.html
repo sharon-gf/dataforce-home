@@ -744,7 +744,8 @@ function renderDTable(id, data){
   }
   tb.innerHTML = data.map(r => {
     const name = (r.name || '').replace(/"/g, '&quot;');
-    return `<tr style="cursor:pointer;" data-group="${groupCol}" data-val="${name}" data-label="${name}">
+    const rowGroupCol = r.groupCol || groupCol;
+    return `<tr style="cursor:pointer;" data-group="${rowGroupCol}" data-val="${name}" data-label="${name}">
       <td>${r.name??'—'}</td>
       <td>${n(r.tons,2)}</td>
       <td>${n(r.bk)}</td>
@@ -759,6 +760,15 @@ function renderDTable(id, data){
       showAwbDetail(row.dataset.group, row.dataset.val, row.dataset.label);
     });
   });
+}
+
+function addEtLggRowToSales(salesRows, segOriRows) {
+  const rows = Array.isArray(salesRows) ? salesRows.map(row => ({ ...row })) : [];
+  const lggRow = (segOriRows || []).find(row => String(row?.name || '').trim() === 'LGG');
+  if (!lggRow) return rows;
+  if (rows.some(row => String(row?.name || '').trim() === 'LGG')) return rows;
+  rows.push({ ...lggRow, groupCol: 'Seg_Ori' });
+  return rows;
 }
 
 function hasSeriesData(series) {
@@ -886,6 +896,7 @@ function setComp(id, pct) {
   
 function applyData(d){
   window.DATAFORCE_DASHBOARD_READY = false;
+  const effectiveBiz = getEffectiveBiz();
   // KPIs
   if (d.kpis) {
     const k = d.kpis;
@@ -922,7 +933,11 @@ function applyData(d){
   }
   renderWeekly(d.weeklyBreakdown);
   renderDTable('gsaBody',d.gsaTable);
-  renderDTable('salesBody',d.salesTable);
+  const segOriRows = (d.segOriTable || []).slice(0, 10);
+  const salesRows = effectiveBiz === '02_ET_LGG'
+    ? addEtLggRowToSales(d.salesTable, segOriRows)
+    : d.salesTable;
+  renderDTable('salesBody', salesRows);
   renderDTable('oriBody',d.oriTable);
   renderLine(d.lineChart);
   renderWeeklyBar(d.weeklyBreakdown);
