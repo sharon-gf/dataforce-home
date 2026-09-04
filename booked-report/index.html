@@ -259,6 +259,16 @@ function getUserEmail() {
 const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
 const API_KEY  = "";
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    return await fetch(url, controller ? {...options, signal: controller.signal} : options);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 function formatAwb(awb, pfx) {
   const raw = String(awb ?? "").trim();
   if (!raw) return "";
@@ -527,7 +537,7 @@ async function loadSummary() {
     const fetchCardData = async (cfg, attempts=3) => {
       for (let i = 0; i < attempts; i++) {
         try {
-          const r = await fetch(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=${WEEK_MODE}&email=${encodeURIComponent(userEmail)}&module=booked`, {headers:{"x-api-key":API_KEY}});
+          const r = await fetchWithTimeout(`${API_BASE}/api/dashboard?biz=${cfg.key}&date_col=Bkg_CreaDate&week_mode=${WEEK_MODE}&email=${encodeURIComponent(userEmail)}&module=booked`);
           if (r.ok) return { data: await r.json(), error: null };
           if (i === attempts - 1) return { data: null, error: `${cfg.key}: HTTP ${r.status}` };
         } catch(e) {
@@ -650,7 +660,7 @@ async function showAwbDetail(groupCol, groupVal, label, rowElement) {
     console.log('groupVal:', groupVal);
     console.log('URL:', url);
     
-    const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
+    const r = await fetchWithTimeout(url);
     console.log('Status:', r.status, r.statusText);
     
     if (!r.ok) {

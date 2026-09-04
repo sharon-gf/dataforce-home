@@ -582,7 +582,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 <script>
   const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
   const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
-  const ALLOWED_DOMAIN = "gsaforce.com";
+  const ALLOWED_DOMAINS = ["gsaforce.com", "asia-force.com"];
 
   let currentUserEmail = '';
   let allUsers = [];
@@ -1213,6 +1213,12 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 
     if (!name || !email) {
       alert('Please fill in name and email');
+      return;
+    }
+
+    const domain = email.toLowerCase().split('@')[1] || '';
+    if (!ALLOWED_DOMAINS.includes(domain)) {
+      alert('Email must use @gsaforce.com or @asia-force.com');
       return;
     }
 

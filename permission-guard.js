@@ -26,6 +26,16 @@ function showNoAccess(message) {
   `;
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    return await fetch(url, controller ? {...options, signal: controller.signal} : options);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 async function checkModuleAccess(moduleName, initFunction) {
   const user = getDataforceUser();
   const email = user && user.email ? user.email : '';
@@ -39,7 +49,7 @@ async function checkModuleAccess(moduleName, initFunction) {
     const base = typeof API_BASE !== 'undefined' ? API_BASE : (typeof API !== 'undefined' ? API : '');
     if (!base) throw new Error('API base not configured');
 
-    const resp = await fetch(`${base}/api/user_modules?email=${encodeURIComponent(email)}`);
+    const resp = await fetchWithTimeout(`${base}/api/user_modules?email=${encodeURIComponent(email)}`);
     if (!resp.ok) throw new Error('Permission check failed');
 
     const data = await resp.json();

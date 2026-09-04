@@ -575,6 +575,16 @@ function setDateMode(col) {
 const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
 const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    return await fetch(url, controller ? {...options, signal: controller.signal} : options);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 function getUserEmail() {
   try {
     const saved = DataforceAuth.getItem('df_user');
@@ -690,7 +700,7 @@ async function showWeekDetail(week, year) {
   try {
     const userEmail = getUserEmail();
     const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}&module=dashboard`;
-    const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
+    const r = await fetchWithTimeout(url);
     const data = await r.json();
     const rows = data.rows || [];
 
@@ -943,7 +953,7 @@ const TITLES = {
 async function fetchWithRetry(url, options, retries=5, delay=5000){
   for(let i=0; i<retries; i++){
     try{
-      const r = await fetch(url, options);
+      const r = await fetchWithTimeout(url, options);
       if(r.ok) return r;
       throw new Error(`HTTP ${r.status}`);
     }catch(e){
@@ -959,7 +969,7 @@ async function loadAllData(dateCol) {
   const userEmail = getUserEmail();
   const r = await fetchWithRetry(
     `${API_BASE}/api/all?date_col=${dateCol}&email=${encodeURIComponent(userEmail)}`,
-    {headers: {"x-api-key": API_KEY}},
+    {},
     3, 4000
   );
   return await r.json();
@@ -984,7 +994,7 @@ async function loadData(){
   try{
     const r = await fetchWithRetry(
       `${API_BASE}/api/dashboard?biz=${biz}&date_col=${DATE_COL}&email=${encodeURIComponent(userEmail)}&module=dashboard`,
-      {headers: {"x-api-key": API_KEY}},
+      {},
       3, 4000
     );
     const data = await r.json();
@@ -1038,7 +1048,7 @@ async function getDashboardPermissions() {
   const userEmail = getUserEmail();
   if (!userEmail) return null;
 
-  const r = await fetch(`${API_BASE}/api/user_modules?email=${encodeURIComponent(userEmail)}`);
+  const r = await fetchWithTimeout(`${API_BASE}/api/user_modules?email=${encodeURIComponent(userEmail)}`);
   if (!r.ok) return null;
   const data = await r.json();
   DataforceAuth.setItem('df_permissions', JSON.stringify(data));
@@ -1056,7 +1066,11 @@ function normalizeAllowedBusinesses(permissions) {
 function canAccessBusinessOption(biz) {
   if (!DASHBOARD_ALLOWED_BIZ) return true;
   return DASHBOARD_ALLOWED_BIZ.has(biz) || (
-    HAS_805_BIZ.has(biz) && DASHBOARD_ALLOWED_BIZ.has(getVariantBiz(biz))
+    HAS_805_BIZ.has(biz) && (
+      biz === "02_ET"
+        ? DASHBOARD_ALLOWED_BIZ.has("02_ET") || DASHBOARD_ALLOWED_BIZ.has("02_ET_LGG")
+        : DASHBOARD_ALLOWED_BIZ.has(getVariantBiz(biz))
+    )
   );
 }
 
@@ -1106,7 +1120,10 @@ function getEffectiveBiz() {
 function set805Mode(is805) {
   const biz = document.getElementById('bizSelect').value;
   const effectiveBiz = is805 && HAS_805_BIZ.has(biz) ? getVariantBiz(biz) : biz;
-  if (!canAccessEffectiveBusiness(effectiveBiz)) return;
+  const canUseVariant = biz === "02_ET"
+    ? (canAccessEffectiveBusiness("02_ET") || canAccessEffectiveBusiness("02_ET_LGG"))
+    : canAccessEffectiveBusiness(effectiveBiz);
+  if (!canUseVariant) return;
   IS_805 = is805;
   document.getElementById('btn-pure').classList.toggle('active', !is805);
   document.getElementById('btn-w805').classList.toggle('active', is805);
@@ -1120,7 +1137,7 @@ async function fetchBiz(biz, dateCol){
     try {
       const r = await fetch(
         `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard`,
-        {headers: {"x-api-key": API_KEY}}
+        {}
       );
       if (!r.ok) return null;
       return await r.json();
@@ -1212,7 +1229,11 @@ function updateBusinessControls(shouldLoad=true){
 
   // Enable/disable 805 toggle
   const hasPureAccess = canAccessEffectiveBusiness(biz);
-  const has805Access = HAS_805_BIZ.has(biz) && canAccessEffectiveBusiness(getVariantBiz(biz));
+  const has805Access = HAS_805_BIZ.has(biz) && (
+    biz === "02_ET"
+      ? canAccessEffectiveBusiness("02_ET") || canAccessEffectiveBusiness("02_ET_LGG")
+      : canAccessEffectiveBusiness(getVariantBiz(biz))
+  );
   btnPure.disabled = !hasPureAccess;
   btnPure.style.opacity = hasPureAccess ? '1' : '0.35';
   btnPure.style.cursor = hasPureAccess ? 'pointer' : 'not-allowed';
@@ -1339,7 +1360,7 @@ async function showAwbDetail(groupCol, groupVal, label) {
   try {
     const userEmail = getUserEmail();
     const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=dashboard`;
-    const r = await fetch(url, {headers: {"x-api-key": API_KEY}});
+    const r = await fetchWithTimeout(url);
     const data = await r.json();
     const rows = data.rows || [];
 
