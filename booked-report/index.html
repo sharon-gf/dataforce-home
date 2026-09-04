@@ -305,7 +305,6 @@ const BIZ_CONFIG = [
   { key: "01_CXSUD",   name: "CX-SUD",           col: "GSA",     dbCol: "GSA_SName",        logo: CATH_LOGO },
   { key: "01_CXOFF",   name: "CX-OFF",           col: "SalesP",  dbCol: "Bkg_SalesPerson",  logo: CATH_LOGO },
   { key: "02_ET",      name: "ET-USA",           col: "SalesP",  dbCol: "Bkg_SalesPerson",  logo: ET_LOGO   },
-  { key: "02_ET_LGG",  name: "ET-USA W/LGG",     col: "SalesP",  dbCol: "Bkg_SalesPerson",  logo: ET_LOGO   },
   { key: "03_UPS",     name: "UPS",              col: "Origin",  dbCol: "Bkg_Ori",          logo: UPS_LOGO  },
   { key: "04_ELAL",    name: "EL-AL",            col: "GSA",     dbCol: "GSA_SName",        logo: ELAL_LOGO },
   { key: "07_JPN",     name: "MAS-JPN",              col: "GSA",     dbCol: "GSA_SName",        logo: JPN_LOGO  },
@@ -423,6 +422,20 @@ const pct = v => {
   return `<span class="${cls}">${arr}${Math.abs(v).toFixed(1)}%</span>`;
 };
 
+function appendLggAsSalesRow(cfg, salesRows, segOriRows) {
+  if (cfg.key !== '02_ET') return salesRows;
+  if (salesRows.some(row => String(row?.name || '').trim().toUpperCase() === 'LGG')) return salesRows;
+
+  const lggRow = segOriRows.find(row => String(row?.name || '').trim().toUpperCase() === 'LGG');
+  if (!lggRow) return salesRows;
+
+  return [...salesRows, {
+    ...lggRow,
+    name: 'LGG',
+    groupCol: 'Seg_Ori',
+  }];
+}
+
 function buildCard(cfg, data) {
   const k = data?.kpis;
   const lw = k?.lw;
@@ -436,17 +449,18 @@ function buildCard(cfg, data) {
   const suffix = MODE === 'ytd' ? '_ytd' : MODE === 'q1' ? '_q1' : '';
   const gsaRows   = (data?.['gsaTable'   + suffix] || data?.gsaTable   || []).slice(0, 10);
   const salesRows = (data?.['salesTable' + suffix] || data?.salesTable || []).slice(0, 10);
-  const oriRows   = (data?.['oriTable'   + suffix] || data?.oriTable   || []).slice(0, 10);
+  const segOriRows = (data?.['segOriTable' + suffix] || data?.segOriTable || []).slice(0, 10);
 
   let rows = [];
   if (cfg.dbCol === 'GSA_SName') rows = gsaRows;
-  else if (cfg.dbCol === 'Bkg_SalesPerson') rows = salesRows;
-  else if (cfg.dbCol === 'Bkg_Ori') rows = oriRows;
+  else if (cfg.dbCol === 'Bkg_SalesPerson') rows = appendLggAsSalesRow(cfg, salesRows, segOriRows);
+  else if (cfg.dbCol === 'Bkg_Ori') rows = (data?.['oriTable' + suffix] || data?.oriTable || []).slice(0, 10);
 
   const tableRows = rows.length > 0
     ? rows.map(r => {
         const nameB64 = btoa(unescape(encodeURIComponent(r.name ?? '')));
-        return `<tr onclick="showAwbDetail('${cfg.dbCol}', atob('${nameB64}'), '${(r.name ?? '').replace(/'/g, "\\'").replace(/"/g, '\\"')}', this)" style="cursor:pointer;" onmouseover="this.style.background='#f0f5ff';" onmouseout="this.style.background=''"><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(r.profit,0)}</td><td>${n(r.pkg)}</td></tr>`;
+        const clickCol = r.groupCol || cfg.dbCol;
+        return `<tr onclick="showAwbDetail('${clickCol}', atob('${nameB64}'), '${(r.name ?? '').replace(/'/g, "\\'").replace(/"/g, '\\"')}', this)" style="cursor:pointer;" onmouseover="this.style.background='#f0f5ff';" onmouseout="this.style.background=''"><td>${r.name??'—'}</td><td>${n(r.tons)}</td><td>${n(r.profit,0)}</td><td>${n(r.pkg)}</td></tr>`;
       }).join('')
     : `<tr><td colspan="4" class="nodata-cell">No data this week</td></tr>`;
 
