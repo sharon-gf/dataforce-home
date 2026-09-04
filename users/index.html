@@ -594,11 +594,19 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 
   const BUSINESSES = [
     "MERC_LOCAL", "MERC_GSA", "MERC_ALL", "CXMEX",
-    "01_CXOFF", "01_CXSUD", "02_ET", "03_UPS", "03_UPS_805",
+    "01_CXOFF", "01_CXSUD", "02_ET", "02_ET_LGG", "03_UPS", "03_UPS_805",
     "04_ELAL", "04_ELAL_805", "05_AVASIA", "07_JPN",
     "08_AVCHI", "09_AVOTHER", "10_VIRGIN", "10_VIRGIN_805",
     "11_ULTRACN"
   ];
+
+  const BUSINESS_LABELS = {
+    "02_ET": "ET-USA",
+    "02_ET_LGG": "ET-USA W/LGG",
+    "03_UPS_805": "UPS-805",
+    "04_ELAL_805": "EL-AL-805",
+    "10_VIRGIN_805": "VIRGIN-805"
+  };
 
   const MODULE_COLUMNS = [
     { key: 'booked', label: 'BKD' },
@@ -778,7 +786,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       div.className = 'checkbox-item';
       div.innerHTML = `
         <input type="checkbox" id="biz-${biz}" value="${biz}" onchange="updateSelectAllBusinesses()" />
-        <label for="biz-${biz}">${biz}</label>
+        <label for="biz-${biz}">${BUSINESS_LABELS[biz] || biz}</label>
       `;
       container.appendChild(div);
     });

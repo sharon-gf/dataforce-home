@@ -929,6 +929,7 @@ const TITLES = {
   '01_CXOFF':   'CX-OFF',
   '01_CXSUD':   'CX-SUD',
   '02_ET':      'ET-USA',
+  '02_ET_LGG':  'ET-USA W/LGG',
   '03_UPS':     'UPS',
   '04_ELAL':    'EL-AL',
   '05_AVASIA':  'AV-ASIA',
@@ -1003,18 +1004,23 @@ async function loadData(){
 
 const ALL_BIZ_LIST = [
   "MERC_ALL","MERC_LOCAL","MERC_GSA","CXMEX",
-  "01_CXSUD","01_CXOFF","02_ET",
+  "01_CXSUD","01_CXOFF","02_ET","02_ET_LGG",
   "03_UPS","03_UPS_805","04_ELAL","04_ELAL_805",
   "07_JPN","05_AVASIA","09_AVOTHER","08_AVCHI",
   "10_VIRGIN","10_VIRGIN_805","11_ULTRACN"
 ];
 
-const SELECTABLE_BIZ_LIST = ALL_BIZ_LIST.filter(biz => !biz.endsWith('_805'));
+const SELECTABLE_BIZ_LIST = ALL_BIZ_LIST.filter(biz => !biz.endsWith('_805') && biz !== "02_ET_LGG");
 let DASHBOARD_ALLOWED_BIZ = null;
 
 // Businesses that have a Pure vs w/805 toggle
-const HAS_805_BIZ = new Set(["03_UPS","04_ELAL","10_VIRGIN"]);
+const HAS_805_BIZ = new Set(["02_ET","03_UPS","04_ELAL","10_VIRGIN"]);
 let IS_805 = false;
+
+function getVariantBiz(biz) {
+  if (biz === "02_ET") return "02_ET_LGG";
+  return `${biz}_805`;
+}
 
 function readStoredPermissions() {
   try {
@@ -1050,7 +1056,7 @@ function normalizeAllowedBusinesses(permissions) {
 function canAccessBusinessOption(biz) {
   if (!DASHBOARD_ALLOWED_BIZ) return true;
   return DASHBOARD_ALLOWED_BIZ.has(biz) || (
-    HAS_805_BIZ.has(biz) && DASHBOARD_ALLOWED_BIZ.has(`${biz}_805`)
+    HAS_805_BIZ.has(biz) && DASHBOARD_ALLOWED_BIZ.has(getVariantBiz(biz))
   );
 }
 
@@ -1064,7 +1070,7 @@ function shouldDefaultTo805(biz) {
     DASHBOARD_ALLOWED_BIZ &&
     HAS_805_BIZ.has(biz) &&
     !DASHBOARD_ALLOWED_BIZ.has(biz) &&
-    DASHBOARD_ALLOWED_BIZ.has(`${biz}_805`)
+    DASHBOARD_ALLOWED_BIZ.has(getVariantBiz(biz))
   );
 }
 
@@ -1094,12 +1100,12 @@ function configureBusinessAccess(permissions) {
 
 function getEffectiveBiz() {
   const biz = document.getElementById('bizSelect').value;
-  return (IS_805 && HAS_805_BIZ.has(biz)) ? biz + '_805' : biz;
+  return (IS_805 && HAS_805_BIZ.has(biz)) ? getVariantBiz(biz) : biz;
 }
 
 function set805Mode(is805) {
   const biz = document.getElementById('bizSelect').value;
-  const effectiveBiz = is805 && HAS_805_BIZ.has(biz) ? `${biz}_805` : biz;
+  const effectiveBiz = is805 && HAS_805_BIZ.has(biz) ? getVariantBiz(biz) : biz;
   if (!canAccessEffectiveBusiness(effectiveBiz)) return;
   IS_805 = is805;
   document.getElementById('btn-pure').classList.toggle('active', !is805);
@@ -1169,6 +1175,15 @@ function applyReportParams() {
   if (reportBiz && select && Array.from(select.options).some(opt => opt.value === reportBiz) && canAccessBusinessOption(reportBiz)) {
     select.value = reportBiz;
     IS_805 = false;
+  } else if (reportBiz === "02_ET_LGG" && select && canAccessBusinessOption("02_ET")) {
+    select.value = "02_ET";
+    IS_805 = true;
+  } else if (reportBiz && reportBiz.endsWith("_805")) {
+    const pureBiz = reportBiz.replace(/_805$/, "");
+    if (select && Array.from(select.options).some(opt => opt.value === pureBiz) && canAccessBusinessOption(pureBiz)) {
+      select.value = pureBiz;
+      IS_805 = true;
+    }
   }
   if (reportDateCol === "FlightDate" || reportDateCol === "Bkg_CreaDate") {
     DATE_COL = reportDateCol;
@@ -1182,15 +1197,22 @@ function updateBusinessControls(shouldLoad=true){
   const btnBooked = document.getElementById('btn-booked');
   const btnPure   = document.getElementById('btn-pure');
   const btn805    = document.getElementById('btn-w805');
+  btn805.textContent = biz === "02_ET" ? "w/LGG" : "w/805";
 
-  // Reset 805 mode whenever business changes
-  IS_805 = shouldDefaultTo805(biz);
+  // Reset variant mode whenever business changes, while preserving deep links on init.
+  if (shouldLoad) {
+    IS_805 = shouldDefaultTo805(biz);
+  } else if (IS_805 && !canAccessEffectiveBusiness(getVariantBiz(biz))) {
+    IS_805 = shouldDefaultTo805(biz);
+  } else if (!IS_805 && !canAccessEffectiveBusiness(biz)) {
+    IS_805 = shouldDefaultTo805(biz);
+  }
   btnPure.classList.toggle('active', !IS_805);
   btn805.classList.toggle('active', IS_805);
 
   // Enable/disable 805 toggle
   const hasPureAccess = canAccessEffectiveBusiness(biz);
-  const has805Access = HAS_805_BIZ.has(biz) && canAccessEffectiveBusiness(`${biz}_805`);
+  const has805Access = HAS_805_BIZ.has(biz) && canAccessEffectiveBusiness(getVariantBiz(biz));
   btnPure.disabled = !hasPureAccess;
   btnPure.style.opacity = hasPureAccess ? '1' : '0.35';
   btnPure.style.cursor = hasPureAccess ? 'pointer' : 'not-allowed';
