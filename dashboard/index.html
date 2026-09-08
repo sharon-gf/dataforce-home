@@ -351,6 +351,7 @@ main {
       <option value="01_CXSUD">CX-SUD</option>
       <option value="01_CXOFF">CX-OFF</option>
       <option value="02_ET">ET-USA</option>
+      <option value="02_ET_LGG">ET-LGG</option>
       <option value="03_UPS">UPS</option>
       <option value="04_ELAL">EL-AL</option>
       <option value="07_JPN">JPN</option>
@@ -691,7 +692,7 @@ function renderWeekly(data){
 }
 
 async function showWeekDetail(week, year) {
-  const biz = document.getElementById('bizSelect').value;
+  const biz = getEffectiveBiz();
   const modal = document.getElementById('awb-modal');
   const body = document.getElementById('awb-modal-body');
   const title = document.getElementById('awb-modal-title');
@@ -953,7 +954,8 @@ const TITLES = {
   '01_CXOFF':   'CX-OFF',
   '01_CXSUD':   'CX-SUD',
   '02_ET':      'ET-USA',
-  '02_ET_LGG':  'ET-USA W/LGG',
+  '02_ET_LGG':  'ET-LGG',
+  '02_ET_WITH_LGG': 'ET-USA W/LGG',
   '03_UPS':     'UPS',
   '04_ELAL':    'EL-AL',
   '05_AVASIA':  'AV-ASIA',
@@ -991,6 +993,7 @@ async function loadAllData(dateCol) {
 
 async function loadData(){
   const biz = getEffectiveBiz();
+  const dateCol = DATE_COL;
   const userEmail = getUserEmail();
   console.log('User email:', userEmail);
   const connLbl = document.getElementById('connLabel');
@@ -998,8 +1001,8 @@ async function loadData(){
   if(!API_BASE){ applyData(DEMO); connLbl.textContent='Demo mode'; return; }
 
   // If already cached locally, apply instantly
-  if(ALL_DATA[DATE_COL] && ALL_DATA[DATE_COL][biz]){
-    applyData(ALL_DATA[DATE_COL][biz]);
+  if(ALL_DATA[dateCol] && ALL_DATA[dateCol][biz]){
+    applyData(ALL_DATA[dateCol][biz]);
     connDot.classList.add('live');
     connLbl.textContent = 'Ready';
     return;
@@ -1007,17 +1010,19 @@ async function loadData(){
 
   try{
     const r = await fetchWithRetry(
-      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${DATE_COL}&email=${encodeURIComponent(userEmail)}&module=dashboard`,
+      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(userEmail)}&module=dashboard`,
       {},
       3, 4000
     );
     const data = await r.json();
-    if(!ALL_DATA[DATE_COL]) ALL_DATA[DATE_COL] = {};
-    ALL_DATA[DATE_COL][biz] = data;
+    if(!ALL_DATA[dateCol]) ALL_DATA[dateCol] = {};
+    ALL_DATA[dateCol][biz] = data;
+    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL) return;
     applyData(data);
     connDot.classList.add('live');
     connLbl.textContent = 'Ready';
   }catch(e){
+    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL) return;
     if (!_isWarming) {
       connDot.classList.remove('live');
       connLbl.textContent = 'Connection failed';
@@ -1028,13 +1033,13 @@ async function loadData(){
 
 const ALL_BIZ_LIST = [
   "MERC_ALL","MERC_LOCAL","MERC_GSA","CXMEX",
-  "01_CXSUD","01_CXOFF","02_ET","02_ET_LGG",
+  "01_CXSUD","01_CXOFF","02_ET","02_ET_LGG","02_ET_WITH_LGG",
   "03_UPS","03_UPS_805","04_ELAL","04_ELAL_805",
   "07_JPN","05_AVASIA","09_AVOTHER","08_AVCHI",
   "10_VIRGIN","10_VIRGIN_805","11_ULTRACN"
 ];
 
-const SELECTABLE_BIZ_LIST = ALL_BIZ_LIST.filter(biz => !biz.endsWith('_805') && biz !== "02_ET_LGG");
+const SELECTABLE_BIZ_LIST = ALL_BIZ_LIST.filter(biz => !biz.endsWith('_805') && biz !== "02_ET_WITH_LGG");
 let DASHBOARD_ALLOWED_BIZ = null;
 
 // Businesses that have a Pure vs w/805 toggle
@@ -1042,7 +1047,7 @@ const HAS_805_BIZ = new Set(["02_ET","03_UPS","04_ELAL","10_VIRGIN"]);
 let IS_805 = false;
 
 function getVariantBiz(biz) {
-  if (biz === "02_ET") return "02_ET_LGG";
+  if (biz === "02_ET") return "02_ET_WITH_LGG";
   return `${biz}_805`;
 }
 
@@ -1080,16 +1085,15 @@ function normalizeAllowedBusinesses(permissions) {
 function canAccessBusinessOption(biz) {
   if (!DASHBOARD_ALLOWED_BIZ) return true;
   return DASHBOARD_ALLOWED_BIZ.has(biz) || (
-    HAS_805_BIZ.has(biz) && (
-      biz === "02_ET"
-        ? DASHBOARD_ALLOWED_BIZ.has("02_ET") || DASHBOARD_ALLOWED_BIZ.has("02_ET_LGG")
-        : DASHBOARD_ALLOWED_BIZ.has(getVariantBiz(biz))
-    )
+    HAS_805_BIZ.has(biz) && canAccessEffectiveBusiness(getVariantBiz(biz))
   );
 }
 
 function canAccessEffectiveBusiness(biz) {
   if (!DASHBOARD_ALLOWED_BIZ) return true;
+  if (biz === "02_ET_WITH_LGG") {
+    return DASHBOARD_ALLOWED_BIZ.has("02_ET") && DASHBOARD_ALLOWED_BIZ.has("02_ET_LGG");
+  }
   return DASHBOARD_ALLOWED_BIZ.has(biz);
 }
 
@@ -1098,7 +1102,7 @@ function shouldDefaultTo805(biz) {
     DASHBOARD_ALLOWED_BIZ &&
     HAS_805_BIZ.has(biz) &&
     !DASHBOARD_ALLOWED_BIZ.has(biz) &&
-    DASHBOARD_ALLOWED_BIZ.has(getVariantBiz(biz))
+    canAccessEffectiveBusiness(getVariantBiz(biz))
   );
 }
 
@@ -1134,9 +1138,7 @@ function getEffectiveBiz() {
 function set805Mode(is805) {
   const biz = document.getElementById('bizSelect').value;
   const effectiveBiz = is805 && HAS_805_BIZ.has(biz) ? getVariantBiz(biz) : biz;
-  const canUseVariant = biz === "02_ET"
-    ? (canAccessEffectiveBusiness("02_ET") || canAccessEffectiveBusiness("02_ET_LGG"))
-    : canAccessEffectiveBusiness(effectiveBiz);
+  const canUseVariant = canAccessEffectiveBusiness(effectiveBiz);
   if (!canUseVariant) return;
   IS_805 = is805;
   document.getElementById('btn-pure').classList.toggle('active', !is805);
@@ -1206,7 +1208,7 @@ function applyReportParams() {
   if (reportBiz && select && Array.from(select.options).some(opt => opt.value === reportBiz) && canAccessBusinessOption(reportBiz)) {
     select.value = reportBiz;
     IS_805 = false;
-  } else if (reportBiz === "02_ET_LGG" && select && canAccessBusinessOption("02_ET")) {
+  } else if (reportBiz === "02_ET_WITH_LGG" && select && canAccessBusinessOption("02_ET")) {
     select.value = "02_ET";
     IS_805 = true;
   } else if (reportBiz && reportBiz.endsWith("_805")) {
@@ -1244,9 +1246,7 @@ function updateBusinessControls(shouldLoad=true){
   // Enable/disable 805 toggle
   const hasPureAccess = canAccessEffectiveBusiness(biz);
   const has805Access = HAS_805_BIZ.has(biz) && (
-    biz === "02_ET"
-      ? canAccessEffectiveBusiness("02_ET") || canAccessEffectiveBusiness("02_ET_LGG")
-      : canAccessEffectiveBusiness(getVariantBiz(biz))
+    canAccessEffectiveBusiness(getVariantBiz(biz))
   );
   btnPure.disabled = !hasPureAccess;
   btnPure.style.opacity = hasPureAccess ? '1' : '0.35';
@@ -1360,7 +1360,7 @@ document.getElementById('awb-modal').addEventListener('click', function(e) {
 });
 
 async function showAwbDetail(groupCol, groupVal, label) {
-  const biz = document.getElementById('bizSelect').value;
+  const biz = getEffectiveBiz();
   const modal = document.getElementById('awb-modal');
   const body = document.getElementById('awb-modal-body');
   const title = document.getElementById('awb-modal-title');
