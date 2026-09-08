@@ -43,12 +43,13 @@ test('dashboard inline scripts parse', () => {
   for (const match of html.matchAll(/<script(?:\s[^>]*)?>([^]*?)<\/script>/g)) new vm.Script(match[1]);
 });
 
-test('ET toggle selects combined view, ET-LGG remains separately selectable', () => {
+test('ET dashboard offers only ET-USA with the combined toggle', () => {
   const h = harness();
   assert.equal(h.run('getEffectiveBiz()'), '02_ET');
   assert.equal(h.run('IS_805 = true; getEffectiveBiz()'), '02_ET_WITH_LGG');
   assert.equal(h.run("document.getElementById('bizSelect').value = '02_ET_LGG'; getEffectiveBiz()"), '02_ET_LGG');
-  assert.match(html, /<option value="02_ET_LGG">ET-LGG<\/option>/);
+  assert.doesNotMatch(html, /<option value="02_ET_LGG">/);
+  assert.match(html, /<option value="02_ET">ET-USA<\/option>/);
 });
 
 test('combined view requires both business permissions', () => {

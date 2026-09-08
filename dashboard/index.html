@@ -351,7 +351,6 @@ main {
       <option value="01_CXSUD">CX-SUD</option>
       <option value="01_CXOFF">CX-OFF</option>
       <option value="02_ET">ET-USA</option>
-      <option value="02_ET_LGG">ET-LGG</option>
       <option value="03_UPS">UPS</option>
       <option value="04_ELAL">EL-AL</option>
       <option value="07_JPN">JPN</option>
@@ -1039,7 +1038,7 @@ const ALL_BIZ_LIST = [
   "10_VIRGIN","10_VIRGIN_805","11_ULTRACN"
 ];
 
-const SELECTABLE_BIZ_LIST = ALL_BIZ_LIST.filter(biz => !biz.endsWith('_805') && biz !== "02_ET_WITH_LGG");
+const SELECTABLE_BIZ_LIST = ALL_BIZ_LIST.filter(biz => !biz.endsWith('_805') && biz !== "02_ET_LGG" && biz !== "02_ET_WITH_LGG");
 let DASHBOARD_ALLOWED_BIZ = null;
 
 // Businesses that have a Pure vs w/805 toggle
