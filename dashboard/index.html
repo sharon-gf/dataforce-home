@@ -569,12 +569,7 @@ function setDateMode(col) {
   DATE_COL = col;
   document.getElementById("btn-flown").classList.toggle("active", col === "FlightDate");
   document.getElementById("btn-booked").classList.toggle("active", col === "Bkg_CreaDate");
-  const biz = getEffectiveBiz();
-  if (ALL_DATA[col] && ALL_DATA[col][biz]) {
-    applyData(ALL_DATA[col][biz]);
-  } else {
-    loadData();
-  }
+  loadData();
 }
 
 const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
@@ -1007,26 +1002,18 @@ async function loadData(){
     return;
   }
 
+  connDot.classList.remove('live');
+  connLbl.textContent = 'Loading...';
   try{
-    const r = await fetchWithRetry(
-      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(userEmail)}&module=dashboard`,
-      {},
-      3, 4000
-    );
-    const data = await r.json();
-    if(!ALL_DATA[dateCol]) ALL_DATA[dateCol] = {};
-    ALL_DATA[dateCol][biz] = data;
+    const data = await getBusinessData(biz, dateCol);
     if (biz !== getEffectiveBiz() || dateCol !== DATE_COL) return;
     applyData(data);
     connDot.classList.add('live');
     connLbl.textContent = 'Ready';
   }catch(e){
     if (biz !== getEffectiveBiz() || dateCol !== DATE_COL) return;
-    if (!_isWarming) {
-      connDot.classList.remove('live');
-      connLbl.textContent = 'Connection failed';
-    }
-    applyData(DEMO);
+    connDot.classList.remove('live');
+    connLbl.textContent = 'Unable to load — please retry';
   }
 }
 
@@ -1145,46 +1132,48 @@ function set805Mode(is805) {
   loadData();
 }
 
-async function fetchBiz(biz, dateCol){
-  // Race the fetch against a 12s timeout — returns null on any failure
-  const timeout = new Promise(res => setTimeout(() => res(null), 12000));
-  const fetcher = (async () => {
-    try {
-      const r = await fetch(
-        `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard`,
-        {}
-      );
-      if (!r.ok) return null;
-      return await r.json();
-    } catch(e) { return null; }
-  })();
-  return Promise.race([fetcher, timeout]);
+const BUSINESS_REQUESTS = new Map();
+
+function getBusinessData(biz, dateCol) {
+  if (ALL_DATA[dateCol]?.[biz]) return Promise.resolve(ALL_DATA[dateCol][biz]);
+  const key = `${dateCol}:${biz}`;
+  if (BUSINESS_REQUESTS.has(key)) return BUSINESS_REQUESTS.get(key);
+  const request = (async () => {
+    const r = await fetchWithTimeout(
+      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard`,
+      {}, 60000
+    );
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    if (!data.kpis) throw new Error('Invalid dashboard response');
+    if (!ALL_DATA[dateCol]) ALL_DATA[dateCol] = {};
+    ALL_DATA[dateCol][biz] = data;
+    return data;
+  })().finally(() => BUSINESS_REQUESTS.delete(key));
+  BUSINESS_REQUESTS.set(key, request);
+  return request;
 }
 
 let _isWarming = false;
 
 async function warmCache() {
-  const connLbl = document.getElementById('connLabel');
-  const connDot = document.getElementById('connDot');
-  const mercBiz = ['MERC_LOCAL','MERC_GSA','MERC_ALL'].filter(canAccessEffectiveBusiness);
-
+  if (_isWarming) return;
   _isWarming = true;
-  const originalStatus = connLbl ? connLbl.textContent : '';
-
+  // One background request at a time; selected business loads independently.
+  const dateCols = [DATE_COL, DATE_COL === 'FlightDate' ? 'Bkg_CreaDate' : 'FlightDate'];
+  const businesses = ALL_BIZ_LIST.filter(canAccessEffectiveBusiness);
   try {
-    await Promise.allSettled(mercBiz.map(async (biz) => {
-      const data = await fetchBiz(biz, 'Bkg_CreaDate');
-      if (data) {
-        if (!ALL_DATA.Bkg_CreaDate) ALL_DATA.Bkg_CreaDate = {};
-        ALL_DATA.Bkg_CreaDate[biz] = data;
+    for (const dateCol of dateCols) {
+      for (const biz of businesses) {
+        try {
+          await getBusinessData(biz, dateCol);
+        } catch (e) {
+          console.warn('Background dashboard load failed:', biz, dateCol, e);
+        }
       }
-    }));
-  } catch(e) {
-    console.error('warmCache error:', e);
+    }
   } finally {
     _isWarming = false;
-    if (connDot) { connDot.style.background = ''; connDot.classList.add('live'); }
-    if (connLbl) connLbl.textContent = originalStatus || 'Ready';
   }
 }
 

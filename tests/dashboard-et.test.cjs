@@ -16,22 +16,23 @@ function harness() {
     } },
     getUserEmail: () => 'test@gsaforce.com',
     applyData: data => applied.push(data),
-    fetchWithRetry: url => {
+    fetchWithTimeout: url => {
       calls.push(url);
-      return new Promise(resolve => pending.push(data => resolve({ json: async () => data })));
-    },
-    fetchWithTimeout: async url => {
-      calls.push(url);
-      return { json: async () => ({ rows: [] }) };
+      if (new URL(url).pathname === '/api/dashboard') {
+        return new Promise(resolve => pending.push(data => resolve({ ok: true, json: async () => ({ kpis: {}, ...data }) })));
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ rows: [] }) });
     },
   });
   vm.runInContext(`
     let DATE_COL = 'FlightDate', IS_805 = false, ALL_DATA = {}, DASHBOARD_ALLOWED_BIZ = null;
     const HAS_805_BIZ = new Set(['02_ET','03_UPS','04_ELAL','10_VIRGIN']);
-    const API_BASE = 'https://example.test', DEMO = {}, _isWarming = false;
+    const API_BASE = 'https://example.test', DEMO = {};
+    const BUSINESS_REQUESTS = new Map();
+    let _isWarming = false;
   `, context);
   for (const name of ['getVariantBiz', 'getEffectiveBiz', 'canAccessEffectiveBusiness',
-                      'canAccessBusinessOption', 'loadData', 'showWeekDetail', 'showAwbDetail']) {
+                      'canAccessBusinessOption', 'getBusinessData', 'loadData', 'showWeekDetail', 'showAwbDetail']) {
     const match = html.match(new RegExp(`(?:async )?function ${name}\\([^]*?\\n\\}`));
     assert.ok(match, `Missing function ${name}`);
     vm.runInContext(match[0], context);
@@ -78,7 +79,7 @@ test('late pure response cannot overwrite selected W/LGG view', async () => {
   await combined;
   h.pending[0]({ scope: 'pure' });
   await pure;
-  assert.deepEqual(h.applied, [{ scope: 'combined' }]);
+  assert.deepEqual(h.applied.map(d => d.scope), ['combined']);
 });
 
 test('late flown response is cached under flown and cannot overwrite booked', async () => {
@@ -90,7 +91,36 @@ test('late flown response is cached under flown and cannot overwrite booked', as
   await booked;
   h.pending[0]({ scope: 'flown' });
   await flown;
-  assert.deepEqual(h.applied, [{ scope: 'booked' }]);
+  assert.deepEqual(h.applied.map(d => d.scope), ['booked']);
   assert.equal(h.run("ALL_DATA.FlightDate['02_ET'].scope"), 'flown');
   assert.equal(h.run("ALL_DATA.Bkg_CreaDate['02_ET'].scope"), 'booked');
+});
+
+
+test('prefetch and selection share a request; revisiting uses local cache', async () => {
+  const h = harness();
+  const prefetch = h.run("getBusinessData('02_ET', 'FlightDate')");
+  const selected = h.run('loadData()');
+  assert.equal(h.calls.length, 1);
+  h.pending[0]({ scope: 'ET' });
+  await Promise.all([prefetch, selected]);
+  await h.run('loadData()');
+  assert.equal(h.calls.length, 1);
+  assert.deepEqual(h.applied.map(d => d.scope), ['ET', 'ET']);
+});
+
+test('warmup visits all allowed businesses sequentially without changing status', async () => {
+  const h = harness();
+  h.run("const ALL_BIZ_LIST = ['02_ET', '03_UPS', 'CXMEX']; DASHBOARD_ALLOWED_BIZ = new Set(['02_ET', '03_UPS']);");
+  const match = html.match(/async function warmCache\([^]*?\n\}/);
+  vm.runInContext(match[0], h.context);
+  const warm = h.run('warmCache()');
+  for (let i = 0; i < 4; i++) {
+    assert.equal(h.calls.length, i + 1);
+    h.pending[i]({});
+    await new Promise(resolve => setImmediate(resolve));
+  }
+  await warm;
+  assert.deepEqual(h.calls.map(url => new URL(url).searchParams.get('biz')), ['02_ET', '03_UPS', '02_ET', '03_UPS']);
+  assert.equal(h.run("document.getElementById('connLabel').textContent"), undefined);
 });
