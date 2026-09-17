@@ -97,8 +97,18 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   padding:6px 8px; background:var(--navy-hdr); white-space:nowrap;
   position:sticky; top:0; z-index:20;
 }
-.name-col, .name-cell { min-width:150px; }
-.email-col, .email-cell { min-width:190px; }
+.name-col, .name-cell {
+  min-width:150px; max-width:150px; width:150px;
+  position:sticky; left:0; z-index:5;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.email-col, .email-cell {
+  min-width:190px; max-width:190px; width:190px;
+  position:sticky; left:150px; z-index:5;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  box-shadow: 4px 0 6px -4px rgba(0,0,0,.25);
+}
+th.name-col, th.email-col { z-index:26; }
 .dtbl th.module-col, .dtbl th.summary-col, .dtbl th.status-col { text-align:center; }
 .dtbl th.actions-col { text-align:right; }
 .dtbl th.module-info-header { position:sticky; top:0; z-index:21; cursor:help; outline:none; }
@@ -279,7 +289,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
   .name-col, .name-cell,
   .email-col, .email-cell,
   .status-col, .status-cell,
-  .actions-col, .actions-cell { width:auto; min-width:0; }
+  .actions-col, .actions-cell { width:auto; min-width:0; max-width:none; position:static; box-shadow:none; }
   .email-col, .email-cell { display:block !important; }
   .status-col, .status-cell { text-align:center; }
   .actions-col, .actions-cell { text-align:right; }
@@ -457,6 +467,14 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     </div>
 
     <div class="form-group">
+      <label>Status</label>
+      <select id="formStatus">
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+
+    <div class="form-group">
       <label>Type</label>
       <input type="text" id="formType" list="typeOptions" placeholder="Sales, Manager, Operations…" />
       <datalist id="typeOptions"></datalist>
@@ -569,17 +587,21 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     </div>
 
     <div class="form-group">
-      <label>Market Data databases</label>
-      <button type="button" class="select-all-btn" onclick="toggleSelectAllMdSources()">Select All</button>
-      <div class="checkbox-group" id="mdSourcesCheckboxes"></div>
+      <label>Market Data role</label>
+      <select id="formMarketDataRol">
+        <option value="">— Not managed here (use Panel de Ventas &gt; Permisos)</option>
+        <option value="vendedor">Vendedor</option>
+        <option value="manager">Manager</option>
+        <option value="ceo">CEO</option>
+        <option value="admin">Admin</option>
+      </select>
     </div>
 
     <div class="form-group">
-      <label>Status</label>
-      <select id="formStatus">
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-      </select>
+      <label>Market Data databases</label>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllMdSources()">Select All</button>
+      <div class="checkbox-group" id="mdSourcesCheckboxes"></div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Only applies if "Market Data role" above is set — otherwise Panel de Ventas ignores this and keeps whatever was configured for this person in its own Permisos tab.</div>
     </div>
 
     <div class="modal-footer">
@@ -622,14 +644,21 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
 
   // 18 sep, cony (Market Data / Panel de Ventas): lista de bases de datos
   // que el módulo Market Data puede mostrar hoy (misma lista que
-  // DATA_SOURCES en el backend de Panel de Ventas — data_helpers.py). Se
-  // guarda en el usuario como 'fuentes_permitidas' (mismo nombre de campo
-  // que ya usa Panel de Ventas internamente, para que ese backend pueda
-  // leerlo directo sin traducir nombres) — ver el checklist "Market Data
-  // databases" del modal, debajo de "GSA access". OJO: esto es solo el
-  // frontend — el backend de Dataforce (API_BASE) todavía necesita
-  // aceptar/guardar el parámetro 'fuentes_permitidas' en POST/PUT
-  // /api/users para que esto tenga efecto real (spec ya entregada).
+  // DATA_SOURCES en el backend de Panel de Ventas — data_helpers.py).
+  // 26 sep, cony: se guarda en el usuario como 'market_data_fuentes' —
+  // NO 'fuentes_permitidas' como decía este comentario antes. El backend
+  // de Dataforce (API_BASE, ver api.py) ya trae desde el 15 sep sus
+  // propios 5 campos de Market Data (market_data_rol, market_data_fuentes,
+  // market_data_aerolineas, market_data_managed_sellers,
+  // market_data_compliance) — Panel de Ventas los lee directo con esos
+  // nombres en GET /api/user_modules (ver _sincronizar_usuario_desde_sharon
+  // en pv3/main.py), así que este checklist tiene que mandar/leer el mismo
+  // nombre, no el que usa Panel de Ventas puertas adentro para sí mismo.
+  // OJO — esto solo hace algo si 'Market Data role' (market_data_rol, ver
+  // el selector de abajo) queda en admin/ceo/manager/vendedor: si se deja
+  // vacío, Panel de Ventas ignora por completo estos 5 campos y esa
+  // persona sigue con lo que ya tuviera configurado a mano en su propia
+  // pestaña Permisos (o queda pendiente si nunca existió ahí).
   const MARKET_DATA_SOURCES = [
     { id: "cathay_hkg", label: "Hong Kong — CASS — Cathay" },
     { id: "cathay_sam", label: "Sudamérica — CASS — Cathay" },
@@ -1092,8 +1121,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
         });
 
         row.innerHTML = `
-          <td class="name-cell"><strong>${escapeHtml(displayName)}</strong></td>
-          <td class="email-cell">${escapeHtml(email)}</td>
+          <td class="name-cell" title="${escapeHtml(displayName)}"><strong>${escapeHtml(displayName)}</strong></td>
+          <td class="email-cell" title="${escapeHtml(email)}">${escapeHtml(email)}</td>
           ${moduleCells}
           <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(bizSummary)}</span></td>
           <td class="summary-cell desktop-col"><span class="summary-value">${escapeHtml(gsaSummary)}</span></td>
@@ -1220,6 +1249,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     document.getElementById('formType').value = '';
     document.getElementById('formSalesPerson').value = '';
     document.getElementById('formStatus').value = 'active';
+    document.getElementById('formMarketDataRol').value = '';
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
     document.getElementById('editModal').classList.add('active');
@@ -1248,6 +1278,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     document.getElementById('formType').value = userType(user) === 'Unassigned' ? '' : userType(user);
     document.getElementById('formSalesPerson').value = user.sales_person || '';
     document.getElementById('formStatus').value = user.status || 'active';
+    document.getElementById('formMarketDataRol').value = user.market_data_rol || '';
 
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => {
       cb.checked = (user.modules || []).includes(cb.value);
@@ -1264,7 +1295,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     });
 
     document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]').forEach(cb => {
-      cb.checked = asList(user.fuentes_permitidas).includes(cb.value);
+      cb.checked = asList(user.market_data_fuentes).includes(cb.value);
     });
 
     document.getElementById('editModal').classList.add('active');
@@ -1289,7 +1320,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     const gsaCheckboxes = Array.from(document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]'));
     const selectedGsas = gsaCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
     const gsas = selectedGsas.length === 0 || selectedGsas.length === gsaCheckboxes.length ? [] : selectedGsas;
-    const fuentesPermitidas = Array.from(document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
+    const marketDataFuentes = Array.from(document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
+    const marketDataRol = document.getElementById('formMarketDataRol').value || '';
     const status = document.getElementById('formStatus').value;
 
     if (!name || !email) {
@@ -1320,8 +1352,8 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       const isNew = !currentEditingUser;
       const method = isNew ? 'POST' : 'PUT';
       const url = isNew
-        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&fuentes_permitidas=${encodeURIComponent(JSON.stringify(fuentesPermitidas))}`
-        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&fuentes_permitidas=${encodeURIComponent(JSON.stringify(fuentesPermitidas))}`;
+        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}`
+        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}`;
 
       const r = await fetch(url, {
         method,
