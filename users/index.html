@@ -476,7 +476,7 @@ th.name-col, th.email-col { z-index:26; }
 
     <div class="form-group">
       <label>Type</label>
-      <input type="text" id="formType" list="typeOptions" placeholder="Sales, Manager, Operations…" />
+      <input type="text" id="formType" list="typeOptions" placeholder="Sales, Manager, Operations…" oninput="updateMarketDataRolDisplay()" />
       <datalist id="typeOptions"></datalist>
     </div>
 
@@ -588,27 +588,22 @@ th.name-col, th.email-col { z-index:26; }
 
     <div class="form-group">
       <label>Market Data role</label>
-      <select id="formMarketDataRol" onchange="updateMdManagedSellersVisibility()">
-        <option value="">— Not managed here (use Panel de Ventas &gt; Permisos)</option>
-        <option value="vendedor">Vendedor</option>
-        <option value="manager">Manager</option>
-        <option value="ceo">CEO</option>
-        <option value="admin">Admin</option>
-      </select>
+      <div id="formMarketDataRolDisplay" style="padding:8px; border:1px solid var(--border); border-radius:4px; background:var(--surface2); font-size:11px; color:var(--text1);">—</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Calculado solo del campo "Type" de arriba — ya no se elige a mano acá. Business Manager → Manager. Sales / GSA → Vendedor. C-Level y sin Type → Admin (ve todas las BD, la lista de abajo no le aplica). Operations, Manager (a secas) y cualquier otro Type → sin Market Data (Panel de Ventas ignora a esta persona, se sigue configurando a mano en su propia pestaña Permisos si hiciera falta).</div>
     </div>
 
     <div class="form-group" id="mdManagedSellersGroup" style="display:none;">
       <label>Market Data — supervised sales reps (Manager only)</label>
       <button type="button" class="select-all-btn" onclick="toggleSelectAllMdManagedSellers()">Select All</button>
       <div class="checkbox-group" id="mdManagedSellersCheckboxes"></div>
-      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Only vendedores (people with "Market Data role" = Vendedor) show up here — this manager will only see/assign tasks for whoever is checked.</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Only vendedores (Type = Sales or GSA) show up here — this manager will only see/assign tasks for whoever is checked.</div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" id="mdSourcesGroup" style="display:none;">
       <label>Market Data databases</label>
       <button type="button" class="select-all-btn" onclick="toggleSelectAllMdSources()">Select All</button>
       <div class="checkbox-group" id="mdSourcesCheckboxes"></div>
-      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Only applies if "Market Data role" above is set — otherwise Panel de Ventas ignores this and keeps whatever was configured for this person in its own Permisos tab.</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Restricts which databases this Vendedor/Manager can see in Market Data — leave all checked for no restriction.</div>
     </div>
 
     <div class="modal-footer">
@@ -661,11 +656,11 @@ th.name-col, th.email-col { z-index:26; }
   // nombres en GET /api/user_modules (ver _sincronizar_usuario_desde_sharon
   // en pv3/main.py), así que este checklist tiene que mandar/leer el mismo
   // nombre, no el que usa Panel de Ventas puertas adentro para sí mismo.
-  // OJO — esto solo hace algo si 'Market Data role' (market_data_rol, ver
-  // el selector de abajo) queda en admin/ceo/manager/vendedor: si se deja
-  // vacío, Panel de Ventas ignora por completo estos 5 campos y esa
-  // persona sigue con lo que ya tuviera configurado a mano en su propia
-  // pestaña Permisos (o queda pendiente si nunca existió ahí).
+  // OJO — esto solo hace algo si 'market_data_rol' queda en
+  // admin/ceo/manager/vendedor: si se deja vacío, Panel de Ventas ignora
+  // por completo estos 5 campos y esa persona sigue con lo que ya
+  // tuviera configurado a mano en su propia pestaña Permisos (o queda
+  // pendiente si nunca existió ahí).
   const MARKET_DATA_SOURCES = [
     { id: "cathay_hkg", label: "Hong Kong — CASS — Cathay" },
     { id: "cathay_sam", label: "Sudamérica — CASS — Cathay" },
@@ -687,6 +682,31 @@ th.name-col, th.email-col { z-index:26; }
     { id: "chi_isidora_exp", label: "Chile — Isidora (Exportación)" },
     { id: "per_aduana", label: "Perú — Aduana (Exportación)" }
   ];
+
+  // 26 sep, cony: antes había un selector aparte para elegir 'Market Data
+  // role' a mano. Se sacó — ahora se calcula solo del campo "Type" de
+  // arriba (el mismo selector/datalist que ya usa Sharon, ver
+  // DEFAULT_USER_TYPES más abajo), para no mantener dos clasificaciones
+  // de cargo distintas por persona. Mapeo pedido por cony (26 sep):
+  // Business Manager reparte tareas y queda a cargo de vendedores → rol
+  // 'manager'; Sales/GSA son los vendedores → rol 'vendedor'; C-Level, y
+  // cualquiera sin Type asignado todavía (userType() les muestra
+  // "Unassigned" pero el campo real queda vacío), ven todas las bases →
+  // rol 'admin'. "Operations" y "Manager" a secas (distinto de "Business
+  // Manager") quedan sin Market Data por ahora — cony confirmó que esas
+  // personas no van a tener acceso — igual que cualquier Type que no esté
+  // en este mapa (texto libre, este campo no es un select cerrado).
+  const TYPE_TO_MARKET_DATA_ROL = {
+    "Business Manager": "manager",
+    "Sales": "vendedor",
+    "GSA": "vendedor",
+    "C-Level": "admin",
+  };
+  function marketDataRolForType(type) {
+    const t = (type || "").trim();
+    if (!t) return "admin"; // sin Type = "Unassigned" = admin, mismo criterio que C-Level
+    return TYPE_TO_MARKET_DATA_ROL[t] || "";
+  }
 
   const MODULE_COLUMNS = [
     { key: 'booked', label: 'BKD' },
@@ -909,9 +929,20 @@ th.name-col, th.email-col { z-index:26; }
     });
   }
 
-  function updateMdManagedSellersVisibility() {
-    const rol = document.getElementById('formMarketDataRol').value;
+  const MARKET_DATA_ROL_LABELS = {
+    manager: 'Manager',
+    vendedor: 'Vendedor',
+    admin: 'Admin (ve todas las BD)',
+    ceo: 'CEO',
+    '': '— None (Operations, Manager a secas, u otro Type — no gestionado acá)',
+  };
+
+  function updateMarketDataRolDisplay() {
+    const type = document.getElementById('formType').value;
+    const rol = marketDataRolForType(type);
+    document.getElementById('formMarketDataRolDisplay').textContent = MARKET_DATA_ROL_LABELS[rol] || rol;
     document.getElementById('mdManagedSellersGroup').style.display = rol === 'manager' ? '' : 'none';
+    document.getElementById('mdSourcesGroup').style.display = (rol === 'vendedor' || rol === 'manager') ? '' : 'none';
   }
 
   function populateSalesPersonSelect() {
@@ -1296,10 +1327,9 @@ th.name-col, th.email-col { z-index:26; }
     document.getElementById('formType').value = '';
     document.getElementById('formSalesPerson').value = '';
     document.getElementById('formStatus').value = 'active';
-    document.getElementById('formMarketDataRol').value = '';
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
-    updateMdManagedSellersVisibility();
+    updateMarketDataRolDisplay();
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Create';
     updateSelectAllModules();
@@ -1326,7 +1356,6 @@ th.name-col, th.email-col { z-index:26; }
     document.getElementById('formType').value = userType(user) === 'Unassigned' ? '' : userType(user);
     document.getElementById('formSalesPerson').value = user.sales_person || '';
     document.getElementById('formStatus').value = user.status || 'active';
-    document.getElementById('formMarketDataRol').value = user.market_data_rol || '';
 
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => {
       cb.checked = (user.modules || []).includes(cb.value);
@@ -1346,7 +1375,7 @@ th.name-col, th.email-col { z-index:26; }
       cb.checked = asList(user.market_data_fuentes).includes(cb.value);
     });
 
-    updateMdManagedSellersVisibility();
+    updateMarketDataRolDisplay();
     document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]').forEach(cb => {
       cb.checked = asList(user.market_data_managed_sellers).includes(cb.value);
     });
@@ -1374,8 +1403,10 @@ th.name-col, th.email-col { z-index:26; }
     const gsaCheckboxes = Array.from(document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]'));
     const selectedGsas = gsaCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
     const gsas = selectedGsas.length === 0 || selectedGsas.length === gsaCheckboxes.length ? [] : selectedGsas;
-    const marketDataFuentes = Array.from(document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
-    const marketDataRol = document.getElementById('formMarketDataRol').value || '';
+    const marketDataRol = marketDataRolForType(type);
+    const marketDataFuentes = (marketDataRol === 'vendedor' || marketDataRol === 'manager')
+      ? Array.from(document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value)
+      : [];
     const marketDataManagedSellers = marketDataRol === 'manager'
       ? Array.from(document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value)
       : [];
