@@ -588,13 +588,20 @@ th.name-col, th.email-col { z-index:26; }
 
     <div class="form-group">
       <label>Market Data role</label>
-      <select id="formMarketDataRol">
+      <select id="formMarketDataRol" onchange="updateMdManagedSellersVisibility()">
         <option value="">— Not managed here (use Panel de Ventas &gt; Permisos)</option>
         <option value="vendedor">Vendedor</option>
         <option value="manager">Manager</option>
         <option value="ceo">CEO</option>
         <option value="admin">Admin</option>
       </select>
+    </div>
+
+    <div class="form-group" id="mdManagedSellersGroup" style="display:none;">
+      <label>Market Data — supervised sales reps (Manager only)</label>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllMdManagedSellers()">Select All</button>
+      <div class="checkbox-group" id="mdManagedSellersCheckboxes"></div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Only vendedores (people with "Market Data role" = Vendedor) show up here — this manager will only see/assign tasks for whoever is checked.</div>
     </div>
 
     <div class="form-group">
@@ -780,6 +787,7 @@ th.name-col, th.email-col { z-index:26; }
       updateStats();
       populateBusinessCheckboxes();
       populateMdSourcesCheckboxes();
+      populateMdManagedSellersCheckboxes();
     } catch (e) {
       console.error('Failed to load users:', e);
       document.getElementById('loadingSpinner').textContent = 'Error loading users. Please refresh.';
@@ -881,6 +889,31 @@ th.name-col, th.email-col { z-index:26; }
     });
   }
 
+  function populateMdManagedSellersCheckboxes() {
+    const container = document.getElementById('mdManagedSellersCheckboxes');
+    if (!container) return;
+    container.innerHTML = '';
+    const vendedores = allUsers.filter(u => u.market_data_rol === 'vendedor');
+    if (vendedores.length === 0) {
+      container.innerHTML = '<div style="font-size:10px;color:var(--text3);">No one has "Market Data role" = Vendedor yet.</div>';
+      return;
+    }
+    vendedores.forEach(v => {
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = `
+        <input type="checkbox" id="mdmgr-${escapeHtml(v.email)}" value="${escapeHtml(v.email)}" onchange="updateSelectAllMdManagedSellers()" />
+        <label for="mdmgr-${escapeHtml(v.email)}">${escapeHtml(v.name || v.email)} <span style="color:var(--text3);">(${escapeHtml(v.email)})</span></label>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function updateMdManagedSellersVisibility() {
+    const rol = document.getElementById('formMarketDataRol').value;
+    document.getElementById('mdManagedSellersGroup').style.display = rol === 'manager' ? '' : 'none';
+  }
+
   function populateSalesPersonSelect() {
     const select = document.getElementById('formSalesPerson');
     select.innerHTML = '<option value="">— All sales persons</option>';
@@ -946,6 +979,20 @@ th.name-col, th.email-col { z-index:26; }
     const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
     const btn = document.querySelector('#mdSourcesCheckboxes').previousElementSibling;
     btn.textContent = allChecked ? 'Deselect All' : 'Select All';
+  }
+
+  function toggleSelectAllMdManagedSellers() {
+    const checkboxes = document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]');
+    const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateSelectAllMdManagedSellers();
+  }
+
+  function updateSelectAllMdManagedSellers() {
+    const checkboxes = document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]');
+    const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    const btn = document.querySelector('#mdManagedSellersCheckboxes').previousElementSibling;
+    if (btn) btn.textContent = allChecked ? 'Deselect All' : 'Select All';
   }
 
   function toggleSelectAllGsas() {
@@ -1252,6 +1299,7 @@ th.name-col, th.email-col { z-index:26; }
     document.getElementById('formMarketDataRol').value = '';
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
+    updateMdManagedSellersVisibility();
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Create';
     updateSelectAllModules();
@@ -1298,12 +1346,18 @@ th.name-col, th.email-col { z-index:26; }
       cb.checked = asList(user.market_data_fuentes).includes(cb.value);
     });
 
+    updateMdManagedSellersVisibility();
+    document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]').forEach(cb => {
+      cb.checked = asList(user.market_data_managed_sellers).includes(cb.value);
+    });
+
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Save';
     updateSelectAllModules();
     updateSelectAllBusinesses();
     updateSelectAllGsas();
     updateSelectAllMdSources();
+    updateSelectAllMdManagedSellers();
   }
 
   function closeEditModal() {
@@ -1322,6 +1376,9 @@ th.name-col, th.email-col { z-index:26; }
     const gsas = selectedGsas.length === 0 || selectedGsas.length === gsaCheckboxes.length ? [] : selectedGsas;
     const marketDataFuentes = Array.from(document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     const marketDataRol = document.getElementById('formMarketDataRol').value || '';
+    const marketDataManagedSellers = marketDataRol === 'manager'
+      ? Array.from(document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value)
+      : [];
     const status = document.getElementById('formStatus').value;
 
     if (!name || !email) {
@@ -1352,8 +1409,8 @@ th.name-col, th.email-col { z-index:26; }
       const isNew = !currentEditingUser;
       const method = isNew ? 'POST' : 'PUT';
       const url = isNew
-        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}`
-        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}`;
+        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}&market_data_managed_sellers=${encodeURIComponent(JSON.stringify(marketDataManagedSellers))}`
+        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}&market_data_managed_sellers=${encodeURIComponent(JSON.stringify(marketDataManagedSellers))}`;
 
       const r = await fetch(url, {
         method,
