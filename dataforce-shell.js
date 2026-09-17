@@ -10,6 +10,11 @@
   const DEFAULT_APP_LOGO_URL = SCRIPT_URL ? new URL("app-logo.png", SCRIPT_URL).href : "app-logo.png";
   const MODULES = [
     { key: "dashboard", label: "Dashboard", href: "https://dataforce.gsaforce.com/dashboard/" },
+    // 17 sep, cony: Market Data no estaba en esta lista, por eso no aparecía
+    // en el menú hamburguesa del resto de la app (Dashboard, Flown, etc.) —
+    // solo tenía un card en la home. Se agrega acá para que aparezca igual
+    // que los demás módulos.
+    { key: "market_data", label: "Market Data", href: "https://dataforce.gsaforce.com/market-data/" },
     { key: "flown", label: "Flown", href: "https://dataforce.gsaforce.com/flown-report/" },
     { key: "booked", label: "Booked", href: "https://dataforce.gsaforce.com/booked-report/" },
     { key: "my_bookings", label: "My Bookings", href: "https://dataforce.gsaforce.com/my-bookings/" },
