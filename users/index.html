@@ -569,6 +569,12 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     </div>
 
     <div class="form-group">
+      <label>Market Data databases</label>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllMdSources()">Select All</button>
+      <div class="checkbox-group" id="mdSourcesCheckboxes"></div>
+    </div>
+
+    <div class="form-group">
       <label>Status</label>
       <select id="formStatus">
         <option value="active">Active</option>
@@ -613,6 +619,38 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     "04_ELAL_805": "EL-AL-805",
     "10_VIRGIN_805": "VIRGIN-805"
   };
+
+  // 18 sep, cony (Market Data / Panel de Ventas): lista de bases de datos
+  // que el módulo Market Data puede mostrar hoy (misma lista que
+  // DATA_SOURCES en el backend de Panel de Ventas — data_helpers.py). Se
+  // guarda en el usuario como 'fuentes_permitidas' (mismo nombre de campo
+  // que ya usa Panel de Ventas internamente, para que ese backend pueda
+  // leerlo directo sin traducir nombres) — ver el checklist "Market Data
+  // databases" del modal, debajo de "GSA access". OJO: esto es solo el
+  // frontend — el backend de Dataforce (API_BASE) todavía necesita
+  // aceptar/guardar el parámetro 'fuentes_permitidas' en POST/PUT
+  // /api/users para que esto tenga efecto real (spec ya entregada).
+  const MARKET_DATA_SOURCES = [
+    { id: "cathay_hkg", label: "Hong Kong — CASS — Cathay" },
+    { id: "cathay_sam", label: "Sudamérica — CASS — Cathay" },
+    { id: "usa_cargois_2024", label: "USA — CASS 2024" },
+    { id: "mex_cargois_2023", label: "México — CASS" },
+    { id: "asia_wacd_av", label: "Asia — WACD — Avianca" },
+    { id: "sam_wacd_agent", label: "Sudamérica — WACD — Mercury (Agente)" },
+    { id: "sam_wacd_product", label: "Sudamérica — WACD — Mercury (Producto)" },
+    { id: "mex_wacd_agent", label: "México — WACD — Mercury (Agente)" },
+    { id: "mex_wacd_product", label: "México — WACD — Mercury (Producto)" },
+    { id: "jpn_wacd_agent", label: "Japón — WACD — Mercury (Agente)" },
+    { id: "jpn_wacd_product", label: "Japón — WACD — Mercury (Producto)" },
+    { id: "oce_wacd_agent", label: "Oceanía — WACD — Mercury (Agente)" },
+    { id: "oce_wacd_product", label: "Oceanía — WACD — Mercury (Producto)" },
+    { id: "jpn_cargois_la", label: "Japón — CASS — LATAM" },
+    { id: "jpn_cargois_m7", label: "Japón — CASS — Masair" },
+    { id: "bra_logcomex", label: "Brasil — Logcomex (Importación)" },
+    { id: "chi_isidora_imp", label: "Chile — Isidora (Importación)" },
+    { id: "chi_isidora_exp", label: "Chile — Isidora (Exportación)" },
+    { id: "per_aduana", label: "Perú — Aduana (Exportación)" }
+  ];
 
   const MODULE_COLUMNS = [
     { key: 'booked', label: 'BKD' },
@@ -712,6 +750,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       renderTable();
       updateStats();
       populateBusinessCheckboxes();
+      populateMdSourcesCheckboxes();
     } catch (e) {
       console.error('Failed to load users:', e);
       document.getElementById('loadingSpinner').textContent = 'Error loading users. Please refresh.';
@@ -799,6 +838,20 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     });
   }
 
+  function populateMdSourcesCheckboxes() {
+    const container = document.getElementById('mdSourcesCheckboxes');
+    container.innerHTML = '';
+    MARKET_DATA_SOURCES.forEach(src => {
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = `
+        <input type="checkbox" id="mdsrc-${src.id}" value="${src.id}" onchange="updateSelectAllMdSources()" />
+        <label for="mdsrc-${src.id}">${escapeHtml(src.label)}</label>
+      `;
+      container.appendChild(div);
+    });
+  }
+
   function populateSalesPersonSelect() {
     const select = document.getElementById('formSalesPerson');
     select.innerHTML = '<option value="">— All sales persons</option>';
@@ -849,6 +902,20 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     const checkboxes = document.querySelectorAll('#businessesCheckboxes input[type="checkbox"]');
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     const btn = document.querySelector('#businessesCheckboxes').previousElementSibling;
+    btn.textContent = allChecked ? 'Deselect All' : 'Select All';
+  }
+
+  function toggleSelectAllMdSources() {
+    const checkboxes = document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]');
+    const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateSelectAllMdSources();
+  }
+
+  function updateSelectAllMdSources() {
+    const checkboxes = document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]');
+    const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    const btn = document.querySelector('#mdSourcesCheckboxes').previousElementSibling;
     btn.textContent = allChecked ? 'Deselect All' : 'Select All';
   }
 
@@ -1160,6 +1227,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     updateSelectAllModules();
     updateSelectAllBusinesses();
     updateSelectAllGsas();
+    updateSelectAllMdSources();
   }
 
   function openRequestUserModal(requestId, email) {
@@ -1195,11 +1263,16 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
       cb.checked = unrestrictedGsas || allowedGsas.includes(cb.value);
     });
 
+    document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]').forEach(cb => {
+      cb.checked = asList(user.fuentes_permitidas).includes(cb.value);
+    });
+
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Save';
     updateSelectAllModules();
     updateSelectAllBusinesses();
     updateSelectAllGsas();
+    updateSelectAllMdSources();
   }
 
   function closeEditModal() {
@@ -1216,6 +1289,7 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     const gsaCheckboxes = Array.from(document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]'));
     const selectedGsas = gsaCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
     const gsas = selectedGsas.length === 0 || selectedGsas.length === gsaCheckboxes.length ? [] : selectedGsas;
+    const fuentesPermitidas = Array.from(document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     const status = document.getElementById('formStatus').value;
 
     if (!name || !email) {
@@ -1245,9 +1319,9 @@ main { padding:8px clamp(12px, 7vw, 80px) 24px; display:flex; flex-direction:col
     try {
       const isNew = !currentEditingUser;
       const method = isNew ? 'POST' : 'PUT';
-      const url = isNew 
-        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}`
-        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}`;
+      const url = isNew
+        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&fuentes_permitidas=${encodeURIComponent(JSON.stringify(fuentesPermitidas))}`
+        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&fuentes_permitidas=${encodeURIComponent(JSON.stringify(fuentesPermitidas))}`;
 
       const r = await fetch(url, {
         method,
