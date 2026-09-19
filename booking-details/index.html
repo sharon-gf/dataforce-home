@@ -206,6 +206,10 @@
     cursor:pointer;
     white-space:nowrap;
   }
+  .multi-search-wrap { position:sticky; top:-4px; background:#fff; padding:4px 0 6px; z-index:1; }
+  .multi-search { width:100%; min-width:0; }
+  .multi-option[hidden], .multi-empty[hidden] { display:none; }
+  .multi-empty { padding:8px 6px; color:var(--text2); }
   .multi-option:hover { background:#eaf0fb; }
   .multi-option input {
     width:14px;
@@ -758,16 +762,36 @@ function updateMultiFilter(root) {
   });
 }
 
+function filterMultiOptions(root) {
+  const term = (root.dataset.search || "").trim().toUpperCase();
+  let matches = 0;
+  root.querySelectorAll(".multi-option").forEach(option => {
+    const value = option.querySelector("input").value;
+    option.hidden = value !== "ALL" && !value.toUpperCase().includes(term);
+    if (value !== "ALL" && !option.hidden) matches++;
+  });
+  root.querySelector(".multi-empty").hidden = matches > 0;
+}
+
 function renderMultiFilter(root, options) {
   const current = validMultiValues(root, options);
   const menu = root.querySelector(".multi-menu");
   const allOptions = ["ALL"].concat(options);
-  menu.innerHTML = allOptions.map(value => `
+  const wasSearching = document.activeElement === menu.querySelector(".multi-search");
+  const searchLabel = root === els.origin ? "Search origins" : "Search destinations";
+  menu.innerHTML = `<div class="multi-search-wrap"><input class="multi-search" type="search" placeholder="${searchLabel}" aria-label="${searchLabel}" value="${esc(root.dataset.search || "")}"></div>` + allOptions.map(value => `
     <label class="multi-option">
       <input type="checkbox" value="${esc(value)}">
       <span>${esc(value === "ALL" ? "All" : value)}</span>
     </label>
-  `).join("");
+  `).join("") + '<div class="multi-empty" role="status" hidden>No matches found.</div>';
+  const search = menu.querySelector(".multi-search");
+  search.addEventListener("input", () => {
+    root.dataset.search = search.value;
+    filterMultiOptions(root);
+  });
+  filterMultiOptions(root);
+  if (wasSearching) search.focus();
   menu.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.addEventListener("change", () => {
       if (input.value === "ALL") {
@@ -797,6 +821,7 @@ function toggleMultiFilter(root) {
   closeMultiFilters(root);
   root.classList.toggle("is-open", open);
   root.querySelector(".multi-button").setAttribute("aria-expanded", String(open));
+  if (open) root.querySelector(".multi-search")?.focus();
 }
 
 function populateOriginFilter(rows) {
@@ -1112,8 +1137,13 @@ els.search.addEventListener("input", debouncedLoad);
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.search.value = "";
   els.business.value = "ALL";
-  setMultiValues(els.origin, ["ALL"]);
-  setMultiValues(els.destination, ["ALL"]);
+  [els.origin, els.destination].forEach(root => {
+    root.dataset.search = "";
+    const search = root.querySelector(".multi-search");
+    if (search) search.value = "";
+    filterMultiOptions(root);
+    setMultiValues(root, ["ALL"]);
+  });
   setDefaultDates();
   loadBookings();
   closeFilterDrawer();
