@@ -606,6 +606,13 @@ th.name-col, th.email-col { z-index:26; }
       <div style="font-size:9px;color:var(--text3);margin-top:4px;">Restricts which databases this Vendedor/Manager can see in Market Data — leave all checked for no restriction.</div>
     </div>
 
+    <div class="form-group" id="mdClientsGroup" style="display:none;">
+      <label>Market Data — allowed clients / airlines</label>
+      <button type="button" class="select-all-btn" onclick="toggleSelectAllMdClients()">Select All</button>
+      <div class="checkbox-group" id="mdClientsCheckboxes"></div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Only applies to Perú — Aduana, Chile — Isidora (Importación) and Chile — Isidora (Exportación) — the databases that mix several clients in one table. Leave all checked for no restriction (e.g. give access to "Perú — Aduana" but only check "Cathay" here to only show that client's rows).</div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
       <button class="btn-save" onclick="saveUser()" id="saveBtn">Save</button>
@@ -681,6 +688,60 @@ th.name-col, th.email-col { z-index:26; }
     { id: "chi_isidora_imp", label: "Chile — Isidora (Importación)" },
     { id: "chi_isidora_exp", label: "Chile — Isidora (Exportación)" },
     { id: "per_aduana", label: "Perú — Aduana (Exportación)" }
+  ];
+
+  // 17 sep, cony: pidió poder restringir, además de qué bases ve un
+  // vendedor/manager, a qué CLIENTES/aerolíneas dentro de esas bases (ej:
+  // Perú Export con Avianca/Cathay/UPS — solo quiere que vea Cathay). Este
+  // control YA existía armado por completo en el backend real de Sharon
+  // (campo 'market_data_aerolineas', ver api.py) y Panel de Ventas ya sabe
+  // aplicarlo de verdad (filtra los datos, no es solo cosmético) — nunca
+  // hubo forma de tocarlo en esta pantalla, es el mismo tipo de hueco que
+  // 'vendedores a cargo' antes de agregarlo.
+  //
+  // Solo aplica a las bases que MEZCLAN varios clientes en una sola tabla
+  // (tienen 'airline_column' real en dataforce-marketdata/data_helpers.py):
+  // Perú — Aduana, Brasil — Logcomex, Chile — Isidora (Importación) y
+  // Chile — Isidora (Exportación). El resto de las bases son de un solo
+  // cliente, ahí no aplica nada.
+  //
+  // Brasil — Logcomex queda AFUERA de esta lista por pedido de cony (17
+  // sep): esa base trae los nombres de aerolínea sin normalizar (ej.
+  // "LATAM", "LATAM CARGO BRASIL" y "LATAM CARGO COLOMBIA" separados como
+  // si fueran 3 clientes distintos) — se deja pendiente hasta limpiar eso.
+  //
+  // Lista sacada de un caché real de datos (fin de agosto / inicio de
+  // septiembre) de Perú-Aduana + Chile-Isidora Importación/Exportación,
+  // pasada por la función real de normalización de nombres de aerolínea
+  // (_aerolinea_real_normalizada / _aerolinea_desde_prefijo). Es UNA sola
+  // lista compartida entre las 3 bases (market_data_aerolineas es un solo
+  // campo, no uno por base) — si alguien tiene, por ejemplo, "Cathay"
+  // marcado, solo ve filas de Cathay en cualquiera de las 3. Como es de un
+  // caché puntual, puede faltar algún cliente real que no haya aparecido
+  // en esa ventana — conviene revisarla cuando se pueda contra la lista
+  // en vivo (filtro "Aerolínea" dentro de cada una de esas 3 bases).
+  const MARKET_DATA_CLIENTS = [
+    "AEROMEXICO",
+    "AGENCIA EN CHILE KLM COMPANIA REAL HOLANDESA DE AVIACION",
+    "AMERICAN AIRLINES",
+    "AMERICAN AIRLINES INC.",
+    "ATLAS AIR",
+    "AVIANCA",
+    "CATHAY",
+    "COPA",
+    "DELTA AIR LINES",
+    "DELTA AIR LINES INC AGENCIA EN CHILE",
+    "DHL",
+    "IBERIA",
+    "KOREAN",
+    "LATAM",
+    "QATAR",
+    "SKY AIRLINE S.A.",
+    "SOCIETE AIR FRANCE",
+    "TAMPA CARGO S.A.S. SUCURSAL PERUANA",
+    "TURKISH AIRLINES",
+    "UNITED AIRLINES",
+    "UPS"
   ];
 
   // 26 sep, cony: antes había un selector aparte para elegir 'Market Data
@@ -807,6 +868,7 @@ th.name-col, th.email-col { z-index:26; }
       updateStats();
       populateBusinessCheckboxes();
       populateMdSourcesCheckboxes();
+      populateMdClientsCheckboxes();
       populateMdManagedSellersCheckboxes();
     } catch (e) {
       console.error('Failed to load users:', e);
@@ -909,6 +971,20 @@ th.name-col, th.email-col { z-index:26; }
     });
   }
 
+  function populateMdClientsCheckboxes() {
+    const container = document.getElementById('mdClientsCheckboxes');
+    container.innerHTML = '';
+    MARKET_DATA_CLIENTS.forEach((client, index) => {
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = `
+        <input type="checkbox" id="mdcli-${index}" value="${escapeHtml(client)}" onchange="updateSelectAllMdClients()" />
+        <label for="mdcli-${index}">${escapeHtml(client)}</label>
+      `;
+      container.appendChild(div);
+    });
+  }
+
   function populateMdManagedSellersCheckboxes() {
     const container = document.getElementById('mdManagedSellersCheckboxes');
     if (!container) return;
@@ -943,6 +1019,7 @@ th.name-col, th.email-col { z-index:26; }
     document.getElementById('formMarketDataRolDisplay').textContent = MARKET_DATA_ROL_LABELS[rol] || rol;
     document.getElementById('mdManagedSellersGroup').style.display = rol === 'manager' ? '' : 'none';
     document.getElementById('mdSourcesGroup').style.display = (rol === 'vendedor' || rol === 'manager') ? '' : 'none';
+    document.getElementById('mdClientsGroup').style.display = (rol === 'vendedor' || rol === 'manager') ? '' : 'none';
   }
 
   function populateSalesPersonSelect() {
@@ -1009,6 +1086,20 @@ th.name-col, th.email-col { z-index:26; }
     const checkboxes = document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]');
     const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
     const btn = document.querySelector('#mdSourcesCheckboxes').previousElementSibling;
+    btn.textContent = allChecked ? 'Deselect All' : 'Select All';
+  }
+
+  function toggleSelectAllMdClients() {
+    const checkboxes = document.querySelectorAll('#mdClientsCheckboxes input[type="checkbox"]');
+    const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateSelectAllMdClients();
+  }
+
+  function updateSelectAllMdClients() {
+    const checkboxes = document.querySelectorAll('#mdClientsCheckboxes input[type="checkbox"]');
+    const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    const btn = document.querySelector('#mdClientsCheckboxes').previousElementSibling;
     btn.textContent = allChecked ? 'Deselect All' : 'Select All';
   }
 
@@ -1336,6 +1427,7 @@ th.name-col, th.email-col { z-index:26; }
     updateSelectAllBusinesses();
     updateSelectAllGsas();
     updateSelectAllMdSources();
+    updateSelectAllMdClients();
   }
 
   function openRequestUserModal(requestId, email) {
@@ -1375,6 +1467,14 @@ th.name-col, th.email-col { z-index:26; }
       cb.checked = asList(user.market_data_fuentes).includes(cb.value);
     });
 
+    // 17 sep, cony: mismo criterio que mdSourcesCheckboxes arriba —
+    // 'market_data_aerolineas' vacío = sin restricción (ve todos los
+    // clientes), pero acá se refleja igual que fuentes: con nada marcado
+    // (ver comentario de MARKET_DATA_CLIENTS más arriba sobre el porqué).
+    document.querySelectorAll('#mdClientsCheckboxes input[type="checkbox"]').forEach(cb => {
+      cb.checked = asList(user.market_data_aerolineas).includes(cb.value);
+    });
+
     updateMarketDataRolDisplay();
     document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]').forEach(cb => {
       cb.checked = asList(user.market_data_managed_sellers).includes(cb.value);
@@ -1386,6 +1486,7 @@ th.name-col, th.email-col { z-index:26; }
     updateSelectAllBusinesses();
     updateSelectAllGsas();
     updateSelectAllMdSources();
+    updateSelectAllMdClients();
     updateSelectAllMdManagedSellers();
   }
 
@@ -1409,6 +1510,9 @@ th.name-col, th.email-col { z-index:26; }
       : [];
     const marketDataManagedSellers = marketDataRol === 'manager'
       ? Array.from(document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value)
+      : [];
+    const marketDataAerolineas = (marketDataRol === 'vendedor' || marketDataRol === 'manager')
+      ? Array.from(document.querySelectorAll('#mdClientsCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value)
       : [];
     const status = document.getElementById('formStatus').value;
 
@@ -1440,8 +1544,8 @@ th.name-col, th.email-col { z-index:26; }
       const isNew = !currentEditingUser;
       const method = isNew ? 'POST' : 'PUT';
       const url = isNew
-        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}&market_data_managed_sellers=${encodeURIComponent(JSON.stringify(marketDataManagedSellers))}`
-        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}&market_data_managed_sellers=${encodeURIComponent(JSON.stringify(marketDataManagedSellers))}`;
+        ? `${API_BASE}/api/users?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}&market_data_aerolineas=${encodeURIComponent(JSON.stringify(marketDataAerolineas))}&market_data_managed_sellers=${encodeURIComponent(JSON.stringify(marketDataManagedSellers))}`
+        : `${API_BASE}/api/users/${currentEditingUser.id}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&user_type=${encodeURIComponent(type)}&modules=${encodeURIComponent(JSON.stringify(modules))}&allowed_businesses=${encodeURIComponent(JSON.stringify(businesses))}&allowed_gsas=${encodeURIComponent(JSON.stringify(gsas))}&sales_person=${encodeURIComponent(salesPerson || '')}&market_data_rol=${encodeURIComponent(marketDataRol)}&market_data_fuentes=${encodeURIComponent(JSON.stringify(marketDataFuentes))}&market_data_aerolineas=${encodeURIComponent(JSON.stringify(marketDataAerolineas))}&market_data_managed_sellers=${encodeURIComponent(JSON.stringify(marketDataManagedSellers))}`;
 
       const r = await fetch(url, {
         method,
