@@ -11,9 +11,9 @@
 <body>
 <iframe id="forwardingFrame" title="Forwarding Automático"></iframe>
 <script>
-  // Mismo servicio de Cloud Run que Market Data, página /forwarding
+  // Servicio propio de Cloud Run (dataforce-forwarding), separado de Market Data
   document.getElementById('forwardingFrame').src =
-    "https://dataforce-marketdata-git-911713216717.us-east1.run.app/forwarding" + window.location.search;
+    "https://dataforce-forwarding-911713216717.us-east1.run.app/" + window.location.search;
 </script>
 </body>
 </html>
