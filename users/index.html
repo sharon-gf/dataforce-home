@@ -379,6 +379,7 @@ th.name-col, th.email-col { z-index:26; }
         <option value="vvi_charters">VVI Charters</option>
         <option value="customers">Customers</option>
         <option value="market_data">Market Data</option>
+        <option value="forwarding_automatico">Forwarding Automático</option>
         <option value="upload">Upload</option>
         <option value="admin">Admin</option>
       </select>
@@ -555,7 +556,11 @@ th.name-col, th.email-col { z-index:26; }
         <div class="checkbox-item">
           <input type="checkbox" id="mod-market_data" value="market_data" onchange="updateSelectAllModules()" />
           <label for="mod-market_data">Market Data</label>
-        </div>  
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="mod-forwarding_automatico" value="forwarding_automatico" onchange="updateSelectAllModules()" />
+          <label for="mod-forwarding_automatico">Forwarding Automático</label>
+        </div>
         <div class="checkbox-item">
           <input type="checkbox" id="mod-upload" value="upload" onchange="updateSelectAllModules()" />
           <label for="mod-upload">Upload</label>
@@ -792,6 +797,7 @@ th.name-col, th.email-col { z-index:26; }
     { key: 'vvi_charters', label: 'VVI' },
     { key: 'customers', label: 'CUST' },
     { key: 'market_data', label: 'MD' },
+    { key: 'forwarding_automatico', label: 'FWD' },
     { key: 'admin', label: 'ADMIN' }
   ];
 

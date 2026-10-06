@@ -15,6 +15,7 @@
     // solo tenía un card en la home. Se agrega acá para que aparezca igual
     // que los demás módulos.
     { key: "market_data", label: "Market Data", href: "https://dataforce.gsaforce.com/market-data/" },
+    { key: "forwarding_automatico", label: "Forwarding Automático", href: "https://dataforce.gsaforce.com/forwarding-automatico/" },
     { key: "flown", label: "Flown", href: "https://dataforce.gsaforce.com/flown-report/" },
     { key: "booked", label: "Booked", href: "https://dataforce.gsaforce.com/booked-report/" },
     { key: "my_bookings", label: "My Bookings", href: "https://dataforce.gsaforce.com/my-bookings/" },
