@@ -16,6 +16,7 @@
     "spot_opportunities",
     "pending_spots",
     "check_rates",
+    "cod",
     "finance",
     "jet_fuel",
     "industry_monitor",

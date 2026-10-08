@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - COD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e8eaee;
+    --surface:#fff;
+    --surface2:#f5f7fb;
+    --border:#d8dde8;
+    --navy:#0d1f3c;
+    --navy2:#1a3360;
+    --text1:#0d1f3c;
+    --text2:#41536c;
+    --text3:#8391a8;
+    --blue:#1a56db;
+    --purple:#7c3aed;
+    --red:#b91c1c;
+    --green:#15803d;
+    --content-width:1180px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
+  body.filter-drawer-open { overflow:hidden; }
+  button, input, select { font:inherit; }
+  .app { min-height:100vh; padding:8px; }
+  .header {
+    background:var(--navy);
+    border-radius:6px;
+    padding:8px 16px;
+    display:grid;
+    grid-template-columns:minmax(180px,1fr) minmax(280px,1.4fr) minmax(250px,1fr);
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .logo-link { color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:9px; width:max-content; }
+  .df-mark { width:28px; height:28px; border:1px solid rgba(122,174,213,.7); border-radius:4px; display:grid; place-items:center; color:#7aaed5; font-size:12px; font-weight:700; letter-spacing:0; }
+  .logo-word { display:flex; flex-direction:column; gap:1px; }
+  .logo-main { font-size:18px; letter-spacing:.13em; font-weight:600; line-height:1; }
+  .logo-sub { color:#7aaed5; font-size:9px; letter-spacing:.24em; text-transform:uppercase; }
+  .hdr-mid { text-align:center; min-width:0; }
+  .header-title { color:#7aaed5; letter-spacing:.12em; font-size:17px; font-weight:500; white-space:nowrap; }
+  .header-right { color:#fff; display:flex; flex-direction:column; align-items:flex-end; gap:6px; font-size:11px; min-width:0; }
+  .header-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; max-width:100%; }
+  .status { color:#8fb5d7; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .dot { width:7px; height:7px; border-radius:99px; background:#22c55e; }
+  .logout { border:1px solid #7aaed5; color:#7aaed5; background:transparent; border-radius:3px; padding:4px 10px; cursor:pointer; font-size:10px; }
+  .range { color:#8fb5d7; text-align:right; line-height:1.35; font-size:10px; }
+  .range-main { color:#fff; font-size:12px; letter-spacing:.08em; font-weight:500; display:block; }
+
+  .summary-grid { width:min(var(--content-width),100%); margin:0 auto 8px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+  .metric-card { background:var(--surface); border:1px solid var(--border); border-radius:6px; min-height:72px; padding:12px; border-top:4px solid var(--purple); }
+  .metric-label { color:var(--text3); font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .metric-value { color:var(--text1); font-size:20px; line-height:1.1; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .metric-card.loss .metric-value { color:var(--red); }
+
+  .panel { width:min(var(--content-width),100%); margin:0 auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+  .panel-head { background:var(--navy2); color:#c8d8f0; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:38px; }
+  .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
+  .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
+  .mobile-filter-toggle { display:none; height:28px; border:1px solid rgba(200,216,240,.65); background:transparent; color:#fff; border-radius:4px; padding:0 10px; font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+  .filters { padding:10px 12px; display:grid; grid-template-columns:1.6fr minmax(190px,1.1fr) repeat(2,minmax(130px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .filter-backdrop { display:none; }
+  .mobile-filter-head { display:none; }
+  .field { min-width:0; }
+  label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
+  input, select {
+    width:100%;
+    height:30px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    background:#fff;
+    color:var(--text1);
+    padding:5px 8px;
+    outline:none;
+  }
+  input:focus, select:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); }
+  .multi-select { position:relative; }
+  .multi-trigger {
+    width:100%;
+    height:30px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    background:#fff;
+    color:var(--text1);
+    padding:5px 28px 5px 8px;
+    text-align:left;
+    cursor:pointer;
+    position:relative;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .multi-trigger:focus { border-color:#6d9ce6; box-shadow:0 0 0 2px rgba(26,86,219,.08); outline:none; }
+  .multi-trigger::after {
+    content:"";
+    position:absolute;
+    right:10px;
+    top:50%;
+    width:6px;
+    height:6px;
+    border-right:1.5px solid var(--text2);
+    border-bottom:1.5px solid var(--text2);
+    transform:translateY(-60%) rotate(45deg);
+  }
+  .multi-menu {
+    display:none;
+    position:absolute;
+    z-index:20;
+    top:34px;
+    left:0;
+    right:0;
+    max-height:280px;
+    overflow:auto;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:4px;
+    box-shadow:0 18px 42px rgba(15,23,42,.16);
+    padding:4px;
+  }
+  .multi-select.open .multi-menu { display:block; }
+  .multi-option {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-height:28px;
+    padding:5px 6px;
+    margin:0;
+    border-radius:3px;
+    cursor:pointer;
+    color:var(--text1);
+    font-size:10px;
+    font-weight:500;
+    letter-spacing:0;
+    text-transform:none;
+  }
+  .multi-option:hover { background:#eef3fb; }
+  .multi-option input { width:13px; height:13px; padding:0; flex:0 0 auto; }
+  .filter-actions { display:flex; gap:6px; align-items:end; justify-content:flex-end; }
+  .tool-btn { height:30px; border:1px solid var(--border); background:#fff; color:var(--text1); border-radius:4px; padding:0 10px; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  .tool-btn.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .tool-btn:hover { border-color:#9aa9bd; }
+  .table-shell { min-height:520px; }
+  .table-wrap { overflow:auto; max-height:620px; padding:0 0 12px; }
+  table { width:100%; border-collapse:collapse; }
+  th { position:sticky; top:0; z-index:1; background:var(--navy2); color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:8px; text-align:center; white-space:nowrap; }
+  th.sortable { cursor:pointer; user-select:none; }
+  th.sortable::after { content:""; display:inline-block; width:10px; color:#8fb5d7; font-size:8px; margin-left:4px; }
+  th.sortable.sort-asc::after { content:"▲"; }
+  th.sortable.sort-desc::after { content:"▼"; }
+  td { border-bottom:1px solid var(--border); padding:8px; text-align:center; color:var(--text1); font-size:11px; white-space:nowrap; }
+  tbody tr:nth-child(even) td { background:#f0f2f6; }
+  tbody tr:hover td { background:#e4ecfb; }
+  .awb { color:var(--blue); font-weight:600; }
+  .customer { max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  .negative { color:var(--red); font-weight:600; }
+  .zero { color:#92400e; font-weight:600; }
+  .ok-cell { width:52px; }
+  .ok-check { width:16px; height:16px; cursor:pointer; accent-color:var(--green); }
+  .show-ok { display:flex; align-items:center; gap:6px; height:30px; color:var(--text2); font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+  .show-ok input { width:14px; height:14px; cursor:pointer; accent-color:var(--green); }
+  .empty { padding:38px 16px; color:var(--text3); text-align:center; font-size:12px; }
+
+  @media (max-width:900px) {
+    .header { grid-template-columns:1fr; text-align:center; }
+    .logo-link { margin:auto; align-items:center; }
+    .header-right { align-items:center; }
+    .range { text-align:center; }
+    .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+    .metric-card { min-height:58px; padding:8px 6px; }
+    .metric-label { font-size:7px; margin-bottom:6px; }
+    .metric-value { font-size:14px; }
+    .panel { overflow:visible; }
+    .panel-head { border-radius:6px 6px 0 0; flex-wrap:wrap; }
+    .mobile-filter-toggle { display:inline-flex; align-items:center; justify-content:center; margin-left:auto; }
+    .filter-backdrop.is-open { display:block; position:fixed; inset:0; z-index:1090; background:rgba(13,31,60,.45); }
+    .mobile-filter-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+    .mobile-filter-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+    .mobile-filter-close { width:30px; height:30px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--text1); cursor:pointer; font-size:16px; line-height:1; }
+    .filters { position:fixed; top:0; right:0; z-index:1100; width:min(88vw,360px); height:100vh; height:100dvh; display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:14px; border-left:1px solid var(--border); border-bottom:0; box-shadow:-18px 0 45px rgba(13,31,60,.28); overflow-y:auto; transform:translateX(105%); transition:transform .2s ease; }
+    .filters.is-open { transform:translateX(0); }
+    .filter-actions { justify-content:stretch; }
+    .filter-actions .tool-btn { flex:1; }
+  }
+  @media (max-width:520px) {
+    .app { padding:6px; }
+    .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .filter-backdrop.is-open { display:block; position:fixed; inset:0; z-index:1090; background:rgba(13,31,60,.45); }
+    .mobile-filter-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+    .mobile-filter-title { color:var(--text1); font-size:12px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+    .mobile-filter-close { width:30px; height:30px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--text1); cursor:pointer; font-size:16px; line-height:1; }
+    .filters { position:fixed; top:0; right:0; z-index:1100; width:min(88vw,360px); height:100vh; height:100dvh; display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:14px; border-left:1px solid var(--border); border-bottom:0; box-shadow:-18px 0 45px rgba(13,31,60,.28); overflow-y:auto; transform:translateX(105%); transition:transform .2s ease; }
+    .filters.is-open { transform:translateX(0); }
+    th, td { padding:7px 6px; }
+  }
+</style>
+<link rel="stylesheet" href="../dataforce-shell.css">
+<script>window.DATAFORCE_SHELL = {"title":"COD","meta":[".range"],"userNameId":"userLabel"};</script>
+<script src="../dataforce-auth.js"></script>
+<script src="../dataforce-shell.js"></script>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <a class="logo-link" href="https://dataforce.gsaforce.com/">
+      <span class="df-mark">DF</span>
+      <span class="logo-word">
+        <span class="logo-main">DATAFORCE</span>
+        <span class="logo-sub">GSA Force</span>
+      </span>
+    </a>
+    <div class="hdr-mid">
+      <div class="header-title">COD</div>
+    </div>
+    <div class="header-right">
+      <div class="header-actions">
+        <span id="userLabel"></span>
+        <span class="status"><span class="dot"></span><span id="statusText">Ready</span></span>
+        <button class="logout" type="button" onclick="signOut()">Sign out</button>
+      </div>
+      <div class="range">
+        <span class="range-main" id="rangeTitle">BOOKED YTD</span>
+        <span id="rangeDates"></span>
+      </div>
+    </div>
+  </header>
+
+  <section class="summary-grid" id="summaryGrid">
+    <div class="metric-card"><div class="metric-label">AWBs</div><div class="metric-value" id="metricAwbs">0</div></div>
+    <div class="metric-card"><div class="metric-label">CHW</div><div class="metric-value" id="metricChw">0</div></div>
+    <div class="metric-card"><div class="metric-label">Rev</div><div class="metric-value" id="metricRev">$0</div></div>
+    <div class="metric-card"><div class="metric-label">Profit</div><div class="metric-value" id="metricProfit">$0</div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">All bookings of COD customers (Cust_IntType = COD)</div>
+      <div class="panel-note" id="resultNote">0 rows</div>
+      <button class="mobile-filter-toggle" id="filterToggle" type="button" aria-expanded="false" aria-controls="ratesFilters">Filters</button>
+    </div>
+    <div class="filter-backdrop" id="filterBackdrop"></div>
+    <div class="filters" id="ratesFilters">
+      <div class="mobile-filter-head">
+        <span class="mobile-filter-title">Filters</span>
+        <button class="mobile-filter-close" id="filterClose" type="button" aria-label="Close filters">x</button>
+      </div>
+      <div class="field">
+        <label for="searchInput">Search</label>
+        <input id="searchInput" type="search" placeholder="AWB, GSA, sales person, customer">
+      </div>
+      <div class="field">
+        <label id="businessLabel" for="businessTrigger">Business</label>
+        <div class="multi-select" id="businessSelect">
+          <button class="multi-trigger" id="businessTrigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span id="businessTriggerText">All businesses</span>
+          </button>
+          <div class="multi-menu" id="businessMenu" role="listbox" aria-labelledby="businessLabel" aria-multiselectable="true"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="dateFrom">Booked From</label>
+        <input id="dateFrom" type="date">
+      </div>
+      <div class="field">
+        <label for="dateTo">Booked To</label>
+        <input id="dateTo" type="date">
+      </div>
+      <div class="filter-actions">
+        <label class="show-ok"><input id="showOkFilter" type="checkbox">Show OK</label>
+        <button class="tool-btn" id="resetBtn" type="button">Reset</button>
+        <button class="tool-btn primary" id="exportBtn" type="button">Export</button>
+      </div>
+    </div>
+    <div class="table-shell">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>OK</th>
+              <th class="sortable" data-sort="booking_date">Booking Date</th>
+              <th class="sortable" data-sort="flight_date">Flight Date</th>
+              <th class="sortable" data-sort="awb">AWB</th>
+              <th class="sortable" data-sort="gsa">GSA</th>
+              <th class="sortable" data-sort="sales_person">Sales Person</th>
+              <th class="sortable" data-sort="customer">Customer</th>
+              <th class="sortable" data-sort="chw">CHW</th>
+              <th class="sortable" data-sort="rev">Rev</th>
+              <th class="sortable" data-sort="profit">Profit</th>
+              <th class="sortable" data-sort="pkg">P/KG</th>
+            </tr>
+          </thead>
+          <tbody id="ratesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
+const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+
+const BUSINESS_OPTIONS = [
+  {key:"ALL", label:"All businesses"},
+  {key:"MERC_LOCAL", label:"MA-LOCAL"},
+  {key:"MERC_GSA", label:"MA-GSA"},
+  {key:"MERC_ALL", label:"MA-ALL"},
+  {key:"CXMEX", label:"CX-MEX"},
+  {key:"01_CXOFF", label:"CX-OFF"},
+  {key:"01_CXSUD", label:"CX-SUD"},
+  {key:"02_ET", label:"ET-USA"},
+  {key:"02_ET_LGG", label:"ET-USA W/LGG"},
+  {key:"04_ELAL", label:"EL-AL"},
+  {key:"04_ELAL_805", label:"EL-AL-805"},
+  {key:"05_AVASIA", label:"AV-ASIA"},
+  {key:"07_JPN", label:"MAS-JPN"},
+  {key:"08_AVCHI", label:"AV-CHILE"},
+  {key:"09_AVOTHER", label:"AV-OTHER"},
+  {key:"10_VIRGIN", label:"VIRGIN"},
+  {key:"10_VIRGIN_805", label:"VIRGIN-805"},
+  {key:"11_ULTRACN", label:"CN-ULTRA"}
+];
+const BUSINESS_KEYS = BUSINESS_OPTIONS
+  .map(option => option.key)
+  .filter(key => key !== "ALL");
+
+let rateRows = [];
+let allRateRows = [];
+let currentData = null;
+let requestSeq = 0;
+let searchTimer = null;
+let selectedBusinesses = [...BUSINESS_KEYS];
+let sortState = {key: "flight_date", dir: "desc"};
+let handledKeys = new Set();
+
+const els = {
+  body: document.getElementById("ratesBody"),
+  resultNote: document.getElementById("resultNote"),
+  search: document.getElementById("searchInput"),
+  businessSelect: document.getElementById("businessSelect"),
+  businessTrigger: document.getElementById("businessTrigger"),
+  businessTriggerText: document.getElementById("businessTriggerText"),
+  businessMenu: document.getElementById("businessMenu"),
+  from: document.getElementById("dateFrom"),
+  to: document.getElementById("dateTo"),
+  showOk: document.getElementById("showOkFilter"),
+  rangeDates: document.getElementById("rangeDates"),
+  status: document.getElementById("statusText"),
+  dot: document.querySelector(".dot"),
+  metricAwbs: document.getElementById("metricAwbs"),
+  metricChw: document.getElementById("metricChw"),
+  metricRev: document.getElementById("metricRev"),
+  metricProfit: document.getElementById("metricProfit"),
+  filters: document.getElementById("ratesFilters"),
+  filterToggle: document.getElementById("filterToggle"),
+  filterClose: document.getElementById("filterClose"),
+  filterBackdrop: document.getElementById("filterBackdrop")
+};
+
+const MOBILE_QUERY = window.matchMedia("(max-width:900px)");
+
+function user() {
+  return getDataforceUser() || {};
+}
+
+function signOut() {
+  DataforceAuth.removeItem("df_user");
+  DataforceAuth.removeItem("df_permissions");
+  window.location.href = "https://dataforce.gsaforce.com/";
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[ch]));
+}
+
+function fmt(n, digits = 0) {
+  return Number(n || 0).toLocaleString(undefined, {
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits
+  });
+}
+
+function money(value) {
+  const n = Number(value || 0);
+  const sign = n < 0 ? "-$" : "$";
+  return `${sign}${fmt(Math.abs(n), 0)}`;
+}
+
+function rate(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  const n = Number(value || 0);
+  const sign = n < 0 ? "-$" : "$";
+  return `${sign}${Math.abs(n).toFixed(2)}`;
+}
+
+function numberClass(value) {
+  const n = Number(value || 0);
+  if (n < 0) return "negative";
+  if (n === 0) return "zero";
+  return "";
+}
+
+function formatAwb(awb, pfx) {
+  const raw = String(awb ?? "").trim();
+  if (!raw) return "";
+  const prefixDigits = String(pfx ?? "").replace(/\D/g, "");
+  const parts = raw.split("-");
+  const padPrefix = value => value.padStart(3, "0").slice(-3);
+  const padNumber = value => value.padStart(8, "0").slice(-8);
+
+  if (parts.length >= 2) {
+    const parsedPrefix = parts[0].replace(/\D/g, "");
+    const parsedNumber = parts.slice(1).join("").replace(/\D/g, "");
+    if (parsedPrefix && parsedNumber) return `${padPrefix(parsedPrefix)}-${padNumber(parsedNumber)}`;
+  }
+
+  const numberDigits = raw.replace(/\D/g, "");
+  if (prefixDigits && numberDigits) return `${padPrefix(prefixDigits)}-${padNumber(numberDigits)}`;
+  if (numberDigits.length > 8) return `${padPrefix(numberDigits.slice(0, -8))}-${padNumber(numberDigits.slice(-8))}`;
+  return raw;
+}
+
+function rateKey(row) {
+  return formatAwb(row.awb_no || row.awb, row.pfx).toUpperCase();
+}
+
+function loadHandledKeys() {
+  const u = user();
+  return fetch(`${API_BASE}/api/cod_ok?email=${encodeURIComponent(u.email || "")}`, {
+    headers: { "x-api-key": API_KEY }
+  })
+    .then(response => {
+      if (!response.ok) throw new Error(`API error ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      handledKeys = new Set((data.keys || []).map(key => String(key).trim().toUpperCase()).filter(Boolean));
+    })
+    .catch(error => {
+      console.error("Failed to load shared COD OK rows:", error);
+      handledKeys = new Set();
+    });
+}
+
+async function setHandledKey(key, checked) {
+  const u = user();
+  const response = await fetch(`${API_BASE}/api/cod_ok?email=${encodeURIComponent(u.email || "")}`, {
+    method: "POST",
+    headers: {
+      "x-api-key": API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({rate_key: key, ok: checked})
+  });
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const body = await response.json();
+      detail = body.detail ? `: ${body.detail}` : "";
+    } catch (_) {}
+    throw new Error(`API error ${response.status}${detail}`);
+  }
+  return response.json();
+}
+
+function isoDate(d) {
+  const copy = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return copy.toISOString().slice(0, 10);
+}
+
+function dateLabel(value) {
+  if (!value) return "-";
+  const d = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"});
+}
+
+function setDefaultDates() {
+  const today = new Date();
+  const start = new Date(today.getFullYear(), 0, 1);
+  els.from.value = isoDate(start);
+  els.to.value = isoDate(today);
+}
+
+function businessLabel(key) {
+  const option = BUSINESS_OPTIONS.find(item => item.key === key);
+  return option ? option.label : key;
+}
+
+function selectedBusinessParam() {
+  if (!selectedBusinesses.length) return "__NONE__";
+  return selectedBusinesses.length === BUSINESS_KEYS.length ? "ALL" : selectedBusinesses.join(",");
+}
+
+function renderBusinessTrigger() {
+  if (selectedBusinesses.length === BUSINESS_KEYS.length) {
+    els.businessTriggerText.textContent = "All businesses";
+  } else if (!selectedBusinesses.length) {
+    els.businessTriggerText.textContent = "No businesses";
+  } else if (selectedBusinesses.length === 1) {
+    els.businessTriggerText.textContent = businessLabel(selectedBusinesses[0]);
+  } else {
+    els.businessTriggerText.textContent = `${selectedBusinesses.length} businesses`;
+  }
+}
+
+function renderBusinessMenu() {
+  els.businessMenu.innerHTML = BUSINESS_OPTIONS.map(option => `
+    <label class="multi-option" role="option" aria-selected="${option.key === "ALL" ? selectedBusinesses.length === BUSINESS_KEYS.length : selectedBusinesses.includes(option.key)}">
+      <input type="checkbox" value="${esc(option.key)}" ${option.key === "ALL" ? selectedBusinesses.length === BUSINESS_KEYS.length ? "checked" : "" : selectedBusinesses.includes(option.key) ? "checked" : ""}>
+      <span>${esc(option.label)}</span>
+    </label>
+  `).join("");
+}
+
+function setBusinessSelection(keys, shouldLoad = true) {
+  const valid = new Set(BUSINESS_KEYS);
+  const clean = [];
+  keys.forEach(key => {
+    if (valid.has(key) && !clean.includes(key)) clean.push(key);
+  });
+
+  selectedBusinesses = clean;
+
+  renderBusinessTrigger();
+  renderBusinessMenu();
+  if (shouldLoad) loadRates();
+}
+
+function toggleBusinessMenu(forceOpen) {
+  const open = typeof forceOpen === "boolean" ? forceOpen : !els.businessSelect.classList.contains("open");
+  els.businessSelect.classList.toggle("open", open);
+  els.businessTrigger.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function openFilterDrawer() {
+  if (!MOBILE_QUERY.matches) return;
+  els.filters.classList.add("is-open");
+  els.filterBackdrop.classList.add("is-open");
+  els.filterToggle.setAttribute("aria-expanded", "true");
+  document.body.classList.add("filter-drawer-open");
+}
+
+function closeFilterDrawer() {
+  els.filters.classList.remove("is-open");
+  els.filterBackdrop.classList.remove("is-open");
+  els.filterToggle.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("filter-drawer-open");
+  toggleBusinessMenu(false);
+}
+
+function syncMobileControls() {
+  if (!MOBILE_QUERY.matches) closeFilterDrawer();
+}
+
+function setStatus(text, ready) {
+  els.status.textContent = text;
+  els.dot.style.background = ready ? "#22c55e" : "#c97a06";
+}
+
+function renderSummary(data) {
+  const activeRows = data && data.rows ? data.rows : rateRows;
+  const summary = activeRows.reduce((totals, row) => {
+    totals.chw += Number(row.chw || 0);
+    totals.rev += Number(row.rev || 0);
+    totals.profit += Number(row.profit || 0);
+    return totals;
+  }, {chw: 0, rev: 0, profit: 0});
+  els.metricAwbs.textContent = fmt(activeRows.length);
+  els.metricChw.textContent = fmt(summary.chw);
+  els.metricRev.textContent = money(summary.rev);
+  els.metricProfit.textContent = money(summary.profit);
+  els.rangeDates.textContent = `${dateLabel(data && data.date_from)} - ${dateLabel(data && data.date_to)}`;
+}
+
+function sortValue(row, key) {
+  if (key === "awb") return formatAwb(row.awb_no || row.awb, row.pfx);
+  return row[key];
+}
+
+function sortedRateRows() {
+  const {key, dir} = sortState;
+  const direction = dir === "asc" ? 1 : -1;
+  return rateRows.slice().sort((a, b) => {
+    const av = sortValue(a, key);
+    const bv = sortValue(b, key);
+    const an = Number(av);
+    const bn = Number(bv);
+    if (!Number.isNaN(an) && !Number.isNaN(bn)) return (an - bn) * direction;
+    return String(av ?? "").localeCompare(String(bv ?? ""), undefined, {numeric:true, sensitivity:"base"}) * direction;
+  });
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll("th.sortable").forEach(th => {
+    const active = th.dataset.sort === sortState.key;
+    th.classList.toggle("sort-asc", active && sortState.dir === "asc");
+    th.classList.toggle("sort-desc", active && sortState.dir === "desc");
+    th.setAttribute("aria-sort", active ? (sortState.dir === "asc" ? "ascending" : "descending") : "none");
+  });
+}
+
+function renderTable() {
+  const visibleTotal = els.showOk.checked ? allRateRows.length : allRateRows.filter(row => !handledKeys.has(rateKey(row))).length;
+  els.resultNote.textContent = allRateRows.length && rateRows.length !== visibleTotal
+    ? `${rateRows.length} of ${visibleTotal} rows`
+    : `${rateRows.length} rows`;
+  updateSortHeaders();
+  if (!rateRows.length) {
+    els.body.innerHTML = `<tr><td colspan="11" class="empty">${esc((currentData && currentData.pending) || "No AWBs found.")}</td></tr>`;
+    return;
+  }
+
+  els.body.innerHTML = sortedRateRows().map(row => `
+    <tr>
+      <td class="ok-cell"><input class="ok-check" type="checkbox" data-key="${esc(rateKey(row))}" ${handledKeys.has(rateKey(row)) ? "checked" : ""} aria-label="Mark as checked"></td>
+      <td>${esc(dateLabel(row.booking_date))}</td>
+      <td>${esc(dateLabel(row.flight_date))}</td>
+      <td class="awb">${esc(formatAwb(row.awb_no || row.awb, row.pfx))}</td>
+      <td>${esc(row.gsa)}</td>
+      <td>${esc(row.sales_person)}</td>
+      <td class="customer" title="${esc(row.customer)}">${esc(row.customer)}</td>
+      <td>${fmt(row.chw)}</td>
+      <td>${money(row.rev)}</td>
+      <td class="${numberClass(row.profit)}">${money(row.profit)}</td>
+      <td class="${numberClass(row.pkg)}">${rate(row.pkg)}</td>
+    </tr>
+  `).join("");
+}
+
+function applyOkFilter(data = currentData) {
+  const showOk = els.showOk.checked;
+  rateRows = allRateRows.filter(row => showOk || !handledKeys.has(rateKey(row)));
+  renderSummary({
+    date_from: data && data.date_from,
+    date_to: data && data.date_to,
+    rows: rateRows
+  });
+  renderTable();
+}
+
+async function loadRates() {
+  const u = user();
+  const seq = ++requestSeq;
+  setStatus("Loading", false);
+  els.body.innerHTML = '<tr><td colspan="11" class="empty">Loading AWBs...</td></tr>';
+
+  const params = new URLSearchParams({
+    email: u.email || "",
+    date_from: els.from.value || "",
+    date_to: els.to.value || "",
+    businesses: selectedBusinessParam(),
+    search: els.search.value.trim()
+  });
+
+  try {
+    const response = await fetch(`${API_BASE}/api/cod?${params.toString()}`, {
+      headers: { "x-api-key": API_KEY }
+    });
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const body = await response.json();
+        detail = body.detail ? `: ${body.detail}` : "";
+      } catch (_) {}
+      throw new Error(`API error ${response.status}${detail}`);
+    }
+    const data = await response.json();
+    if (seq !== requestSeq) return;
+    currentData = data;
+    allRateRows = data.rows || [];
+    applyOkFilter(data);
+    setStatus("Ready", true);
+  } catch (e) {
+    if (seq !== requestSeq) return;
+    console.error("Failed to load COD:", e);
+    allRateRows = [];
+    rateRows = [];
+    currentData = null;
+    renderSummary({date_from: els.from.value, date_to: els.to.value, count: 0, summary: {}});
+    setStatus("Error", false);
+    els.body.innerHTML = `<tr><td colspan="11" class="empty">Could not load AWBs. ${esc(e.message || "")}</td></tr>`;
+  }
+}
+
+function debouncedLoad() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadRates, 250);
+}
+
+function exportCsv() {
+  const csv = ["Booking Date,Flight Date,AWB,GSA,Sales Person,Customer,CHW,Rev,Profit,P/KG"]
+    .concat(rateRows.map(r => [
+      r.booking_date,
+      r.flight_date,
+      formatAwb(r.awb_no || r.awb, r.pfx),
+      r.gsa,
+      r.sales_person,
+      r.customer,
+      r.chw,
+      r.rev,
+      r.profit,
+      r.pkg
+    ].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")))
+    .join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cod.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function checkRatesAccess(initFunction) {
+  const u = user();
+  const email = u && u.email ? u.email : "";
+  if (!email) {
+    window.location.href = "https://dataforce.gsaforce.com/";
+    return;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/api/user_modules?email=${encodeURIComponent(email)}`, {
+      headers: { "x-api-key": API_KEY }
+    });
+    if (!response.ok) throw new Error("Permission check failed");
+    const data = await response.json();
+    DataforceAuth.setItem("df_permissions", JSON.stringify(data));
+    const modules = (data.modules || []).map(m => String(m).toLowerCase().replace(/-/g, "_"));
+    if (!modules.includes("cod") && !modules.includes("admin")) {
+      showNoAccess("Your account is signed in, but this module has not been assigned to you.");
+      return;
+    }
+    initFunction();
+  } catch (e) {
+    console.error("Error checking access to cod:", e);
+    showNoAccess("We could not verify your access. Please try again or contact an administrator.");
+  }
+}
+
+els.search.addEventListener("input", debouncedLoad);
+[els.from, els.to].forEach(el => el.addEventListener("input", loadRates));
+els.businessTrigger.addEventListener("click", () => toggleBusinessMenu());
+els.businessMenu.addEventListener("change", e => {
+  if (!e.target.matches('input[type="checkbox"]')) return;
+  if (e.target.value === "ALL") {
+    setBusinessSelection(e.target.checked ? BUSINESS_KEYS : []);
+    return;
+  }
+  const checked = Array.from(els.businessMenu.querySelectorAll('input[type="checkbox"]:checked'))
+    .map(input => input.value)
+    .filter(key => key !== "ALL");
+  setBusinessSelection(checked);
+});
+document.addEventListener("click", e => {
+  if (!els.businessSelect.contains(e.target)) toggleBusinessMenu(false);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    toggleBusinessMenu(false);
+    closeFilterDrawer();
+  }
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  els.search.value = "";
+  setBusinessSelection(BUSINESS_KEYS, false);
+  setDefaultDates();
+  els.showOk.checked = false;
+  loadRates();
+  closeFilterDrawer();
+});
+document.getElementById("exportBtn").addEventListener("click", exportCsv);
+els.showOk.addEventListener("change", () => applyOkFilter());
+els.body.addEventListener("change", event => {
+  if (!event.target.classList.contains("ok-check")) return;
+  const key = event.target.dataset.key;
+  if (!key) return;
+  const checked = event.target.checked;
+  if (checked) handledKeys.add(key);
+  else handledKeys.delete(key);
+  applyOkFilter();
+  setHandledKey(key, checked).catch(error => {
+    console.error("Failed to update shared COD OK row:", error);
+    if (checked) handledKeys.delete(key);
+    else handledKeys.add(key);
+    setStatus("Error", false);
+    alert(`Could not update OK status. ${error.message || ""}`);
+    applyOkFilter();
+  });
+});
+document.querySelectorAll("th.sortable").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    sortState = {
+      key,
+      dir: sortState.key === key && sortState.dir === "asc" ? "desc" : "asc"
+    };
+    renderTable();
+  });
+});
+els.filterToggle.addEventListener("click", () => {
+  if (els.filters.classList.contains("is-open")) closeFilterDrawer();
+  else openFilterDrawer();
+});
+els.filterClose.addEventListener("click", closeFilterDrawer);
+els.filterBackdrop.addEventListener("click", closeFilterDrawer);
+if (MOBILE_QUERY.addEventListener) {
+  MOBILE_QUERY.addEventListener("change", syncMobileControls);
+} else {
+  MOBILE_QUERY.addListener(syncMobileControls);
+}
+syncMobileControls();
+
+async function initCod() {
+  const u = user();
+  document.getElementById("userLabel").textContent = u.name || u.email || "";
+  await loadHandledKeys();
+  setDefaultDates();
+  setBusinessSelection(BUSINESS_KEYS, false);
+  renderSummary({date_from: els.from.value, date_to: els.to.value, count: 0, summary: {}});
+  loadRates();
+}
+
+checkRatesAccess(initCod);
+</script>
+</body>
+</html>

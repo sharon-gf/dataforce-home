@@ -26,6 +26,7 @@
     { key: "spot_opportunities", label: "Spot Opportunities", href: "https://dataforce.gsaforce.com/spot-opportunities/" },
     { key: "pending_spots", label: "Pending Spots", href: "https://dataforce.gsaforce.com/pending-spots/" },
     { key: "check_rates", label: "Check Rates", href: "https://dataforce.gsaforce.com/check-rates/" },
+    { key: "cod", label: "COD", href: "https://dataforce.gsaforce.com/cod/" },
     { key: "finance", label: "Finance", href: "https://dataforce.gsaforce.com/finance/" },
     { key: "jet_fuel", label: "Jet Fuel", href: "https://dataforce.gsaforce.com/jet-fuel/" },
     { key: "industry_monitor", label: "Industry Monitor", href: "https://dataforce.gsaforce.com/industry-monitor/" },
@@ -119,6 +120,7 @@
     );
     if (allowed.has("admin")) {
       allowed.add("check_rates");
+      allowed.add("cod");
       allowed.add("spot_opportunities");
       allowed.add("pending_spots");
       allowed.add("customers");
