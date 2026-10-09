@@ -228,7 +228,7 @@
         <button class="logout" type="button" onclick="signOut()">Sign out</button>
       </div>
       <div class="range">
-        <span class="range-main" id="rangeTitle">BOOKED YTD</span>
+        <span class="range-main" id="rangeTitle">FLIGHT DATE</span>
         <span id="rangeDates"></span>
       </div>
     </div>
@@ -243,7 +243,7 @@
 
   <section class="panel">
     <div class="panel-head">
-      <div class="panel-title">All bookings of COD customers (Cust_IntType = COD)</div>
+      <div class="panel-title">COD customers &mdash; not billed (Cust_IntType = COD, BILL_St &ne; POSTED)</div>
       <div class="panel-note" id="resultNote">0 rows</div>
       <button class="mobile-filter-toggle" id="filterToggle" type="button" aria-expanded="false" aria-controls="ratesFilters">Filters</button>
     </div>
@@ -267,11 +267,11 @@
         </div>
       </div>
       <div class="field">
-        <label for="dateFrom">Booked From</label>
+        <label for="dateFrom">Flight From</label>
         <input id="dateFrom" type="date">
       </div>
       <div class="field">
-        <label for="dateTo">Booked To</label>
+        <label for="dateTo">Flight To</label>
         <input id="dateTo" type="date">
       </div>
       <div class="filter-actions">
@@ -492,7 +492,8 @@ function setDefaultDates() {
   const today = new Date();
   const start = new Date(today.getFullYear(), 0, 1);
   els.from.value = isoDate(start);
-  els.to.value = isoDate(today);
+  // COD filters by flight date: default to the whole year so upcoming flights show
+  els.to.value = isoDate(new Date(today.getFullYear(), 11, 31));
 }
 
 function businessLabel(key) {
