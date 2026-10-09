@@ -22,7 +22,7 @@
     --purple:#7c3aed;
     --red:#b91c1c;
     --green:#15803d;
-    --content-width:1180px;
+    --content-width:1480px;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:12px; }
@@ -159,6 +159,9 @@
   tbody tr:hover td { background:#e4ecfb; }
   .awb { color:var(--blue); font-weight:600; }
   .customer { max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  /* Bkg_Remarks: keeps its line breaks, max 3 lines; full text on hover */
+  td.remarks { white-space:pre-line; text-align:left; min-width:220px; max-width:340px; font-size:10px; color:var(--text2); line-height:1.35; }
+  td.remarks div { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .negative { color:var(--red); font-weight:600; }
   .zero { color:#92400e; font-weight:600; }
   .ok-cell { width:52px; }
@@ -252,7 +255,7 @@
       </div>
       <div class="field">
         <label for="searchInput">Search</label>
-        <input id="searchInput" type="search" placeholder="AWB, GSA, sales person, customer">
+        <input id="searchInput" type="search" placeholder="AWB, GSA, sales person, customer, remarks">
       </div>
       <div class="field">
         <label id="businessLabel" for="businessTrigger">Business</label>
@@ -293,6 +296,7 @@
               <th class="sortable" data-sort="rev">Rev</th>
               <th class="sortable" data-sort="profit">Profit</th>
               <th class="sortable" data-sort="pkg">P/KG</th>
+              <th class="sortable" data-sort="remarks">Remarks</th>
             </tr>
           </thead>
           <tbody id="ratesBody"></tbody>
@@ -616,7 +620,7 @@ function renderTable() {
     : `${rateRows.length} rows`;
   updateSortHeaders();
   if (!rateRows.length) {
-    els.body.innerHTML = `<tr><td colspan="11" class="empty">${esc((currentData && currentData.pending) || "No AWBs found.")}</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="12" class="empty">${esc((currentData && currentData.pending) || "No AWBs found.")}</td></tr>`;
     return;
   }
 
@@ -633,6 +637,7 @@ function renderTable() {
       <td>${money(row.rev)}</td>
       <td class="${numberClass(row.profit)}">${money(row.profit)}</td>
       <td class="${numberClass(row.pkg)}">${rate(row.pkg)}</td>
+      <td class="remarks" title="${esc(row.remarks || "")}"><div>${esc(row.remarks || "")}</div></td>
     </tr>
   `).join("");
 }
@@ -652,7 +657,7 @@ async function loadRates() {
   const u = user();
   const seq = ++requestSeq;
   setStatus("Loading", false);
-  els.body.innerHTML = '<tr><td colspan="11" class="empty">Loading AWBs...</td></tr>';
+  els.body.innerHTML = '<tr><td colspan="12" class="empty">Loading AWBs...</td></tr>';
 
   const params = new URLSearchParams({
     email: u.email || "",
@@ -688,7 +693,7 @@ async function loadRates() {
     currentData = null;
     renderSummary({date_from: els.from.value, date_to: els.to.value, count: 0, summary: {}});
     setStatus("Error", false);
-    els.body.innerHTML = `<tr><td colspan="11" class="empty">Could not load AWBs. ${esc(e.message || "")}</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="12" class="empty">Could not load AWBs. ${esc(e.message || "")}</td></tr>`;
   }
 }
 
@@ -698,7 +703,7 @@ function debouncedLoad() {
 }
 
 function exportCsv() {
-  const csv = ["Booking Date,Flight Date,AWB,GSA,Sales Person,Customer,CHW,Rev,Profit,P/KG"]
+  const csv = ["Booking Date,Flight Date,AWB,GSA,Sales Person,Customer,CHW,Rev,Profit,P/KG,Remarks"]
     .concat(rateRows.map(r => [
       r.booking_date,
       r.flight_date,
@@ -709,7 +714,8 @@ function exportCsv() {
       r.chw,
       r.rev,
       r.profit,
-      r.pkg
+      r.pkg,
+      r.remarks
     ].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")))
     .join("\n");
   const blob = new Blob([csv], {type:"text/csv"});
