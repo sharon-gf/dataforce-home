@@ -23,33 +23,56 @@ async function api(path,params={},retry=true){
  return data;
 }
 function point(data,year,month){return data?.points.find(p=>p.year===Number(year)&&p.month===month);}
-function eligible(){
- const fixed={CHI:'CL',BRA:'BR',JPN:'JP',MEX:'MX',USA:'US',PER:'PE',HKG:'HK'},country=$('country').value;
- return state.sources.filter(s=>(!country || (s.region==='SAM'?['CL','BR','AR','PE','CO','EC','PY','UY','BO','VE','CR','PR'].includes(country):s.region==='OCE'?['AU','NZ'].includes(country):s.region==='ASIA'?['CN','HK','TW','JP'].includes(country):!fixed[s.region]||fixed[s.region]===country))&&s.direction===(state.sources.find(s=>s.id===$('trendSource').value)?.direction||'Export')&&($('basis').value==='chargeable'?s.chargeable_column:s.weight_column!=='Mkt_Chw')&&(!country||s.country_column||fixed[s.region]===country));
-}
 function sourceLabel(s){return `${s.family} · ${s.region}${s.id.includes('Agent')?' · Agent':s.id.includes('Product')?' · Product':''}${s.family==='Isidora'?' · '+s.direction:''}${s.family==='Aduana'?' · all transport modes':''}${/USA_EXP_WACD/.test(s.id)?' · '+s.id.slice(-4):''}`;}
-function buildChoices(){
- const selected=state.sources.find(s=>s.id===$('trendSource').value);
- const sources=eligible();if(selected&&!sources.some(s=>s.id===selected.id))sources.unshift(selected);
- $('duplicateSource').innerHTML=sources.map(s=>`<option value="${esc(s.id)}">${esc(s.id)}</option>`).join('');$('duplicateSource').value=selected?.id||'';
- const defaults=$('country').value==='CL'?['SAM_EXP_CASS_CX_2019_20XX','SAM_EXP_WACD_Agent_2024_20XX','CHI_EXP_Isidora_2023_20XX']:[selected?.id];
- $('sourceChoices').innerHTML=sources.map(s=>`<label><input type="checkbox" value="${esc(s.id)}" ${defaults.includes(s.id)?'checked':''}><span>${esc(s.id)}</span></label>`).join('');
+const comparisonGroups={
+ CL:['SAM_EXP_WACD_{view}_2024_20XX','SAM_EXP_CASS_CX_2019_20XX','CHI_EXP_Isidora_2023_20XX'],
+ PE:['SAM_EXP_WACD_{view}_2024_20XX','SAM_EXP_CASS_CX_2019_20XX','PER_EXP_Aduana_2023_20XX'],
+ BR:['SAM_EXP_WACD_{view}_2024_20XX','SAM_EXP_CASS_CX_2019_20XX'],
+ EC:['SAM_EXP_WACD_{view}_2024_20XX','SAM_EXP_CASS_CX_2019_20XX'],
+ CO:['SAM_EXP_WACD_{view}_2024_20XX','SAM_EXP_CASS_CX_2019_20XX'],
+ MX:[]
+};
+let compareOptionsVersion=0,compareSources=[];
+function clearCompare(){
+ state.compareVersion++;state.comparison=[];state.hiddenSources.clear();
+ for(const id of ['sourceLegend','sourceTable','compareStatus'])$(id).innerHTML='';
+ $('sourceChart').textContent='Choose a country and year, then compare sources.';$('exportSources').disabled=true;
+}
+async function selectCompareCountry(){
+ const version=++compareOptionsVersion,country=$('compareCountry').value;clearCompare();compareSources=[];
+ $('compareYear').innerHTML='';$('compareYear').disabled=true;$('loadCompare').disabled=true;$('sourceChoices').innerHTML='';
+ if(!country)return;
+ const ids=comparisonGroups[country].map(id=>id.replace('{view}',$('wacdView').value));
+ if(!ids.length){$('compareStatus').textContent='Mexico: CASS table mapping pending confirmation.';return;}
+ compareSources=ids;
+ $('sourceChoices').innerHTML=ids.map(id=>`<span class="source-chip">${esc(sourceLabel(state.sources.find(s=>s.id===id)||{id,family:id,region:''}))}</span>`).join('');
+ $('compareStatus').textContent='Loading available years for this country…';
+ const years=new Set(),failures=[];
+ for(const source of ids){
+  if(version!==compareOptionsVersion)return;
+  try{const options=await api('options',{source});if(version!==compareOptionsVersion)return;
+   const available=options.countries.find(c=>c.id===country);for(const year of available?.years||[])years.add(year);
+  }catch(e){if(version!==compareOptionsVersion)return;failures.push(`${source}: ${e.message}`);}
+ }
+ if(version!==compareOptionsVersion)return;
+ const sorted=[...years].sort((a,b)=>a-b);$('compareYear').innerHTML=sorted.map(y=>`<option value="${y}">${y}</option>`).join('');
+ if(sorted.length)$('compareYear').value=sorted.at(-1);
+ $('compareYear').disabled=!sorted.length;$('loadCompare').disabled=!sorted.length;
+ $('compareStatus').textContent=failures.length?'Could not load some year options: '+failures.join('; '):sorted.length?'Choose a year. Sources without records for that year remain blank.':'No years available for this country.';
 }
 function clearResults(){
- state.trendVersion++;state.compareVersion++;state.trend=null;state.comparison=[];
- for(const id of ['yearTable','yearLegend','trendFlags','yearRowsChart','sourceLegend','sourceTable','compareStatus'])$(id).innerHTML='';
- $('yearWeightChart').textContent='Choose a table, country and years, then compare.';$('sourceChart').textContent='Choose sources below to compare.';$('trendMeta').textContent='';$('export').disabled=true;$('duplicateResult').textContent='Not checked for this selection.';
+ state.trendVersion++;state.trend=null;
+ for(const id of ['yearTable','yearLegend','trendFlags','yearRowsChart'])$(id).innerHTML='';
+ $('yearWeightChart').textContent='Choose a table, country and years, then compare.';$('trendMeta').textContent='';$('export').disabled=true;
 }
 function populateYears(){
  const country=state.options?.countries.find(c=>c.id===$('country').value);
  const years=country?country.years:(state.options?.years||[]);
  $('yearChoices').innerHTML=years.map(y=>`<label><input type="checkbox" value="${y}" ${years.slice(-3).includes(y)?'checked':''}>${y}</label>`).join('')||'<span>No dated records in this table.</span>';
- $('compareYear').innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');if(years.length)$('compareYear').value=years.at(-1);
  $('load').disabled=!years.length;
 }
 async function selectTable(){
  const source=$('trendSource').value,version=++state.optionsVersion;state.options=null;clearResults();$('filters').hidden=true;
- $('loadCompare').disabled=true;$('checkDuplicates').disabled=true;
  if(!source){notice('First select the physical table you want to review.');return;}
  notice('Loading the countries and years available in this table…');
  try{const options=await api('options',{source});if(version!==state.optionsVersion)return;state.options=options;
@@ -57,7 +80,7 @@ async function selectTable(){
  if(options.countries.length===1)$('country').value=options.countries[0].id;
  $('country').disabled=false;
  const src=state.sources.find(s=>s.id===source);$('basis').options[0].disabled=src.weight_column==='Mkt_Chw';$('basis').options[1].disabled=!src.chargeable_column;$('basis').value=src.weight_column==='Mkt_Chw'?'chargeable':'actual';
- populateYears();buildChoices();$('filters').hidden=false;$('loadCompare').disabled=false;$('checkDuplicates').disabled=false;
+ populateYears();$('filters').hidden=false;
  notice('Choose a country and the years you want to compare.');
  }catch(e){if(version===state.optionsVersion)notice('Could not load table options: '+e.message,true);}
 }
@@ -95,25 +118,20 @@ function comparisonSeries(){return state.comparison.map((d,i)=>({key:d.source.id
 function renderCompare(){
  const all=comparisonSeries(),visible=all.filter(s=>!state.hiddenSources.has(s.key));legend('sourceLegend',all,state.hiddenSources);draw('sourceChart',visible,'weight_kg');
  $('sourceTable').innerHTML=`<caption>Reported market kilos · ${esc(state.comparison[0]?.viewLabel||'')} · ${esc(state.comparison[0]?.start_year||'')}</caption><thead><tr><th>Month</th>${visible.map(s=>`<th>${esc(s.label)} · kg</th>`).join('')}<th>Highest / lowest</th></tr></thead><tbody>${months.map((m,i)=>{const vals=visible.map(s=>s.values[i]?.weight_kg).filter(v=>v!==null&&v!==undefined);const ratio=vals.length>1&&Math.min(...vals)>0?Math.max(...vals)/Math.min(...vals):null;return `<tr><td>${m}${state.comparison[0]?.start_year===now.getFullYear()&&i===now.getMonth()?' *':''}</td>${visible.map(s=>`<td>${fmt(s.values[i]?.weight_kg)}</td>`).join('')}<td class="${ratio>1.5?'gap':''}">${ratio===null?'—':fmt(ratio,2)+'×'}</td></tr>`;}).join('')}</tbody>`;
- $('export').disabled=!state.trend&&!state.comparison.length;
+ $('exportSources').disabled=!state.comparison.length;
 }
 async function loadCompare(){
- const selected=[...$('sourceChoices').querySelectorAll('input:checked')].map(n=>n.value);if(!selected.length||selected.length>6){$('compareStatus').textContent='Choose between 1 and 6 sources.';return;}
- const version=++state.compareVersion,year=$('compareYear').value,filter=filters(),label=contextLabel();state.comparison=[];state.hiddenSources.clear();$('sourceLegend').innerHTML='';$('sourceTable').innerHTML='';$('sourceChart').textContent='Loading selected sources…';$('compareStatus').textContent=`${label} · ${year} · Loading…`;
+ const selected=[...compareSources];if(!selected.length||!$('compareYear').value)return;
+ const version=++state.compareVersion,year=$('compareYear').value,filter={country:$('compareCountry').value,basis:'actual'},label=`${$('compareCountry').selectedOptions[0].textContent} · Export · Actual weight · kg`;state.comparison=[];state.hiddenSources.clear();$('sourceLegend').innerHTML='';$('sourceTable').innerHTML='';$('sourceChart').textContent='Loading selected sources…';$('compareStatus').textContent=`${label} · ${year} · Loading…`;
  // Sequential requests leave capacity for the year-over-year query.
  const failures=[];
  for(const source of selected){if(version!==state.compareVersion)return;try{const d=await api('series',{source,start_year:year,end_year:year,...filter});if(version!==state.compareVersion)return;state.comparison.push({...d,viewLabel:label});}catch(e){if(version!==state.compareVersion)return;failures.push(`${source}: ${e.message}`);}renderCompare();$('compareStatus').textContent=`${label} · ${year} · ${state.comparison.length}/${selected.length} loaded${failures.length?' · Failed: '+failures.join('; '):''}`;}
  if(state.comparison.length){$('compareStatus').textContent+=` · Fields: ${state.comparison.map(d=>sourceLabel(d.source)+' → '+d.weight_column).join(' | ')}. Cached up to 10 minutes.`;}
 }
-async function updateAll(){notice('Loading comparisons. Each source is queried separately.');await Promise.all([loadTrend(),loadCompare()]);notice('Review the charts below. Missing data stays blank; failed sources are identified in their panel.');}
-async function duplicates(){const source=$('duplicateSource').value,month=$('duplicateMonth').value;if(!source||!month)return;const label=contextLabel();$('checkDuplicates').disabled=true;$('duplicateResult').textContent=`Checking ${source} · ${month} · ${label}…`;
- try{const d=await api('duplicates',{source,month,country:$('country').value});$('duplicateResult').textContent=`${source} · ${month} · ${label}: ${fmt(d.extra_rows)} extra rows in ${fmt(d.duplicate_groups)} exact groups. Checked ${new Date(d.checked_at).toLocaleString()}. No data changed.`;}
- catch(e){$('duplicateResult').textContent=`Check failed: ${e.message}. This is not a clean result.`;}finally{$('checkDuplicates').disabled=false;}}
-function exportCsv(){const rows=[['view','source','country','traffic','weight_basis','weight_column','year','month','weight_kg','database_rows','missing_weights','negative_weights','checked_at']];for(const [view,sets] of [['years',state.trend?[state.trend]:[]],['sources',state.comparison]])sets.forEach(d=>d.points.forEach(p=>rows.push([view,d.source.id,d.country,d.source.direction,d.basis,d.weight_column,p.year,p.month,p.weight_kg,p.rows,p.missing_weight,p.negative_weight,d.checked_at])));const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='mkt-data-review.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function exportCsv(view){const rows=[['view','source','country','traffic','weight_basis','weight_column','year','month','weight_kg','database_rows','missing_weights','negative_weights','checked_at']];const sets=view==='years'?(state.trend?[state.trend]:[]):state.comparison;sets.forEach(d=>d.points.forEach(p=>rows.push([view,d.source.id,d.country,d.source.direction,d.basis,d.weight_column,p.year,p.month,p.weight_kg,p.rows,p.missing_weight,p.negative_weight,d.checked_at])));const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='mkt-data-review.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 async function initializeData(){
  try{const catalog=await api('sources');state.sources=catalog.sources;
  $('trendSource').innerHTML='<option value="">Select a table…</option>'+state.sources.map(s=>`<option value="${esc(s.id)}">${esc(s.id)}</option>`).join('');
- $('duplicateMonth').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
  $('signIn').hidden=true;await selectTable();
  }catch(e){notice(e.message,true);}
 }
@@ -131,10 +149,11 @@ async function init(){const user=getDataforceUser();if(!user?.email){location.hr
  if(!state.token){showSignIn();return;}await initializeData();}
 $('filters').addEventListener('submit',e=>{e.preventDefault();loadTrend();});
 $('trendSource').addEventListener('change',selectTable);
-$('country').addEventListener('change',()=>{clearResults();populateYears();buildChoices();});
-$('basis').addEventListener('change',()=>{clearResults();buildChoices();});
+$('country').addEventListener('change',()=>{clearResults();populateYears();});
+$('basis').addEventListener('change',()=>{clearResults();});
 $('yearChoices').addEventListener('change',clearResults);
-$('loadCompare').addEventListener('click',loadCompare);$('checkDuplicates').addEventListener('click',duplicates);$('export').addEventListener('click',exportCsv);
+$('compareCountry').addEventListener('change',selectCompareCountry);$('wacdView').addEventListener('change',selectCompareCountry);$('compareYear').addEventListener('change',clearCompare);
+$('loadCompare').addEventListener('click',loadCompare);$('export').addEventListener('click',()=>exportCsv('years'));$('exportSources').addEventListener('click',()=>exportCsv('sources'));
 $('yearLegend').addEventListener('click',e=>{const key=e.target.closest('[data-series]')?.dataset.series;if(!key)return;state.hiddenYears.has(key)?state.hiddenYears.delete(key):state.hiddenYears.add(key);renderTrend();});
 $('sourceLegend').addEventListener('click',e=>{const key=e.target.closest('[data-series]')?.dataset.series;if(!key)return;state.hiddenSources.has(key)?state.hiddenSources.delete(key):state.hiddenSources.add(key);renderCompare();});
 init();
