@@ -14,11 +14,12 @@ const now=new Date();
 function notice(text,error=false){$('notice').textContent=text;$('notice').className=error?'error':'';}
 function filters(){return {country:$('country').value,basis:$('basis').value};}
 function contextLabel(){return `${$('country').selectedOptions[0]?.textContent||''} · ${$('direction').value} · ${$('basis').selectedOptions[0].textContent}`;}
-async function api(path,params={}){
+async function api(path,params={},retry=true){
+ const shared=await DataforceAuth.getSessionToken();if(shared)state.token=shared;
  if(!REVIEW_API)throw new Error('The independent review API has not been configured yet.');
  const r=await fetchWithTimeout(`${REVIEW_API}/api/mkt-data-review/${path}?${new URLSearchParams({...params,email:state.email})}`,{headers:{Authorization:`Bearer ${state.token}`}},210000);
  const data=await r.json().catch(()=>({}));
- if(!r.ok){if(r.status===401)showSignIn();throw new Error(typeof data.detail==='string'?data.detail:`Request failed (${r.status})`);}
+ if(!r.ok){if(r.status===401&&retry){DataforceAuth.removeItem('df_shared_session');const renewed=await DataforceAuth.getSessionToken();if(renewed){state.token=renewed;return api(path,params,false);}}if(r.status===401)showSignIn();throw new Error(typeof data.detail==='string'?data.detail:`Request failed (${r.status})`);}
  return data;
 }
 function point(data,year,month){return data?.points.find(p=>p.year===Number(year)&&p.month===month);}
@@ -99,10 +100,10 @@ function showSignIn(){
  if(googleInitialized)return;
  if(!window.google?.accounts?.id){setTimeout(showSignIn,500);return;}
  googleInitialized=true;
- google.accounts.id.initialize({client_id:CLIENT_ID,login_hint:state.email,callback:async response=>{state.token=response.credential;sessionStorage.setItem('df_google_id_token',state.token);await initializeData();}});
+ google.accounts.id.initialize({client_id:CLIENT_ID,login_hint:state.email,callback:async response=>{DataforceAuth.setItem('df_google_id_token',response.credential);try{state.token=await DataforceAuth.establishSession(response.credential);await initializeData();}catch(error){notice('Please sign in with the same account used for DATAFORCE.',true);}}});
  google.accounts.id.renderButton($('googleButton'),{theme:'outline',size:'large'});
 }
-async function init(){const user=getDataforceUser();if(!user?.email){location.href='../';return;}state.email=user.email;$('userLabel').textContent=user.name||user.email;state.token=sessionStorage.getItem('df_google_id_token')||'';
+async function init(){const user=getDataforceUser();if(!user?.email){location.href='../';return;}state.email=user.email;$('userLabel').textContent=user.name||user.email;state.token=await DataforceAuth.getSessionToken()||'';
  if(!REVIEW_API){notice('The independent review API is being prepared. Live data will be available once it is deployed.',true);return;}
  if(!state.token){showSignIn();return;}await initializeData();}
 $('filters').addEventListener('submit',e=>{e.preventDefault();updateAll();});

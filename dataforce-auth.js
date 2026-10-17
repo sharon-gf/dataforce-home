@@ -132,13 +132,52 @@
     setItem(PERMISSIONS_KEY, JSON.stringify(permissions));
   }
 
+  const SESSION_KEY = "df_shared_session";
+  const SESSION_API = "https://dataforce-review-api-911713216717.us-east1.run.app";
+  let sessionRequest = null;
+
+  function getSession() {
+    const value = parseJson(getItem(SESSION_KEY), null);
+    const user = getUser();
+    if (!value || !user || value.email !== String(user.email).toLowerCase() || value.expires_at * 1000 <= Date.now() + 30000) return null;
+    return value;
+  }
+
+  async function establishSession(credential, remember) {
+    const response = await fetch(SESSION_API + "/api/auth/session", {
+      method: "POST", headers: { "Authorization": "Bearer " + credential, "Content-Type": "application/json" },
+      body: JSON.stringify({ remember: remember === undefined ? hasRememberedUser() : remember }),
+      signal: AbortSignal.timeout(20000)
+    });
+    if (!response.ok) throw new Error("Could not establish the DATAFORCE session");
+    const session = await response.json();
+    const user = getUser();
+    // Never save a login that finished after sign-out or an account switch.
+    if (!user || session.email !== String(user.email).toLowerCase()) throw new Error("Account changed during sign-in");
+    setItem(SESSION_KEY, JSON.stringify(session), remember);
+    return session.token;
+  }
+
+  async function getSessionToken() {
+    const saved = getSession();
+    if (saved) return saved.token;
+    const credential = getItem("df_google_id_token");
+    if (!credential) return null;
+    if (!sessionRequest) sessionRequest = establishSession(credential).finally(() => { sessionRequest = null; });
+    try { return await sessionRequest; } catch (e) { return null; }
+  }
+
   function clear() {
     removeItem(USER_KEY);
     removeItem(PERMISSIONS_KEY);
     removeItem("df_google_id_token");
+    removeItem(SESSION_KEY);
   }
 
   window.DataforceAuth = {
+    getSessionToken,
+    establishSession,
+    getSession,
     getItem,
     setItem,
     removeItem,

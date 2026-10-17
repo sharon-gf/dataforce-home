@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="DataForce">
   
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="dataforce-auth.js"></script>
+<script src="dataforce-auth.js?v=shared-session-20261017"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -389,7 +389,7 @@ const API_KEY  = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 
 let currentUserEmail = '';
 
-function handleCredentialResponse(response) {
+async function handleCredentialResponse(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
   const email   = payload.email || '';
   const name    = payload.given_name || email.split('@')[0];
@@ -404,7 +404,9 @@ function handleCredentialResponse(response) {
   
   const remember = document.getElementById('remember-login')?.checked !== false;
   DataforceAuth.setUser({ email, name }, remember);
-  sessionStorage.setItem("df_google_id_token", response.credential);
+  DataforceAuth.setItem("df_google_id_token", response.credential, remember);
+  try { await DataforceAuth.establishSession(response.credential, remember); }
+  catch (error) { console.warn("Shared session unavailable; DATAFORCE login retained."); }
   showApp(name);
 }
 
