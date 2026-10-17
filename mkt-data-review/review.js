@@ -5,7 +5,7 @@ const CLIENT_ID='911713216717-0434lgkd25hk5jf62jam67go19h78vsg.apps.googleuserco
 const $=id=>document.getElementById(id);
 const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const colors=['#1a56db','#0d9488','#d28412','#9333b8','#db5262','#5f7494','#478020','#784c34'];
-const state={email:'',token:'',sources:[],trend:null,comparison:[],hiddenYears:new Set(),hiddenSources:new Set(),trendVersion:0,compareVersion:0};
+const state={email:'',token:'',sources:[],trend:null,comparison:[],hiddenYears:new Set(),hiddenSources:new Set(),trendVersion:0,compareVersion:0,optionsVersion:0,options:null};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=(v,d=0)=>v===null||v===undefined?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d});
 const short=v=>Math.abs(v)>=1e6?`${fmt(v/1e6,1)}m`:Math.abs(v)>=1e3?`${fmt(v/1e3,1)}k`:fmt(v,1);
@@ -13,7 +13,7 @@ const pct=(a,b)=>a===null||a===undefined||b===null||b===undefined||b===0?null:(a
 const now=new Date();
 function notice(text,error=false){$('notice').textContent=text;$('notice').className=error?'error':'';}
 function filters(){return {country:$('country').value,basis:$('basis').value};}
-function contextLabel(){return `${$('country').selectedOptions[0]?.textContent||''} · ${$('direction').value} · ${$('basis').selectedOptions[0].textContent}`;}
+function contextLabel(){return `${$('country').selectedOptions[0]?.textContent||''} · ${state.sources.find(s=>s.id===$('trendSource').value)?.direction||'Export'} · ${$('basis').selectedOptions[0].textContent}`;}
 async function api(path,params={},retry=true){
  const shared=await DataforceAuth.getSessionToken();if(shared)state.token=shared;
  if(!REVIEW_API)throw new Error('The independent review API has not been configured yet.');
@@ -25,18 +25,41 @@ async function api(path,params={},retry=true){
 function point(data,year,month){return data?.points.find(p=>p.year===Number(year)&&p.month===month);}
 function eligible(){
  const fixed={CHI:'CL',BRA:'BR',JPN:'JP',MEX:'MX',USA:'US',PER:'PE',HKG:'HK'},country=$('country').value;
- return state.sources.filter(s=>(!country || (s.region==='SAM'?['CL','BR','AR','PE','CO','EC','PY','UY','BO','VE','CR','PR'].includes(country):s.region==='OCE'?['AU','NZ'].includes(country):s.region==='ASIA'?['CN','HK','TW','JP'].includes(country):!fixed[s.region]||fixed[s.region]===country))&&s.direction===$('direction').value&&($('basis').value==='chargeable'?s.chargeable_column:s.weight_column!=='Mkt_Chw')&&(!country||s.country_column||fixed[s.region]===country));
+ return state.sources.filter(s=>(!country || (s.region==='SAM'?['CL','BR','AR','PE','CO','EC','PY','UY','BO','VE','CR','PR'].includes(country):s.region==='OCE'?['AU','NZ'].includes(country):s.region==='ASIA'?['CN','HK','TW','JP'].includes(country):!fixed[s.region]||fixed[s.region]===country))&&s.direction===(state.sources.find(s=>s.id===$('trendSource').value)?.direction||'Export')&&($('basis').value==='chargeable'?s.chargeable_column:s.weight_column!=='Mkt_Chw')&&(!country||s.country_column||fixed[s.region]===country));
 }
-function sourceLabel(s){return `${s.family} · ${s.region}${s.id.includes('Agent')?' · Agent':s.id.includes('Product')?' · Product':''}${s.family==='Isidora'?' · '+s.direction:''}${s.family==='Aduana'?' · all transport modes':''}`;}
+function sourceLabel(s){return `${s.family} · ${s.region}${s.id.includes('Agent')?' · Agent':s.id.includes('Product')?' · Product':''}${s.family==='Isidora'?' · '+s.direction:''}${s.family==='Aduana'?' · all transport modes':''}${/USA_EXP_WACD/.test(s.id)?' · '+s.id.slice(-4):''}`;}
 function buildChoices(){
- const sources=eligible(),old=$('trendSource').value,oldDup=$('duplicateSource').value;
- const options=sources.map(s=>`<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
- $('trendSource').innerHTML=options;$('duplicateSource').innerHTML=options;
- const preferred=sources.find(s=>s.id==='SAM_EXP_WACD_Agent_2024_20XX')||sources[0];
- $('trendSource').value=sources.some(s=>s.id===old)?old:preferred?.id||'';
- $('duplicateSource').value=sources.some(s=>s.id===oldDup)?oldDup:preferred?.id||'';
- const defaults=$('country').value==='CL'&&$('direction').value==='Export'?['SAM_EXP_CASS_CX_2019_20XX','SAM_EXP_WACD_Agent_2024_20XX','CHI_EXP_Isidora_2023_20XX']:sources.slice(0,3).map(s=>s.id);
- $('sourceChoices').innerHTML=sources.map(s=>`<label><input type="checkbox" value="${esc(s.id)}" ${defaults.includes(s.id)?'checked':''}><span>${esc(sourceLabel(s))}<small class="source-note">${esc(s.id)}</small></span></label>`).join('')||'<p>No datasets support these filters.</p>';
+ const selected=state.sources.find(s=>s.id===$('trendSource').value);
+ const sources=eligible();if(selected&&!sources.some(s=>s.id===selected.id))sources.unshift(selected);
+ $('duplicateSource').innerHTML=sources.map(s=>`<option value="${esc(s.id)}">${esc(s.id)}</option>`).join('');$('duplicateSource').value=selected?.id||'';
+ const defaults=$('country').value==='CL'?['SAM_EXP_CASS_CX_2019_20XX','SAM_EXP_WACD_Agent_2024_20XX','CHI_EXP_Isidora_2023_20XX']:[selected?.id];
+ $('sourceChoices').innerHTML=sources.map(s=>`<label><input type="checkbox" value="${esc(s.id)}" ${defaults.includes(s.id)?'checked':''}><span>${esc(s.id)}</span></label>`).join('');
+}
+function clearResults(){
+ state.trendVersion++;state.compareVersion++;state.trend=null;state.comparison=[];
+ for(const id of ['yearTable','yearLegend','trendFlags','yearRowsChart','sourceLegend','sourceTable','compareStatus'])$(id).innerHTML='';
+ $('yearWeightChart').textContent='Choose a table, country and years, then compare.';$('sourceChart').textContent='Choose sources below to compare.';$('trendMeta').textContent='';$('export').disabled=true;$('duplicateResult').textContent='Not checked for this selection.';
+}
+function populateYears(){
+ const country=state.options?.countries.find(c=>c.id===$('country').value);
+ const years=country?country.years:(state.options?.years||[]);
+ $('yearChoices').innerHTML=years.map(y=>`<label><input type="checkbox" value="${y}" ${years.slice(-3).includes(y)?'checked':''}>${y}</label>`).join('')||'<span>No dated records in this table.</span>';
+ $('compareYear').innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');if(years.length)$('compareYear').value=years.at(-1);
+ $('load').disabled=!years.length;
+}
+async function selectTable(){
+ const source=$('trendSource').value,version=++state.optionsVersion;state.options=null;clearResults();$('filters').hidden=true;
+ $('loadCompare').disabled=true;$('checkDuplicates').disabled=true;
+ if(!source){notice('First select the physical table you want to review.');return;}
+ notice('Loading the countries and years available in this table…');
+ try{const options=await api('options',{source});if(version!==state.optionsVersion)return;state.options=options;
+ $('country').innerHTML='<option value="">All countries in this table</option>'+options.countries.map(c=>`<option value="${esc(c.id)}">${esc(c.label)}</option>`).join('');
+ if(options.countries.length===1)$('country').value=options.countries[0].id;
+ $('country').disabled=false;
+ const src=state.sources.find(s=>s.id===source);$('basis').options[0].disabled=src.weight_column==='Mkt_Chw';$('basis').options[1].disabled=!src.chargeable_column;$('basis').value=src.weight_column==='Mkt_Chw'?'chargeable':'actual';
+ populateYears();buildChoices();$('filters').hidden=false;$('loadCompare').disabled=false;$('checkDuplicates').disabled=false;
+ notice('Choose a country and the years you want to compare.');
+ }catch(e){if(version===state.optionsVersion)notice('Could not load table options: '+e.message,true);}
 }
 function draw(target,series,metric){
  const values=series.flatMap(s=>s.values.map(v=>v?.[metric])).filter(v=>v!==null&&v!==undefined&&Number.isFinite(v));
@@ -51,7 +74,7 @@ function draw(target,series,metric){
  $(target).innerHTML=`<svg viewBox="0 0 ${width} ${height}" aria-hidden="true">${grid}${lines}${months.map((m,i)=>`<text x="${x(i)}" y="${height-12}" text-anchor="middle" font-size="11" fill="#64748b">${m}</text>`).join('')}</svg>`;
 }
 function legend(id,series,hidden){$(id).innerHTML=series.map(s=>`<button type="button" data-series="${esc(s.key)}" class="${hidden.has(s.key)?'off':''}" aria-pressed="${!hidden.has(s.key)}"><span class="swatch" style="background:${s.color}"></span>${esc(s.label)}</button>`).join('');}
-function yearSeries(){const d=state.trend;if(!d)return[];return Array.from({length:d.end_year-d.start_year+1},(_,i)=>{const yr=d.start_year+i;return{key:String(yr),label:String(yr),color:colors[i%colors.length],values:months.map((_,m)=>point(d,yr,m+1))};});}
+function yearSeries(){const d=state.trend;if(!d)return[];return d.selectedYears.map((yr,i)=>{return{key:String(yr),label:String(yr),color:colors[i%colors.length],values:months.map((_,m)=>point(d,yr,m+1))};});}
 function renderTrend(){
  const d=state.trend;if(!d)return;const all=yearSeries(),visible=all.filter(s=>!state.hiddenYears.has(s.key));legend('yearLegend',all,state.hiddenYears);
  draw('yearWeightChart',visible,'weight_kg');draw('yearRowsChart',visible,'rows');
@@ -63,9 +86,9 @@ function renderTrend(){
 }
 async function loadTrend(){
  const source=$('trendSource').value;if(!source)return;
- const start=Number($('fromYear').value),end=Number($('toYear').value);if(end<start||end-start>7){notice('Choose a year range of up to 8 years, in chronological order.',true);return;}
+ const selectedYears=[...$('yearChoices').querySelectorAll('input:checked')].map(n=>Number(n.value));if(!selectedYears.length){notice('Select at least one year.',true);return;}const start=Math.min(...selectedYears),end=Math.max(...selectedYears);if(end<start||end-start>7){notice('Choose a year range of up to 8 years, in chronological order.',true);return;}
  const version=++state.trendVersion,label=contextLabel();state.trend=null;$('yearLegend').innerHTML='';$('yearTable').innerHTML='';$('trendFlags').textContent='';$('trendMeta').textContent=`Loading ${label}…`;$('yearWeightChart').textContent='Loading monthly kilos…';$('yearRowsChart').textContent='Loading row counts…';
- try{const d=await api('series',{source,start_year:start,end_year:end,...filters()});if(version!==state.trendVersion)return;state.trend={...d,viewLabel:label};state.hiddenYears.clear();renderTrend();}
+ try{const d=await api('series',{source,start_year:start,end_year:end,...filters()});if(version!==state.trendVersion)return;state.trend={...d,points:d.points.filter(p=>selectedYears.includes(p.year)),selectedYears,viewLabel:label};state.hiddenYears.clear();renderTrend();}
  catch(e){if(version!==state.trendVersion)return;$('trendMeta').textContent=`Could not load this source: ${e.message}`;$('yearWeightChart').textContent='Check failed. No values are shown.';$('yearRowsChart').textContent='';}
 }
 function comparisonSeries(){return state.comparison.map((d,i)=>({key:d.source.id,label:sourceLabel(d.source),color:colors[i%colors.length],values:months.map((_,m)=>point(d,d.start_year,m+1))}));}
@@ -88,10 +111,10 @@ async function duplicates(){const source=$('duplicateSource').value,month=$('dup
  catch(e){$('duplicateResult').textContent=`Check failed: ${e.message}. This is not a clean result.`;}finally{$('checkDuplicates').disabled=false;}}
 function exportCsv(){const rows=[['view','source','country','traffic','weight_basis','weight_column','year','month','weight_kg','database_rows','missing_weights','negative_weights','checked_at']];for(const [view,sets] of [['years',state.trend?[state.trend]:[]],['sources',state.comparison]])sets.forEach(d=>d.points.forEach(p=>rows.push([view,d.source.id,d.country,d.source.direction,d.basis,d.weight_column,p.year,p.month,p.weight_kg,p.rows,p.missing_weight,p.negative_weight,d.checked_at])));const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='mkt-data-review.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 async function initializeData(){
- try{const catalog=await api('sources');state.sources=catalog.sources;$('country').innerHTML='<option value="">All countries in source</option>'+catalog.countries.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join('');$('country').value='CL';
- for(const id of ['fromYear','toYear','compareYear']){$(id).innerHTML='';for(let y=now.getFullYear();y>=2019;y--)$(id).add(new Option(y,y));}
- $('fromYear').value=String(Math.max(2019,now.getFullYear()-3));$('toYear').value=now.getFullYear();$('compareYear').value=now.getFullYear();$('duplicateMonth').value=`${now.getFullYear()}-${String(now.getMonth()||12).padStart(2,'0')}`;if(now.getMonth()===0)$('duplicateMonth').value=`${now.getFullYear()-1}-12`;
- buildChoices();$('signIn').hidden=true;await updateAll();
+ try{const catalog=await api('sources');state.sources=catalog.sources;
+ $('trendSource').innerHTML='<option value="">Select a table…</option>'+state.sources.map(s=>`<option value="${esc(s.id)}">${esc(s.id)}</option>`).join('');
+ $('duplicateMonth').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+ $('signIn').hidden=true;await selectTable();
  }catch(e){notice(e.message,true);}
 }
 let googleInitialized=false;
@@ -106,9 +129,12 @@ function showSignIn(){
 async function init(){const user=getDataforceUser();if(!user?.email){location.href='../';return;}state.email=user.email;$('userLabel').textContent=user.name||user.email;state.token=await DataforceAuth.getSessionToken()||'';
  if(!REVIEW_API){notice('The independent review API is being prepared. Live data will be available once it is deployed.',true);return;}
  if(!state.token){showSignIn();return;}await initializeData();}
-$('filters').addEventListener('submit',e=>{e.preventDefault();updateAll();});
-['country','direction','basis'].forEach(id=>$(id).addEventListener('change',()=>{state.trendVersion++;state.compareVersion++;state.trend=null;state.comparison=[];buildChoices();$('trendMeta').textContent='Filters changed. Click Update charts.';$('yearWeightChart').textContent='Update charts to apply the new filters.';$('yearRowsChart').textContent='';$('yearTable').innerHTML='';$('yearLegend').innerHTML='';$('trendFlags').textContent='';$('sourceLegend').innerHTML='';$('sourceChart').textContent='Update charts to apply the new filters.';$('sourceTable').innerHTML='';$('compareStatus').textContent='';$('export').disabled=true;$('duplicateResult').textContent='Not checked for these filters.';}));
-$('loadTrend').addEventListener('click',loadTrend);$('loadCompare').addEventListener('click',loadCompare);$('checkDuplicates').addEventListener('click',duplicates);$('export').addEventListener('click',exportCsv);
+$('filters').addEventListener('submit',e=>{e.preventDefault();loadTrend();});
+$('trendSource').addEventListener('change',selectTable);
+$('country').addEventListener('change',()=>{clearResults();populateYears();buildChoices();});
+$('basis').addEventListener('change',()=>{clearResults();buildChoices();});
+$('yearChoices').addEventListener('change',clearResults);
+$('loadCompare').addEventListener('click',loadCompare);$('checkDuplicates').addEventListener('click',duplicates);$('export').addEventListener('click',exportCsv);
 $('yearLegend').addEventListener('click',e=>{const key=e.target.closest('[data-series]')?.dataset.series;if(!key)return;state.hiddenYears.has(key)?state.hiddenYears.delete(key):state.hiddenYears.add(key);renderTrend();});
 $('sourceLegend').addEventListener('click',e=>{const key=e.target.closest('[data-series]')?.dataset.series;if(!key)return;state.hiddenSources.has(key)?state.hiddenSources.delete(key):state.hiddenSources.add(key);renderCompare();});
 init();
