@@ -23,7 +23,7 @@ async function api(path,params={},retry=true){
  return data;
 }
 function point(data,year,month){return data?.points.find(p=>p.year===Number(year)&&p.month===month);}
-function sourceLabel(s){return `${s.id==='MEX_EXP_CargoIS_2023_20XX'?'CASS':s.family} · ${s.region}${s.id.includes('Agent')?' · Agent':s.id.includes('Product')?' · Product':''}${s.family==='Isidora'?' · '+s.direction:''}${s.family==='Aduana'?' · all transport modes':''}${/USA_EXP_WACD/.test(s.id)?' · '+s.id.slice(-4):''}`;}
+function sourceLabel(s){return `${s.id==='MEX_EXP_CargoIS_2023_20XX'?'CASS':s.family} · ${s.region}${s.id.includes('Agent')?' · Agent':s.id.includes('Product')?' · Product':''}${s.family==='Isidora'?' · '+s.direction:''}${s.family==='Aduana'?' · all transport modes':''}`;}
 const comparisonGroups={
  CL:['SAM_EXP_WACD_{view}_2024_20XX','SAM_EXP_CASS_CX_2019_20XX','CHI_EXP_Isidora_2023_20XX'],
  PE:['SAM_EXP_WACD_{view}_2024_20XX','SAM_EXP_CASS_CX_2019_20XX','PER_EXP_Aduana_2023_20XX'],
