@@ -381,6 +381,7 @@ th.name-col, th.email-col { z-index:26; }
         <option value="market_data">Market Data</option>
         <option value="forwarding_automatico">Forwarding Automático</option>
         <option value="cod">COD</option>
+        <option value="mkt_data_review">MKT DATA REVIEW</option>
         <option value="upload">Upload</option>
         <option value="admin">Admin</option>
       </select>
@@ -439,6 +440,7 @@ th.name-col, th.email-col { z-index:26; }
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Market Data: Panel de Ventas dashboard">MD</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Forwarding Automático: CargoSystem AUTOMATIC FWD report uploaded to Nodes twice a day.">FWD</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="COD: all bookings of customers that must pay before the cargo flies (Cust_IntType = COD).">COD</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="MKT DATA REVIEW: monthly kilos and row trends, source comparisons, and exact duplicate checks.">MKT REV</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Admin: user administration, access requests, permissions, and user scope management.">ADMIN</th>
             <th class="summary-col desktop-col">Biz</th>
             <th class="summary-col desktop-col">GSA</th>
@@ -567,6 +569,10 @@ th.name-col, th.email-col { z-index:26; }
         <div class="checkbox-item">
           <input type="checkbox" id="mod-cod" value="cod" onchange="updateSelectAllModules()" />
           <label for="mod-cod">COD</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="mod-mkt_data_review" value="mkt_data_review" onchange="updateSelectAllModules()" />
+          <label for="mod-mkt_data_review">MKT DATA REVIEW</label>
         </div>
         <div class="checkbox-item">
           <input type="checkbox" id="mod-upload" value="upload" onchange="updateSelectAllModules()" />
@@ -806,6 +812,7 @@ th.name-col, th.email-col { z-index:26; }
     { key: 'market_data', label: 'MD' },
     { key: 'forwarding_automatico', label: 'FWD' },
     { key: 'cod', label: 'COD' },
+    { key: 'mkt_data_review', label: 'MKT REV' },
     { key: 'admin', label: 'ADMIN' }
   ];
 

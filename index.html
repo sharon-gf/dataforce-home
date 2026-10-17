@@ -312,6 +312,12 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
 
+      <a class="card card-mkt-data-review" href="https://dataforce.gsaforce.com/mkt-data-review/" style="--card-accent:#0f766e; --card-icon-bg:#e6f5f3;">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18M5 15V9m5 6V5m5 10v-4"/><circle cx="18" cy="6" r="3"/><path d="m20 8 2 2"/></svg></div>
+        <div><div class="card-name">MKT DATA REVIEW</div><div class="card-desc">Monthly market trends, data quality alerts and duplicate checks</div></div>
+        <div class="card-arrow">→</div>
+      </a>
+
       <a class="card card-market-data" href="https://dataforce.gsaforce.com/market-data/">
         <div class="card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -398,6 +404,7 @@ function handleCredentialResponse(response) {
   
   const remember = document.getElementById('remember-login')?.checked !== false;
   DataforceAuth.setUser({ email, name }, remember);
+  sessionStorage.setItem("df_google_id_token", response.credential);
   showApp(name);
 }
 
@@ -459,7 +466,8 @@ async function applyModulePermissions() {
       'customers': '.card-customers',
       'market_data': '.card-market-data',
       'forwarding_automatico': '.card-forwarding-automatico',
-      'admin': '#users-admin-card, .card-check-rates, .card-cod, .card-spot-opportunities, .card-pending-spots, .card-customers'
+      'mkt_data_review': '.card-mkt-data-review',
+      'admin': '.card-mkt-data-review, #users-admin-card, .card-check-rates, .card-cod, .card-spot-opportunities, .card-pending-spots, .card-customers'
     };
     
     allowedModules.forEach(module => {

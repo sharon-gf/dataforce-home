@@ -135,6 +135,7 @@
   function clear() {
     removeItem(USER_KEY);
     removeItem(PERMISSIONS_KEY);
+    removeItem("df_google_id_token");
   }
 
   window.DataforceAuth = {

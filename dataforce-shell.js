@@ -14,6 +14,7 @@
     // en el menú hamburguesa del resto de la app (Dashboard, Flown, etc.) —
     // solo tenía un card en la home. Se agrega acá para que aparezca igual
     // que los demás módulos.
+    { key: "mkt_data_review", label: "MKT DATA REVIEW", href: "https://dataforce.gsaforce.com/mkt-data-review/" },
     { key: "market_data", label: "Market Data", href: "https://dataforce.gsaforce.com/market-data/" },
     { key: "forwarding_automatico", label: "Forwarding Automático", href: "https://dataforce.gsaforce.com/forwarding-automatico/" },
     { key: "flown", label: "Flown", href: "https://dataforce.gsaforce.com/flown-report/" },
@@ -113,7 +114,7 @@
   function permittedModules() {
     const permissions = readPermissions();
     const modules = permissions && Array.isArray(permissions.modules) ? permissions.modules : null;
-    if (!modules) return MODULES.filter((module) => module.key !== "admin");
+    if (!modules) return MODULES.filter((module) => !["admin", "mkt_data_review"].includes(module.key));
 
     const allowed = new Set(
       modules.map((name) => String(name).toLowerCase().replace(/-/g, "_"))
@@ -121,6 +122,7 @@
     if (allowed.has("admin")) {
       allowed.add("check_rates");
       allowed.add("cod");
+      allowed.add("mkt_data_review");
       allowed.add("spot_opportunities");
       allowed.add("pending_spots");
       allowed.add("customers");
