@@ -12,8 +12,10 @@ const short=v=>Math.abs(v)>=1e6?`${fmt(v/1e6,1)}m`:Math.abs(v)>=1e3?`${fmt(v/1e3
 const pct=(a,b)=>a===null||a===undefined||b===null||b===undefined||b===0?null:(a/b-1)*100;
 const now=new Date();
 function notice(text,error=false){$('notice').textContent=text;$('notice').className=error?'error':'';}
-function filters(){return {country:$('country').value,basis:$('basis').value};}
-function contextLabel(){return `${$('country').selectedOptions[0]?.textContent||''} · ${state.sources.find(s=>s.id===$('trendSource').value)?.direction||'Export'} · ${$('basis').selectedOptions[0].textContent}`;}
+function isWacdTrend(){return state.sources.find(s=>s.id===$('trendSource').value)?.family==='WACD';}
+function trendBasis(){return isWacdTrend()?'chargeable':$('basis').value;}
+function filters(){return {country:$('country').value,basis:trendBasis()};}
+function contextLabel(){return `${$('country').selectedOptions[0]?.textContent||''} · ${state.sources.find(s=>s.id===$('trendSource').value)?.direction||'Export'} · ${trendBasis()==='chargeable'?'Chargeable weight · kg':'Actual weight · kg'}`;}
 async function api(path,params={},retry=true){
  const shared=await DataforceAuth.getSessionToken();if(shared)state.token=shared;
  if(!REVIEW_API)throw new Error('The independent review API has not been configured yet.');
@@ -79,7 +81,7 @@ async function selectTable(){
  $('country').innerHTML='<option value="">All countries in this table</option>'+options.countries.map(c=>`<option value="${esc(c.id)}">${esc(c.label)}</option>`).join('');
  if(options.countries.length===1)$('country').value=options.countries[0].id;
  $('country').disabled=false;
- const src=state.sources.find(s=>s.id===source);$('basis').options[0].disabled=src.weight_column==='Mkt_Chw';$('basis').options[1].disabled=!src.chargeable_column;$('basis').value=src.weight_column==='Mkt_Chw'?'chargeable':'actual';
+ const src=state.sources.find(s=>s.id===source);$('basis').options[0].disabled=src.weight_column==='Mkt_Chw';$('basis').options[1].disabled=!src.chargeable_column;$('basis').value=isWacdTrend()||src.weight_column==='Mkt_Chw'?'chargeable':'actual';$('basisControl').hidden=isWacdTrend();$('basis').disabled=isWacdTrend();
  populateYears();$('filters').hidden=false;
  notice('Choose a country and the years you want to compare.');
  }catch(e){if(version===state.optionsVersion)notice('Could not load table options: '+e.message,true);}
