@@ -327,7 +327,7 @@ main {
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
-<script>window.DATAFORCE_SHELL = {"title":"Dashboard","controls":["#bizSelect","#toggle-805",".date-toggle"],"meta":["#weekLabel","#datesLabel"],"statusText":"Ready"};</script>
+<script>window.DATAFORCE_SHELL = {"title":"Dashboard","controls":["#bizSelect","#gsaSelect","#toggle-805",".date-toggle"],"meta":["#weekLabel","#datesLabel"],"statusText":"Ready"};</script>
 <script src="../dataforce-auth.js"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
@@ -359,6 +359,9 @@ main {
       <option value="08_AVCHI">AV-CHILE</option>
       <option value="10_VIRGIN">VIRGIN</option>
       <option value="11_ULTRACN">ULTRA CN</option>
+    </select>
+    <select class="hdr-select" id="gsaSelect" aria-label="GSA" onchange="loadData()">
+      <option value="">All GSAs</option>
     </select>
     <div class="date-toggle" id="toggle-805" style="margin-right:4px;">
       <button id="btn-pure" class="active" onclick="set805Mode(false)">Pure</button>
@@ -699,7 +702,7 @@ async function showWeekDetail(week, year) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}&module=dashboard`;
+    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}`;
     const r = await fetchWithTimeout(url);
     const data = await r.json();
     const rows = data.rows || [];
@@ -988,6 +991,8 @@ async function loadAllData(dateCol) {
 async function loadData(){
   const biz = getEffectiveBiz();
   const dateCol = DATE_COL;
+  const gsa = getSelectedGsa();
+  const cacheBiz = gsa ? JSON.stringify([biz, gsa]) : biz;
   const userEmail = getUserEmail();
   console.log('User email:', userEmail);
   const connLbl = document.getElementById('connLabel');
@@ -995,8 +1000,8 @@ async function loadData(){
   if(!API_BASE){ applyData(DEMO); connLbl.textContent='Demo mode'; return; }
 
   // If already cached locally, apply instantly
-  if(ALL_DATA[dateCol] && ALL_DATA[dateCol][biz]){
-    applyData(ALL_DATA[dateCol][biz]);
+  if(ALL_DATA[dateCol] && ALL_DATA[dateCol][cacheBiz]){
+    applyData(ALL_DATA[dateCol][cacheBiz]);
     connDot.classList.add('live');
     connLbl.textContent = 'Ready';
     return;
@@ -1005,13 +1010,13 @@ async function loadData(){
   connDot.classList.remove('live');
   connLbl.textContent = 'Loading...';
   try{
-    const data = await getBusinessData(biz, dateCol);
-    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL) return;
+    const data = await getBusinessData(biz, dateCol, gsa);
+    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa()) return;
     applyData(data);
     connDot.classList.add('live');
     connLbl.textContent = 'Ready';
   }catch(e){
-    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL) return;
+    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa()) return;
     connDot.classList.remove('live');
     connLbl.textContent = 'Unable to load — please retry';
   }
@@ -1127,27 +1132,54 @@ function set805Mode(is805) {
   const canUseVariant = canAccessEffectiveBusiness(effectiveBiz);
   if (!canUseVariant) return;
   IS_805 = is805;
+  loadGsaOptions();
   document.getElementById('btn-pure').classList.toggle('active', !is805);
   document.getElementById('btn-w805').classList.toggle('active', is805);
   loadData();
 }
 
+function getSelectedGsa() {
+  return document.getElementById('gsaSelect').value;
+}
+
+let gsaOptionsVersion = 0;
+async function loadGsaOptions() {
+  const version = ++gsaOptionsVersion;
+  const select = document.getElementById('gsaSelect');
+  select.replaceChildren(new Option('All GSAs', ''));
+  select.disabled = true;
+  if (!API_BASE) return;
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/api/dashboard_gsas?biz=${encodeURIComponent(getEffectiveBiz())}&email=${encodeURIComponent(getUserEmail())}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (version !== gsaOptionsVersion) return;
+    for (const gsa of data.gsas) select.add(new Option(gsa, gsa));
+    select.disabled = false;
+    select.title = '';
+  } catch (error) {
+    if (version !== gsaOptionsVersion) return;
+    select.title = 'Unable to load GSAs. Change Business to retry.';
+  }
+}
+
 const BUSINESS_REQUESTS = new Map();
 
-function getBusinessData(biz, dateCol) {
-  if (ALL_DATA[dateCol]?.[biz]) return Promise.resolve(ALL_DATA[dateCol][biz]);
-  const key = `${dateCol}:${biz}`;
+function getBusinessData(biz, dateCol, gsa = '') {
+  const cacheBiz = gsa ? JSON.stringify([biz, gsa]) : biz;
+  if (ALL_DATA[dateCol]?.[cacheBiz]) return Promise.resolve(ALL_DATA[dateCol][cacheBiz]);
+  const key = `${dateCol}:${cacheBiz}`;
   if (BUSINESS_REQUESTS.has(key)) return BUSINESS_REQUESTS.get(key);
   const request = (async () => {
     const r = await fetchWithTimeout(
-      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard`,
+      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard&gsa=${encodeURIComponent(gsa)}`,
       {}, 60000
     );
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     if (!data.kpis) throw new Error('Invalid dashboard response');
     if (!ALL_DATA[dateCol]) ALL_DATA[dateCol] = {};
-    ALL_DATA[dateCol][biz] = data;
+    ALL_DATA[dateCol][cacheBiz] = data;
     return data;
   })().finally(() => BUSINESS_REQUESTS.delete(key));
   BUSINESS_REQUESTS.set(key, request);
@@ -1183,6 +1215,7 @@ async function initDashboard(){
   if (!configureBusinessAccess(permissions)) return;
   applyReportParams();
   updateBusinessControls(false);
+  loadGsaOptions();
   await loadData(); // load current business first, before warming the rest
   if (!REPORT_PARAMS.get('report')) setTimeout(warmCache, 0);
 }
@@ -1260,7 +1293,9 @@ function updateBusinessControls(shouldLoad=true){
 }
 
 function onBizChange(){
+  document.getElementById('gsaSelect').value = '';
   updateBusinessControls(true);
+  loadGsaOptions();
 }
 
 (function(){
@@ -1361,7 +1396,7 @@ async function showAwbDetail(groupCol, groupVal, label) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=dashboard`;
+    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}`;
     const r = await fetchWithTimeout(url);
     const data = await r.json();
     const rows = data.rows || [];

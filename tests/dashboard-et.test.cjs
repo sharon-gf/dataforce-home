@@ -11,7 +11,7 @@ function harness() {
   const context = vm.createContext({
     console: { log() {} },
     document: { getElementById(id) {
-      if (!elements.has(id)) elements.set(id, { value: '02_ET', style: {}, classList: { add() {}, remove() {}, toggle() {} } });
+      if (!elements.has(id)) elements.set(id, { value: id === 'gsaSelect' ? '' : '02_ET', style: {}, classList: { add() {}, remove() {}, toggle() {} } });
       return elements.get(id);
     } },
     getUserEmail: () => 'test@gsaforce.com',
@@ -31,7 +31,7 @@ function harness() {
     const BUSINESS_REQUESTS = new Map();
     let _isWarming = false;
   `, context);
-  for (const name of ['getVariantBiz', 'getEffectiveBiz', 'canAccessEffectiveBusiness',
+  for (const name of ['getSelectedGsa', 'getVariantBiz', 'getEffectiveBiz', 'canAccessEffectiveBusiness',
                       'canAccessBusinessOption', 'getBusinessData', 'loadData', 'showWeekDetail', 'showAwbDetail']) {
     const match = html.match(new RegExp(`(?:async )?function ${name}\\([^]*?\\n\\}`));
     assert.ok(match, `Missing function ${name}`);
@@ -123,4 +123,22 @@ test('warmup visits all allowed businesses sequentially without changing status'
   await warm;
   assert.deepEqual(h.calls.map(url => new URL(url).searchParams.get('biz')), ['02_ET', '03_UPS', '02_ET', '03_UPS']);
   assert.equal(h.run("document.getElementById('connLabel').textContent"), undefined);
+});
+
+ test('GSA selection isolates cache and ignores stale responses', async () => {
+  const h = harness();
+  const all = h.run('loadData()');
+  h.run("document.getElementById('gsaSelect').value = 'ET-WEBCARGO'");
+  const filtered = h.run('loadData()');
+  assert.equal(new URL(h.calls[1]).searchParams.get('gsa'), 'ET-WEBCARGO');
+  h.pending[1]({ scope: 'gsa' });
+  await filtered;
+  h.pending[0]({ scope: 'all' });
+  await all;
+  assert.deepEqual(h.applied.map(d => d.scope), ['gsa']);
+  await h.run('loadData()');
+  assert.equal(h.calls.length, 2);
+  await h.run('showWeekDetail(36, 2026)');
+  await h.run("showAwbDetail('Bkg_Ori', 'MIA', 'MIA')");
+  for (const url of h.calls.slice(2)) assert.equal(new URL(url).searchParams.get('gsa'), 'ET-WEBCARGO');
 });
