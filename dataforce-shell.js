@@ -8,6 +8,7 @@
   const DEFAULT_FAVICON_HREF = SCRIPT_URL ? new URL("favicon.jpg", SCRIPT_URL).href : "favicon.jpg";
   const DEFAULT_FAVICON_TYPE = "image/jpeg";
   const DEFAULT_APP_LOGO_URL = SCRIPT_URL ? new URL("app-logo.png", SCRIPT_URL).href : "app-logo.png";
+  const DRAWER_LOGO_URL = SCRIPT_URL ? new URL("dataforce-logo-color.png", SCRIPT_URL).href : "dataforce-logo-color.png";
   const MODULES = [
     { key: "dashboard", label: "Dashboard", href: "https://dataforce.gsaforce.com/dashboard/" },
     // 17 sep, cony: Market Data no estaba en esta lista, por eso no aparecía
@@ -307,17 +308,29 @@
     logo.href = HOME_URL;
     logo.setAttribute("aria-label", "Back to DATAFORCE home");
     const img = document.createElement("img");
-    img.src = cfg().logoSrc || DEFAULT_LOGO_URL;
+    // 22 oct, cony: menú blanco (igual que el de Market Data) — logo a color
+    img.src = cfg().drawerLogoSrc || DRAWER_LOGO_URL;
     img.alt = "DATAFORCE";
     logo.appendChild(img);
 
     const nav = document.createElement("nav");
     nav.className = "df-shell-drawer-nav";
+    const navTitle = document.createElement("div");
+    navTitle.className = "df-shell-drawer-title";
+    navTitle.textContent = "Modules";
+    nav.appendChild(navTitle);
 
     const path = currentPath();
+    const email = readUser().email;
     permittedModules().forEach((module) => {
       const link = document.createElement("a");
       link.href = module.href;
+      // 22 oct, cony: Market Data y Forwarding Automático necesitan el correo
+      // de quien ya inició sesión (igual que las tarjetas de la página de
+      // inicio) — sin esto mostraban "Open this from ... inside Dataforce"
+      if (email && (module.key === "market_data" || module.key === "forwarding_automatico")) {
+        link.href = module.href + "?email=" + encodeURIComponent(email);
+      }
       link.textContent = module.label;
       link.className = "df-shell-drawer-link";
       if (module.external) {

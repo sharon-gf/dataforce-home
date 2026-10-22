@@ -331,9 +331,10 @@ body {
   width: min(330px, calc(100vw - 48px));
   padding: 22px 18px;
   overflow-y: auto;
-  background: var(--df-navy);
-  color: #fff;
-  box-shadow: 16px 0 40px rgba(13,31,60,0.3);
+  /* 22 oct, cony: menú blanco, igual que el de Market Data */
+  background: #fff;
+  color: #1f2937;
+  box-shadow: 16px 0 40px rgba(13,31,60,0.22);
   transform: translateX(-102%);
   transition: transform 180ms ease;
 }
@@ -360,29 +361,39 @@ body {
   gap: 5px;
 }
 
+.df-shell-drawer-title {
+  padding: 0 12px 6px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .df-shell-drawer-link {
   display: flex;
   align-items: center;
-  min-height: 42px;
+  min-height: 38px;
   padding: 0 12px;
-  border-radius: 5px;
-  color: #fff;
-  font-size: 16px;
+  border-radius: 6px;
+  color: #1f2937;
+  font-size: 15px;
   font-weight: 500;
   line-height: 1.2;
   text-decoration: none;
 }
 
 .df-shell-drawer-link:hover,
-.df-shell-drawer-link:focus-visible,
-.df-shell-drawer-link.active {
-  background: rgba(143, 181, 215, 0.16);
-  color: #fff;
+.df-shell-drawer-link:focus-visible {
+  background: #f4f2ec;
+  color: #0d1f3c;
   outline: none;
 }
 
 .df-shell-drawer-link.active {
-  box-shadow: 3px 0 0 #8fb5d7 inset;
+  background: #eaf1fb;
+  color: #0b4a8b;
+  box-shadow: 3px 0 0 #1a56db inset;
 }
 
 .df-shell-meta {
