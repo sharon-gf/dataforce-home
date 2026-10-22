@@ -308,13 +308,16 @@ body {
   opacity: 0.45 !important;
 }
 
+/* 22 oct, cony: "deben ser todos como el de Market Data" — el menú de las
+   tres rayitas es la misma tarjeta desplegable blanca de Market Data
+   (.hamburger-menu en su index.html), no un panel lateral completo. */
 .df-shell-drawer-overlay {
   position: fixed;
   inset: 0;
   z-index: 980;
   border: 0;
-  background: rgba(8, 18, 35, 0.42);
-  cursor: pointer;
+  background: transparent;
+  cursor: default;
 }
 
 .df-shell-drawer-overlay[hidden] {
@@ -323,77 +326,66 @@ body {
 
 .df-shell-drawer {
   position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
+  top: 60px;
+  left: 16px;
   z-index: 990;
   box-sizing: border-box;
-  width: min(330px, calc(100vw - 48px));
-  padding: 22px 18px;
+  display: none;
+  min-width: 230px;
+  max-width: calc(100vw - 32px);
+  max-height: 80vh;
+  padding: 8px 0;
   overflow-y: auto;
-  /* 22 oct, cony: menú blanco, igual que el de Market Data */
+  border-radius: 8px;
   background: #fff;
-  color: #1f2937;
-  box-shadow: 16px 0 40px rgba(13,31,60,0.22);
-  transform: translateX(-102%);
-  transition: transform 180ms ease;
+  color: #14213D;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 .df-shell-drawer-open .df-shell-drawer {
-  transform: translateX(0);
-}
-
-.df-shell-drawer-logo {
-  display: inline-flex;
-  align-items: center;
-  margin-bottom: 34px;
-}
-
-.df-shell-drawer-logo img {
   display: block;
-  height: 32px;
-  max-width: 210px;
-  object-fit: contain;
 }
 
 .df-shell-drawer-nav {
-  display: grid;
-  gap: 5px;
+  display: block;
 }
 
 .df-shell-drawer-title {
-  padding: 0 12px 6px;
-  color: #6b7280;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 8px 16px 6px;
+  color: #64748B;
+  font-size: 10px;
+  font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+.df-shell-drawer-nav .df-shell-drawer-title {
+  padding-top: 10px;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
 .df-shell-drawer-link {
-  display: flex;
-  align-items: center;
-  min-height: 38px;
-  padding: 0 12px;
-  border-radius: 6px;
-  color: #1f2937;
-  font-size: 15px;
-  font-weight: 500;
+  display: block;
+  padding: 9px 16px;
+  color: #14213D;
+  font-size: 13px;
+  font-weight: 400;
   line-height: 1.2;
   text-decoration: none;
 }
 
 .df-shell-drawer-link:hover,
 .df-shell-drawer-link:focus-visible {
-  background: #f4f2ec;
-  color: #0d1f3c;
+  background: #F7F5F0;
+  color: #14213D;
   outline: none;
 }
 
 .df-shell-drawer-link.active {
-  background: #eaf1fb;
-  color: #0b4a8b;
-  box-shadow: 3px 0 0 #1a56db inset;
+  background: #F7F5F0;
+  font-weight: 600;
 }
 
 .df-shell-meta {

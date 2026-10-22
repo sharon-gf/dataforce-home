@@ -8,7 +8,6 @@
   const DEFAULT_FAVICON_HREF = SCRIPT_URL ? new URL("favicon.jpg", SCRIPT_URL).href : "favicon.jpg";
   const DEFAULT_FAVICON_TYPE = "image/jpeg";
   const DEFAULT_APP_LOGO_URL = SCRIPT_URL ? new URL("app-logo.png", SCRIPT_URL).href : "app-logo.png";
-  const DRAWER_LOGO_URL = SCRIPT_URL ? new URL("dataforce-logo-color.png", SCRIPT_URL).href : "dataforce-logo-color.png";
   const MODULES = [
     { key: "dashboard", label: "Dashboard", href: "https://dataforce.gsaforce.com/dashboard/" },
     // 17 sep, cony: Market Data no estaba en esta lista, por eso no aparecía
@@ -281,6 +280,12 @@
       button.setAttribute("aria-label", open ? "Close module menu" : "Open module menu");
     }
     if (drawer) drawer.setAttribute("aria-hidden", open ? "false" : "true");
+    // el menú se abre justo debajo de las tres rayitas, como en Market Data
+    if (open && button && drawer) {
+      const r = button.getBoundingClientRect();
+      drawer.style.top = Math.round(r.bottom + 4) + "px";
+      drawer.style.left = Math.max(8, Math.round(r.left)) + "px";
+    }
     if (overlay) overlay.hidden = !open;
   }
 
@@ -303,15 +308,15 @@
     drawer.setAttribute("aria-hidden", "true");
     drawer.setAttribute("aria-label", "Module menu");
 
-    const logo = document.createElement("a");
-    logo.className = "df-shell-drawer-logo";
-    logo.href = HOME_URL;
-    logo.setAttribute("aria-label", "Back to DATAFORCE home");
-    const img = document.createElement("img");
-    // 22 oct, cony: menú blanco (igual que el de Market Data) — logo a color
-    img.src = cfg().drawerLogoSrc || DRAWER_LOGO_URL;
-    img.alt = "DATAFORCE";
-    logo.appendChild(img);
+    // 22 oct, cony: "deben ser todos como el de Market Data" — mismo menú
+    // desplegable: título DATAFORCE, "Dataforce Home" y la lista de módulos
+    const title = document.createElement("div");
+    title.className = "df-shell-drawer-title";
+    title.textContent = "Dataforce";
+    const home = document.createElement("a");
+    home.className = "df-shell-drawer-link";
+    home.href = HOME_URL;
+    home.textContent = "⌂  Dataforce Home";
 
     const nav = document.createElement("nav");
     nav.className = "df-shell-drawer-nav";
@@ -347,7 +352,7 @@
       nav.appendChild(link);
     });
 
-    drawer.append(logo, nav);
+    drawer.append(title, home, nav);
     document.body.append(overlay, drawer);
   }
 
