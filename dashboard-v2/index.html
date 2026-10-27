@@ -333,31 +333,47 @@ main { overflow-y:auto; }
 .v2-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:6px; flex-shrink:0; margin-bottom:10px; }
 .v2-sel { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#fff; font-family:'Inter',sans-serif; font-size:10px; padding:2px 6px; border-radius:4px; max-width:260px; }
 .v2-sel option, .v2-sel optgroup { background:#0d1f3c; color:#fff; }
-.mk-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding:8px 10px 4px; }
-.mk-tile { background:var(--surface2); border:1px solid var(--border); border-radius:5px; padding:7px 9px; }
+.mk-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; padding:8px 10px 4px; }
+.mk-tile { background:var(--surface2); border:1px solid var(--border); border-top:2.5px solid #c9d6ea; border-radius:5px; padding:7px 9px; }
+.mk-tile.ms { border-top-color:var(--blue-lw); }
 .mk-lbl { font-size:8.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); }
-.mk-val { font-size:17px; font-weight:500; color:var(--text1); margin:3px 0 4px; }
-.mk-val.ms { color:var(--blue-lw); }
-.mk-cmp { display:flex; justify-content:space-between; font-size:9px; color:var(--text3); line-height:1.6; }
+.mk-val { font-size:17px; font-weight:500; color:var(--text1); margin:3px 0 3px; font-variant-numeric:tabular-nums; }
+.mk-val small { font-size:10px; font-weight:400; color:var(--text3); }
+.mk-tile.ms .mk-val { color:var(--blue-lw); }
+.mk-cmp { display:flex; justify-content:space-between; font-size:9px; color:var(--text3); line-height:1.6; font-variant-numeric:tabular-nums; }
 .mk-cmp b { font-weight:500; }
-.mk-cmp .up { color:var(--up); } .mk-cmp .dn { color:var(--down); }
-.mk-week { margin:2px 10px 6px; padding:5px 9px; border-radius:5px; background:#eef3fb; color:var(--text2); font-size:10px; }
-.mk-foot { display:flex; gap:10px; align-items:stretch; padding:0 10px 8px; }
-.mk-chart { position:relative; flex:1; height:130px; }
+.up { color:var(--up); } .dn { color:var(--down); }
+.mk-week { margin:2px 10px 4px; padding:5px 9px; border-radius:5px; background:#eef3fb; color:var(--text2); font-size:10px; }
+.mk-g2 { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); gap:6px; padding:4px 10px 8px; }
+.mk-panel { border:1px solid var(--border); border-radius:5px; padding:7px 9px; background:#fff; min-width:0; }
+.mk-ph { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+.mk-pt { font-size:10px; font-weight:600; color:var(--text1); }
+.mk-ps { font-size:9px; color:var(--text3); }
+.mk-chart { position:relative; height:150px; }
+.mk-tbl { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; margin-top:4px; }
+.mk-tbl th { font-size:8px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); font-weight:500; text-align:right; padding:3px 4px; border-bottom:1px solid var(--border); }
+.mk-tbl td { font-size:10px; text-align:right; padding:3px 4px; border-bottom:1px solid #f0f2f6; color:var(--text1); }
+.mk-tbl th:first-child, .mk-tbl td:first-child { text-align:left; }
+.mk-tbl .l { text-align:left; }
+.flag { display:inline-block; font-size:8px; padding:1px 5px; border-radius:3px; font-weight:600; background:#fdece4; color:#c2410c; }
+.flag.ok { background:#e6f4ee; color:var(--up); }
+.flag.op { background:#eef3fb; color:var(--blue-lw); cursor:pointer; }
+.flag.cl { background:#e6f4ee; color:var(--up); cursor:pointer; }
+.flag.late { background:#fdece4; color:#c2410c; }
+.mk-ins { margin-top:6px; padding:5px 8px; border-left:2px solid var(--blue-lw); background:var(--surface2); font-size:9.5px; color:var(--text2); line-height:1.5; }
+.mk-def { font-size:8.5px; color:var(--text3); padding:0 10px 8px; line-height:1.5; }
 .mk-msg { padding:14px 12px; color:var(--text3); font-size:11px; }
 .nt-body { display:flex; flex-direction:column; min-height:0; }
-.nt-add { display:flex; gap:6px; padding:8px 10px; border-bottom:1px solid var(--border); }
-.nt-add textarea { flex:1; resize:vertical; min-height:34px; font-family:'Inter',sans-serif; font-size:11px; padding:5px 7px; border:1px solid var(--border); border-radius:5px; }
+.nt-add { display:grid; grid-template-columns:1fr 110px 118px auto; gap:5px; padding:8px 10px; border-bottom:1px solid var(--border); }
+.nt-add input { font-family:'Inter',sans-serif; font-size:10.5px; padding:4px 6px; border:1px solid var(--border); border-radius:4px; min-width:0; }
 .nt-btn { border:1px solid var(--border); background:#fff; border-radius:5px; padding:4px 9px; font-family:'Inter',sans-serif; font-size:10px; cursor:pointer; color:var(--text2); }
 .nt-btn.primary { background:var(--blue-lw); border-color:var(--blue-lw); color:#fff; }
-.nt-list { overflow-y:auto; max-height:230px; padding:4px 10px 8px; }
-.nt-day { font-size:8.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin:8px 0 3px; }
-.nt-item { display:flex; gap:8px; align-items:flex-start; padding:6px 8px; border:1px solid var(--border); border-radius:5px; margin-bottom:4px; background:#fff; }
-.nt-item.off { opacity:.55; background:var(--surface2); }
-.nt-text { flex:1; font-size:11px; color:var(--text1); white-space:pre-wrap; word-break:break-word; }
-.nt-meta { font-size:9px; color:var(--text3); margin-top:2px; }
+.nt-x { border:none; background:none; color:var(--text3); cursor:pointer; font-size:11px; padding:0 2px; }
+.nt-list { overflow-y:auto; max-height:260px; padding:2px 10px 6px; }
+.nt-list tr.off td { opacity:.5; }
+.nt-list td.txt { white-space:pre-wrap; word-break:break-word; }
 .nt-tools { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-top:1px solid var(--border); font-size:10px; color:var(--text3); }
-@media (max-width: 1100px) { .v2-row { grid-template-columns:1fr; } .mk-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width: 1100px) { .v2-row, .mk-g2 { grid-template-columns:1fr; } .mk-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .nt-add { grid-template-columns:1fr 1fr; } }
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
@@ -518,30 +534,39 @@ main { overflow-y:auto; }
     </div>
   </div>
 
-  <!-- DASHBOARD 2.0: MERCADO + MINUTA -->
-  <div class="sec-lbl">Market vs us</div>
+  <!-- DASHBOARD 2.0: MERCADO + REGISTRO DE ACCIONES -->
+  <div class="sec-lbl">Market performance</div>
+  <div class="card" style="flex-shrink:0;margin-bottom:6px;">
+    <div class="card-hdr">
+      <span class="card-title" id="mkTitle">Market</span>
+      <select class="v2-sel" id="mkSource" aria-label="Market database" onchange="onMarketSourceChange()"></select>
+    </div>
+    <div id="mkBody"><div class="mk-msg">Loading market data…</div></div>
+  </div>
   <div class="v2-row">
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title" id="mkTitle">Market</span>
-        <select class="v2-sel" id="mkSource" aria-label="Market database" onchange="onMarketSourceChange()"></select>
+        <span class="card-title">Market share — control chart</span>
+        <span class="card-sub" id="ccSub">mean ± 2σ · 3-month moving average</span>
       </div>
-      <div id="mkBody"><div class="mk-msg">Loading market data…</div></div>
+      <div id="ccBody" style="padding:8px 10px;"><div class="mk-msg">Loading…</div></div>
     </div>
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Meeting notes</span>
-        <span class="card-sub" id="ntSub">Shared with everyone in this business</span>
+        <span class="card-title">Meeting action log</span>
+        <span class="card-sub" id="ntCount"></span>
       </div>
       <div class="nt-body">
         <div class="nt-add">
-          <textarea id="ntText" maxlength="2000" placeholder="Add a note for this meeting…"></textarea>
+          <input id="ntText" maxlength="2000" placeholder="New action or note…" onkeydown="if(event.key==='Enter')addNote()">
+          <input id="ntOwner" maxlength="60" placeholder="Owner">
+          <input id="ntDue" type="date" title="Due date">
           <button class="nt-btn primary" id="ntAddBtn" onclick="addNote()">Add</button>
         </div>
-        <div class="nt-list" id="ntList"><div class="mk-msg">Loading notes…</div></div>
+        <div class="nt-list" id="ntList"><div class="mk-msg">Loading actions…</div></div>
         <div class="nt-tools">
           <label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="ntShowAll" onchange="loadNotes()"> Show discarded</label>
-          <span id="ntCount"></span>
+          <span>Shared with everyone in this business · click the status to open / close</span>
         </div>
       </div>
     </div>
@@ -1394,7 +1419,14 @@ function onBizChange(){
   document.getElementById('datesLabel').textContent = `${f(lastMonday)} – ${f(lastSunday)}`;
 })();
 
+// 23 oct, cony: en prueba — solo ella puede abrir esta página (aunque
+// alguien tenga el link). El servidor de Market Data también lo exige.
+const DASHBOARD_V2_EMAILS = ['crobles@gsaforce.com'];
 checkModuleAccess('dashboard', function () {
+  if (!DASHBOARD_V2_EMAILS.includes(getUserEmail().toLowerCase())) {
+    document.querySelector('main').innerHTML = '<div style="margin:60px auto;max-width:420px;text-align:center;color:#3d4f68;font-size:14px;line-height:1.6;"><b>Dashboard 2.0 is not available for your account yet.</b><br>Use the regular <a href="../dashboard/">Dashboard</a>.</div>';
+    return;
+  }
   initMercado(); // en paralelo: no espera a que terminen de cargar los números de la empresa
   return initDashboard();
 });
@@ -1418,7 +1450,10 @@ const BIZ_MERCADO = {
   CXMEX:      ['mex_cargois_2023'],
   '01_CXSUD': ['cathay_sam', 'chi_isidora_exp|CATHAY', 'per_aduana|CATHAY'],
   '01_CXOFF': ['cathay_hkg', 'usa_cargois_2024'],   // la CASS de USA es de Cathay
-  '02_ET':    ['chi_isidora_exp|ETHIOPIAN', 'per_aduana|ETHIOPIAN'],
+  // "fuente||XX" = esa base filtrada a "Destinations <aerolínea XX>": así
+  // miran el mercado de Ethiopian y El Al (WACD con sus destinos)
+  '02_ET':    ['usa_wacd_agent||ET', 'chi_isidora_exp|ETHIOPIAN', 'per_aduana|ETHIOPIAN'],
+  '04_ELAL':  ['usa_wacd_agent||LY'],
   '03_UPS':   ['chi_isidora_exp|UPS', 'per_aduana|UPS'],
   '07_JPN':   ['jpn_cargois_la', 'jpn_cargois_m7', 'jpn_wacd_agent'],
   '05_AVASIA':['asia_wacd_av'],
@@ -1476,13 +1511,20 @@ function armarSelectorMercado() {
   const disponibles = new Set(fuentes.map(f => f.id));
   const sugeridas = (BIZ_MERCADO[biz] || []).filter(o => disponibles.has(o.split('|')[0]));
   const otras = fuentes.filter(f => !sugeridas.some(o => o.split('|')[0] === f.id)).map(f => f.id);
-  const etiqueta = o => { const [f, v] = o.split('|'); return nombre(f) + (v ? ` · ${v.charAt(0) + v.slice(1).toLowerCase()}` : ''); };
+  const DESTINOS = { ET: 'Ethiopian', LY: 'El Al', CX: 'Cathay', LA: 'LATAM', M7: 'Masair' };
+  const etiqueta = o => {
+    const [f, v, d] = o.split('|');
+    return nombre(f) + (v ? ` · ${v.charAt(0) + v.slice(1).toLowerCase()}` : '') + (d ? ` · Destinations ${DESTINOS[d] || d}` : '');
+  };
+  // sin base sugerida (ET-USA, VIRGIN…): no se elige sola una base de otra
+  // aerolínea — antes mostraba, p. ej., el market share de Mercury en ET-USA
   sel.innerHTML =
+    (sugeridas.length ? '' : '<option value="">— No market database linked to this business —</option>') +
     (sugeridas.length ? `<optgroup label="Suggested for this business">${sugeridas.map(o => `<option value="${h(o)}">${h(etiqueta(o))}</option>`).join('')}</optgroup>` : '') +
     (otras.length ? `<optgroup label="Other databases">${otras.map(o => `<option value="${h(o)}">${h(etiqueta(o))}</option>`).join('')}</optgroup>` : '');
   const guardada = opcionGuardada(biz);
   const valores = [...sel.options].map(o => o.value);
-  sel.value = valores.includes(guardada) ? guardada : (sugeridas[0] || valores[0] || '');
+  sel.value = valores.includes(guardada) ? guardada : (sugeridas[0] || '');
 }
 
 async function initMercado() {
@@ -1508,66 +1550,220 @@ function onMarketSourceChange() {
 
 const fmtT = v => v == null ? '—' : Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
 const fmtR = v => v == null ? '—' : '$' + Number(v).toFixed(2);
-function cambio(v, sufijo = '%') {
+// market share de una aerolínea chica ~0,1%: 3 decimales bajo 1%
+const fmtS = v => v == null ? '—' : Number(v).toFixed(Math.abs(v) < 1 ? 3 : 2);
+const fmtPts = v => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(Math.abs(v) < 1 ? 3 : 2);
+function cambio(v, sufijo = '%', dec) {
   if (v == null) return '<b>—</b>';
   const cls = v > 0 ? 'up' : v < 0 ? 'dn' : '';
-  return `<b class="${cls}">${v > 0 ? '▲' : v < 0 ? '▼' : ''} ${Math.abs(v).toFixed(sufijo === ' pts' ? 2 : 1)}${sufijo}</b>`;
+  const txt = sufijo === ' pts' && dec == null ? fmtPts(v) : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(dec == null ? 1 : dec);
+  return `<b class="${cls}">${txt}${sufijo}</b>`;
 }
-function mesLabel(m) {
+function mesLabel(m, corto) {
   if (!m) return '';
   const [y, mm] = m.split('-');
-  return new Date(+y, +mm - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  return new Date(+y, +mm - 1, 1).toLocaleDateString('en-US', { month: 'short', year: corto ? '2-digit' : 'numeric' });
 }
+function mesAnterior(m, n) {
+  const [y, mm] = m.split('-').map(Number);
+  const d = new Date(y, mm - 1 - n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function destruirGraficos() {
+  for (const k of ['pareto', 'bridge', 'control']) if (MK.charts[k]) { MK.charts[k].destroy(); MK.charts[k] = null; }
+}
+MK.charts = {};
+const AXIS = { ticks: { font: { size: 8.5 }, color: '#8896aa' }, grid: { color: '#f0f2f6' } };
 
 async function loadMarket() {
   const seq = ++MK.seq;
   const opcion = document.getElementById('mkSource').value;
   const body = document.getElementById('mkBody');
-  if (!opcion) { body.innerHTML = '<div class="mk-msg">No market database available for your account.</div>'; return; }
+  const cc = document.getElementById('ccBody');
+  destruirGraficos();
+  if (!opcion) {
+    document.getElementById('mkTitle').textContent = 'Market';
+    body.innerHTML = `<div class="mk-msg">There is no market database for <b>${h(document.getElementById('bizSelect').selectedOptions[0]?.textContent || negocioActual())}</b> yet, so there is no market share to show. You can still pick any database from the list to look at that market (its share will be for that database's own airline).</div>`;
+    cc.innerHTML = '<div class="mk-msg">No market database selected.</div>';
+    return;
+  }
   body.innerHTML = '<div class="mk-msg">Loading market data… (the first time a database is opened it can take a minute)</div>';
+  cc.innerHTML = '<div class="mk-msg">Loading…</div>';
   let d;
-  try { d = await md('/api/reunion/mercado', opcion); }
-  catch (e) { if (seq === MK.seq) body.innerHTML = `<div class="mk-msg">Could not load market data: ${h(e.message)}</div>`; return; }
+  const destino = opcion.split('|')[2] || '';
+  try { d = await md('/api/reunion/mercado' + (destino ? `?aerolinea_destino=${encodeURIComponent(destino)}` : ''), opcion); }
+  catch (e) { if (seq === MK.seq) { body.innerHTML = `<div class="mk-msg">Could not load market data: ${h(e.message)}</div>`; cc.innerHTML = ''; } return; }
   if (seq !== MK.seq) return;
-  if (!d.mes) { body.innerHTML = '<div class="mk-msg">This database has no data yet.</div>'; return; }
-  document.getElementById('mkTitle').textContent = `Market — ${mesLabel(d.mes)} (latest month loaded)`;
+  if (!d.mes) { body.innerHTML = '<div class="mk-msg">This database has no data yet.</div>'; cc.innerHTML = ''; return; }
+
+  const quien = d.aerolinea || 'Own';
+  // "Destinations X": el mercado es el de esos destinos, pero las toneladas
+  // "propias" de la base son de otra aerolínea (ej. Mercury en WACD), así que
+  // no se muestran ni se calcula un market share con ellas
+  const porDestinos = !!d.destinos_de;
+  const negocio = document.getElementById('bizSelect').selectedOptions[0]?.textContent || negocioActual();
   const pm = d.vs_mes_anterior || {}, py = d.vs_anio_anterior || {};
-  const tile = (lbl, val, cls, a, b, suf) => `<div class="mk-tile"><div class="mk-lbl">${lbl}</div><div class="mk-val ${cls || ''}">${val}</div>
-    <div class="mk-cmp"><span>vs prev. month</span>${cambio(a, suf)}</div><div class="mk-cmp"><span>vs last year</span>${cambio(b, suf)}</div></div>`;
+  const mPrev = mesLabel(mesAnterior(d.mes, 1)), mYoy = mesLabel(mesAnterior(d.mes, 12));
+  document.getElementById('mkTitle').textContent = `Market performance — ${mesLabel(d.mes)}${d.fuente ? ' · ' + d.fuente : ''}`;
+
+  const tile = (lbl, val, unidad, a, b, suf, cls) => `<div class="mk-tile ${cls || ''}"><div class="mk-lbl">${lbl}</div>
+    <div class="mk-val">${val} <small>${unidad}</small></div>
+    <div class="mk-cmp"><span>vs ${mPrev}</span>${cambio(a, suf)}</div><div class="mk-cmp"><span>vs ${mYoy}</span>${cambio(b, suf)}</div></div>`;
+  const prem = d.premium_pct;
+  const kpis = [
+    tile(porDestinos ? `Market volume · ${h(negocio)} destinations` : 'Market volume', fmtT(d.ton_mercado), 't', pm.ton_mercado, py.ton_mercado),
+    porDestinos ? '' : tile(`${h(quien)} volume`, fmtT(d.ton_propias), 't', pm.ton_propias, py.ton_propias),
+    porDestinos ? '' : tile('Market share', fmtS(d.market_share_pct), '%', pm.market_share_pts, py.market_share_pts, ' pts', 'ms'),
+    tile('Market yield', d.tarifa_mercado == null ? '—' : Number(d.tarifa_mercado).toFixed(2), 'USD/kg', pm.tarifa_mercado, py.tarifa_mercado),
+    porDestinos ? '' : `<div class="mk-tile"><div class="mk-lbl">${h(quien)} yield vs market</div>
+      <div class="mk-val">${prem == null ? '—' : (prem > 0 ? '+' : '') + prem.toFixed(1)} <small>%</small></div>
+      <div class="mk-cmp"><span>${h(quien)} yield</span><b>${d.tarifa_propia == null ? '—' : Number(d.tarifa_propia).toFixed(2) + ' USD/kg'}</b></div>
+      <div class="mk-cmp"><span>vs ${mPrev}</span>${cambio(pm.premium_pts, ' pts', 1)}</div></div>`,
+  ].join('');
   const s = d.semana;
-  body.innerHTML = `
-    <div class="mk-grid">
-      ${tile('Market size (tons)', fmtT(d.ton_mercado), '', pm.ton_mercado, py.ton_mercado)}
-      ${tile('Our tons (in market data)', fmtT(d.ton_propias), '', pm.ton_propias, py.ton_propias)}
-      ${tile('Market share', Number(d.market_share_pct || 0).toFixed(2) + '%', 'ms', pm.market_share_pts, py.market_share_pts, ' pts')}
-      ${tile('Market rate ($/kg)', fmtR(d.tarifa_mercado), '', pm.tarifa_mercado, py.tarifa_mercado)}
-    </div>
-    ${s ? `<div class="mk-week"><b>Last week</b> (${h(s.desde)} – ${h(s.hasta)}): market ${fmtT(s.ton_mercado)} t · ours ${fmtT(s.ton_propias)} t · share <b>${Number(s.market_share_pct || 0).toFixed(2)}%</b> ${cambio((s.vs_semana_anterior || {}).market_share_pts, ' pts')} vs previous week</div>`
-         : `<div class="mk-week">This database is monthly${d.fuente ? ` (${h(d.fuente)})` : ''}, so the market is shown for the latest month loaded; the weekly view needs a daily source (Isidora, Peru).</div>`}
-    <div class="mk-foot"><div class="mk-chart"><canvas id="mkChart"></canvas></div></div>`;
-  dibujarSerie(d.serie || []);
+  const semana = s && !porDestinos ? `<div class="mk-week"><b>Last week</b> (${h(s.desde)} – ${h(s.hasta)}): market ${fmtT(s.ton_mercado)} t · ${h(quien)} ${fmtT(s.ton_propias)} t · share <b>${fmtS(s.market_share_pct)}%</b> ${cambio((s.vs_semana_anterior || {}).market_share_pts, ' pts')} vs previous week</div>` : '';
+
+  // Pareto
+  const td = d.top_destinos || [];
+  const acum = td.length ? td[td.length - 1].pct_acumulado : 0;
+  const filas = td.map(r => {
+    const flag = porDestinos ? '' : r.ton_propias <= 0 ? '<span class="flag">Gap</span>' : (r.indice || 0) >= 150 ? '<span class="flag ok">Strong</span>' : '';
+    return `<tr><td><b>${h(r.destino)}</b></td><td>${fmtT(r.ton_mercado)}</td><td>${r.pct_del_mercado.toFixed(1)}</td><td>${r.pct_acumulado.toFixed(1)}</td>
+      ${porDestinos ? '' : `<td>${fmtT(r.ton_propias)}</td><td>${fmtS(r.market_share_pct)}%</td><td>${r.indice == null ? '—' : r.indice}</td><td>${flag}</td>`}</tr>`;
+  }).join('');
+  const gaps = td.filter(r => r.ton_propias <= 0);
+  const top = [...td].sort((a, b) => b.ton_propias - a.ton_propias)[0];
+  let insPareto = '';
+  if (!porDestinos && td.length) {
+    const partes = [];
+    if (gaps.length) partes.push(`${gaps.length} of the top ${td.length} destinations (${gaps.map(g => h(g.destino)).join(', ')} = ${gaps.reduce((a, g) => a + g.pct_del_mercado, 0).toFixed(1)}% of market volume) have zero ${h(quien)} volume.`);
+    if (top && top.ton_propias > 0 && d.ton_propias && top.ton_propias / d.ton_propias >= 0.2) partes.push(`${h(top.destino)} concentrates ${(top.ton_propias / d.ton_propias * 100).toFixed(0)}% of ${h(quien)} tons.`);
+    if (partes.length) insPareto = `<div class="mk-ins">${partes.join(' ')}</div>`;
+  }
+  const pareto = `<div class="mk-panel"><div class="mk-ph"><span class="mk-pt">Pareto — market volume by destination</span><span class="mk-ps">Top ${td.length} = ${acum.toFixed(1)}% of market</span></div>
+    <div class="mk-chart"><canvas id="mkPareto"></canvas></div>
+    <table class="mk-tbl"><tr><th>Dest.</th><th>Market t</th><th>% mkt</th><th>Cum. %</th>${porDestinos ? '' : '<th>Own t</th><th>Share</th><th>Index</th><th></th>'}</tr>${filas}</table>${insPareto}</div>`;
+
+  // Varianza del market share (mes anterior → último mes)
+  const v = d.varianza;
+  let bridge = '';
+  if (!porDestinos && v) {
+    // con efectos de distinto signo el "% del cambio" daría -41% / 141%: no se muestra
+    const pctDe = x => v.total && v.efecto_mercado * v.efecto_volumen >= 0 ? Math.round(x / v.total * 100) + '%' : '—';
+    const signo = v.total < 0 ? 'loss' : 'gain';
+    const domina = Math.abs(v.efecto_volumen) >= Math.abs(v.efecto_mercado);
+    const mov = v.var_mercado_pct == null ? 'changed' : v.var_mercado_pct >= 0 ? `grew ${v.var_mercado_pct.toFixed(1)}%` : `shrank ${Math.abs(v.var_mercado_pct).toFixed(1)}%`;
+    const movOwn = v.var_propias_pct == null ? 'changed' : v.var_propias_pct >= 0 ? `grew ${v.var_propias_pct.toFixed(1)}%` : `fell ${Math.abs(v.var_propias_pct).toFixed(1)}%`;
+    // efectos de distinto signo: se explica la compensación en vez de un "% del cambio" > 100%
+    const opuestos = v.efecto_mercado * v.efecto_volumen < 0;
+    const insVar = !v.total ? '' : opuestos
+      ? `The market ${mov}, which alone would have moved share ${fmtPts(v.efecto_mercado)} pts; ${h(quien)} volume ${movOwn} (${fmtPts(v.efecto_volumen)} pts). Net: ${fmtPts(v.total)} pts — the change is driven by ${domina ? `${h(quien)}'s own volume` : 'the market size'}.`
+      : `${pctDe(domina ? v.efecto_volumen : v.efecto_mercado)} of the share ${signo} is explained by ${domina ? `${h(quien)}'s own volume` : 'the market size'}, not by ${domina ? 'the market' : `${h(quien)}'s volume`}.`;
+    bridge = `<div class="mk-panel"><div class="mk-ph"><span class="mk-pt">Market share variance — ${mPrev} → ${mesLabel(d.mes)}</span><span class="mk-ps">pts</span></div>
+      <div class="mk-chart"><canvas id="mkBridge"></canvas></div>
+      <table class="mk-tbl"><tr><th>Driver</th><th>Δ pts</th><th>% of Δ</th></tr>
+        <tr><td>Market ${v.var_mercado_pct == null ? '' : (v.var_mercado_pct >= 0 ? 'grew +' : 'fell ') + v.var_mercado_pct.toFixed(1) + '%'} (${v.efecto_mercado <= 0 ? 'dilution' : 'concentration'})</td><td class="${v.efecto_mercado < 0 ? 'dn' : 'up'}">${fmtPts(v.efecto_mercado)}</td><td>${pctDe(v.efecto_mercado)}</td></tr>
+        <tr><td>${h(quien)} volume ${v.delta_ton_propias >= 0 ? '+' : ''}${fmtT(v.delta_ton_propias)} t${v.var_propias_pct == null ? '' : ` (${v.var_propias_pct >= 0 ? '+' : ''}${v.var_propias_pct.toFixed(1)}%)`}</td><td class="${v.efecto_volumen < 0 ? 'dn' : 'up'}">${fmtPts(v.efecto_volumen)}</td><td>${pctDe(v.efecto_volumen)}</td></tr>
+        <tr><td><b>Total change</b></td><td class="${v.total < 0 ? 'dn' : 'up'}"><b>${fmtPts(v.total)}</b></td><td><b>100%</b></td></tr></table>
+      ${insVar ? `<div class="mk-ins">${insVar}</div>` : ''}</div>`;
+  } else if (porDestinos) {
+    bridge = `<div class="mk-panel"><div class="mk-ph"><span class="mk-pt">Own numbers</span></div><div style="font-size:10.5px;color:var(--text2);line-height:1.5;">This market is filtered to ${h(negocio)}'s destinations. The own column of this database belongs to another airline, so share, variance and control chart are not shown. ${h(negocio)}'s own tons are the company KPIs at the top of the page.</div></div>`;
+  }
+
+  body.innerHTML = `<div class="mk-kpis" style="grid-template-columns:repeat(${porDestinos ? 2 : 5},minmax(0,1fr));">${kpis}</div>${semana}
+    <div class="mk-g2">${pareto}${bridge}</div>
+    <div class="mk-def">Market share = own chargeable tons ÷ total market tons in the selected source. Yield = total charges ÷ chargeable kg.
+    Variance: market effect = prior own tons × (1/M<sub>now</sub> − 1/M<sub>prior</sub>); volume effect = Δ own tons ÷ M<sub>now</sub> (they add up to the total change).
+    Index = destination share ÷ total share × 100 (100 = same as our average; Strong ≥ 150). Control limits = mean ± 2σ of the 12 months before the latest one.</div>`;
+
+  dibujarPareto(td);
+  if (v && !porDestinos) dibujarBridge(v, mPrev, mesLabel(d.mes));
+  dibujarControl(d, porDestinos, quien);
 }
 
-function dibujarSerie(serie) {
-  if (MK.chart) { MK.chart.destroy(); MK.chart = null; }
-  const c = document.getElementById('mkChart');
-  if (!c || !serie.length || typeof Chart === 'undefined') return;
-  MK.chart = new Chart(c, {
-    type: 'bar',
-    data: { labels: serie.map(s => mesLabel(s.mes)), datasets: [
-      { type: 'line', label: 'Market share %', data: serie.map(s => s.market_share_pct), borderColor: '#1a56db', backgroundColor: '#1a56db', yAxisID: 'y1', tension: 0.25, pointRadius: 2, order: 1 },
-      { type: 'bar', label: 'Market tons', data: serie.map(s => s.ton_mercado), backgroundColor: '#c9d6ea', yAxisID: 'y', order: 2 },
+function dibujarPareto(td) {
+  const c = document.getElementById('mkPareto');
+  if (!c || !td.length || typeof Chart === 'undefined') return;
+  // sin barra "Other": en mercados muy repartidos (USA) taparía al resto
+  const labels = td.map(r => r.destino);
+  const pct = td.map(r => r.pct_del_mercado);
+  const cum = td.map(r => r.pct_acumulado);
+  MK.charts.pareto = new Chart(c, {
+    data: { labels, datasets: [
+      { type: 'line', label: 'Cumulative %', data: cum, borderColor: '#1a56db', backgroundColor: '#1a56db', yAxisID: 'y1', pointRadius: 2, borderWidth: 1.6, order: 1 },
+      { type: 'line', label: '80%', data: labels.map(() => 80), borderColor: '#c2410c', borderDash: [3, 3], borderWidth: 0.8, pointRadius: 0, yAxisID: 'y1', order: 2 },
+      { type: 'bar', label: '% of market', data: pct, backgroundColor: '#c9d6ea', yAxisID: 'y', order: 3 },
     ] },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 9, font: { size: 9 } } },
-        tooltip: { callbacks: { label: (ctx) => ctx.dataset.yAxisID === 'y1' ? ` Market share: ${Number(ctx.raw).toFixed(2)}%` : ` Market: ${fmtT(ctx.raw)} t` } } },
-      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } },
-        y: { ticks: { font: { size: 9 }, callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v } },
-        y1: { position: 'right', grid: { display: false }, ticks: { font: { size: 9 }, callback: v => v + '%' } } } }
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${Number(ctx.raw).toFixed(1)}%` } } },
+      scales: { x: { ...AXIS, grid: { display: false } },
+        y: { ...AXIS, beginAtZero: true, ticks: { ...AXIS.ticks, callback: v => v + '%' } },
+        y1: { ...AXIS, position: 'right', min: 0, max: Math.max(100, ...cum), grid: { display: false }, ticks: { ...AXIS.ticks, callback: v => v + '%' } } } }
   });
 }
 
-// ── Minuta: notas por negocio ──
+function dibujarBridge(v, mPrev, mNow) {
+  const c = document.getElementById('mkBridge');
+  if (!c || typeof Chart === 'undefined') return;
+  const a = v.share_antes, b = a + v.efecto_mercado, f = v.share_ahora;
+  // el eje no parte en 0 para que se vean los efectos (se avisa en el eje)
+  const lo = Math.min(a, b, f), hi = Math.max(a, b, f);
+  const pad = Math.max((hi - lo) * 0.6, hi * 0.02);
+  const min = Math.max(0, lo - pad);
+  const color = x => x < 0 ? '#c2410c' : '#15803d';
+  MK.charts.bridge = new Chart(c, {
+    type: 'bar',
+    data: { labels: [`${mPrev} share`, 'Market size', 'Own volume', `${mNow} share`],
+      datasets: [{ data: [[min, a], [Math.min(a, b), Math.max(a, b)], [Math.min(b, f), Math.max(b, f)], [min, f]],
+        backgroundColor: ['#c9d6ea', color(v.efecto_mercado) + 'aa', color(v.efecto_volumen), '#1a56db'], barPercentage: 0.6 }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => {
+        const i = ctx.dataIndex;
+        return i === 0 ? ` ${fmtS(a)}%` : i === 3 ? ` ${fmtS(f)}%` : ` ${fmtPts(i === 1 ? v.efecto_mercado : v.efecto_volumen)} pts`;
+      } } } },
+      scales: { x: { ...AXIS, grid: { display: false } },
+        y: { ...AXIS, min, max: hi + pad * 0.5, title: { display: min > 0, text: `axis from ${fmtS(min)}%`, font: { size: 8 }, color: '#8896aa' },
+          ticks: { ...AXIS.ticks, callback: x => fmtS(x) + '%' } } } }
+  });
+}
+
+function dibujarControl(d, porDestinos, quien) {
+  const cc = document.getElementById('ccBody');
+  const k = d.control, serie = d.serie || [];
+  if (porDestinos) { cc.innerHTML = '<div class="mk-msg">Not shown: this market is filtered by destinations and has no own share.</div>'; return; }
+  if (!k || serie.length < 4) { cc.innerHTML = '<div class="mk-msg">Not enough months in this database for a control chart (needs at least 4).</div>'; return; }
+  const ult = serie[serie.length - 1].market_share_pct;
+  const estado = k.estado === 'below' ? `<b class="dn">below the lower control limit</b> (special cause: worth reviewing)`
+    : k.estado === 'above' ? `<b class="up">above the upper control limit</b> (special cause: worth reviewing)`
+    : 'within the control limits (normal variation)';
+  const mm = k.mm3[k.mm3.length - 1];
+  cc.innerHTML = `<div class="mk-chart" style="height:170px;"><canvas id="mkControl"></canvas></div>
+    <div class="mk-ins">${mesLabel(d.mes)}: ${fmtS(ult)}% is ${estado}${k.minimo ? `, and the lowest share in ${k.n_meses} months` : ''}.
+    ${mm != null ? `3-month average ${fmtS(mm)}% (${ult < mm ? 'latest month below the trend' : 'latest month above the trend'}).` : ''}
+    Mean ${fmtS(k.media)}% · σ ${fmtS(k.sigma)} · UCL ${fmtS(k.ucl)}% · LCL ${fmtS(k.lcl)}%.</div>`;
+  const c = document.getElementById('mkControl');
+  if (!c || typeof Chart === 'undefined') return;
+  const n = serie.length, linea = (val) => Array(n).fill(val);
+  const ref = { borderColor: '#8896aa', borderWidth: 0.8, pointRadius: 0, fill: false };
+  MK.charts.control = new Chart(c, {
+    type: 'line',
+    data: { labels: serie.map(x => mesLabel(x.mes, true)), datasets: [
+      { label: `${quien} share %`, data: serie.map(x => x.market_share_pct), borderColor: '#1a56db', borderWidth: 1.8, tension: 0,
+        pointRadius: serie.map((x, i) => i === n - 1 ? 4 : 2),
+        pointBackgroundColor: serie.map((x, i) => i === n - 1 && k.estado !== 'within' ? '#c2410c' : '#1a56db') },
+      { label: '3-month MA', data: k.mm3, borderColor: '#8896aa', borderDash: [3, 2], borderWidth: 1.2, pointRadius: 0, spanGaps: false },
+      { label: 'UCL', data: linea(k.ucl), ...ref, borderDash: [4, 3] },
+      { label: 'Mean', data: linea(k.media), ...ref },
+      { label: 'LCL', data: linea(k.lcl), ...ref, borderDash: [4, 3] },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 9, font: { size: 8.5 }, filter: it => it.datasetIndex < 2 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmtS(ctx.raw)}%` } } },
+      scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, ticks: { ...AXIS.ticks, callback: x => fmtS(x) + '%' } } } }
+  });
+}
+
+// ── Registro de acciones de la reunión, por negocio ──
 async function loadNotes() {
   const seq = ++MK.notasSeq;
   const biz = negocioActual();
@@ -1575,25 +1771,29 @@ async function loadNotes() {
   const todas = document.getElementById('ntShowAll').checked;
   let notas;
   try { notas = await md(`/api/reunion/notas?negocio=${encodeURIComponent(biz)}&todas=${todas}`, ''); }
-  catch (e) { if (seq === MK.notasSeq) lista.innerHTML = `<div class="mk-msg">Could not load notes: ${h(e.message)}</div>`; return; }
+  catch (e) { if (seq === MK.notasSeq) lista.innerHTML = `<div class="mk-msg">Could not load actions: ${h(e.message)}</div>`; return; }
   if (seq !== MK.notasSeq) return;
-  const activas = notas.filter(n => !n.desechada_en).length;
-  document.getElementById('ntCount').textContent = `${activas} open note${activas === 1 ? '' : 's'}`;
-  if (!notas.length) { lista.innerHTML = '<div class="mk-msg">No notes yet for this business. Notes you add stay here for the next meeting until you discard them.</div>'; return; }
-  const hoy = new Date().toDateString();
-  let dia = '';
-  lista.innerHTML = notas.map(n => {
-    const f = new Date(n.creada_en);
-    const d = f.toDateString() === hoy ? 'Today' : f.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    const cab = d !== dia ? `<div class="nt-day">${h(d === 'Today' ? 'Today' : 'Meeting of ' + d)}</div>` : '';
-    dia = d;
-    const off = !!n.desechada_en;
-    return `${cab}<div class="nt-item ${off ? 'off' : ''}">
-      <div style="flex:1;min-width:0;"><div class="nt-text">${h(n.texto)}</div>
-        <div class="nt-meta">${h(n.autor_nombre || n.autor)} · ${f.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}${off ? ' · discarded' : ''}</div></div>
-      <button class="nt-btn" onclick="discardNote('${h(n.id)}', ${off})">${off ? 'Restore' : 'Discard'}</button>
-    </div>`;
-  }).join('');
+  const vivas = notas.filter(n => !n.desechada_en);
+  const abiertas = vivas.filter(n => (n.estado || 'open') === 'open').length;
+  document.getElementById('ntCount').textContent = `${abiertas} open · ${vivas.length - abiertas} closed`;
+  if (!notas.length) { lista.innerHTML = '<div class="mk-msg">No actions yet for this business. What you add stays here for the next meeting until you discard it.</div>'; return; }
+  const hoy = new Date().toISOString().slice(0, 10);
+  // abiertas primero, después por número (más reciente arriba)
+  const orden = [...notas].sort((a, b) => ((a.estado || 'open') === 'closed') - ((b.estado || 'open') === 'closed') || (b.num || 0) - (a.num || 0) || (b.creada_en || '').localeCompare(a.creada_en || ''));
+  const fecha = f => new Date(f + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+  lista.innerHTML = `<table class="mk-tbl"><tr><th>#</th><th class="l">Action</th><th class="l">Owner</th><th>Due</th><th>Status</th><th></th></tr>
+    ${orden.map(n => {
+      const off = !!n.desechada_en, cerrada = (n.estado || 'open') === 'closed';
+      const atrasada = !cerrada && n.fecha_limite && n.fecha_limite < hoy;
+      const creada = new Date(n.creada_en).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `<tr class="${off ? 'off' : ''}" title="Added by ${h(n.autor_nombre || n.autor)} on ${h(creada)}${off ? ' · discarded' : ''}">
+        <td>${n.num ? String(n.num).padStart(2, '0') : '—'}</td>
+        <td class="l txt">${h(n.texto)}</td>
+        <td class="l">${h(n.responsable || '—')}</td>
+        <td>${n.fecha_limite ? h(fecha(n.fecha_limite)) : '—'}</td>
+        <td><span class="flag ${cerrada ? 'cl' : atrasada ? 'late' : 'op'}" style="cursor:pointer" onclick="setNoteStatus('${h(n.id)}', '${cerrada ? 'open' : 'closed'}')">${cerrada ? 'Closed' : atrasada ? 'Overdue' : 'Open'}</span></td>
+        <td><button class="nt-x" title="${off ? 'Restore' : 'Discard (stays saved in the cloud)'}" onclick="discardNote('${h(n.id)}', ${off})">${off ? '↺' : '✕'}</button></td></tr>`;
+    }).join('')}</table>`;
 }
 
 async function addNote() {
@@ -1603,16 +1803,22 @@ async function addNote() {
   const btn = document.getElementById('ntAddBtn');
   btn.disabled = true;
   try {
-    await md('/api/reunion/notas', '', { method: 'POST', body: JSON.stringify({ negocio: negocioActual(), texto }) });
-    ta.value = '';
+    await md('/api/reunion/notas', '', { method: 'POST', body: JSON.stringify({ negocio: negocioActual(), texto,
+      responsable: document.getElementById('ntOwner').value.trim() || null, fecha_limite: document.getElementById('ntDue').value || null }) });
+    ta.value = ''; document.getElementById('ntOwner').value = ''; document.getElementById('ntDue').value = '';
     await loadNotes();
-  } catch (e) { alert('Could not save the note: ' + e.message); }
+  } catch (e) { alert('Could not save the action: ' + e.message); }
   finally { btn.disabled = false; }
+}
+
+async function setNoteStatus(id, estado) {
+  try { await md(`/api/reunion/notas/${encodeURIComponent(id)}/estado?estado=${estado}`, '', { method: 'POST' }); await loadNotes(); }
+  catch (e) { alert('Could not update the action: ' + e.message); }
 }
 
 async function discardNote(id, restaurar) {
   try { await md(`/api/reunion/notas/${encodeURIComponent(id)}/desechar?restaurar=${!!restaurar}`, '', { method: 'POST' }); await loadNotes(); }
-  catch (e) { alert('Could not update the note: ' + e.message); }
+  catch (e) { alert('Could not update the action: ' + e.message); }
 }
 
 // al cambiar de negocio: además de lo que ya hacía el Dashboard, cambia la base de mercado sugerida y las notas

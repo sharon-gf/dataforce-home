@@ -10,7 +10,8 @@
   const DEFAULT_APP_LOGO_URL = SCRIPT_URL ? new URL("app-logo.png", SCRIPT_URL).href : "app-logo.png";
   const MODULES = [
     { key: "dashboard", label: "Dashboard", href: "https://dataforce.gsaforce.com/dashboard/" },
-    { key: "dashboard", label: "Dashboard 2.0", href: "https://dataforce.gsaforce.com/dashboard-v2/" },
+    // 23 oct, cony: Dashboard 2.0 en prueba — solo lo ve ella (onlyEmails)
+    { key: "dashboard", label: "Dashboard 2.0", href: "https://dataforce.gsaforce.com/dashboard-v2/", onlyEmails: ["crobles@gsaforce.com"] },
     // 17 sep, cony: Market Data no estaba en esta lista, por eso no aparecía
     // en el menú hamburguesa del resto de la app (Dashboard, Flown, etc.) —
     // solo tenía un card en la home. Se agrega acá para que aparezca igual
@@ -113,6 +114,14 @@
   }
 
   function permittedModules() {
+    return permittedByRole().filter((module) => {
+      if (!module.onlyEmails) return true;
+      const email = String(readUser().email || "").toLowerCase();
+      return module.onlyEmails.includes(email);
+    });
+  }
+
+  function permittedByRole() {
     const permissions = readPermissions();
     const modules = permissions && Array.isArray(permissions.modules) ? permissions.modules : null;
     if (!modules) return MODULES.filter((module) => !["admin", "mkt_data_review"].includes(module.key));

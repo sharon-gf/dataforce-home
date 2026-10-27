@@ -107,7 +107,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-desc { font-size:11px; color:var(--text3); line-height:1.5; }
 .card-arrow { position:absolute; bottom:14px; right:14px; width:22px; height:22px; border-radius:50%; background:var(--card-icon-bg,#eef3fb); display:flex; align-items:center; justify-content:center; }
 .card-arrow svg { width:11px; height:11px; }
-.card-dashboard { --card-accent:#1a56db; --card-icon-bg:#eef3fb; }
+.card-dashboard, .card-dashboard-v2 { --card-accent:#1a56db; --card-icon-bg:#eef3fb; }
 .card-my-bookings { --card-accent:#0f766e; --card-icon-bg:#e6f5f3; }
 .card-sales-performance { --card-accent:#1a56db; --card-icon-bg:#e8efff; }
 .card-sales-tasks { --card-accent:#1a3360; --card-icon-bg:#edf1f7; }
@@ -193,6 +193,14 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
       <a class="card card-dashboard" href="https://dataforce.gsaforce.com/dashboard/">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/></svg></div>
         <div><div class="card-name">Dashboard</div><div class="card-desc">KPIs, revenue charts and GSA performance overview</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+
+      <!-- 23 oct, cony: Dashboard 2.0 (../dashboard-v2), con mercado, market
+           share y minuta — en prueba, solo la ve ella (ver DASHBOARD_V2_EMAILS) -->
+      <a class="card card-dashboard-v2" href="https://dataforce.gsaforce.com/dashboard-v2/" style="display:none;">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><circle cx="19" cy="8" r="1.5"/></svg></div>
+        <div><div class="card-name">Dashboard 2.0</div><div class="card-desc">Our KPIs next to market size and market share, with meeting notes</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
 
@@ -478,6 +486,12 @@ async function applyModulePermissions() {
         const els = document.querySelectorAll(selector);
         els.forEach(el => el.style.display = 'block');
       }
+    });
+
+    // 23 oct, cony: Dashboard 2.0 en prueba — solo para estos correos
+    const DASHBOARD_V2_EMAILS = ['crobles@gsaforce.com'];
+    document.querySelectorAll('.card-dashboard-v2').forEach(el => {
+      el.style.display = DASHBOARD_V2_EMAILS.includes(String(currentUserEmail || '').toLowerCase()) ? 'block' : 'none';
     });
     
     // If no modules allowed, show message
