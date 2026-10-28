@@ -330,9 +330,10 @@ main {
    de MERCADO (tamaño de mercado y market share, desde Market Data) y la
    MINUTA de la reunión (notas por negocio, guardadas en la nube). */
 main { overflow-y:auto; }
-.v2-cols { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(360px,1fr); gap:10px; align-items:start; flex-shrink:0; margin-bottom:10px; }
+.v2-cols { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(360px,1fr); gap:10px; align-items:stretch; flex-shrink:0; margin-bottom:10px; }
 .v2-left, .v2-right { min-width:0; display:flex; flex-direction:column; }
-.v2-left .bottom-row { margin-bottom:0; }
+.v2-left .bottom-row { margin-bottom:0; flex:1; }
+.v2-right > .card { flex:1; }
 .v2-sel { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#fff; font-family:'Inter',sans-serif; font-size:10px; padding:2px 6px; border-radius:4px; max-width:260px; }
 .v2-sel option, .v2-sel optgroup { background:#0d1f3c; color:#fff; }
 .mk-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:8px 10px 4px; }
@@ -357,7 +358,8 @@ main { overflow-y:auto; }
 .mk-ph { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
 .mk-pt { font-size:10px; font-weight:600; color:var(--text1); }
 .mk-ps { font-size:9px; color:var(--text3); }
-.mk-chart { position:relative; height:150px; }
+.mk-chart { position:relative; height:130px; }
+.mk-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:4px; }
 .mk-tbl { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; margin-top:4px; }
 .mk-tbl th { font-size:8px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); font-weight:500; text-align:right; padding:3px 4px; border-bottom:1px solid var(--border); }
 .mk-tbl td { font-size:10px; text-align:right; padding:3px 4px; border-bottom:1px solid #f0f2f6; color:var(--text1); }
@@ -1660,18 +1662,21 @@ async function loadMarket() {
   const semana = s && !porDestinos ? `<div class="mk-week"><b>Last week</b> (${h(s.desde)} – ${h(s.hasta)}): share <b>${fmtS(s.market_share_pct)}%</b> ${cambio((s.vs_semana_anterior || {}).market_share_pts, ' pts')} vs previous week</div>` : '';
 
   const base = serie.length ? mesLabel(serie[0].mes) : '';
-  const bloques = [
-    porDestinos
-      ? `<div class="mk-blk"><div class="mk-h">Market volume — last ${n} months</div><div class="mk-hs">Tons per month</div><div class="mk-chart"><canvas id="mkTrend"></canvas></div></div>`
-      : `<div class="mk-blk"><div class="mk-h">${h(quien)} vs rest of the market</div><div class="mk-hs">Volume index, ${h(base)} = 100 · if the grey line rises and the blue one doesn't, we are losing ground</div>
-         <div class="mk-chart"><canvas id="mkTrend"></canvas></div>
-         <div class="mk-leg"><span><i style="background:${C_OWN}"></i>${h(quien)}</span><span><i style="background:${C_MKT}"></i>Rest of market</span></div></div>`,
-    porDestinos || !k ? '' : `<div class="mk-blk"><div class="mk-h">Market share — last ${n} months</div><div class="mk-hs">Shaded band = normal range (12 months before the latest) · red point = outside the range</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`,
-    td.length ? `<div class="mk-blk"><div class="mk-h">Top ${td.length} destinations — ${mesLabel(d.mes)}</div><div class="mk-hs">Market tons${porDestinos ? '' : ` · <span style="color:${C_GAP}">orange = no ${h(quien)} volume</span>`}</div><div class="mk-chart" style="height:${Math.max(150, td.length * 19)}px;"><canvas id="mkDest"></canvas></div></div>` : '',
-  ].join('');
+  // los dos gráficos de línea lado a lado, así la columna del mercado mide
+  // más o menos lo mismo que la de Sharon
+  const tendencia = porDestinos
+    ? `<div class="mk-blk"><div class="mk-h">Market volume — last ${n} months</div><div class="mk-hs">Tons per month</div><div class="mk-chart"><canvas id="mkTrend"></canvas></div></div>`
+    : `<div class="mk-blk"><div class="mk-h">${h(quien)} vs rest of the market</div><div class="mk-hs">Volume index, ${h(base)} = 100</div>
+       <div class="mk-chart"><canvas id="mkTrend"></canvas></div>
+       <div class="mk-leg"><span><i style="background:${C_OWN}"></i>${h(quien)}</span><span><i style="background:${C_MKT}"></i>Rest of market</span></div></div>`;
+  const share = porDestinos || !k ? '' : `<div class="mk-blk"><div class="mk-h">Market share — last ${n} months</div><div class="mk-hs">Band = normal range · red = outside</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`;
+  const destinos = td.length ? `<div class="mk-blk"><div class="mk-h">Top ${td.length} destinations — ${mesLabel(d.mes)}</div><div class="mk-hs">Market tons${porDestinos ? '' : ` · <span style="color:${C_GAP}">orange = no ${h(quien)} volume</span>`}</div><div class="mk-chart" style="height:${share ? 140 : 130}px;"><canvas id="mkDest"></canvas></div></div>` : '';
+  const bloques = share
+    ? `<div class="mk-pair">${tendencia}${share}</div>${destinos}`
+    : `<div class="mk-pair">${tendencia}${destinos}</div>`;
 
-  body.innerHTML = `${resumen}<div class="mk-kpis">${kpis.join('')}</div>${semana}${bloques}
-    <div class="mk-def">Market share = own chargeable tons ÷ market tons. Rest of market = market − own. Yield = charges ÷ chargeable kg.</div>`;
+  body.innerHTML = `${resumen}<div class="mk-kpis">${kpis.join('')}</div>${semana}${bloques}`;
+  document.getElementById('mkTitle').title = 'Market share = own chargeable tons ÷ market tons. Rest of market = market − own. Yield = charges ÷ chargeable kg.';
 
   dibujarTendencia(serie, porDestinos, quien);
   if (!porDestinos && k) dibujarShare(serie, k, quien);
