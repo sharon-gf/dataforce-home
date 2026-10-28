@@ -209,8 +209,7 @@
   .multi-search-wrap { position:sticky; top:-4px; background:#fff; padding:4px 0 6px; z-index:1; }
   .multi-search { width:100%; min-width:0; }
   .multi-option[hidden], .multi-empty[hidden] { display:none; }
-  .multi-empty { padding:8px 6px; color:var(--text2); }
-  .multi-option:hover { background:#eaf0fb; }
+  .multi-empty { padding:8px 6px; color:var(--text2); }  .multi-option:hover { background:#eaf0fb; }
   .multi-option input {
     width:14px;
     height:14px;
@@ -789,6 +788,16 @@ function renderMultiFilter(root, options) {
   search.addEventListener("input", () => {
     root.dataset.search = search.value;
     filterMultiOptions(root);
+    // Oct 2026 (cony): while searching, "All" shows unchecked so the next
+    // click picks only that airport (see the change handler below). Nothing
+    // is reloaded until an airport is picked; clearing the search restores it.
+    const current = normalizedMultiValues(root);
+    const wasAll = current.includes("ALL") || (options.length > 0 && options.every(value => current.includes(value)));
+    if (wasAll && search.value.trim()) {
+      menu.querySelectorAll('input[type="checkbox"]').forEach(box => { box.checked = false; });
+    } else if (!search.value.trim()) {
+      updateMultiFilter(root);
+    }
   });
   filterMultiOptions(root);
   if (wasSearching) search.focus();
@@ -797,10 +806,19 @@ function renderMultiFilter(root, options) {
       if (input.value === "ALL") {
         setMultiValues(root, input.checked ? options : []);
       } else {
-        const selected = [...menu.querySelectorAll('input[type="checkbox"]:checked')]
-          .map(item => item.value)
-          .filter(value => value !== "ALL");
-        setMultiValues(root, selected);
+        // Bug fix (Oct 2026): with "All" active every box shows checked, so a
+        // click on one airport UNCHECKED it and the filter became "all but
+        // that one". When the filter was on All, the click keeps only it.
+        const current = normalizedMultiValues(root);
+        const wasAll = current.includes("ALL") || (options.length > 0 && options.every(value => current.includes(value)));
+        if (wasAll) {
+          setMultiValues(root, [input.value]);
+        } else {
+          const selected = [...menu.querySelectorAll('input[type="checkbox"]:checked')]
+            .map(item => item.value)
+            .filter(value => value !== "ALL");
+          setMultiValues(root, selected);
+        }
       }
       loadBookings();
     });
@@ -811,6 +829,7 @@ function renderMultiFilter(root, options) {
 function closeMultiFilters(except = null) {
   document.querySelectorAll(".multi-select.is-open").forEach(root => {
     if (root === except) return;
+    updateMultiFilter(root); // the boxes always match the real filter after closing
     root.classList.remove("is-open");
     root.querySelector(".multi-button").setAttribute("aria-expanded", "false");
   });
@@ -896,6 +915,12 @@ function updateSortHeaders() {
 function renderTable() {
   const totals = filteredTotals();
   els.resultNote.textContent = `${fmt(totals.bookings)} bookings | ${fmt(totals.chw)} kg | $${fullMoney(totals.rev)} rev | ${pkg(totals.pkg)} p/kg`;
+  // the totals cover every booking; past MAX_TABLE_ROWS the table keeps the newest
+  if (Number(totals.bookings) > bookingRows.length) {
+    els.resultNote.textContent += currentData && currentData.onlyOldest
+      ? ` · table shows the first ${fmt(bookingRows.length)} (oldest) — narrow the dates, origin or destination to see the rest`
+      : ` · table shows the newest ${fmt(bookingRows.length)} — narrow the dates, origin or destination to see the rest`;
+  }
   updateSortHeaders();
   if (!bookingRows.length) {
     els.body.innerHTML = '<tr><td colspan="12" class="empty">No bookings match this filter.</td></tr>';
@@ -961,8 +986,25 @@ async function loadBookings() {
     }
     const data = await response.json();
     if (seq !== requestSeq) return;
+    let rows = data.rows || [];
+    // Bug fix (Oct 2026): the API returns at most 500 bookings, oldest
+    // first, so with more than 500 the newest never showed up (e.g. from
+    // Oct 1 you only saw Oct 1-3). The same request is repeated week by
+    // week, newest first, and joined (totals and KPIs stay as they were).
+    if (Number((data.summary || {}).bookings || 0) > rows.length) {
+      setStatus("Loading newest", false);
+      try {
+        const newest = await fetchNewestFirst(params, data.date_from || els.from.value, data.date_to || els.to.value, seq);
+        if (newest === null) return; // a newer search started meanwhile
+        rows = newest;
+      } catch (e) {
+        // if any extra request fails, keep the first 500 exactly as before
+        console.error("Booking Details: could not load the newest bookings, showing the first 500", e);
+        data.onlyOldest = true;
+      }
+    }
     currentData = data;
-    bookingRows = data.rows || [];
+    bookingRows = rows;
     populateBusinessSelect(data.businessOptions || []);
     populateOriginFilter(bookingRows);
     populateDestinationFilter(bookingRows);
@@ -976,6 +1018,47 @@ async function loadBookings() {
     setStatus("Error", false);
     els.body.innerHTML = `<tr><td colspan="12" class="empty">Could not load bookings. ${esc(e.message || "")}</td></tr>`;
   }
+}
+
+const MAX_TABLE_ROWS = 5000; // a full month (~3.700 bookings in Oct 2026) fits
+
+function addDays(iso, n) {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  return isoDate(d);
+}
+
+async function fetchBookingPage(params, from, to) {
+  const p = new URLSearchParams(params);
+  p.set("date_from", from);
+  p.set("date_to", to);
+  const response = await fetch(`${API_BASE}/api/booking_details?${p.toString()}`, { headers: { "x-api-key": API_KEY } });
+  if (!response.ok) throw new Error(`API error ${response.status}`);
+  const data = await response.json();
+  return { rows: data.rows || [], total: Number((data.summary || {}).bookings || 0) };
+}
+
+// Newest week first; a week with more than 500 bookings is asked day by day.
+// Returns null if another search started meanwhile.
+async function fetchNewestFirst(params, from, to, seq) {
+  const out = [];
+  let end = to;
+  while (end >= from && out.length < MAX_TABLE_ROWS) {
+    const start = addDays(end, -6) < from ? from : addDays(end, -6);
+    const week = await fetchBookingPage(params, start, end);
+    if (seq !== requestSeq) return null;
+    if (week.total > week.rows.length && start !== end) {
+      const days = [];
+      for (let day = end; day >= start; day = addDays(day, -1)) days.push(day);
+      const pages = await Promise.all(days.map(day => fetchBookingPage(params, day, day)));
+      if (seq !== requestSeq) return null;
+      pages.forEach(page => out.push(...page.rows.slice().reverse()));
+    } else {
+      out.push(...week.rows.slice().reverse());
+    }
+    end = addDays(start, -1);
+  }
+  return out.slice(0, MAX_TABLE_ROWS);
 }
 
 function debouncedLoad() {
