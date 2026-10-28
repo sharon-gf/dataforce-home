@@ -330,10 +330,12 @@ main {
    de MERCADO (tamaño de mercado y market share, desde Market Data) y la
    MINUTA de la reunión (notas por negocio, guardadas en la nube). */
 main { overflow-y:auto; }
-.v2-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:6px; flex-shrink:0; margin-bottom:10px; }
+.v2-cols { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(360px,1fr); gap:10px; align-items:start; flex-shrink:0; margin-bottom:10px; }
+.v2-left, .v2-right { min-width:0; display:flex; flex-direction:column; }
+.v2-left .bottom-row { margin-bottom:0; }
 .v2-sel { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#fff; font-family:'Inter',sans-serif; font-size:10px; padding:2px 6px; border-radius:4px; max-width:260px; }
 .v2-sel option, .v2-sel optgroup { background:#0d1f3c; color:#fff; }
-.mk-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; padding:8px 10px 4px; }
+.mk-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:8px 10px 4px; }
 .mk-tile { background:var(--surface2); border:1px solid var(--border); border-top:2.5px solid #c9d6ea; border-radius:5px; padding:7px 9px; }
 .mk-tile.ms { border-top-color:var(--blue-lw); }
 .mk-lbl { font-size:8.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); }
@@ -344,7 +346,13 @@ main { overflow-y:auto; }
 .mk-cmp b { font-weight:500; }
 .up { color:var(--up); } .dn { color:var(--down); }
 .mk-week { margin:2px 10px 4px; padding:5px 9px; border-radius:5px; background:#eef3fb; color:var(--text2); font-size:10px; }
-.mk-g2 { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); gap:6px; padding:4px 10px 8px; }
+.mk-sum { margin:8px 10px 2px; padding:7px 10px; background:var(--surface2); border-left:2.5px solid var(--blue-lw); font-size:10.5px; line-height:1.6; color:var(--text1); }
+.mk-sum div { display:flex; gap:6px; } .mk-sum i { font-style:normal; color:var(--text3); }
+.mk-blk { padding:6px 10px 4px; }
+.mk-h { font-size:10px; font-weight:500; color:var(--text1); }
+.mk-hs { font-size:9px; color:var(--text3); margin-bottom:3px; }
+.mk-leg { display:flex; gap:12px; font-size:9px; color:var(--text2); margin-top:2px; }
+.mk-leg span { display:flex; align-items:center; gap:4px; } .mk-leg i { width:12px; height:2px; display:inline-block; }
 .mk-panel { border:1px solid var(--border); border-radius:5px; padding:7px 9px; background:#fff; min-width:0; }
 .mk-ph { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
 .mk-pt { font-size:10px; font-weight:600; color:var(--text1); }
@@ -373,7 +381,7 @@ main { overflow-y:auto; }
 .nt-list tr.off td { opacity:.5; }
 .nt-list td.txt { white-space:pre-wrap; word-break:break-word; }
 .nt-tools { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-top:1px solid var(--border); font-size:10px; color:var(--text3); }
-@media (max-width: 1100px) { .v2-row, .mk-g2 { grid-template-columns:1fr; } .mk-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .nt-add { grid-template-columns:1fr 1fr; } }
+@media (max-width: 1100px) { .v2-cols { grid-template-columns:1fr; } .nt-add { grid-template-columns:1fr 1fr; } }
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
@@ -435,6 +443,10 @@ main { overflow-y:auto; }
 <!-- MAIN -->
 <main>
 
+  <!-- DASHBOARD 2.0 (28 oct, pedido de cony): dos columnas. Izquierda = el
+       Dashboard de Sharon tal cual; derecha = el mercado (Market Data). -->
+  <div class="v2-cols">
+  <div class="v2-left">
   <!-- KPI ROW -->
   <div class="kpi-row">
     <div class="kpi-group">
@@ -534,44 +546,6 @@ main { overflow-y:auto; }
     </div>
   </div>
 
-  <!-- DASHBOARD 2.0: MERCADO + REGISTRO DE ACCIONES -->
-  <div class="sec-lbl">Market performance</div>
-  <div class="card" style="flex-shrink:0;margin-bottom:6px;">
-    <div class="card-hdr">
-      <span class="card-title" id="mkTitle">Market</span>
-      <select class="v2-sel" id="mkSource" aria-label="Market database" onchange="onMarketSourceChange()"></select>
-    </div>
-    <div id="mkBody"><div class="mk-msg">Loading market data…</div></div>
-  </div>
-  <div class="v2-row">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Market share — control chart</span>
-        <span class="card-sub" id="ccSub">mean ± 2σ · 3-month moving average</span>
-      </div>
-      <div id="ccBody" style="padding:8px 10px;"><div class="mk-msg">Loading…</div></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Meeting action log</span>
-        <span class="card-sub" id="ntCount"></span>
-      </div>
-      <div class="nt-body">
-        <div class="nt-add">
-          <input id="ntText" maxlength="2000" placeholder="New action or note…" onkeydown="if(event.key==='Enter')addNote()">
-          <input id="ntOwner" maxlength="60" placeholder="Owner">
-          <input id="ntDue" type="date" title="Due date">
-          <button class="nt-btn primary" id="ntAddBtn" onclick="addNote()">Add</button>
-        </div>
-        <div class="nt-list" id="ntList"><div class="mk-msg">Loading actions…</div></div>
-        <div class="nt-tools">
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="ntShowAll" onchange="loadNotes()"> Show discarded</label>
-          <span>Shared with everyone in this business · click the status to open / close</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- CENTER ROW -->
   <div class="center-row">
 
@@ -645,6 +619,39 @@ main { overflow-y:auto; }
       </div>
     </div>
 
+  </div>
+  </div>
+
+  <div class="v2-right">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title" id="mkTitle">Market</span>
+        <select class="v2-sel" id="mkSource" aria-label="Market database" onchange="onMarketSourceChange()"></select>
+      </div>
+      <div id="mkBody"><div class="mk-msg">Loading market data…</div></div>
+    </div>
+  </div>
+  </div>
+
+  <div class="sec-lbl">Meeting actions</div>
+  <div class="card" style="flex-shrink:0;margin-bottom:10px;">
+    <div class="card-hdr">
+      <span class="card-title">Meeting action log</span>
+      <span class="card-sub" id="ntCount"></span>
+    </div>
+    <div class="nt-body">
+      <div class="nt-add">
+        <input id="ntText" maxlength="2000" placeholder="New action or note…" onkeydown="if(event.key==='Enter')addNote()">
+        <input id="ntOwner" maxlength="60" placeholder="Owner">
+        <input id="ntDue" type="date" title="Due date">
+        <button class="nt-btn primary" id="ntAddBtn" onclick="addNote()">Add</button>
+      </div>
+      <div class="nt-list" id="ntList"><div class="mk-msg">Loading actions…</div></div>
+      <div class="nt-tools">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="ntShowAll" onchange="loadNotes()"> Show discarded</label>
+        <span>Shared with everyone in this business · click the status to open / close</span>
+      </div>
+    </div>
   </div>
 
 </main>
@@ -1570,31 +1577,31 @@ function mesAnterior(m, n) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 function destruirGraficos() {
-  for (const k of ['pareto', 'bridge', 'control']) if (MK.charts[k]) { MK.charts[k].destroy(); MK.charts[k] = null; }
+  for (const k of Object.keys(MK.charts)) if (MK.charts[k]) { MK.charts[k].destroy(); MK.charts[k] = null; }
 }
 MK.charts = {};
 const AXIS = { ticks: { font: { size: 8.5 }, color: '#8896aa' }, grid: { color: '#f0f2f6' } };
+const C_OWN = '#1a56db', C_MKT = '#94a3b8', C_GAP = '#c2410c';
+const pct1 = v => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%';
+const varPct = (a, b) => (a == null || !b) ? null : (a - b) / b * 100;
 
 async function loadMarket() {
   const seq = ++MK.seq;
   const opcion = document.getElementById('mkSource').value;
   const body = document.getElementById('mkBody');
-  const cc = document.getElementById('ccBody');
   destruirGraficos();
   if (!opcion) {
     document.getElementById('mkTitle').textContent = 'Market';
-    body.innerHTML = `<div class="mk-msg">There is no market database for <b>${h(document.getElementById('bizSelect').selectedOptions[0]?.textContent || negocioActual())}</b> yet, so there is no market share to show. You can still pick any database from the list to look at that market (its share will be for that database's own airline).</div>`;
-    cc.innerHTML = '<div class="mk-msg">No market database selected.</div>';
+    body.innerHTML = `<div class="mk-msg">There is no market database for <b>${h(document.getElementById('bizSelect').selectedOptions[0]?.textContent || negocioActual())}</b> yet. You can still pick any database from the list to look at that market.</div>`;
     return;
   }
   body.innerHTML = '<div class="mk-msg">Loading market data… (the first time a database is opened it can take a minute)</div>';
-  cc.innerHTML = '<div class="mk-msg">Loading…</div>';
   let d;
   const destino = opcion.split('|')[2] || '';
   try { d = await md('/api/reunion/mercado' + (destino ? `?aerolinea_destino=${encodeURIComponent(destino)}` : ''), opcion); }
-  catch (e) { if (seq === MK.seq) { body.innerHTML = `<div class="mk-msg">Could not load market data: ${h(e.message)}</div>`; cc.innerHTML = ''; } return; }
+  catch (e) { if (seq === MK.seq) body.innerHTML = `<div class="mk-msg">Could not load market data: ${h(e.message)}</div>`; return; }
   if (seq !== MK.seq) return;
-  if (!d.mes) { body.innerHTML = '<div class="mk-msg">This database has no data yet.</div>'; cc.innerHTML = ''; return; }
+  if (!d.mes) { body.innerHTML = '<div class="mk-msg">This database has no data yet.</div>'; return; }
 
   const quien = d.aerolinea || 'Own';
   // "Destinations X": el mercado es el de esos destinos, pero las toneladas
@@ -1602,165 +1609,128 @@ async function loadMarket() {
   // no se muestran ni se calcula un market share con ellas
   const porDestinos = !!d.destinos_de;
   const negocio = document.getElementById('bizSelect').selectedOptions[0]?.textContent || negocioActual();
-  const pm = d.vs_mes_anterior || {}, py = d.vs_anio_anterior || {};
+  const serie = d.serie || [];
+  const n = serie.length;
   const mPrev = mesLabel(mesAnterior(d.mes, 1)), mYoy = mesLabel(mesAnterior(d.mes, 12));
-  document.getElementById('mkTitle').textContent = `Market performance — ${mesLabel(d.mes)}${d.fuente ? ' · ' + d.fuente : ''}`;
+  document.getElementById('mkTitle').textContent = `Market — ${mesLabel(d.mes)}${d.fuente ? ' · ' + d.fuente : ''}`;
 
-  const tile = (lbl, val, unidad, a, b, suf, cls) => `<div class="mk-tile ${cls || ''}"><div class="mk-lbl">${lbl}</div>
-    <div class="mk-val">${val} <small>${unidad}</small></div>
-    <div class="mk-cmp"><span>vs ${mPrev}</span>${cambio(a, suf)}</div><div class="mk-cmp"><span>vs ${mYoy}</span>${cambio(b, suf)}</div></div>`;
-  const prem = d.premium_pct;
-  const kpis = [
-    tile(porDestinos ? `Market volume · ${h(negocio)} destinations` : 'Market volume', fmtT(d.ton_mercado), 't', pm.ton_mercado, py.ton_mercado),
-    porDestinos ? '' : tile(`${h(quien)} volume`, fmtT(d.ton_propias), 't', pm.ton_propias, py.ton_propias),
-    porDestinos ? '' : tile('Market share', fmtS(d.market_share_pct), '%', pm.market_share_pts, py.market_share_pts, ' pts', 'ms'),
-    tile('Market yield', d.tarifa_mercado == null ? '—' : Number(d.tarifa_mercado).toFixed(2), 'USD/kg', pm.tarifa_mercado, py.tarifa_mercado),
-    porDestinos ? '' : `<div class="mk-tile"><div class="mk-lbl">${h(quien)} yield vs market</div>
-      <div class="mk-val">${prem == null ? '—' : (prem > 0 ? '+' : '') + prem.toFixed(1)} <small>%</small></div>
-      <div class="mk-cmp"><span>${h(quien)} yield</span><b>${d.tarifa_propia == null ? '—' : Number(d.tarifa_propia).toFixed(2) + ' USD/kg'}</b></div>
-      <div class="mk-cmp"><span>vs ${mPrev}</span>${cambio(pm.premium_pts, ' pts', 1)}</div></div>`,
-  ].join('');
-  const s = d.semana;
-  const semana = s && !porDestinos ? `<div class="mk-week"><b>Last week</b> (${h(s.desde)} – ${h(s.hasta)}): market ${fmtT(s.ton_mercado)} t · ${h(quien)} ${fmtT(s.ton_propias)} t · share <b>${fmtS(s.market_share_pct)}%</b> ${cambio((s.vs_semana_anterior || {}).market_share_pts, ' pts')} vs previous week</div>` : '';
-
-  // Pareto
+  // resto del mercado = mercado − lo nuestro (así nuestro volumen no se mezcla en la cifra del mercado)
+  const resto = x => x ? x.ton_mercado - (porDestinos ? 0 : x.ton_propias) : null;
+  const ult = serie[n - 1], ant = serie[n - 2];
+  const yoy = serie.find(x => x.mes === mesAnterior(d.mes, 12));
+  const restoAhora = resto(ult) ?? d.ton_mercado;
+  const vRestoMes = varPct(restoAhora, resto(ant)), vRestoAnio = varPct(restoAhora, resto(yoy));
+  const pm = d.vs_mes_anterior || {}, py = d.vs_anio_anterior || {};
+  const k = d.control;
   const td = d.top_destinos || [];
-  const acum = td.length ? td[td.length - 1].pct_acumulado : 0;
-  const filas = td.map(r => {
-    const flag = porDestinos ? '' : r.ton_propias <= 0 ? '<span class="flag">Gap</span>' : (r.indice || 0) >= 150 ? '<span class="flag ok">Strong</span>' : '';
-    return `<tr><td><b>${h(r.destino)}</b></td><td>${fmtT(r.ton_mercado)}</td><td>${r.pct_del_mercado.toFixed(1)}</td><td>${r.pct_acumulado.toFixed(1)}</td>
-      ${porDestinos ? '' : `<td>${fmtT(r.ton_propias)}</td><td>${fmtS(r.market_share_pct)}%</td><td>${r.indice == null ? '—' : r.indice}</td><td>${flag}</td>`}</tr>`;
-  }).join('');
-  const gaps = td.filter(r => r.ton_propias <= 0);
-  const top = [...td].sort((a, b) => b.ton_propias - a.ton_propias)[0];
-  let insPareto = '';
-  if (!porDestinos && td.length) {
-    const partes = [];
-    if (gaps.length) partes.push(`${gaps.length} of the top ${td.length} destinations (${gaps.map(g => h(g.destino)).join(', ')} = ${gaps.reduce((a, g) => a + g.pct_del_mercado, 0).toFixed(1)}% of market volume) have zero ${h(quien)} volume.`);
-    if (top && top.ton_propias > 0 && d.ton_propias && top.ton_propias / d.ton_propias >= 0.2) partes.push(`${h(top.destino)} concentrates ${(top.ton_propias / d.ton_propias * 100).toFixed(0)}% of ${h(quien)} tons.`);
-    if (partes.length) insPareto = `<div class="mk-ins">${partes.join(' ')}</div>`;
+  const gaps = porDestinos ? [] : td.filter(r => r.ton_propias <= 0);
+
+  // ── resumen: qué pasó, en frases ──
+  const frases = [];
+  const restoTxt = porDestinos ? `${h(negocio)}-destinations market` : 'Rest of the market';
+  frases.push(`${restoTxt} ${pct1(vRestoMes)} vs ${mPrev}${porDestinos ? '' : `; ${h(quien)} ${pct1(pm.ton_propias)}`}.`);
+  if (!porDestinos) {
+    const rango = !k ? '' : k.estado === 'below' ? ', <b class="dn">below its normal range</b>' : k.estado === 'above' ? ', <b class="up">above its normal range</b>' : ', within its normal range';
+    frases.push(`Market share ${fmtS(d.market_share_pct)}% (${fmtPts(pm.market_share_pts)} pts)${rango}${k && k.minimo ? `, the lowest in ${k.n_meses} months` : ''}.`);
+    const pctGaps = gaps.reduce((a, g) => a + g.pct_del_mercado, 0).toFixed(0);
+    if (gaps.length > 3) frases.push(`${gaps.length} of the top ${td.length} destinations (${pctGaps}% of the market) have no ${h(quien)} volume, led by ${gaps.slice(0, 3).map(g => h(g.destino)).join(', ')}.`);
+    else if (gaps.length) frases.push(`${gaps.map(g => h(g.destino)).join(', ')} (${pctGaps}% of the market) ${gaps.length > 1 ? 'have' : 'has'} no ${h(quien)} volume.`);
+    else if (d.premium_pct != null) frases.push(`${h(quien)} yield is ${Math.abs(d.premium_pct).toFixed(0)}% ${d.premium_pct >= 0 ? 'above' : 'below'} the market.`);
+  } else {
+    frases.push(`Market yield ${d.tarifa_mercado == null ? '—' : Number(d.tarifa_mercado).toFixed(2)} USD/kg (${pct1(pm.tarifa_mercado)} vs ${mPrev}).`);
   }
-  const pareto = `<div class="mk-panel"><div class="mk-ph"><span class="mk-pt">Pareto — market volume by destination</span><span class="mk-ps">Top ${td.length} = ${acum.toFixed(1)}% of market</span></div>
-    <div class="mk-chart"><canvas id="mkPareto"></canvas></div>
-    <table class="mk-tbl"><tr><th>Dest.</th><th>Market t</th><th>% mkt</th><th>Cum. %</th>${porDestinos ? '' : '<th>Own t</th><th>Share</th><th>Index</th><th></th>'}</tr>${filas}</table>${insPareto}</div>`;
+  const resumen = `<div class="mk-sum">${frases.map((f, i) => `<div><i>${i + 1}.</i><span>${f}</span></div>`).join('')}</div>`;
 
-  // Varianza del market share (mes anterior → último mes)
-  const v = d.varianza;
-  let bridge = '';
-  if (!porDestinos && v) {
-    // con efectos de distinto signo el "% del cambio" daría -41% / 141%: no se muestra
-    const pctDe = x => v.total && v.efecto_mercado * v.efecto_volumen >= 0 ? Math.round(x / v.total * 100) + '%' : '—';
-    const signo = v.total < 0 ? 'loss' : 'gain';
-    const domina = Math.abs(v.efecto_volumen) >= Math.abs(v.efecto_mercado);
-    const mov = v.var_mercado_pct == null ? 'changed' : v.var_mercado_pct >= 0 ? `grew ${v.var_mercado_pct.toFixed(1)}%` : `shrank ${Math.abs(v.var_mercado_pct).toFixed(1)}%`;
-    const movOwn = v.var_propias_pct == null ? 'changed' : v.var_propias_pct >= 0 ? `grew ${v.var_propias_pct.toFixed(1)}%` : `fell ${Math.abs(v.var_propias_pct).toFixed(1)}%`;
-    // efectos de distinto signo: se explica la compensación en vez de un "% del cambio" > 100%
-    const opuestos = v.efecto_mercado * v.efecto_volumen < 0;
-    const insVar = !v.total ? '' : opuestos
-      ? `The market ${mov}, which alone would have moved share ${fmtPts(v.efecto_mercado)} pts; ${h(quien)} volume ${movOwn} (${fmtPts(v.efecto_volumen)} pts). Net: ${fmtPts(v.total)} pts — the change is driven by ${domina ? `${h(quien)}'s own volume` : 'the market size'}.`
-      : `${pctDe(domina ? v.efecto_volumen : v.efecto_mercado)} of the share ${signo} is explained by ${domina ? `${h(quien)}'s own volume` : 'the market size'}, not by ${domina ? 'the market' : `${h(quien)}'s volume`}.`;
-    bridge = `<div class="mk-panel"><div class="mk-ph"><span class="mk-pt">Market share variance — ${mPrev} → ${mesLabel(d.mes)}</span><span class="mk-ps">pts</span></div>
-      <div class="mk-chart"><canvas id="mkBridge"></canvas></div>
-      <table class="mk-tbl"><tr><th>Driver</th><th>Δ pts</th><th>% of Δ</th></tr>
-        <tr><td>Market ${v.var_mercado_pct == null ? '' : (v.var_mercado_pct >= 0 ? 'grew +' : 'fell ') + v.var_mercado_pct.toFixed(1) + '%'} (${v.efecto_mercado <= 0 ? 'dilution' : 'concentration'})</td><td class="${v.efecto_mercado < 0 ? 'dn' : 'up'}">${fmtPts(v.efecto_mercado)}</td><td>${pctDe(v.efecto_mercado)}</td></tr>
-        <tr><td>${h(quien)} volume ${v.delta_ton_propias >= 0 ? '+' : ''}${fmtT(v.delta_ton_propias)} t${v.var_propias_pct == null ? '' : ` (${v.var_propias_pct >= 0 ? '+' : ''}${v.var_propias_pct.toFixed(1)}%)`}</td><td class="${v.efecto_volumen < 0 ? 'dn' : 'up'}">${fmtPts(v.efecto_volumen)}</td><td>${pctDe(v.efecto_volumen)}</td></tr>
-        <tr><td><b>Total change</b></td><td class="${v.total < 0 ? 'dn' : 'up'}"><b>${fmtPts(v.total)}</b></td><td><b>100%</b></td></tr></table>
-      ${insVar ? `<div class="mk-ins">${insVar}</div>` : ''}</div>`;
-  } else if (porDestinos) {
-    bridge = `<div class="mk-panel"><div class="mk-ph"><span class="mk-pt">Own numbers</span></div><div style="font-size:10.5px;color:var(--text2);line-height:1.5;">This market is filtered to ${h(negocio)}'s destinations. The own column of this database belongs to another airline, so share, variance and control chart are not shown. ${h(negocio)}'s own tons are the company KPIs at the top of the page.</div></div>`;
-  }
+  // ── 3 números ──
+  const tile = (lbl, val, unidad, l1, v1, l2, v2, cls) => `<div class="mk-tile ${cls || ''}"><div class="mk-lbl">${lbl}</div>
+    <div class="mk-val">${val} <small>${unidad}</small></div>
+    <div class="mk-cmp"><span>${l1}</span>${v1}</div>${l2 ? `<div class="mk-cmp"><span>${l2}</span>${v2}</div>` : ''}</div>`;
+  const prem = d.premium_pct;
+  const kpis = porDestinos ? [
+    tile('Market volume', fmtT(d.ton_mercado), 't', `vs ${mPrev}`, cambio(pm.ton_mercado), `vs ${mYoy}`, cambio(py.ton_mercado)),
+    tile('Market yield', d.tarifa_mercado == null ? '—' : Number(d.tarifa_mercado).toFixed(2), 'USD/kg', `vs ${mPrev}`, cambio(pm.tarifa_mercado), `vs ${mYoy}`, cambio(py.tarifa_mercado)),
+    tile('Top 10 destinations', td.length ? td[td.length - 1].pct_acumulado.toFixed(0) : '—', '% of market', 'destinations', `<b>${td.length}</b>`),
+  ] : [
+    tile('Market share', fmtS(d.market_share_pct), '%', `vs ${mPrev}`, cambio(pm.market_share_pts, ' pts'), `vs ${mYoy}`, cambio(py.market_share_pts, ' pts'), 'ms'),
+    tile('Rest of market', fmtT(restoAhora), 't', `vs ${mPrev}`, cambio(vRestoMes), `vs ${mYoy}`, cambio(vRestoAnio)),
+    tile(`${h(quien)} yield vs market`, prem == null ? '—' : (prem > 0 ? '+' : '') + prem.toFixed(1), '%',
+      h(quien), `<b>${d.tarifa_propia == null ? '—' : Number(d.tarifa_propia).toFixed(2)}</b>`, 'Market', `<b>${d.tarifa_mercado == null ? '—' : Number(d.tarifa_mercado).toFixed(2)}</b>`),
+  ];
+  const s = d.semana;
+  const semana = s && !porDestinos ? `<div class="mk-week"><b>Last week</b> (${h(s.desde)} – ${h(s.hasta)}): share <b>${fmtS(s.market_share_pct)}%</b> ${cambio((s.vs_semana_anterior || {}).market_share_pts, ' pts')} vs previous week</div>` : '';
 
-  body.innerHTML = `<div class="mk-kpis" style="grid-template-columns:repeat(${porDestinos ? 2 : 5},minmax(0,1fr));">${kpis}</div>${semana}
-    <div class="mk-g2">${pareto}${bridge}</div>
-    <div class="mk-def">Market share = own chargeable tons ÷ total market tons in the selected source. Yield = total charges ÷ chargeable kg.
-    Variance: market effect = prior own tons × (1/M<sub>now</sub> − 1/M<sub>prior</sub>); volume effect = Δ own tons ÷ M<sub>now</sub> (they add up to the total change).
-    Index = destination share ÷ total share × 100 (100 = same as our average; Strong ≥ 150). Control limits = mean ± 2σ of the 12 months before the latest one.</div>`;
+  const base = serie.length ? mesLabel(serie[0].mes) : '';
+  const bloques = [
+    porDestinos
+      ? `<div class="mk-blk"><div class="mk-h">Market volume — last ${n} months</div><div class="mk-hs">Tons per month</div><div class="mk-chart"><canvas id="mkTrend"></canvas></div></div>`
+      : `<div class="mk-blk"><div class="mk-h">${h(quien)} vs rest of the market</div><div class="mk-hs">Volume index, ${h(base)} = 100 · if the grey line rises and the blue one doesn't, we are losing ground</div>
+         <div class="mk-chart"><canvas id="mkTrend"></canvas></div>
+         <div class="mk-leg"><span><i style="background:${C_OWN}"></i>${h(quien)}</span><span><i style="background:${C_MKT}"></i>Rest of market</span></div></div>`,
+    porDestinos || !k ? '' : `<div class="mk-blk"><div class="mk-h">Market share — last ${n} months</div><div class="mk-hs">Shaded band = normal range (12 months before the latest) · red point = outside the range</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`,
+    td.length ? `<div class="mk-blk"><div class="mk-h">Top ${td.length} destinations — ${mesLabel(d.mes)}</div><div class="mk-hs">Market tons${porDestinos ? '' : ` · <span style="color:${C_GAP}">orange = no ${h(quien)} volume</span>`}</div><div class="mk-chart" style="height:${Math.max(150, td.length * 19)}px;"><canvas id="mkDest"></canvas></div></div>` : '',
+  ].join('');
 
-  dibujarPareto(td);
-  if (v && !porDestinos) dibujarBridge(v, mPrev, mesLabel(d.mes));
-  dibujarControl(d, porDestinos, quien);
+  body.innerHTML = `${resumen}<div class="mk-kpis">${kpis.join('')}</div>${semana}${bloques}
+    <div class="mk-def">Market share = own chargeable tons ÷ market tons. Rest of market = market − own. Yield = charges ÷ chargeable kg.</div>`;
+
+  dibujarTendencia(serie, porDestinos, quien);
+  if (!porDestinos && k) dibujarShare(serie, k, quien);
+  dibujarDestinos(td, porDestinos, quien);
 }
 
-function dibujarPareto(td) {
-  const c = document.getElementById('mkPareto');
+function dibujarTendencia(serie, porDestinos, quien) {
+  const c = document.getElementById('mkTrend');
+  if (!c || !serie.length || typeof Chart === 'undefined') return;
+  const labels = serie.map(x => mesLabel(x.mes, true));
+  const opts = { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } } };
+  if (porDestinos) {
+    MK.charts.trend = new Chart(c, { type: 'bar', data: { labels, datasets: [{ data: serie.map(x => x.ton_mercado), backgroundColor: serie.map((x, i) => i === serie.length - 1 ? C_OWN : '#c9d6ea'), borderRadius: 2 }] },
+      options: { ...opts, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${fmtT(ctx.raw)} t` } } },
+        scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, beginAtZero: true } } } });
+    return;
+  }
+  // índice base 100 en el primer mes: las dos curvas en la misma escala
+  const idx = arr => { const b = arr.find(v => v > 0); return arr.map(v => b ? v / b * 100 : null); };
+  const own = serie.map(x => x.ton_propias), rest = serie.map(x => x.ton_mercado - x.ton_propias);
+  MK.charts.trend = new Chart(c, { type: 'line', data: { labels, datasets: [
+      { label: quien, data: idx(own), borderColor: C_OWN, borderWidth: 2, pointRadius: 1.5, tension: 0.2, _t: own },
+      { label: 'Rest of market', data: idx(rest), borderColor: C_MKT, borderWidth: 2, borderDash: [4, 3], pointRadius: 1.5, tension: 0.2, _t: rest },
+    ] },
+    options: { ...opts, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmtT(ctx.dataset._t[ctx.dataIndex])} t (index ${Math.round(ctx.raw)})` } } },
+      scales: { x: { ...AXIS, grid: { display: false } }, y: AXIS } } });
+}
+
+function dibujarShare(serie, k, quien) {
+  const c = document.getElementById('mkShare');
+  if (!c || typeof Chart === 'undefined') return;
+  const n = serie.length, vals = serie.map(x => x.market_share_pct);
+  const fuera = k.estado !== 'within';
+  MK.charts.share = new Chart(c, { type: 'line', data: { labels: serie.map(x => mesLabel(x.mes, true)), datasets: [
+      { data: Array(n).fill(k.ucl), borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(26,86,219,0.08)' },
+      { data: Array(n).fill(k.lcl), borderWidth: 0, pointRadius: 0 },
+      { label: `${quien} share`, data: vals, borderColor: C_OWN, borderWidth: 2, tension: 0,
+        pointRadius: vals.map((v, i) => i === n - 1 ? 4.5 : 2),
+        pointBackgroundColor: vals.map((v, i) => i === n - 1 && fuera ? C_GAP : C_OWN), pointBorderColor: vals.map((v, i) => i === n - 1 && fuera ? C_GAP : C_OWN) },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: { filter: it => it.datasetIndex === 2, callbacks: { label: ctx => ` Share: ${fmtS(ctx.raw)}%` } } },
+      scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, ticks: { ...AXIS.ticks, callback: x => fmtS(x) + '%' } } } } });
+}
+
+function dibujarDestinos(td, porDestinos, quien) {
+  const c = document.getElementById('mkDest');
   if (!c || !td.length || typeof Chart === 'undefined') return;
-  // sin barra "Other": en mercados muy repartidos (USA) taparía al resto
-  const labels = td.map(r => r.destino);
-  const pct = td.map(r => r.pct_del_mercado);
-  const cum = td.map(r => r.pct_acumulado);
-  MK.charts.pareto = new Chart(c, {
-    data: { labels, datasets: [
-      { type: 'line', label: 'Cumulative %', data: cum, borderColor: '#1a56db', backgroundColor: '#1a56db', yAxisID: 'y1', pointRadius: 2, borderWidth: 1.6, order: 1 },
-      { type: 'line', label: '80%', data: labels.map(() => 80), borderColor: '#c2410c', borderDash: [3, 3], borderWidth: 0.8, pointRadius: 0, yAxisID: 'y1', order: 2 },
-      { type: 'bar', label: '% of market', data: pct, backgroundColor: '#c9d6ea', yAxisID: 'y', order: 3 },
-    ] },
-    options: { responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${Number(ctx.raw).toFixed(1)}%` } } },
-      scales: { x: { ...AXIS, grid: { display: false } },
-        y: { ...AXIS, beginAtZero: true, ticks: { ...AXIS.ticks, callback: v => v + '%' } },
-        y1: { ...AXIS, position: 'right', min: 0, max: Math.max(100, ...cum), grid: { display: false }, ticks: { ...AXIS.ticks, callback: v => v + '%' } } } }
-  });
-}
-
-function dibujarBridge(v, mPrev, mNow) {
-  const c = document.getElementById('mkBridge');
-  if (!c || typeof Chart === 'undefined') return;
-  const a = v.share_antes, b = a + v.efecto_mercado, f = v.share_ahora;
-  // el eje no parte en 0 para que se vean los efectos (se avisa en el eje)
-  const lo = Math.min(a, b, f), hi = Math.max(a, b, f);
-  const pad = Math.max((hi - lo) * 0.6, hi * 0.02);
-  const min = Math.max(0, lo - pad);
-  const color = x => x < 0 ? '#c2410c' : '#15803d';
-  MK.charts.bridge = new Chart(c, {
-    type: 'bar',
-    data: { labels: [`${mPrev} share`, 'Market size', 'Own volume', `${mNow} share`],
-      datasets: [{ data: [[min, a], [Math.min(a, b), Math.max(a, b)], [Math.min(b, f), Math.max(b, f)], [min, f]],
-        backgroundColor: ['#c9d6ea', color(v.efecto_mercado) + 'aa', color(v.efecto_volumen), '#1a56db'], barPercentage: 0.6 }] },
-    options: { responsive: true, maintainAspectRatio: false, animation: false,
+  const datasets = [{ label: 'Market', data: td.map(r => r.ton_mercado), grouped: false, barPercentage: 0.8, borderRadius: 2,
+    backgroundColor: td.map(r => !porDestinos && r.ton_propias <= 0 ? C_GAP + '99' : '#c9d6ea') }];
+  if (!porDestinos) datasets.push({ label: quien, data: td.map(r => r.ton_propias), grouped: false, barPercentage: 0.4, borderRadius: 2, backgroundColor: C_OWN });
+  MK.charts.dest = new Chart(c, { type: 'bar', data: { labels: td.map(r => r.destino), datasets },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => {
-        const i = ctx.dataIndex;
-        return i === 0 ? ` ${fmtS(a)}%` : i === 3 ? ` ${fmtS(f)}%` : ` ${fmtPts(i === 1 ? v.efecto_mercado : v.efecto_volumen)} pts`;
+        const r = td[ctx.dataIndex];
+        return ctx.datasetIndex === 0 ? ` Market: ${fmtT(r.ton_mercado)} t (${r.pct_del_mercado.toFixed(1)}%)` : ` ${quien}: ${fmtT(r.ton_propias)} t · share ${fmtS(r.market_share_pct)}%`;
       } } } },
-      scales: { x: { ...AXIS, grid: { display: false } },
-        y: { ...AXIS, min, max: hi + pad * 0.5, title: { display: min > 0, text: `axis from ${fmtS(min)}%`, font: { size: 8 }, color: '#8896aa' },
-          ticks: { ...AXIS.ticks, callback: x => fmtS(x) + '%' } } } }
-  });
-}
-
-function dibujarControl(d, porDestinos, quien) {
-  const cc = document.getElementById('ccBody');
-  const k = d.control, serie = d.serie || [];
-  if (porDestinos) { cc.innerHTML = '<div class="mk-msg">Not shown: this market is filtered by destinations and has no own share.</div>'; return; }
-  if (!k || serie.length < 4) { cc.innerHTML = '<div class="mk-msg">Not enough months in this database for a control chart (needs at least 4).</div>'; return; }
-  const ult = serie[serie.length - 1].market_share_pct;
-  const estado = k.estado === 'below' ? `<b class="dn">below the lower control limit</b> (special cause: worth reviewing)`
-    : k.estado === 'above' ? `<b class="up">above the upper control limit</b> (special cause: worth reviewing)`
-    : 'within the control limits (normal variation)';
-  const mm = k.mm3[k.mm3.length - 1];
-  cc.innerHTML = `<div class="mk-chart" style="height:170px;"><canvas id="mkControl"></canvas></div>
-    <div class="mk-ins">${mesLabel(d.mes)}: ${fmtS(ult)}% is ${estado}${k.minimo ? `, and the lowest share in ${k.n_meses} months` : ''}.
-    ${mm != null ? `3-month average ${fmtS(mm)}% (${ult < mm ? 'latest month below the trend' : 'latest month above the trend'}).` : ''}
-    Mean ${fmtS(k.media)}% · σ ${fmtS(k.sigma)} · UCL ${fmtS(k.ucl)}% · LCL ${fmtS(k.lcl)}%.</div>`;
-  const c = document.getElementById('mkControl');
-  if (!c || typeof Chart === 'undefined') return;
-  const n = serie.length, linea = (val) => Array(n).fill(val);
-  const ref = { borderColor: '#8896aa', borderWidth: 0.8, pointRadius: 0, fill: false };
-  MK.charts.control = new Chart(c, {
-    type: 'line',
-    data: { labels: serie.map(x => mesLabel(x.mes, true)), datasets: [
-      { label: `${quien} share %`, data: serie.map(x => x.market_share_pct), borderColor: '#1a56db', borderWidth: 1.8, tension: 0,
-        pointRadius: serie.map((x, i) => i === n - 1 ? 4 : 2),
-        pointBackgroundColor: serie.map((x, i) => i === n - 1 && k.estado !== 'within' ? '#c2410c' : '#1a56db') },
-      { label: '3-month MA', data: k.mm3, borderColor: '#8896aa', borderDash: [3, 2], borderWidth: 1.2, pointRadius: 0, spanGaps: false },
-      { label: 'UCL', data: linea(k.ucl), ...ref, borderDash: [4, 3] },
-      { label: 'Mean', data: linea(k.media), ...ref },
-      { label: 'LCL', data: linea(k.lcl), ...ref, borderDash: [4, 3] },
-    ] },
-    options: { responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 9, font: { size: 8.5 }, filter: it => it.datasetIndex < 2 } },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmtS(ctx.raw)}%` } } },
-      scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, ticks: { ...AXIS.ticks, callback: x => fmtS(x) + '%' } } } }
-  });
+      scales: { x: { ...AXIS, beginAtZero: true }, y: { ...AXIS, grid: { display: false } } } } });
 }
 
 // ── Registro de acciones de la reunión, por negocio ──
