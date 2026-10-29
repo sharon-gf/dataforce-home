@@ -8,6 +8,8 @@
 <title>DATAFORCE — Dashboard 2.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -359,6 +361,21 @@ main { overflow-y:auto; }
 .mk-pt { font-size:10px; font-weight:600; color:var(--text1); }
 .mk-ps { font-size:9px; color:var(--text3); }
 .mk-chart { position:relative; height:130px; }
+.mk-ver { margin:8px 10px 4px; padding:3px 10px; border-left:3px solid var(--blue-lw); }
+.mk-ver.dn { border-left-color:#c2410c; } .mk-ver.up { border-left-color:var(--up); }
+.mk-ver .t { font-size:13px; font-weight:500; color:var(--text1); }
+.mk-ver .s { font-size:10.5px; color:var(--text2); margin-top:1px; line-height:1.5; }
+.mk-big { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:4px 10px; }
+.mk-big > div { border:1px solid var(--border); border-radius:5px; padding:7px 10px; background:#fff; }
+.mk-big .l { font-size:8.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); }
+.mk-big .v { font-size:22px; font-weight:500; color:var(--navy-hdr); margin:2px 0 1px; font-variant-numeric:tabular-nums; }
+.mk-big .v small { font-size:11px; font-weight:400; color:var(--text3); }
+.mk-big .d { font-size:9.5px; color:var(--text2); line-height:1.5; }
+.mk-map { margin:4px 10px; border:1px solid var(--border); border-radius:5px; padding:6px 8px 4px; background:#fff; }
+.mk-map svg { display:block; width:100%; height:auto; }
+.mk-tip { font-size:9.5px; color:var(--text2); min-height:14px; }
+.mk-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:3px; vertical-align:-1px; }
+.mk-card { border:1px solid var(--border); border-radius:5px; padding:6px 8px; background:#fff; min-width:0; }
 .mk-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:4px; }
 .mk-tbl { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; margin-top:4px; }
 .mk-tbl th { font-size:8px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); font-weight:500; text-align:right; padding:3px 4px; border-bottom:1px solid var(--border); }
@@ -1612,130 +1629,181 @@ async function loadMarket() {
   const porDestinos = !!d.destinos_de;
   const negocio = document.getElementById('bizSelect').selectedOptions[0]?.textContent || negocioActual();
   const serie = d.serie || [];
-  const n = serie.length;
   const mPrev = mesLabel(mesAnterior(d.mes, 1)), mYoy = mesLabel(mesAnterior(d.mes, 12));
-  document.getElementById('mkTitle').textContent = `Market — ${mesLabel(d.mes)}${d.fuente ? ' · ' + d.fuente : ''}`;
-
-  // resto del mercado = mercado − lo nuestro (así nuestro volumen no se mezcla en la cifra del mercado)
-  const resto = x => x ? x.ton_mercado - (porDestinos ? 0 : x.ton_propias) : null;
-  const ult = serie[n - 1], ant = serie[n - 2];
-  const yoy = serie.find(x => x.mes === mesAnterior(d.mes, 12));
-  const restoAhora = resto(ult) ?? d.ton_mercado;
-  const vRestoMes = varPct(restoAhora, resto(ant)), vRestoAnio = varPct(restoAhora, resto(yoy));
   const pm = d.vs_mes_anterior || {}, py = d.vs_anio_anterior || {};
-  const k = d.control;
-  const td = d.top_destinos || [];
+  const todos = d.top_destinos || [];           // 15, para los pines
+  const td = todos.slice(0, 10);                // las frases y las barras: top 10
   const gaps = porDestinos ? [] : td.filter(r => r.ton_propias <= 0);
+  const fuente = d.fuente || '';
+  const region = fuente.split(' — ')[0] || fuente;
+  // 29 oct, cony: que lo entienda cualquier persona — título en palabras, la
+  // base (WACD, CASS…) en letra chica
+  document.getElementById('mkTitle').textContent = `Air cargo market · ${region} · ${mesLabel(d.mes)}`;
+  document.getElementById('mkTitle').title = `Source: ${fuente} (monthly). Share = own chargeable tons ÷ market tons. Price = charges ÷ chargeable kg.`;
 
-  // ── resumen: qué pasó, en frases ──
-  const frases = [];
-  const restoTxt = porDestinos ? `${h(negocio)}-destinations market` : 'Rest of the market';
-  frases.push(`${restoTxt} ${pct1(vRestoMes)} vs ${mPrev}${porDestinos ? '' : `; ${h(quien)} ${pct1(pm.ton_propias)}`}.`);
-  if (!porDestinos) {
-    const rango = !k ? '' : k.estado === 'below' ? ', <b class="dn">below its normal range</b>' : k.estado === 'above' ? ', <b class="up">above its normal range</b>' : ', within its normal range';
-    frases.push(`Market share ${fmtS(d.market_share_pct)}% (${fmtPts(pm.market_share_pts)} pts)${rango}${k && k.minimo ? `, the lowest in ${k.n_meses} months` : ''}.`);
-    const pctGaps = gaps.reduce((a, g) => a + g.pct_del_mercado, 0).toFixed(0);
-    if (gaps.length > 3) frases.push(`${gaps.length} of the top ${td.length} destinations (${pctGaps}% of the market) have no ${h(quien)} volume, led by ${gaps.slice(0, 3).map(g => h(g.destino)).join(', ')}.`);
-    else if (gaps.length) frases.push(`${gaps.map(g => h(g.destino)).join(', ')} (${pctGaps}% of the market) ${gaps.length > 1 ? 'have' : 'has'} no ${h(quien)} volume.`);
-    else if (d.premium_pct != null) frases.push(`${h(quien)} yield is ${Math.abs(d.premium_pct).toFixed(0)}% ${d.premium_pct >= 0 ? 'above' : 'below'} the market.`);
+  // ── veredicto: una frase con la conclusión del mes ──
+  const sube = v => v == null ? 'changed' : v >= 0 ? `grew ${Math.abs(v).toFixed(0)}%` : `fell ${Math.abs(v).toFixed(0)}%`;
+  let ver;
+  if (porDestinos) {
+    ver = { cls: '', t: `${h(negocio)} destinations: the market ${sube(pm.ton_mercado)} in ${mesLabel(d.mes)}`,
+      s: `Compared with ${mPrev}. Same month last year: ${pct1(py.ton_mercado)}.` };
   } else {
-    frases.push(`Market yield ${d.tarifa_mercado == null ? '—' : Number(d.tarifa_mercado).toFixed(2)} USD/kg (${pct1(pm.tarifa_mercado)} vs ${mPrev}).`);
+    const dif = (pm.ton_propias ?? 0) - (pm.ton_mercado ?? 0);
+    const estado = pm.ton_propias == null || pm.ton_mercado == null ? 'held' : dif < -1 ? 'lost' : dif > 1 ? 'gained' : 'held';
+    const extra = gaps.length > 3 ? ` ${gaps.length} of the 10 biggest destinations have no ${h(quien)} volume.`
+      : gaps.length ? ` ${gaps.map(g => h(g.destino)).join(', ')} ${gaps.length > 1 ? 'have' : 'has'} no ${h(quien)} volume.` : '';
+    ver = { cls: estado === 'lost' ? 'dn' : estado === 'gained' ? 'up' : '',
+      t: `${h(quien)} ${estado === 'held' ? 'kept its place' : estado + ' ground'} in ${mesLabel(d.mes)}`,
+      s: `The market ${sube(pm.ton_mercado)} vs ${mPrev}, ${h(quien)} ${sube(pm.ton_propias)}.${extra}` };
   }
-  const resumen = `<div class="mk-sum">${frases.map((f, i) => `<div><i>${i + 1}.</i><span>${f}</span></div>`).join('')}</div>`;
+  const veredicto = `<div class="mk-ver ${ver.cls}"><div class="t">${ver.t}</div><div class="s">${ver.s}</div></div>`;
 
-  // ── 3 números ──
-  const tile = (lbl, val, unidad, l1, v1, l2, v2, cls) => `<div class="mk-tile ${cls || ''}"><div class="mk-lbl">${lbl}</div>
-    <div class="mk-val">${val} <small>${unidad}</small></div>
-    <div class="mk-cmp"><span>${l1}</span>${v1}</div>${l2 ? `<div class="mk-cmp"><span>${l2}</span>${v2}</div>` : ''}</div>`;
+  // ── tres números grandes ──
+  const flecha = (v, suf = '%') => v == null ? '—' : `<b class="${v >= 0 ? 'up' : 'dn'}">${v >= 0 ? '▲' : '▼'} ${Math.abs(v).toFixed(1)}${suf}</b>`;
+  const precio = v => v == null ? '—' : Number(v).toFixed(2);
+  const por1000 = d.market_share_pct == null ? null : d.market_share_pct * 10;
   const prem = d.premium_pct;
-  const kpis = porDestinos ? [
-    tile('Market volume', fmtT(d.ton_mercado), 't', `vs ${mPrev}`, cambio(pm.ton_mercado), `vs ${mYoy}`, cambio(py.ton_mercado)),
-    tile('Market yield', d.tarifa_mercado == null ? '—' : Number(d.tarifa_mercado).toFixed(2), 'USD/kg', `vs ${mPrev}`, cambio(pm.tarifa_mercado), `vs ${mYoy}`, cambio(py.tarifa_mercado)),
-    tile('Top 10 destinations', td.length ? td[td.length - 1].pct_acumulado.toFixed(0) : '—', '% of market', 'destinations', `<b>${td.length}</b>`),
+  const big = (l, v, dd) => `<div><div class="l">${l}</div><div class="v">${v}</div><div class="d">${dd}</div></div>`;
+  const numeros = porDestinos ? [
+    big('Total market', `${fmtT(d.ton_mercado)} <small>t</small>`, `${flecha(pm.ton_mercado)} vs ${mPrev} · ${flecha(py.ton_mercado)} vs ${mYoy}`),
+    big('Market price per kg', `${precio(d.tarifa_mercado)} <small>USD</small>`, `${flecha(pm.tarifa_mercado)} vs ${mPrev}`),
+    big('Top 10 destinations', `${td.length ? td[td.length - 1].pct_acumulado.toFixed(0) : '—'} <small>% of market</small>`, `led by ${td.slice(0, 3).map(r => h(r.destino)).join(', ')}`),
   ] : [
-    tile('Market share', fmtS(d.market_share_pct), '%', `vs ${mPrev}`, cambio(pm.market_share_pts, ' pts'), `vs ${mYoy}`, cambio(py.market_share_pts, ' pts'), 'ms'),
-    tile('Rest of market', fmtT(restoAhora), 't', `vs ${mPrev}`, cambio(vRestoMes), `vs ${mYoy}`, cambio(vRestoAnio)),
-    tile(`${h(quien)} yield vs market`, prem == null ? '—' : (prem > 0 ? '+' : '') + prem.toFixed(1), '%',
-      h(quien), `<b>${d.tarifa_propia == null ? '—' : Number(d.tarifa_propia).toFixed(2)}</b>`, 'Market', `<b>${d.tarifa_mercado == null ? '—' : Number(d.tarifa_mercado).toFixed(2)}</b>`),
+    big('Total market', `${fmtT(d.ton_mercado)} <small>t</small>`, `${flecha(pm.ton_mercado)} vs ${mPrev} · ${flecha(py.ton_mercado)} vs ${mYoy}`),
+    big(h(quien), `${fmtT(d.ton_propias)} <small>t</small>`, `${flecha(pm.ton_propias)} vs ${mPrev} · ${por1000 == null ? '—' : por1000.toFixed(por1000 < 1 ? 2 : 1)} of every 1,000 kg`),
+    big('Price per kg', `${precio(d.tarifa_propia)} <small>vs ${precio(d.tarifa_mercado)}</small>`,
+      prem == null ? 'no price data' : `${h(quien)} is ${Math.abs(prem).toFixed(0)}% ${prem >= 0 ? 'above' : 'below'} the market`),
   ];
-  const s = d.semana;
-  const semana = s && !porDestinos ? `<div class="mk-week"><b>Last week</b> (${h(s.desde)} – ${h(s.hasta)}): share <b>${fmtS(s.market_share_pct)}%</b> ${cambio((s.vs_semana_anterior || {}).market_share_pts, ' pts')} vs previous week</div>` : '';
 
-  const base = serie.length ? mesLabel(serie[0].mes) : '';
-  // los dos gráficos de línea lado a lado, así la columna del mercado mide
-  // más o menos lo mismo que la de Sharon
-  const tendencia = porDestinos
-    ? `<div class="mk-blk"><div class="mk-h">Market volume — last ${n} months</div><div class="mk-hs">Tons per month</div><div class="mk-chart"><canvas id="mkTrend"></canvas></div></div>`
-    : `<div class="mk-blk"><div class="mk-h">${h(quien)} vs rest of the market</div><div class="mk-hs">Volume index, ${h(base)} = 100</div>
-       <div class="mk-chart"><canvas id="mkTrend"></canvas></div>
-       <div class="mk-leg"><span><i style="background:${C_OWN}"></i>${h(quien)}</span><span><i style="background:${C_MKT}"></i>Rest of market</span></div></div>`;
-  const share = porDestinos || !k ? '' : `<div class="mk-blk"><div class="mk-h">Market share — last ${n} months</div><div class="mk-hs">Band = normal range · red = outside</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`;
-  const destinos = td.length ? `<div class="mk-blk"><div class="mk-h">Top ${td.length} destinations — ${mesLabel(d.mes)}</div><div class="mk-hs">Market tons${porDestinos ? '' : ` · <span style="color:${C_GAP}">orange = no ${h(quien)} volume</span>`}</div><div class="mk-chart" style="height:${share ? 140 : 130}px;"><canvas id="mkDest"></canvas></div></div>` : '';
-  const bloques = share
-    ? `<div class="mk-pair">${tendencia}${share}</div>${destinos}`
-    : `<div class="mk-pair">${tendencia}${destinos}</div>`;
+  const mapa = `<div class="mk-map"><div class="mk-h">Where the market goes — top destination airports</div>
+    <div class="mk-hs">Pin size = market tons${porDestinos ? '' : ` · <span class="mk-dot" style="background:${C_OWN}"></span>${h(quien)} has volume · <span class="mk-dot" style="background:${C_GAP}"></span>no ${h(quien)} volume`} · <span class="mk-dot" style="background:#0d1f3c;border-radius:1px"></span>origin</div>
+    <div id="mkMap"></div><div class="mk-tip" id="mkTip">Hover a pin for the detail.</div></div>`;
+  // 29 oct, cony: los destinos ya están en el mapa; abajo va "cómo vamos en
+  // el tiempo" — toneladas por mes y participación por mes con su rango normal
+  const k = d.control;
+  const lectura = !k ? '' : k.estado === 'below' ? `<b class="dn">${mesLabel(d.mes)} is below the normal range</b> — worth reviewing`
+    : k.estado === 'above' ? `<b class="up">${mesLabel(d.mes)} is above the normal range</b>`
+    : `${mesLabel(d.mes)} is within the normal range`;
+  const segundo = porDestinos
+    ? `<div class="mk-card"><div class="mk-h">Market price per kg</div><div class="mk-hs">USD per kg, by month</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`
+    : `<div class="mk-card"><div class="mk-h">${h(quien)}'s share of the market</div><div class="mk-hs">kg out of every 1,000 kg · shaded band = normal range${lectura ? ' · ' + lectura : ''}</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`;
+  const barras = `<div class="mk-pair" style="padding:0 10px 8px;gap:6px;">
+    <div class="mk-card"><div class="mk-h">${porDestinos ? 'Market' : h(quien)} tons per month</div><div class="mk-hs">Last ${serie.length} months · latest in dark blue</div><div class="mk-chart"><canvas id="mkTrend"></canvas></div></div>
+    ${segundo}</div>`;
 
-  body.innerHTML = `${resumen}<div class="mk-kpis">${kpis.join('')}</div>${semana}${bloques}`;
-  document.getElementById('mkTitle').title = 'Market share = own chargeable tons ÷ market tons. Rest of market = market − own. Yield = charges ÷ chargeable kg.';
+  body.innerHTML = `${veredicto}<div class="mk-big">${numeros.join('')}</div>${mapa}${barras}`;
 
-  dibujarTendencia(serie, porDestinos, quien);
-  if (!porDestinos && k) dibujarShare(serie, k, quien);
-  dibujarDestinos(td, porDestinos, quien);
+  dibujarMeses(serie, porDestinos);
+  dibujarEvolucion(serie, k, porDestinos, quien);
+  dibujarMapa(todos, d.top_origenes || [], porDestinos, quien);
 }
 
-function dibujarTendencia(serie, porDestinos, quien) {
+// etiqueta con el valor sobre cada barra
+const ETIQUETAS = { id: 'etiquetas', afterDatasetsDraw(c) {
+  const x = c.ctx, ds = c.data.datasets[0], hz = c.options.indexAxis === 'y';
+  x.save(); x.font = '9px Inter, sans-serif'; x.fillStyle = '#3d4f68';
+  c.getDatasetMeta(0).data.forEach((b, i) => {
+    x.textAlign = hz ? 'left' : 'center';
+    x.fillText(ds.fmt(ds.data[i]), hz ? b.x + 3 : b.x, hz ? b.y + 3 : b.y - 3);
+  });
+  x.restore();
+} };
+
+function dibujarMeses(serie, porDestinos) {
   const c = document.getElementById('mkTrend');
   if (!c || !serie.length || typeof Chart === 'undefined') return;
-  const labels = serie.map(x => mesLabel(x.mes, true));
-  const opts = { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } } };
+  const vals = serie.map(x => porDestinos ? x.ton_mercado : x.ton_propias);
+  const miles = Math.max(...vals) >= 10000;
+  MK.charts.trend = new Chart(c, { type: 'bar', plugins: [ETIQUETAS],
+    data: { labels: serie.map(x => mesLabel(x.mes, true).split(' ')[0].slice(0, 1)), datasets: [{ data: vals, borderRadius: 2,
+      fmt: v => miles ? (v / 1000).toFixed(0) + 'k' : fmtT(v),
+      backgroundColor: vals.map((v, i) => i === vals.length - 1 ? C_OWN : '#9db8ee') }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, layout: { padding: { top: 12 } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: it => mesLabel(serie[it[0].dataIndex].mes), label: ctx => ` ${fmtT(ctx.raw)} t` } } },
+      scales: { x: { ...AXIS, grid: { display: false } }, y: { display: false, beginAtZero: true } } } });
+}
+
+// participación por mes en "kg de cada 1.000 kg" (más fácil de leer que 0,116%),
+// con la franja del rango normal; en modo destinos: precio de mercado por mes
+function dibujarEvolucion(serie, k, porDestinos, quien) {
+  const c = document.getElementById('mkShare');
+  if (!c || !serie.length || typeof Chart === 'undefined') return;
+  const labels = serie.map(x => mesLabel(x.mes, true).split(' ')[0].slice(0, 1));
+  const titulo = it => mesLabel(serie[it[0].dataIndex].mes);
+  const base = { responsive: true, maintainAspectRatio: false, animation: false, layout: { padding: { top: 6, right: 4 } } };
   if (porDestinos) {
-    MK.charts.trend = new Chart(c, { type: 'bar', data: { labels, datasets: [{ data: serie.map(x => x.ton_mercado), backgroundColor: serie.map((x, i) => i === serie.length - 1 ? C_OWN : '#c9d6ea'), borderRadius: 2 }] },
-      options: { ...opts, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${fmtT(ctx.raw)} t` } } },
-        scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, beginAtZero: true } } } });
+    const vals = serie.map(x => x.tarifa_mercado);
+    MK.charts.share = new Chart(c, { type: 'line',
+      data: { labels, datasets: [{ data: vals, borderColor: C_OWN, borderWidth: 2, tension: 0.25, pointRadius: vals.map((v, i) => i === vals.length - 1 ? 4 : 2), pointBackgroundColor: C_OWN }] },
+      options: { ...base, plugins: { legend: { display: false }, tooltip: { callbacks: { title: titulo, label: ctx => ` ${Number(ctx.raw).toFixed(2)} USD/kg` } } },
+        scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, ticks: { ...AXIS.ticks, maxTicksLimit: 4, callback: v => Number(v).toFixed(2) } } } } });
     return;
   }
-  // índice base 100 en el primer mes: las dos curvas en la misma escala
-  const idx = arr => { const b = arr.find(v => v > 0); return arr.map(v => b ? v / b * 100 : null); };
-  const own = serie.map(x => x.ton_propias), rest = serie.map(x => x.ton_mercado - x.ton_propias);
-  MK.charts.trend = new Chart(c, { type: 'line', data: { labels, datasets: [
-      { label: quien, data: idx(own), borderColor: C_OWN, borderWidth: 2, pointRadius: 1.5, tension: 0.2, _t: own },
-      { label: 'Rest of market', data: idx(rest), borderColor: C_MKT, borderWidth: 2, borderDash: [4, 3], pointRadius: 1.5, tension: 0.2, _t: rest },
-    ] },
-    options: { ...opts, interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmtT(ctx.dataset._t[ctx.dataIndex])} t (index ${Math.round(ctx.raw)})` } } },
-      scales: { x: { ...AXIS, grid: { display: false } }, y: AXIS } } });
+  const vals = serie.map(x => x.market_share_pct * 10);
+  const dec = Math.max(...vals) < 10 ? 2 : 1;
+  const n = vals.length, fuera = k && k.estado !== 'within';
+  const datasets = [];
+  if (k) datasets.push(
+    { data: Array(n).fill(k.ucl * 10), borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(26,86,219,0.09)' },
+    { data: Array(n).fill(k.lcl * 10), borderWidth: 0, pointRadius: 0 });
+  datasets.push({ data: vals, borderColor: C_OWN, borderWidth: 2, tension: 0.25,
+    pointRadius: vals.map((v, i) => i === n - 1 ? 4.5 : 2),
+    pointBackgroundColor: vals.map((v, i) => i === n - 1 && fuera ? C_GAP : C_OWN),
+    pointBorderColor: vals.map((v, i) => i === n - 1 && fuera ? C_GAP : C_OWN) });
+  MK.charts.share = new Chart(c, { type: 'line', data: { labels, datasets },
+    options: { ...base, plugins: { legend: { display: false }, tooltip: { filter: it => it.datasetIndex === datasets.length - 1,
+        callbacks: { title: titulo, label: ctx => ` ${quien}: ${Number(ctx.raw).toFixed(dec)} of every 1,000 kg` } } },
+      scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, ticks: { ...AXIS.ticks, maxTicksLimit: 4, callback: v => Number(v).toFixed(dec) } } } } });
 }
 
-function dibujarShare(serie, k, quien) {
-  const c = document.getElementById('mkShare');
-  if (!c || typeof Chart === 'undefined') return;
-  const n = serie.length, vals = serie.map(x => x.market_share_pct);
-  const fuera = k.estado !== 'within';
-  MK.charts.share = new Chart(c, { type: 'line', data: { labels: serie.map(x => mesLabel(x.mes, true)), datasets: [
-      { data: Array(n).fill(k.ucl), borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(26,86,219,0.08)' },
-      { data: Array(n).fill(k.lcl), borderWidth: 0, pointRadius: 0 },
-      { label: `${quien} share`, data: vals, borderColor: C_OWN, borderWidth: 2, tension: 0,
-        pointRadius: vals.map((v, i) => i === n - 1 ? 4.5 : 2),
-        pointBackgroundColor: vals.map((v, i) => i === n - 1 && fuera ? C_GAP : C_OWN), pointBorderColor: vals.map((v, i) => i === n - 1 && fuera ? C_GAP : C_OWN) },
-    ] },
-    options: { responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { display: false }, tooltip: { filter: it => it.datasetIndex === 2, callbacks: { label: ctx => ` Share: ${fmtS(ctx.raw)}%` } } },
-      scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, ticks: { ...AXIS.ticks, callback: x => fmtS(x) + '%' } } } } });
+// mapa con un pin por aeropuerto de destino (tamaño = toneladas del mercado)
+async function datosMapa() {
+  if (!MK.geo) MK.geo = Promise.all([
+    fetch('airports.json').then(r => r.json()),
+    fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json()),
+  ]);
+  return MK.geo;
 }
 
-function dibujarDestinos(td, porDestinos, quien) {
-  const c = document.getElementById('mkDest');
-  if (!c || !td.length || typeof Chart === 'undefined') return;
-  const datasets = [{ label: 'Market', data: td.map(r => r.ton_mercado), grouped: false, barPercentage: 0.8, borderRadius: 2,
-    backgroundColor: td.map(r => !porDestinos && r.ton_propias <= 0 ? C_GAP + '99' : '#c9d6ea') }];
-  if (!porDestinos) datasets.push({ label: quien, data: td.map(r => r.ton_propias), grouped: false, barPercentage: 0.4, borderRadius: 2, backgroundColor: C_OWN });
-  MK.charts.dest = new Chart(c, { type: 'bar', data: { labels: td.map(r => r.destino), datasets },
-    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => {
-        const r = td[ctx.dataIndex];
-        return ctx.datasetIndex === 0 ? ` Market: ${fmtT(r.ton_mercado)} t (${r.pct_del_mercado.toFixed(1)}%)` : ` ${quien}: ${fmtT(r.ton_propias)} t · share ${fmtS(r.market_share_pct)}%`;
-      } } } },
-      scales: { x: { ...AXIS, beginAtZero: true }, y: { ...AXIS, grid: { display: false } } } } });
+async function dibujarMapa(destinos, origenes, porDestinos, quien) {
+  const cont = document.getElementById('mkMap');
+  if (!cont || typeof d3 === 'undefined' || typeof topojson === 'undefined') return;
+  let aeropuertos, mundo;
+  try { [aeropuertos, mundo] = await datosMapa(); } catch (e) { cont.innerHTML = '<div class="mk-msg">Map not available right now.</div>'; return; }
+  if (!document.body.contains(cont)) return;
+  const paises = topojson.feature(mundo, mundo.objects.countries).features.filter(f => f.id !== '010'); // sin Antártica
+  const W = 900, H = 400;
+  const pr = d3.geoNaturalEarth1().fitSize([W, H], { type: 'FeatureCollection', features: paises });
+  const path = d3.geoPath(pr);
+  // se recorta a las latitudes con aeropuertos (75°N a 50°S): mapa más bajo, mismo ancho
+  const yN = pr([0, 75])[1], yS = pr([0, -50])[1];
+  const svg = d3.select(cont).append('svg').attr('viewBox', `0 ${yN} ${W} ${yS - yN}`);
+  svg.append('g').selectAll('path').data(paises).join('path').attr('d', path)
+    .attr('fill', '#e9edf3').attr('stroke', '#fff').attr('stroke-width', 0.5);
+  const pos = code => { const c = aeropuertos[String(code).trim().toUpperCase()]; return c ? pr(c) : null; };
+  const pines = destinos.map(r => ({ ...r, p: pos(r.destino) })).filter(r => r.p);
+  const ori = origenes.map(o => ({ ...o, p: pos(o.origen) })).filter(o => o.p);
+  const o0 = ori[0];
+  if (o0) svg.append('g').selectAll('path').data(pines).join('path').attr('fill', 'none').attr('stroke', '#94a3b8')
+    .attr('stroke-width', 0.7).attr('opacity', 0.45)
+    .attr('d', r => `M${o0.p[0]},${o0.p[1]} Q${(o0.p[0] + r.p[0]) / 2},${Math.min(o0.p[1], r.p[1]) - 50} ${r.p[0]},${r.p[1]}`);
+  const max = d3.max(pines, r => r.ton_mercado) || 1;
+  const rad = d3.scaleSqrt([0, max], [0, 17]);
+  const tip = document.getElementById('mkTip');
+  svg.append('g').selectAll('circle').data(pines).join('circle')
+    .attr('cx', r => r.p[0]).attr('cy', r => r.p[1]).attr('r', r => Math.max(3, rad(r.ton_mercado)))
+    .attr('fill', r => porDestinos ? C_OWN : r.ton_propias > 0 ? C_OWN : C_GAP).attr('fill-opacity', 0.72)
+    .attr('stroke', '#fff').attr('stroke-width', 1).style('cursor', 'pointer')
+    .on('mouseenter', (e, r) => { tip.textContent = `${r.destino}: market ${fmtT(r.ton_mercado)} t (${r.pct_del_mercado.toFixed(1)}%)${porDestinos ? '' : ` · ${quien} ${fmtT(r.ton_propias)} t`}`; })
+    .on('mouseleave', () => { tip.textContent = 'Hover a pin for the detail.'; });
+  svg.append('g').selectAll('text').data(pines.slice(0, 8)).join('text')
+    .attr('x', r => r.p[0] + Math.max(3, rad(r.ton_mercado)) + 2).attr('y', r => r.p[1] + 3.5)
+    .attr('font-size', 11).attr('font-family', 'Inter, sans-serif').attr('fill', '#3d4f68').text(r => r.destino);
+  svg.append('g').selectAll('rect').data(ori).join('rect')
+    .attr('x', o => o.p[0] - 4).attr('y', o => o.p[1] - 4).attr('width', 8).attr('height', 8).attr('fill', '#0d1f3c')
+    .append('title').text(o => `Origin ${o.origen}: ${fmtT(o.ton_mercado)} t`);
+  const sinUbicar = destinos.length - pines.length;
+  if (sinUbicar) tip.textContent += ` (${sinUbicar} airport${sinUbicar > 1 ? 's' : ''} without location not shown)`;
 }
 
 // ── Registro de acciones de la reunión, por negocio ──
