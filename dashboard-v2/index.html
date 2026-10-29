@@ -374,6 +374,16 @@ main { overflow-y:auto; }
 .mk-map { margin:4px 10px; border:1px solid var(--border); border-radius:5px; padding:6px 8px 4px; background:#fff; }
 .mk-map svg { display:block; width:100%; height:auto; }
 .mk-tip { font-size:9.5px; color:var(--text2); min-height:14px; }
+.mk-mapg { display:grid; grid-template-columns:minmax(0,1fr) 178px; gap:10px; align-items:start; margin-top:3px; }
+.mk-zoom { display:flex; gap:3px; flex-wrap:wrap; margin-bottom:3px; }
+.mk-zoom button { font-family:'Inter',sans-serif; font-size:9.5px; border:1px solid var(--border); background:#fff; border-radius:4px; padding:1px 7px; cursor:pointer; color:var(--text2); }
+.mk-zoom button.on { background:var(--navy-hdr); border-color:var(--navy-hdr); color:#fff; }
+.mk-list { font-size:9.5px; font-variant-numeric:tabular-nums; }
+.mk-list .r { display:grid; grid-template-columns:15px 30px minmax(0,1fr) 44px; gap:4px; align-items:center; padding:1.5px 3px; border-radius:3px; }
+.mk-list .r.hd { color:var(--text3); font-size:8.5px; text-transform:uppercase; letter-spacing:0.05em; }
+.mk-list .r:not(.hd):hover, .mk-list .r.on { background:#eef3fb; }
+.mk-list .n { width:14px; height:14px; border-radius:50%; color:#fff; font-size:8px; display:flex; align-items:center; justify-content:center; }
+.mk-list .t, .mk-list .o { text-align:right; color:var(--text1); }
 .mk-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:3px; vertical-align:-1px; }
 .mk-card { border:1px solid var(--border); border-radius:5px; padding:6px 8px; background:#fff; min-width:0; }
 .mk-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:4px; }
@@ -1677,7 +1687,11 @@ async function loadMarket() {
 
   const mapa = `<div class="mk-map"><div class="mk-h">Where the market goes — top destination airports</div>
     <div class="mk-hs">Pin size = market tons${porDestinos ? '' : ` · <span class="mk-dot" style="background:${C_OWN}"></span>${h(quien)} has volume · <span class="mk-dot" style="background:${C_GAP}"></span>no ${h(quien)} volume`} · <span class="mk-dot" style="background:#0d1f3c;border-radius:1px"></span>origin</div>
-    <div id="mkMap"></div><div class="mk-tip" id="mkTip">Hover a pin for the detail.</div></div>`;
+    <div class="mk-mapg"><div style="min-width:0;">
+      <div class="mk-zoom" id="mkZoom"><button class="on" data-z="world">World</button><button data-z="am">Americas</button><button data-z="eu">Europe</button><button data-z="me">Middle East · Africa</button><button data-z="as">Asia</button><button data-z="oc">Oceania</button></div>
+      <div id="mkMap"></div></div>
+      <div class="mk-list" id="mkList"></div></div>
+    <div class="mk-tip" id="mkTip">Hover a pin or a row for the detail.</div></div>`;
   // 29 oct, cony: los destinos ya están en el mapa; abajo va "cómo vamos en
   // el tiempo" — toneladas por mes y participación por mes con su rango normal
   const k = d.control;
@@ -1777,33 +1791,85 @@ async function dibujarMapa(destinos, origenes, porDestinos, quien) {
   const path = d3.geoPath(pr);
   // se recorta a las latitudes con aeropuertos (75°N a 50°S): mapa más bajo, mismo ancho
   const yN = pr([0, 75])[1], yS = pr([0, -50])[1];
-  const svg = d3.select(cont).append('svg').attr('viewBox', `0 ${yN} ${W} ${yS - yN}`);
-  svg.append('g').selectAll('path').data(paises).join('path').attr('d', path)
-    .attr('fill', '#e9edf3').attr('stroke', '#fff').attr('stroke-width', 0.5);
-  const pos = code => { const c = aeropuertos[String(code).trim().toUpperCase()]; return c ? pr(c) : null; };
-  const pines = destinos.map(r => ({ ...r, p: pos(r.destino) })).filter(r => r.p);
-  const ori = origenes.map(o => ({ ...o, p: pos(o.origen) })).filter(o => o.p);
+  const vb = [0, yN, W, yS - yN];
+  const svg = d3.select(cont).append('svg').attr('viewBox', vb.join(' '));
+  // 29 oct, cony: en Europa y Asia los pines quedaban unos encima de otros.
+  // Ahora cada pin lleva un número (el de la lista de al lado) y se puede
+  // acercar por región; los pines no crecen al acercar, así se separan.
+  const g = svg.append('g');
+  g.append('g').selectAll('path').data(paises).join('path').attr('d', path)
+    .attr('fill', '#e9edf3').attr('stroke', '#fff').attr('stroke-width', 0.5).attr('vector-effect', 'non-scaling-stroke');
+  const pos = code => { const c = aeropuertos[String(code).trim().toUpperCase()]; return c ? { p: pr(c), lon: c[0], lat: c[1] } : null; };
+  const pines = destinos.map((r, i) => ({ ...r, num: i + 1, ...(pos(r.destino) || {}) })).filter(r => r.p);
+  const ori = origenes.map(o => ({ ...o, ...(pos(o.origen) || {}) })).filter(o => o.p);
+  const color = r => porDestinos || r.ton_propias > 0 ? C_OWN : C_GAP;
   const o0 = ori[0];
-  if (o0) svg.append('g').selectAll('path').data(pines).join('path').attr('fill', 'none').attr('stroke', '#94a3b8')
-    .attr('stroke-width', 0.7).attr('opacity', 0.45)
+  if (o0) g.append('g').selectAll('path').data(pines).join('path').attr('fill', 'none').attr('stroke', '#94a3b8')
+    .attr('stroke-width', 0.7).attr('opacity', 0.4).attr('vector-effect', 'non-scaling-stroke')
     .attr('d', r => `M${o0.p[0]},${o0.p[1]} Q${(o0.p[0] + r.p[0]) / 2},${Math.min(o0.p[1], r.p[1]) - 50} ${r.p[0]},${r.p[1]}`);
+  const oris = g.append('g').selectAll('rect').data(ori).join('rect').attr('fill', '#0d1f3c');
+  oris.append('title').text(o => `Origin ${o.origen}: ${fmtT(o.ton_mercado)} t`);
   const max = d3.max(pines, r => r.ton_mercado) || 1;
-  const rad = d3.scaleSqrt([0, max], [0, 17]);
+  const rad = d3.scaleSqrt([0, max], [7, 15]);   // mínimo 7: cabe el número
   const tip = document.getElementById('mkTip');
-  svg.append('g').selectAll('circle').data(pines).join('circle')
-    .attr('cx', r => r.p[0]).attr('cy', r => r.p[1]).attr('r', r => Math.max(3, rad(r.ton_mercado)))
-    .attr('fill', r => porDestinos ? C_OWN : r.ton_propias > 0 ? C_OWN : C_GAP).attr('fill-opacity', 0.72)
-    .attr('stroke', '#fff').attr('stroke-width', 1).style('cursor', 'pointer')
-    .on('mouseenter', (e, r) => { tip.textContent = `${r.destino}: market ${fmtT(r.ton_mercado)} t (${r.pct_del_mercado.toFixed(1)}%)${porDestinos ? '' : ` · ${quien} ${fmtT(r.ton_propias)} t`}`; })
-    .on('mouseleave', () => { tip.textContent = 'Hover a pin for the detail.'; });
-  svg.append('g').selectAll('text').data(pines.slice(0, 8)).join('text')
-    .attr('x', r => r.p[0] + Math.max(3, rad(r.ton_mercado)) + 2).attr('y', r => r.p[1] + 3.5)
-    .attr('font-size', 11).attr('font-family', 'Inter, sans-serif').attr('fill', '#3d4f68').text(r => r.destino);
-  svg.append('g').selectAll('rect').data(ori).join('rect')
-    .attr('x', o => o.p[0] - 4).attr('y', o => o.p[1] - 4).attr('width', 8).attr('height', 8).attr('fill', '#0d1f3c')
-    .append('title').text(o => `Origin ${o.origen}: ${fmtT(o.ton_mercado)} t`);
+  const texto = r => `#${r.num} ${r.destino}: market ${fmtT(r.ton_mercado)} t (${r.pct_del_mercado.toFixed(1)}% of the market)${porDestinos ? '' : ` · ${quien} ${fmtT(r.ton_propias)} t`}`;
+  const lista = document.getElementById('mkList');
+  const marcar = (num, on) => {
+    pinG.select('circle').attr('stroke', r => on && r.num === num ? '#0d1f3c' : '#fff').attr('stroke-width', r => on && r.num === num ? 2 : 1);
+    lista.querySelectorAll('.r[data-n]').forEach(el => el.classList.toggle('on', on && +el.dataset.n === num));
+    const r = pines.find(x => x.num === num);
+    tip.textContent = on && r ? texto(r) : 'Hover a pin or a row for the detail.';
+  };
+  // los más chicos arriba, así un pin grande no tapa a uno chico
+  const pinG = g.append('g').selectAll('g').data([...pines].sort((a, b) => b.ton_mercado - a.ton_mercado)).join('g')
+    .style('cursor', 'pointer')
+    .on('mouseenter', (e, r) => marcar(r.num, true)).on('mouseleave', (e, r) => marcar(r.num, false));
+  pinG.append('circle').attr('fill', color).attr('fill-opacity', 0.85).attr('stroke', '#fff').attr('stroke-width', 1);
+  pinG.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em').attr('fill', '#fff')
+    .attr('font-family', 'Inter, sans-serif').attr('font-weight', 600).text(r => r.num);
+
+  // dibuja pines y orígenes al tamaño de pantalla actual (k = cuánto se acercó)
+  // rad() está en píxeles de pantalla: se pasa a unidades del mapa según el
+  // ancho real del mapa (u = unidades por píxel), así el número del pin
+  // siempre se lee igual, sea pantalla grande o chica
+  const dibujar = k => {
+    const u = vb[2] / (svg.node().getBoundingClientRect().width || vb[2]) / k;
+    const f = k > 1 ? 0.85 : 1;   // al acercar, pines un poco más chicos para que no se toquen
+    pinG.attr('transform', r => `translate(${r.p[0]},${r.p[1]})`);
+    pinG.select('circle').attr('r', r => f * rad(r.ton_mercado) * u);
+    pinG.select('text').attr('font-size', r => f * (rad(r.ton_mercado) > 10 ? 10 : 8.5) * u);
+    oris.attr('x', o => o.p[0] - 4 * u).attr('y', o => o.p[1] - 4 * u).attr('width', 8 * u).attr('height', 8 * u);
+  };
+  dibujar(1);
+  const zonas = { world: null, am: r => r.lon < -30, eu: r => r.lon >= -30 && r.lon < 45 && r.lat > 35,
+    me: r => r.lon >= -30 && r.lon < 60 && !(r.lon < 45 && r.lat > 35), as: r => r.lon >= 60 && r.lat > -10, oc: r => r.lon >= 100 && r.lat <= -10 };
+  const irA = z => {
+    document.querySelectorAll('#mkZoom button').forEach(b => b.classList.toggle('on', b.dataset.z === z));
+    const sel = zonas[z] ? pines.filter(zonas[z]) : [];
+    if (!sel.length) { g.attr('transform', null); dibujar(1); return; }
+    const xs = sel.map(r => r.p[0]), ys = sel.map(r => r.p[1]);
+    const pad = 25, x0 = Math.min(...xs) - pad, x1 = Math.max(...xs) + pad, y0 = Math.min(...ys) - pad, y1 = Math.max(...ys) + pad;
+    const k = Math.min(16, vb[2] / (x1 - x0), vb[3] / (y1 - y0));
+    const tx = vb[0] + vb[2] / 2 - k * (x0 + x1) / 2, ty = vb[1] + vb[3] / 2 - k * (y0 + y1) / 2;
+    g.attr('transform', `translate(${tx},${ty}) scale(${k})`);
+    dibujar(k);
+  };
+  document.querySelectorAll('#mkZoom button').forEach(b => {
+    const hay = !zonas[b.dataset.z] || pines.some(zonas[b.dataset.z]);
+    b.style.display = hay ? '' : 'none';
+    b.onclick = () => irA(b.dataset.z);
+  });
+
+  // lista numerada al lado del mapa (la misma numeración de los pines)
+  lista.innerHTML = `<div class="r hd"><span>#</span><span>Dest.</span><span class="t">Market t</span><span class="o">${porDestinos ? '' : h(quien)}</span></div>` +
+    destinos.map((r, i) => `<div class="r" data-n="${i + 1}"><span class="n" style="background:${color(r)}">${i + 1}</span><b style="font-weight:500">${h(r.destino)}</b>
+      <span class="t">${fmtT(r.ton_mercado)}</span><span class="o" style="${!porDestinos && r.ton_propias <= 0 ? `color:${C_GAP}` : ''}">${porDestinos ? '' : fmtT(r.ton_propias)}</span></div>`).join('');
+  lista.querySelectorAll('.r[data-n]').forEach(el => {
+    el.onmouseenter = () => marcar(+el.dataset.n, true);
+    el.onmouseleave = () => marcar(+el.dataset.n, false);
+  });
   const sinUbicar = destinos.length - pines.length;
-  if (sinUbicar) tip.textContent += ` (${sinUbicar} airport${sinUbicar > 1 ? 's' : ''} without location not shown)`;
+  if (sinUbicar) lista.insertAdjacentHTML('beforeend', `<div class="mk-tip">${sinUbicar} airport${sinUbicar > 1 ? 's' : ''} without a known location (not on the map)</div>`);
 }
 
 // ── Registro de acciones de la reunión, por negocio ──
