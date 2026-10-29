@@ -384,6 +384,15 @@ main { overflow-y:auto; }
 .mk-list .r:not(.hd):hover, .mk-list .r.on { background:#eef3fb; }
 .mk-list .n { width:14px; height:14px; border-radius:50%; color:#fff; font-size:8px; display:flex; align-items:center; justify-content:center; }
 .mk-list .t, .mk-list .o { text-align:right; color:var(--text1); }
+/* 29 oct, cony: destinos u orígenes (todos) y clic para filtrar el panel */
+.mk-list { max-height:330px; overflow-y:auto; }
+.mk-list .r:not(.hd) { cursor:pointer; }
+.mk-list .r.sel { background:#dbe6fb; font-weight:600; }
+.mk-ltabs { display:flex; gap:4px; margin-bottom:4px; position:sticky; top:0; background:#fff; padding-bottom:2px; }
+.mk-ltabs button { font-size:9px; padding:2px 7px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--text2); cursor:pointer; }
+.mk-ltabs button.on { background:#0d1f3c; border-color:#0d1f3c; color:#fff; }
+.mk-chips { display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:10px; color:var(--text3); padding:6px 10px 0; }
+.mk-chips button { font-size:10px; padding:2px 8px; border-radius:10px; border:1px solid #bcd0f3; background:#eef3fb; color:#1a56db; cursor:pointer; }
 .mk-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:3px; vertical-align:-1px; }
 .mk-card { border:1px solid var(--border); border-radius:5px; padding:6px 8px; background:#fff; min-width:0; }
 .mk-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:4px; }
@@ -1575,12 +1584,14 @@ async function initMercado() {
 }
 function refrescarMercado() {
   if (!MK.fuentes) return;
+  MK.filtro = { origen: null, destino: null };
   armarSelectorMercado();
   loadMarket();
   loadNotes();
 }
 function onMarketSourceChange() {
   try { localStorage.setItem('dfv2_mk_' + negocioActual(), document.getElementById('mkSource').value); } catch (e) {}
+  MK.filtro = { origen: null, destino: null };
   loadMarket();
 }
 
@@ -1627,7 +1638,13 @@ async function loadMarket() {
   body.innerHTML = '<div class="mk-msg">Loading market data… (the first time a database is opened it can take a minute)</div>';
   let d;
   const destino = opcion.split('|')[2] || '';
-  try { d = await md('/api/reunion/mercado' + (destino ? `?aerolinea_destino=${encodeURIComponent(destino)}` : ''), opcion); }
+  const f = MK.filtro || (MK.filtro = { origen: null, destino: null });
+  const q = new URLSearchParams();
+  if (destino) q.set('aerolinea_destino', destino);
+  if (f.origen) q.set('origen', f.origen);
+  if (f.destino) q.set('destino', f.destino);
+  const clave = opcion + '?' + q.toString();
+  try { d = MK.cache && MK.cache.clave === clave ? MK.cache.d : await md('/api/reunion/mercado' + (q.toString() ? '?' + q.toString() : ''), opcion); MK.cache = { clave, d }; }
   catch (e) { if (seq === MK.seq) body.innerHTML = `<div class="mk-msg">Could not load market data: ${h(e.message)}</div>`; return; }
   if (seq !== MK.seq) return;
   if (!d.mes) { body.innerHTML = '<div class="mk-msg">This database has no data yet.</div>'; return; }
@@ -1657,6 +1674,10 @@ async function loadMarket() {
   if (porDestinos) {
     ver = { cls: '', t: `${h(negocio)} destinations: the market ${sube(pm.ton_mercado)} in ${mesLabel(d.mes)}`,
       s: `Compared with ${mPrev}. Same month last year: ${pct1(py.ton_mercado)}.` };
+  } else if (!(d.ton_propias > 0)) {
+    // sin volumen propio en la selección: lo útil es el tamaño del mercado
+    ver = { cls: 'dn', t: `No ${h(quien)} volume in ${mesLabel(d.mes)}`,
+      s: `The market here moved ${fmtT(d.ton_mercado)} t and ${sube(pm.ton_mercado)} vs ${mPrev}; ${h(quien)} had no tons on it.` };
   } else {
     const dif = (pm.ton_propias ?? 0) - (pm.ton_mercado ?? 0);
     const estado = pm.ton_propias == null || pm.ton_mercado == null ? 'held' : dif < -1 ? 'lost' : dif > 1 ? 'gained' : 'held';
@@ -1666,7 +1687,10 @@ async function loadMarket() {
       t: `${h(quien)} ${estado === 'held' ? 'kept its place' : estado + ' ground'} in ${mesLabel(d.mes)}`,
       s: `The market ${sube(pm.ton_mercado)} vs ${mPrev}, ${h(quien)} ${sube(pm.ton_propias)}.${extra}` };
   }
-  const veredicto = `<div class="mk-ver ${ver.cls}"><div class="t">${ver.t}</div><div class="s">${ver.s}</div></div>`;
+  const fo = (d.filtro || {}).origen, fd = (d.filtro || {}).destino;
+  const ruta = fo && fd ? `${h(fo)} → ${h(fd)}` : fo ? `From ${h(fo)}` : fd ? `To ${h(fd)}` : '';
+  const chips = ruta ? `<div class="mk-chips">Showing only: ${fo ? `<button data-q="origen">Origin ${h(fo)} ✕</button>` : ''}${fd ? `<button data-q="destino">Destination ${h(fd)} ✕</button>` : ''}<button data-q="todo">Show all</button></div>` : '';
+  const veredicto = `${chips}<div class="mk-ver ${ver.cls}"><div class="t">${ruta ? ruta + ' · ' : ''}${ver.t}</div><div class="s">${ver.s}</div></div>`;
 
   // ── tres números grandes ──
   const flecha = (v, suf = '%') => v == null ? '—' : `<b class="${v >= 0 ? 'up' : 'dn'}">${v >= 0 ? '▲' : '▼'} ${Math.abs(v).toFixed(1)}${suf}</b>`;
@@ -1691,7 +1715,7 @@ async function loadMarket() {
       <div class="mk-zoom" id="mkZoom"><button class="on" data-z="world">World</button><button data-z="am">Americas</button><button data-z="eu">Europe</button><button data-z="me">Middle East · Africa</button><button data-z="as">Asia</button><button data-z="oc">Oceania</button></div>
       <div id="mkMap"></div></div>
       <div class="mk-list" id="mkList"></div></div>
-    <div class="mk-tip" id="mkTip">Hover a pin or a row for the detail.</div></div>`;
+    <div class="mk-tip" id="mkTip">Hover a pin or a row for the detail · <b>click</b> an origin or destination to analyse only that one.</div></div>`;
   // 29 oct, cony: los destinos ya están en el mapa; abajo va "cómo vamos en
   // el tiempo" — toneladas por mes y participación por mes con su rango normal
   const k = d.control;
@@ -1706,6 +1730,10 @@ async function loadMarket() {
     ${segundo}</div>`;
 
   body.innerHTML = `${veredicto}<div class="mk-big">${numeros.join('')}</div>${mapa}${barras}`;
+  body.querySelectorAll('.mk-chips button').forEach(b => b.onclick = () => {
+    if (b.dataset.q === 'todo') MK.filtro = { origen: null, destino: null }; else MK.filtro[b.dataset.q] = null;
+    loadMarket();
+  });
 
   dibujarMeses(serie, porDestinos);
   dibujarEvolucion(serie, k, porDestinos, quien);
@@ -1779,6 +1807,14 @@ async function datosMapa() {
   return MK.geo;
 }
 
+// clic en un origen o destino: el panel del mercado y su análisis pasan a esa
+// selección (otro clic en el mismo, o la ✕ de arriba, lo quita)
+function elegirMapa(tipo, valor) {
+  MK.filtro = MK.filtro || { origen: null, destino: null };
+  MK.filtro[tipo] = MK.filtro[tipo] === valor ? null : valor;
+  loadMarket();
+}
+
 async function dibujarMapa(destinos, origenes, porDestinos, quien) {
   const cont = document.getElementById('mkMap');
   if (!cont || typeof d3 === 'undefined' || typeof topojson === 'undefined') return;
@@ -1807,13 +1843,26 @@ async function dibujarMapa(destinos, origenes, porDestinos, quien) {
   if (o0) g.append('g').selectAll('path').data(pines).join('path').attr('fill', 'none').attr('stroke', '#94a3b8')
     .attr('stroke-width', 0.7).attr('opacity', 0.4).attr('vector-effect', 'non-scaling-stroke')
     .attr('d', r => `M${o0.p[0]},${o0.p[1]} Q${(o0.p[0] + r.p[0]) / 2},${Math.min(o0.p[1], r.p[1]) - 50} ${r.p[0]},${r.p[1]}`);
-  const oris = g.append('g').selectAll('rect').data(ori).join('rect').attr('fill', '#0d1f3c');
-  oris.append('title').text(o => `Origin ${o.origen}: ${fmtT(o.ton_mercado)} t`);
+  // 29 oct, cony: todos los orígenes, del tamaño de sus toneladas
+  const maxO = d3.max(ori, o => o.ton_mercado) || 1;
+  const ladoO = d3.scaleSqrt([0, maxO], [3, 10]);
+  const textoO = o => `Origin ${o.origen}: market ${fmtT(o.ton_mercado)} t (${(o.pct_del_mercado || 0).toFixed(1)}% of the market)${porDestinos ? '' : ` · ${quien} ${fmtT(o.ton_propias)} t`}`;
+  const oris = g.append('g').selectAll('rect').data([...ori].sort((a, b) => b.ton_mercado - a.ton_mercado)).join('rect')
+    .attr('fill', '#0d1f3c').attr('fill-opacity', 0.85).attr('stroke', '#fff').attr('stroke-width', 0.5).attr('vector-effect', 'non-scaling-stroke')
+    .style('cursor', 'pointer')
+    .on('mouseenter', (e, o) => marcarO(o.origen, true)).on('mouseleave', (e, o) => marcarO(o.origen, false))
+    .on('click', (e, o) => elegirMapa('origen', o.origen));
   const max = d3.max(pines, r => r.ton_mercado) || 1;
   const rad = d3.scaleSqrt([0, max], [7, 15]);   // mínimo 7: cabe el número
   const tip = document.getElementById('mkTip');
   const texto = r => `#${r.num} ${r.destino}: market ${fmtT(r.ton_mercado)} t (${r.pct_del_mercado.toFixed(1)}% of the market)${porDestinos ? '' : ` · ${quien} ${fmtT(r.ton_propias)} t`}`;
   const lista = document.getElementById('mkList');
+  const marcarO = (code, on) => {
+    oris.attr('stroke', o => on && o.origen === code ? '#f59e0b' : '#fff').attr('stroke-width', o => on && o.origen === code ? 2 : 0.5);
+    lista.querySelectorAll('.r[data-o]').forEach(el => el.classList.toggle('on', on && el.dataset.o === code));
+    const o = ori.find(x => x.origen === code) || origenes.find(x => x.origen === code);
+    tip.textContent = on && o ? textoO(o) : 'Hover a pin or a row for the detail.';
+  };
   const marcar = (num, on) => {
     pinG.select('circle').attr('stroke', r => on && r.num === num ? '#0d1f3c' : '#fff').attr('stroke-width', r => on && r.num === num ? 2 : 1);
     lista.querySelectorAll('.r[data-n]').forEach(el => el.classList.toggle('on', on && +el.dataset.n === num));
@@ -1823,7 +1872,8 @@ async function dibujarMapa(destinos, origenes, porDestinos, quien) {
   // los más chicos arriba, así un pin grande no tapa a uno chico
   const pinG = g.append('g').selectAll('g').data([...pines].sort((a, b) => b.ton_mercado - a.ton_mercado)).join('g')
     .style('cursor', 'pointer')
-    .on('mouseenter', (e, r) => marcar(r.num, true)).on('mouseleave', (e, r) => marcar(r.num, false));
+    .on('mouseenter', (e, r) => marcar(r.num, true)).on('mouseleave', (e, r) => marcar(r.num, false))
+    .on('click', (e, r) => elegirMapa('destino', r.destino));
   pinG.append('circle').attr('fill', color).attr('fill-opacity', 0.85).attr('stroke', '#fff').attr('stroke-width', 1);
   pinG.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em').attr('fill', '#fff')
     .attr('font-family', 'Inter, sans-serif').attr('font-weight', 600).text(r => r.num);
@@ -1838,7 +1888,8 @@ async function dibujarMapa(destinos, origenes, porDestinos, quien) {
     pinG.attr('transform', r => `translate(${r.p[0]},${r.p[1]})`);
     pinG.select('circle').attr('r', r => f * rad(r.ton_mercado) * u);
     pinG.select('text').attr('font-size', r => f * (rad(r.ton_mercado) > 10 ? 10 : 8.5) * u);
-    oris.attr('x', o => o.p[0] - 4 * u).attr('y', o => o.p[1] - 4 * u).attr('width', 8 * u).attr('height', 8 * u);
+    oris.attr('x', o => o.p[0] - ladoO(o.ton_mercado) * u).attr('y', o => o.p[1] - ladoO(o.ton_mercado) * u)
+      .attr('width', o => 2 * ladoO(o.ton_mercado) * u).attr('height', o => 2 * ladoO(o.ton_mercado) * u);
   };
   dibujar(1);
   const zonas = { world: null, am: r => r.lon < -30, eu: r => r.lon >= -30 && r.lon < 45 && r.lat > 35,
@@ -1860,15 +1911,33 @@ async function dibujarMapa(destinos, origenes, porDestinos, quien) {
     b.onclick = () => irA(b.dataset.z);
   });
 
-  // lista numerada al lado del mapa (la misma numeración de los pines)
-  lista.innerHTML = `<div class="r hd"><span>#</span><span>Dest.</span><span class="t">Market t</span><span class="o">${porDestinos ? '' : h(quien)}</span></div>` +
+  // lista al lado del mapa: destinos (misma numeración de los pines) u
+  // orígenes (todos, 29 oct, cony), con las toneladas del mercado y propias
+  const modo = MK.listaModo || 'dest';
+  const tabs = `<div class="mk-ltabs"><button data-l="dest" class="${modo === 'dest' ? 'on' : ''}">Destinations (${destinos.length})</button><button data-l="ori" class="${modo === 'ori' ? 'on' : ''}">Origins (${origenes.length})</button></div>`;
+  const filasDest = `<div class="r hd"><span>#</span><span>Dest.</span><span class="t">Market t</span><span class="o">${porDestinos ? '' : h(quien)}</span></div>` +
     destinos.map((r, i) => `<div class="r" data-n="${i + 1}"><span class="n" style="background:${color(r)}">${i + 1}</span><b style="font-weight:500">${h(r.destino)}</b>
       <span class="t">${fmtT(r.ton_mercado)}</span><span class="o" style="${!porDestinos && r.ton_propias <= 0 ? `color:${C_GAP}` : ''}">${porDestinos ? '' : fmtT(r.ton_propias)}</span></div>`).join('');
+  const filasOri = `<div class="r hd"><span></span><span>Origin</span><span class="t">Market t</span><span class="o">${porDestinos ? '%' : h(quien)}</span></div>` +
+    origenes.map(o => `<div class="r" data-o="${h(o.origen)}"><span class="n" style="background:#0d1f3c;border-radius:2px;"></span><b style="font-weight:500">${h(o.origen)}</b>
+      <span class="t">${fmtT(o.ton_mercado)}</span><span class="o" style="${!porDestinos && o.ton_propias <= 0 ? `color:${C_GAP}` : ''}">${porDestinos ? (o.pct_del_mercado || 0).toFixed(1) + '%' : fmtT(o.ton_propias)}</span></div>`).join('');
+  lista.innerHTML = tabs + (modo === 'ori' ? filasOri : filasDest);
+  lista.querySelectorAll('.mk-ltabs button').forEach(b => b.onclick = () => { MK.listaModo = b.dataset.l; loadMarket(); });
+  const f = MK.filtro || {};
   lista.querySelectorAll('.r[data-n]').forEach(el => {
+    const r = destinos[+el.dataset.n - 1];
+    el.classList.toggle('sel', !!r && f.destino === r.destino);
     el.onmouseenter = () => marcar(+el.dataset.n, true);
     el.onmouseleave = () => marcar(+el.dataset.n, false);
+    el.onclick = () => r && elegirMapa('destino', r.destino);
   });
-  const sinUbicar = destinos.length - pines.length;
+  lista.querySelectorAll('.r[data-o]').forEach(el => {
+    el.classList.toggle('sel', f.origen === el.dataset.o);
+    el.onmouseenter = () => marcarO(el.dataset.o, true);
+    el.onmouseleave = () => marcarO(el.dataset.o, false);
+    el.onclick = () => elegirMapa('origen', el.dataset.o);
+  });
+  const sinUbicar = modo === 'ori' ? origenes.length - ori.length : destinos.length - pines.length;
   if (sinUbicar) lista.insertAdjacentHTML('beforeend', `<div class="mk-tip">${sinUbicar} airport${sinUbicar > 1 ? 's' : ''} without a known location (not on the map)</div>`);
 }
 
