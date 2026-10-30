@@ -62,7 +62,7 @@
   .panel-title { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
   .panel-note { font-size:10px; color:#8fb5d7; white-space:nowrap; }
   .mobile-filter-toggle { display:none; height:28px; border:1px solid rgba(200,216,240,.65); background:transparent; color:#fff; border-radius:4px; padding:0 10px; font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
-  .filters { padding:10px 12px; display:grid; grid-template-columns:repeat(3,minmax(160px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
+  .filters { padding:10px 12px; display:grid; grid-template-columns:repeat(4,minmax(160px,1fr)) auto; gap:8px; align-items:end; background:var(--surface2); border-bottom:1px solid var(--border); }
   .filter-backdrop, .mobile-filter-head { display:none; }
   .field { min-width:0; }
   label { display:block; font-size:9px; font-weight:600; color:var(--text2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:4px; }
@@ -167,6 +167,14 @@
         <button class="mobile-filter-close" id="filterClose" type="button" aria-label="Close filters">x</button>
       </div>
       <div class="field">
+        <label for="typeFilter">Pending type</label>
+        <select id="typeFilter">
+          <option value="ALL">X CONFIRMAR + Agreement error</option>
+          <option value="CONFIRM">Only X CONFIRMAR</option>
+          <option value="AGREEMENT">Only Agreement error</option>
+        </select>
+      </div>
+      <div class="field">
         <label for="carrierFilter">Carrier</label>
         <select id="carrierFilter"><option value="ALL">All carriers</option></select>
       </div>
@@ -220,6 +228,7 @@ let requestSeq = 0;
 const els = {
   body: document.getElementById("pendingBody"),
   resultNote: document.getElementById("resultNote"),
+  type: document.getElementById("typeFilter"),
   carrier: document.getElementById("carrierFilter"),
   gsa: document.getElementById("gsaFilter"),
   sales: document.getElementById("salesFilter"),
@@ -384,11 +393,23 @@ function renderTable() {
   `).join("");
 }
 
+// Same texts the API uses to bring the rows: any SpotRef with CONF is
+// "X CONFIRMAR"; the agreement error is "NO or MORE THAN 1 AGREEMENT FOUND".
+// A SpotRef with both texts shows under both options.
+function pendingTypeMatches(row, type) {
+  const ref = String(row.spotref ?? "").toUpperCase();
+  if (type === "CONFIRM") return ref.includes("CONF");
+  if (type === "AGREEMENT") return ref.includes("NO OR MORE THAN 1 AGREEMENT FOUND");
+  return true;
+}
+
 function applyFilters() {
+  const type = els.type.value || "ALL";
   const carrier = cleanFilterValue(els.carrier.value || "ALL");
   const gsa = cleanFilterValue(els.gsa.value || "ALL");
   const sales = cleanFilterValue(els.sales.value || "ALL");
   rows = allRows.filter(row =>
+    pendingTypeMatches(row, type) &&
     (carrier === "ALL" || cleanFilterValue(row.seg_carrier) === carrier) &&
     (gsa === "ALL" || cleanFilterValue(row.gsa_name) === gsa) &&
     (sales === "ALL" || cleanFilterValue(row.sales_person) === sales)
@@ -488,8 +509,9 @@ async function checkPendingSpotsAccess(initFunction) {
   }
 }
 
-[els.carrier, els.gsa, els.sales].forEach(el => el.addEventListener("change", applyFilters));
+[els.type, els.carrier, els.gsa, els.sales].forEach(el => el.addEventListener("change", applyFilters));
 document.getElementById("resetBtn").addEventListener("click", () => {
+  els.type.value = "ALL";
   els.carrier.value = "ALL";
   els.gsa.value = "ALL";
   els.sales.value = "ALL";
