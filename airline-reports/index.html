@@ -93,6 +93,7 @@
       </div>
       <div class="field"><label for="dateFrom">From</label><input type="date" id="dateFrom"></div>
       <div class="field"><label for="dateTo">To</label><input type="date" id="dateTo"></div>
+      <div class="field"><label for="dayFilter">Day</label><select id="dayFilter"><option value="ALL">All days</option></select></div>
       <button class="tool-btn" id="resetBtn" type="button">Reset</button>
       <button class="tool-btn primary" id="exportBtn" type="button">Export Excel</button>
       <button class="tool-btn" id="csvBtn" type="button">Export CSV</button>
@@ -128,6 +129,7 @@ const els = {
   reportType: document.getElementById("reportType"),
   dateFrom: document.getElementById("dateFrom"),
   dateTo: document.getElementById("dateTo"),
+  day: document.getElementById("dayFilter"),
   stations: document.getElementById("stations"),
   note: document.getElementById("note"),
   report: document.getElementById("report"),
@@ -173,10 +175,24 @@ function dayName(group) {
 }
 
 function visibleBlocks() {
-  return (data ? data.blocks : []).map(block => ({
-    ...block,
-    groups: block.groups.filter(g => !hiddenStations.has(g.station)),
-  }));
+  const day = els.day.value;
+  return (data ? data.blocks : [])
+    .filter(block => day === "ALL" || (block.start <= day && day <= block.end))
+    .map(block => ({
+      ...block,
+      groups: block.groups.filter(g => !hiddenStations.has(g.station) && (day === "ALL" || String(g.flight_date).slice(0, 10) === day)),
+    }));
+}
+
+function renderDays() {
+  const selected = els.day.value;
+  const options = [{ value: "ALL", label: "All days" }];
+  (data ? data.blocks : []).forEach(block => {
+    for (let d = parseDay(block.start); iso(d) <= block.end; d.setDate(d.getDate() + 1)) {
+      options.push({ value: iso(d), label: d.toLocaleDateString("en-US", { weekday: "long", month: "2-digit", day: "2-digit" }) });
+    }
+  });
+  fillSelect(els.day, options, options.some(o => o.value === selected) ? selected : "ALL");
 }
 
 function blockTitle(block) {
@@ -263,6 +279,7 @@ async function load() {
     if (!carriers.some(c => c.value === body.carrier)) carriers.unshift({ value: body.carrier, label: body.carrier });
     fillSelect(els.carrier, carriers, body.carrier);
     fillSelect(els.prefix, [{ value: "ALL", label: "All" }].concat(body.prefixes.map(p => ({ value: p, label: String(p).padStart(3, "0") }))), body.prefix ?? "ALL");
+    renderDays();
     renderStations();
     renderReport();
     els.note.textContent = (FLIGHTS[body.carrier] ? "" : "CargoSystem has no flight number, so this carrier shows only the date. ");
@@ -270,6 +287,7 @@ async function load() {
   } catch (error) {
     if (seq !== requestSeq) return;
     data = null;
+    renderDays();
     renderStations();
     els.report.innerHTML = "";
     els.note.textContent = error.message;
@@ -376,6 +394,7 @@ els.dateTo.addEventListener("change", () => {
   if (els.dateTo.value && els.dateTo.value < els.dateFrom.value) els.dateFrom.value = els.dateTo.value;
   load();
 });
+els.day.addEventListener("change", renderReport);
 els.stations.addEventListener("change", event => {
   const station = event.target.dataset.station;
   if (!station) return;
@@ -386,6 +405,7 @@ els.stations.addEventListener("change", event => {
 document.getElementById("resetBtn").addEventListener("click", () => {
   els.carrier.innerHTML = "";
   els.reportType.value = "friday";
+  els.day.value = "ALL";
   setDefaults();
   reloadWithPrefixReset();
 });
