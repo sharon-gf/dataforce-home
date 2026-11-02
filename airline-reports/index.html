@@ -64,6 +64,7 @@
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script src="../dataforce-shell.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -94,6 +95,8 @@
       <div class="field"><label for="dateTo">To</label><input type="date" id="dateTo"></div>
       <button class="tool-btn" id="resetBtn" type="button">Reset</button>
       <button class="tool-btn primary" id="exportBtn" type="button">Export Excel</button>
+      <button class="tool-btn" id="csvBtn" type="button">Export CSV</button>
+      <button class="tool-btn" id="imageBtn" type="button">Export image</button>
     </div>
     <div class="stations" id="stations"></div>
     <div class="note" id="note"></div>
@@ -111,11 +114,12 @@ const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 const FLIGHTS = { ET: { EWR: "ET515", JFK: "ET513" } };
 // AWB prefix each carrier opens with; its segments on other airlines' AWBs stay out until chosen.
 const OWN_PREFIX = { ET: 71 };
-const REPORT_WEEKDAY = { friday: 5, monday: 1 };
+// Stations that start unchecked; they can be added with their checkbox.
+const UNCHECKED_STATIONS = { ET: ["LGG"] };
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 let data = null;
-let hiddenStations = new Set();
+let hiddenStations = new Set(UNCHECKED_STATIONS.ET);
 let requestSeq = 0;
 
 const els = {
@@ -151,12 +155,6 @@ function iso(d) {
 function parseDay(text) {
   const [y, m, d] = String(text).slice(0, 10).split("-").map(Number);
   return new Date(y, m - 1, d);
-}
-
-function lastReportDay(type) {
-  const d = new Date();
-  d.setDate(d.getDate() - ((d.getDay() - REPORT_WEEKDAY[type] + 7) % 7));
-  return iso(d);
 }
 
 function number(value) {
@@ -318,20 +316,57 @@ async function exportExcel() {
   URL.revokeObjectURL(url);
 }
 
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportName(extension) {
+  return `airline-report-${data.carrier}-${data.report_type}-${els.dateFrom.value}.${extension}`;
+}
+
+function exportCsv() {
+  if (!data) return;
+  const cell = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const round = value => Math.floor(Number(value || 0) + 0.5);
+  const lines = [["Report", "Day of the week", "Station", "Flight/Date", "Destination", "AWB", "PRODUCT", "Kilos", "REVENUE", "PMC"]];
+  visibleBlocks().forEach(block => {
+    block.groups.forEach(group => {
+      const start = [blockTitle(block), dayName(group), group.station, flightLabel(data.carrier, group)];
+      group.rows.forEach(row => {
+        lines.push([...start, row.destination, row.awb, row.product, round(row.kilos), round(row.revenue), ""]);
+      });
+      lines.push([...start, "", `${group.station} Total`, "", round(group.kilos), round(group.revenue), group.pmc]);
+    });
+  });
+  const text = lines.map(line => line.map(cell).join(",")).join("\r\n");
+  downloadBlob(new Blob(["﻿" + text], { type: "text/csv;charset=utf-8" }), exportName("csv"));
+}
+
+async function exportImage() {
+  if (!data || !window.html2canvas) return;
+  const canvas = await html2canvas(els.report, { backgroundColor: "#ffffff", scale: 2 });
+  canvas.toBlob(blob => downloadBlob(blob, exportName("png")), "image/png");
+}
+
 function setDefaults() {
-  const day = lastReportDay(els.reportType.value);
+  const day = iso(new Date());
   els.dateFrom.value = day;
   els.dateTo.value = day;
 }
 
 function reloadWithPrefixReset() {
-  hiddenStations = new Set();
+  hiddenStations = new Set(UNCHECKED_STATIONS[els.carrier.value || "ET"] || []);
   els.prefix.innerHTML = "";
   load();
 }
 
 els.carrier.addEventListener("change", reloadWithPrefixReset);
-els.prefix.addEventListener("change", () => { hiddenStations = new Set(); load(); });
+els.prefix.addEventListener("change", load);
 els.reportType.addEventListener("change", () => { setDefaults(); load(); });
 els.dateFrom.addEventListener("change", () => {
   if (els.dateTo.value < els.dateFrom.value) els.dateTo.value = els.dateFrom.value;
@@ -355,6 +390,8 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   reloadWithPrefixReset();
 });
 document.getElementById("exportBtn").addEventListener("click", exportExcel);
+document.getElementById("csvBtn").addEventListener("click", exportCsv);
+document.getElementById("imageBtn").addEventListener("click", exportImage);
 
 async function checkAirlineReportsAccess(initFunction) {
   const u = user();
