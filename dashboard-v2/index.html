@@ -335,7 +335,12 @@ main { overflow-y:auto; }
 .v2-cols { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(360px,1fr); gap:10px; align-items:stretch; flex-shrink:0; margin-bottom:10px; }
 .v2-left, .v2-right { min-width:0; display:flex; flex-direction:column; }
 .v2-left .bottom-row { margin-bottom:0; flex:1; }
-.v2-right > .card { flex:1; }
+.v2-right > .card { flex:1; display:flex; flex-direction:column; }
+#mkBody { flex:1; display:flex; flex-direction:column; min-height:0; }
+#mkBody .mk-pair { flex:1; min-height:0; grid-template-rows:minmax(0,1fr); }
+#mkBody .mk-card { display:flex; flex-direction:column; }
+#mkBody .mk-chart { flex:1; height:auto; min-height:130px; }
+#mkBody .mk-chart canvas { position:absolute; inset:0; }
 .v2-sel { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#fff; font-family:'Inter',sans-serif; font-size:10px; padding:2px 6px; border-radius:4px; max-width:260px; }
 .v2-sel option, .v2-sel optgroup { background:#0d1f3c; color:#fff; }
 .mk-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:8px 10px 4px; }
@@ -417,9 +422,11 @@ main { overflow-y:auto; }
 .mk-ins { margin-top:6px; padding:5px 8px; border-left:2px solid var(--blue-lw); background:var(--surface2); font-size:9.5px; color:var(--text2); line-height:1.5; }
 .mk-def { font-size:8.5px; color:var(--text3); padding:0 10px 8px; line-height:1.5; }
 .mk-msg { padding:14px 12px; color:var(--text3); font-size:11px; }
-.nt-body { display:flex; flex-direction:column; min-height:0; }
+.nt-body { flex:1; display:flex; flex-direction:column; min-height:0; }
+.nt-body .nt-list { flex:1; }
 .nt-add { display:grid; grid-template-columns:1fr 110px 118px auto; gap:5px; padding:8px 10px; border-bottom:1px solid var(--border); }
 .nt-add input { font-family:'Inter',sans-serif; font-size:10.5px; padding:4px 6px; border:1px solid var(--border); border-radius:4px; min-width:0; }
+.nt-add input[readonly] { background:var(--surface2); color:var(--text2); pointer-events:none; }
 .nt-btn { border:1px solid var(--border); background:#fff; border-radius:5px; padding:4px 9px; font-family:'Inter',sans-serif; font-size:10px; cursor:pointer; color:var(--text2); }
 .nt-btn.primary { background:var(--blue-lw); border-color:var(--blue-lw); color:#fff; }
 .nt-x { border:none; background:none; color:var(--text3); cursor:pointer; font-size:11px; padding:0 2px; }
@@ -680,7 +687,7 @@ main { overflow-y:auto; }
   </div>
 
   <div class="sec-lbl">Meeting actions</div>
-  <div class="card" style="flex-shrink:0;margin-bottom:10px;">
+  <div class="card" style="flex:1 0 auto;display:flex;flex-direction:column;">
     <div class="card-hdr">
       <span class="card-title">Meeting action log</span>
       <span class="card-sub" id="ntCount"></span>
@@ -689,7 +696,7 @@ main { overflow-y:auto; }
       <div class="nt-add">
         <input id="ntText" maxlength="2000" placeholder="New action or note…" onkeydown="if(event.key==='Enter')addNote()">
         <input id="ntOwner" maxlength="60" placeholder="Owner">
-        <input id="ntDue" type="date" title="Due date">
+        <input id="ntDue" type="date" title="Today's date" readonly tabindex="-1">
         <button class="nt-btn primary" id="ntAddBtn" onclick="addNote()">Add</button>
       </div>
       <div class="nt-list" id="ntList"><div class="mk-msg">Loading actions…</div></div>
@@ -2075,7 +2082,14 @@ async function dibujarMapa(destinos, origenes, porDestinos, quien) {
 }
 
 // ── Registro de acciones de la reunión, por negocio ──
+// fecha local (toISOString daría la de UTC, ya mañana en la tarde de Chile)
+function fechaHoy() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 async function loadNotes() {
+  document.getElementById('ntDue').value = fechaHoy();
   const seq = ++MK.notasSeq;
   const biz = negocioActual();
   const lista = document.getElementById('ntList');
@@ -2088,21 +2102,19 @@ async function loadNotes() {
   const abiertas = vivas.filter(n => (n.estado || 'open') === 'open').length;
   document.getElementById('ntCount').textContent = `${abiertas} open · ${vivas.length - abiertas} closed`;
   if (!notas.length) { lista.innerHTML = '<div class="mk-msg">No actions yet for this business. What you add stays here for the next meeting until you discard it.</div>'; return; }
-  const hoy = new Date().toISOString().slice(0, 10);
   // abiertas primero, después por número (más reciente arriba)
   const orden = [...notas].sort((a, b) => ((a.estado || 'open') === 'closed') - ((b.estado || 'open') === 'closed') || (b.num || 0) - (a.num || 0) || (b.creada_en || '').localeCompare(a.creada_en || ''));
   const fecha = f => new Date(f + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
-  lista.innerHTML = `<table class="mk-tbl"><tr><th>#</th><th class="l">Action</th><th class="l">Owner</th><th>Due</th><th>Status</th><th></th></tr>
+  lista.innerHTML = `<table class="mk-tbl"><tr><th>#</th><th class="l">Action</th><th class="l">Owner</th><th>Date</th><th>Status</th><th></th></tr>
     ${orden.map(n => {
       const off = !!n.desechada_en, cerrada = (n.estado || 'open') === 'closed';
-      const atrasada = !cerrada && n.fecha_limite && n.fecha_limite < hoy;
       const creada = new Date(n.creada_en).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       return `<tr class="${off ? 'off' : ''}" title="Added by ${h(n.autor_nombre || n.autor)} on ${h(creada)}${off ? ' · discarded' : ''}">
         <td>${n.num ? String(n.num).padStart(2, '0') : '—'}</td>
         <td class="l txt">${h(n.texto)}</td>
         <td class="l">${h(n.responsable || '—')}</td>
         <td>${n.fecha_limite ? h(fecha(n.fecha_limite)) : '—'}</td>
-        <td><span class="flag ${cerrada ? 'cl' : atrasada ? 'late' : 'op'}" style="cursor:pointer" onclick="setNoteStatus('${h(n.id)}', '${cerrada ? 'open' : 'closed'}')">${cerrada ? 'Closed' : atrasada ? 'Overdue' : 'Open'}</span></td>
+        <td><span class="flag ${cerrada ? 'cl' : 'op'}" style="cursor:pointer" onclick="setNoteStatus('${h(n.id)}', '${cerrada ? 'open' : 'closed'}')">${cerrada ? 'Closed' : 'Open'}</span></td>
         <td><button class="nt-x" title="${off ? 'Restore' : 'Discard (stays saved in the cloud)'}" onclick="discardNote('${h(n.id)}', ${off})">${off ? '↺' : '✕'}</button></td></tr>`;
     }).join('')}</table>`;
 }
@@ -2115,8 +2127,8 @@ async function addNote() {
   btn.disabled = true;
   try {
     await md('/api/reunion/notas', '', { method: 'POST', body: JSON.stringify({ negocio: negocioActual(), texto,
-      responsable: document.getElementById('ntOwner').value.trim() || null, fecha_limite: document.getElementById('ntDue').value || null }) });
-    ta.value = ''; document.getElementById('ntOwner').value = ''; document.getElementById('ntDue').value = '';
+      responsable: document.getElementById('ntOwner').value.trim() || null, fecha_limite: fechaHoy() }) });
+    ta.value = ''; document.getElementById('ntOwner').value = '';
     await loadNotes();
   } catch (e) { alert('Could not save the action: ' + e.message); }
   finally { btn.disabled = false; }
