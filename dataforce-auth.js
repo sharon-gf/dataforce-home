@@ -17,6 +17,7 @@
     "pending_spots",
     "check_rates",
     "cod",
+    "airline_reports",
     "finance",
     "jet_fuel",
     "industry_monitor",
