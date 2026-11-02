@@ -1514,6 +1514,10 @@ const BIZ_MERCADO = {
   '08_AVCHI': ['chi_isidora_exp|AVIANCA'],
 };
 
+// 2 nov, reunión: Cathay, Ethiopian, El Al y Masair siempre con "Destinations
+// <aerolínea>", sea cual sea la base de mercado elegida
+const BIZ_DESTINOS = { CXMEX: 'CX', '01_CXSUD': 'CX', '01_CXOFF': 'CX', '02_ET': 'ET', '04_ELAL': 'LY', '07_JPN': 'M7' };
+
 const MK = { token: null, fuentes: null, chart: null, seq: 0, notasSeq: 0 };
 
 function h(s) {
@@ -1645,24 +1649,35 @@ async function loadMarket() {
   }
   body.innerHTML = '<div class="mk-msg">Loading market data… (the first time a database is opened it can take a minute)</div>';
   let d;
-  const destino = opcion.split('|')[2] || '';
+  const destino = opcion.split('|')[2] || BIZ_DESTINOS[negocioActual()] || '';
   const f = MK.filtro || (MK.filtro = { origen: null, destino: null });
   const q = new URLSearchParams();
   if (destino) q.set('aerolinea_destino', destino);
   if (f.origen) q.set('origen', f.origen);
   if (f.destino) q.set('destino', f.destino);
-  const clave = opcion + '?' + q.toString();
+  const clave = negocioActual() + '|' + opcion + '?' + q.toString();
   try { d = MK.cache && MK.cache.clave === clave ? MK.cache.d : await md('/api/reunion/mercado' + (q.toString() ? '?' + q.toString() : ''), opcion); MK.cache = { clave, d }; }
   catch (e) { if (seq === MK.seq) body.innerHTML = `<div class="mk-msg">Could not load market data: ${h(e.message)}</div>`; return; }
   if (seq !== MK.seq) return;
   if (!d.mes) { body.innerHTML = '<div class="mk-msg">This database has no data yet.</div>'; return; }
 
-  const quien = d.aerolinea || 'Own';
-  // "Destinations X": el mercado es el de esos destinos, pero las toneladas
-  // "propias" de la base son de otra aerolínea (ej. Mercury en WACD), así que
-  // no se muestran ni se calcula un market share con ellas
-  const porDestinos = !!d.destinos_de;
+  let quien = d.aerolinea || 'Own';
   const negocio = document.getElementById('bizSelect').selectedOptions[0]?.textContent || negocioActual();
+  // la columna propia de una base WACD de Mercury es de Mercury: para otro
+  // negocio, sus toneladas y su share salen de sus bookings en Dataforce.
+  // Sin esos datos no se muestra nada propio (porDestinos), nunca los de Mercury.
+  let porDestinos = false;
+  if (!MERCURY_BIZ.has(negocioActual()) && quien === 'Mercury') {
+    try {
+      await propiosDesdeDataforce(d);
+      if (seq !== MK.seq) return;
+      quien = negocio;
+    } catch (e) {
+      if (seq !== MK.seq) return;
+      console.error('Dataforce tons by month:', e);
+      porDestinos = true;
+    }
+  }
   const serie = d.serie || [];
   const mPrev = mesLabel(mesAnterior(d.mes, 1)), mYoy = mesLabel(mesAnterior(d.mes, 12));
   const pm = d.vs_mes_anterior || {}, py = d.vs_anio_anterior || {};
@@ -1698,8 +1713,7 @@ async function loadMarket() {
   const fo = (d.filtro || {}).origen, fd = (d.filtro || {}).destino;
   const ruta = fo && fd ? `${h(fo)} → ${h(fd)}` : fo ? `From ${h(fo)}` : fd ? `To ${h(fd)}` : '';
   const chips = ruta ? `<div class="mk-chips">Showing only: ${fo ? `<button data-q="origen">Origin ${h(fo)} ✕</button>` : ''}${fd ? `<button data-q="destino">Destination ${h(fd)} ✕</button>` : ''}<button data-q="todo">Show all</button></div>` : '';
-  const usarDF = !MERCURY_BIZ.has(negocioActual()) && (porDestinos || quien === 'Mercury');
-  const propio = ruta || usarDF ? `<div class="mk-propio" id="mkPropio"><div class="mk-msg" style="padding:6px 0;">Loading ${h(negocio)} bookings on this selection…</div></div>` : '';
+  const propio = '';
   const veredicto = `${chips}${propio}<div class="mk-ver ${ver.cls}"><div class="t">${ruta ? ruta + ' · ' : ''}${ver.t}</div><div class="s">${ver.s}</div></div>`;
 
   // ── tres números grandes ──
@@ -1719,27 +1733,15 @@ async function loadMarket() {
       prem == null ? 'no price data' : `${h(quien)} is ${Math.abs(prem).toFixed(0)}% ${prem >= 0 ? 'above' : 'below'} the market`),
   ];
 
-  const mapa = `<div class="mk-map"><div class="mk-h">Where the market goes — top destination airports</div>
-    <div class="mk-hs">Pin size = market tons${porDestinos ? '' : ` · <span class="mk-dot" style="background:${C_OWN}"></span>${h(quien)} has volume · <span class="mk-dot" style="background:${C_GAP}"></span>no ${h(quien)} volume`} · <span class="mk-dot" style="background:#0d1f3c;border-radius:1px"></span>origin</div>
-    <div class="mk-mapg"><div style="min-width:0;">
-      <div class="mk-zoom" id="mkZoom">${(MK.filtro || {}).origen || (MK.filtro || {}).destino ? '<button class="mk-back" id="mkBack">← Back</button>' : ''}<button class="on" data-z="world">World</button><button data-z="am">Americas</button><button data-z="eu">Europe</button><button data-z="me">Middle East · Africa</button><button data-z="as">Asia</button><button data-z="oc">Oceania</button></div>
-      <div id="mkMap"></div></div>
-      <div class="mk-list" id="mkList"></div></div>
-    <div class="mk-tip" id="mkTip">Hover a pin or a row for the detail · <b>click</b> an origin or destination to analyse only that one.</div></div>`;
-  // 29 oct, cony: los destinos ya están en el mapa; abajo va "cómo vamos en
-  // el tiempo" — toneladas por mes y participación por mes con su rango normal
-  const k = d.control;
-  const lectura = !k ? '' : k.estado === 'below' ? `<b class="dn">${mesLabel(d.mes)} is below the normal range</b> — worth reviewing`
-    : k.estado === 'above' ? `<b class="up">${mesLabel(d.mes)} is above the normal range</b>`
-    : `${mesLabel(d.mes)} is within the normal range`;
+  // 2 nov, reunión: 3 KPIs y dos gráficos — toneladas por mes y share por mes
   const segundo = porDestinos
     ? `<div class="mk-card"><div class="mk-h">Market price per kg</div><div class="mk-hs">USD per kg, by month</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`
-    : `<div class="mk-card"><div class="mk-h">${h(quien)}'s share of the market</div><div class="mk-hs">kg out of every 1,000 kg · shaded band = normal range${lectura ? ' · ' + lectura : ''}</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`;
+    : `<div class="mk-card"><div class="mk-h">${h(quien)}'s market share</div><div class="mk-hs">Line = share % · bars = market tons${d.desde_dataforce ? ' · Dataforce bookings vs market, approx.' : ''}</div><div class="mk-chart"><canvas id="mkShare"></canvas></div></div>`;
   const barras = `<div class="mk-pair" style="padding:0 10px 8px;gap:6px;">
     <div class="mk-card"><div class="mk-h">${porDestinos ? 'Market' : h(quien)} tons per month</div><div class="mk-hs">Last ${serie.length} months · latest in dark blue</div><div class="mk-chart"><canvas id="mkTrend"></canvas></div></div>
     ${segundo}</div>`;
 
-  body.innerHTML = `${veredicto}<div class="mk-big">${numeros.join('')}</div>${mapa}${barras}`;
+  body.innerHTML = `${veredicto}<div class="mk-big">${numeros.join('')}</div>${barras}`;
   body.querySelectorAll('.mk-chips button').forEach(b => b.onclick = () => {
     MK.hist = MK.hist || []; MK.hist.push({ ...MK.filtro });
     if (b.dataset.q === 'todo') MK.filtro = { origen: null, destino: null }; else MK.filtro[b.dataset.q] = null;
@@ -1747,22 +1749,9 @@ async function loadMarket() {
   });
   const back = document.getElementById('mkBack');
   if (back) back.onclick = volverMapa;
-  if (ruta || usarDF) cargarPropio(d, quien);
 
   dibujarMeses(serie, porDestinos);
-  dibujarEvolucion(serie, k, porDestinos, quien);
-  dibujarMapa(todos, d.top_origenes || [], porDestinos, quien);
-  // 30 oct, cony: con un negocio que no es Mercury mirando una base de
-  // Mercury (WACD), la columna propia del mapa es la del negocio, sacada de
-  // sus bookings en Dataforce (mismo mes, mismo origen/destino elegido)
-  if (usarDF) {
-    const seqDF = MK.seq;
-    toneladasDataforce(d.mes).then(df => {
-      if (!df || seqDF !== MK.seq) return;
-      const conDF = (lista, campo, mapa) => lista.map(r => ({ ...r, ton_propias: mapa[r[campo]] || 0 }));
-      dibujarMapa(conDF(todos, 'destino', df.des), conDF(d.top_origenes || [], 'origen', df.ori), false, negocio);
-    }).catch(e => console.error('Dataforce tons by airport:', e));
-  }
+  dibujarEvolucion(serie, porDestinos, quien);
 }
 
 // etiqueta con el valor sobre cada barra
@@ -1790,9 +1779,9 @@ function dibujarMeses(serie, porDestinos) {
       scales: { x: { ...AXIS, grid: { display: false } }, y: { display: false, beginAtZero: true } } } });
 }
 
-// participación por mes en "kg de cada 1.000 kg" (más fácil de leer que 0,116%),
-// con la franja del rango normal; en modo destinos: precio de mercado por mes
-function dibujarEvolucion(serie, k, porDestinos, quien) {
+// 2 nov, reunión: el gráfico que usan — share % en línea con las toneladas
+// del mercado en barras atrás. Sin datos propios: precio de mercado por mes
+function dibujarEvolucion(serie, porDestinos, quien) {
   const c = document.getElementById('mkShare');
   if (!c || !serie.length || typeof Chart === 'undefined') return;
   const labels = serie.map(x => mesLabel(x.mes, true).split(' ')[0].slice(0, 1));
@@ -1806,21 +1795,19 @@ function dibujarEvolucion(serie, k, porDestinos, quien) {
         scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, ticks: { ...AXIS.ticks, maxTicksLimit: 4, callback: v => Number(v).toFixed(2) } } } } });
     return;
   }
-  const vals = serie.map(x => x.market_share_pct * 10);
-  const dec = Math.max(...vals) < 10 ? 2 : 1;
-  const n = vals.length, fuera = k && k.estado !== 'within';
-  const datasets = [];
-  if (k) datasets.push(
-    { data: Array(n).fill(k.ucl * 10), borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(26,86,219,0.09)' },
-    { data: Array(n).fill(k.lcl * 10), borderWidth: 0, pointRadius: 0 });
-  datasets.push({ data: vals, borderColor: C_OWN, borderWidth: 2, tension: 0.25,
-    pointRadius: vals.map((v, i) => i === n - 1 ? 4.5 : 2),
-    pointBackgroundColor: vals.map((v, i) => i === n - 1 && fuera ? C_GAP : C_OWN),
-    pointBorderColor: vals.map((v, i) => i === n - 1 && fuera ? C_GAP : C_OWN) });
-  MK.charts.share = new Chart(c, { type: 'line', data: { labels, datasets },
-    options: { ...base, plugins: { legend: { display: false }, tooltip: { filter: it => it.datasetIndex === datasets.length - 1,
-        callbacks: { title: titulo, label: ctx => ` ${quien}: ${Number(ctx.raw).toFixed(dec)} of every 1,000 kg` } } },
-      scales: { x: { ...AXIS, grid: { display: false } }, y: { ...AXIS, ticks: { ...AXIS.ticks, maxTicksLimit: 4, callback: v => Number(v).toFixed(dec) } } } } });
+  const vals = serie.map(x => x.market_share_pct);
+  const dec = Math.max(...vals) < 1 ? 2 : 1;
+  const n = vals.length;
+  MK.charts.share = new Chart(c, { data: { labels, datasets: [
+      { type: 'line', label: 'Share', data: vals, yAxisID: 'y1', order: 1, borderColor: C_OWN, backgroundColor: C_OWN, borderWidth: 2, tension: 0.25, pointRadius: vals.map((v, i) => i === n - 1 ? 4.5 : 2.5) },
+      { type: 'bar', label: 'Market tons', data: serie.map(x => x.ton_mercado), yAxisID: 'y', order: 2, backgroundColor: '#d5e0f3', borderRadius: 2 },
+    ] },
+    options: { ...base, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: titulo,
+        label: ctx => ctx.dataset.yAxisID === 'y1' ? ` ${quien} share: ${Number(ctx.raw).toFixed(dec)}%` : ` Market: ${fmtT(ctx.raw)} t` } } },
+      scales: { x: { ...AXIS, grid: { display: false } },
+        y: { ...AXIS, beginAtZero: true, position: 'left', grid: { display: false }, ticks: { ...AXIS.ticks, maxTicksLimit: 4, callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v } },
+        y1: { ...AXIS, beginAtZero: true, position: 'right', ticks: { ...AXIS.ticks, maxTicksLimit: 4, callback: v => Number(v).toFixed(dec) + '%' } } } } });
 }
 
 // mapa con un pin por aeropuerto de destino (tamaño = toneladas del mercado)
@@ -1863,6 +1850,45 @@ async function cargarPropio(d, quien) {
       <div><span>Profit / kg</span><b>${act.profit_per_kg == null ? '—' : Number(act.profit_per_kg).toFixed(2)}</b><i>$${fmtT(act.profit || 0)} profit</i></div>
       <div><span>Of every 1,000 kg of the market</span><b>${share == null ? '—' : share.toFixed(share < 1 ? 2 : 1)}</b><i>approx. · bookings vs market</i></div>
     </div>`;
+}
+
+// reemplaza lo propio de la respuesta (que en una base de Mercury es de
+// Mercury) por los bookings del negocio en Dataforce, mes a mes
+async function propiosDesdeDataforce(d) {
+  if (d.desde_dataforce) return;
+  const resumen = async m => {
+    const [y, mm] = m.split('-').map(Number);
+    const q = new URLSearchParams({ email: getUserEmail(), biz: negocioActual(), date_from: `${m}-01`,
+      date_to: `${m}-${String(new Date(y, mm, 0).getDate()).padStart(2, '0')}`, search: '', origin: 'ALL', destination: 'ALL', limit: '1' });
+    const r = await fetchWithTimeout(`${API_BASE}/api/booking_details?${q}`, { headers: { 'x-api-key': API_KEY } }, 60000);
+    if (!r.ok) throw new Error('Dataforce answered ' + r.status);
+    return (await r.json()).summary || {};
+  };
+  const serie = d.serie || [];
+  const res = await Promise.all(serie.map(s => resumen(s.mes)));
+  serie.forEach((s, i) => {
+    const t = Number(res[i].tons || 0), chw = Number(res[i].chw || 0);
+    s.ton_propias = t;
+    s.market_share_pct = s.ton_mercado ? t / s.ton_mercado * 100 : 0;
+    s.tarifa_propia = chw ? Number(res[i].rev || 0) / chw : null;
+  });
+  const de = m => serie.find(s => s.mes === m);
+  const act = de(d.mes);
+  if (!act) throw new Error('no data for ' + d.mes);
+  d.ton_propias = act.ton_propias;
+  d.market_share_pct = act.market_share_pct;
+  d.tarifa_propia = act.tarifa_propia;
+  d.premium_pct = act.tarifa_propia && d.tarifa_mercado ? (act.tarifa_propia / d.tarifa_mercado - 1) * 100 : null;
+  const comparar = (obj, antes) => {
+    if (!obj) return;
+    obj.ton_propias = antes && antes.ton_propias ? (act.ton_propias - antes.ton_propias) / antes.ton_propias * 100 : null;
+    obj.market_share_pts = antes ? act.market_share_pct - antes.market_share_pct : null;
+  };
+  comparar(d.vs_mes_anterior, de(mesAnterior(d.mes, 1)));
+  comparar(d.vs_anio_anterior, de(mesAnterior(d.mes, 12)));
+  const df = await toneladasDataforce(d.mes);
+  (d.top_destinos || []).forEach(r => { r.ton_propias = df.des[r.destino] || 0; });
+  d.desde_dataforce = true;
 }
 
 // bookings del negocio en un mes, con el origen/destino dados (todas las
