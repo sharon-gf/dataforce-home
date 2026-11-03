@@ -497,7 +497,7 @@ async function applyModulePermissions() {
     });
 
     // 23 oct, cony: Dashboard 2.0 en prueba — solo para estos correos
-    const DASHBOARD_V2_EMAILS = ['crobles@gsaforce.com'];
+    const DASHBOARD_V2_EMAILS = ['crobles@gsaforce.com', 'sharon@gsaforce.com'];
     document.querySelectorAll('.card-dashboard-v2').forEach(el => {
       el.style.display = DASHBOARD_V2_EMAILS.includes(String(currentUserEmail || '').toLowerCase()) ? 'block' : 'none';
     });

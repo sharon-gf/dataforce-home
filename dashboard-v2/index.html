@@ -1481,7 +1481,7 @@ function onBizChange(){
 
 // 23 oct, cony: en prueba — solo ella puede abrir esta página (aunque
 // alguien tenga el link). El servidor de Market Data también lo exige.
-const DASHBOARD_V2_EMAILS = ['crobles@gsaforce.com'];
+const DASHBOARD_V2_EMAILS = ['crobles@gsaforce.com', 'sharon@gsaforce.com'];
 checkModuleAccess('dashboard', function () {
   if (!DASHBOARD_V2_EMAILS.includes(getUserEmail().toLowerCase())) {
     document.querySelector('main').innerHTML = '<div style="margin:60px auto;max-width:420px;text-align:center;color:#3d4f68;font-size:14px;line-height:1.6;"><b>Dashboard 2.0 is not available for your account yet.</b><br>Use the regular <a href="../dashboard/">Dashboard</a>.</div>';
@@ -1524,6 +1524,13 @@ const BIZ_MERCADO = {
 // 2 nov, reunión: Cathay, Ethiopian, El Al y Masair siempre con "Destinations
 // <aerolínea>", sea cual sea la base de mercado elegida
 const BIZ_DESTINOS = { CXMEX: 'CX', '01_CXSUD': 'CX', '01_CXOFF': 'CX', '02_ET': 'ET', '04_ELAL': 'LY', '07_JPN': 'M7' };
+const DESTINOS = { ET: 'Ethiopian', LY: 'El Al', CX: 'Cathay', LA: 'LATAM', M7: 'Masair' };
+// 3 nov, cony: el filtro tiene que verse en el selector y en el título, no solo
+// aplicarse (Currency no tiene destinos: ahí no hay filtro que mostrar)
+function destinoDe(opcion) {
+  const [fuente, , d] = String(opcion || '').split('|');
+  return d || (fuente === 'iata_currency' ? '' : BIZ_DESTINOS[negocioActual()] || '');
+}
 
 const MK = { token: null, fuentes: null, chart: null, seq: 0, notasSeq: 0 };
 
@@ -1575,9 +1582,9 @@ function armarSelectorMercado() {
   const disponibles = new Set(fuentes.map(f => f.id));
   const sugeridas = (BIZ_MERCADO[biz] || []).filter(o => disponibles.has(o.split('|')[0]));
   const otras = fuentes.filter(f => !sugeridas.some(o => o.split('|')[0] === f.id)).map(f => f.id);
-  const DESTINOS = { ET: 'Ethiopian', LY: 'El Al', CX: 'Cathay', LA: 'LATAM', M7: 'Masair' };
   const etiqueta = o => {
-    const [f, v, d] = o.split('|');
+    const [f, v] = o.split('|');
+    const d = destinoDe(o);
     return nombre(f) + (v ? ` · ${v.charAt(0) + v.slice(1).toLowerCase()}` : '') + (d ? ` · Destinations ${DESTINOS[d] || d}` : '');
   };
   // sin base sugerida (ET-USA, VIRGIN…): no se elige sola una base de otra
@@ -1656,7 +1663,7 @@ async function loadMarket() {
   }
   body.innerHTML = '<div class="mk-msg">Loading market data… (the first time a database is opened it can take a minute)</div>';
   let d;
-  const destino = opcion.split('|')[2] || BIZ_DESTINOS[negocioActual()] || '';
+  const destino = destinoDe(opcion);
   const f = MK.filtro || (MK.filtro = { origen: null, destino: null });
   const q = new URLSearchParams();
   if (destino) q.set('aerolinea_destino', destino);
@@ -1695,7 +1702,7 @@ async function loadMarket() {
   const region = fuente.split(' — ')[0] || fuente;
   // 29 oct, cony: que lo entienda cualquier persona — título en palabras, la
   // base (WACD, CASS…) en letra chica
-  document.getElementById('mkTitle').textContent = `Air cargo market · ${region} · ${mesLabel(d.mes)}`;
+  document.getElementById('mkTitle').textContent = `Air cargo market · ${region}${destino ? ` · Destinations ${DESTINOS[destino] || destino}` : ''} · ${mesLabel(d.mes)}`;
   document.getElementById('mkTitle').title = `Source: ${fuente} (monthly). Share = own chargeable tons ÷ market tons. Price = charges ÷ chargeable kg.`;
 
   // ── veredicto: una frase con la conclusión del mes ──

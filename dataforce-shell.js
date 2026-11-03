@@ -11,7 +11,7 @@
   const MODULES = [
     { key: "dashboard", label: "Dashboard", href: "https://dataforce.gsaforce.com/dashboard/" },
     // 23 oct, cony: Dashboard 2.0 en prueba — solo lo ve ella (onlyEmails)
-    { key: "dashboard", label: "Dashboard 2.0", href: "https://dataforce.gsaforce.com/dashboard-v2/", onlyEmails: ["crobles@gsaforce.com"] },
+    { key: "dashboard", label: "Dashboard 2.0", href: "https://dataforce.gsaforce.com/dashboard-v2/", onlyEmails: ["crobles@gsaforce.com", "sharon@gsaforce.com"] },
     // 17 sep, cony: Market Data no estaba en esta lista, por eso no aparecía
     // en el menú hamburguesa del resto de la app (Dashboard, Flown, etc.) —
     // solo tenía un card en la home. Se agrega acá para que aparezca igual
