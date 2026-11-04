@@ -163,7 +163,7 @@
     <p class="lead" id="lead">Loading AWBs…</p>
 
     <section class="kpis">
-      <div class="card hero"><div class="k-label">Sales on hold (USD)</div><div class="k-value" id="kSales">0</div><div class="k-note">Flown, not billed and not recovered</div></div>
+      <div class="card hero"><div class="k-label">Sales on hold (USD)</div><div class="k-value" id="kSales">0</div><div class="k-note">Open AWBs whose copy can be requested</div></div>
       <div class="card"><div class="k-label">Pending AWBs</div><div class="k-value" id="kOpen">0</div><div class="k-note" id="kDays">-</div></div>
       <div class="card"><div class="k-label">Over 30 days</div><div class="k-value t-red" id="kOld">0</div><div class="k-note" id="kOldSales">USD 0</div></div>
       <div class="card"><div class="k-label">Received, to mark</div><div class="k-value t-teal" id="kReceived">0</div><div class="k-note">Ready to mark as recovered</div></div>
@@ -175,7 +175,8 @@
       <div class="card"><h2>Customers with most AWBs</h2><div id="customers"></div></div>
     </section>
 
-    <div class="notice"><b>Preview:</b> these figures have not been validated yet against the Finance recovery list, and AWBs already recovered in CargoSystem may still appear. Status is tracked in Dataforce only: nothing is emailed to customers and nothing is written to CargoSystem. Marks made in CargoSystem are not read yet.</div>
+    <div class="notice"><b>Preview:</b> these figures have not been validated yet against the Finance recovery list. Rules: Seg_St FLOWN, IN_ROUTE or WHR; BILL_St OPEN or blank; rBkg_AWBRetInd blank. Status is tracked in Dataforce only: nothing is emailed to customers and nothing is written to CargoSystem.</div>
+    <div class="notice" id="retIndBox" hidden><b>Not filtered yet:</b> rBkg_AWBRetInd has not been loaded into Dataforce, so AWBs already marked in CargoSystem still appear here and totals may be too high.</div>
     <div class="notice error" id="errorBox" hidden></div>
 
     <section class="card list">
@@ -270,7 +271,7 @@ function daysSince(value) {
   const p = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
   if (!p) return null;
   const now = new Date();
-  return Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(+p[1], +p[2] - 1, +p[3])) / 86400000);
+  return Math.max(0, Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(+p[1], +p[2] - 1, +p[3])) / 86400000));
 }
 function matchesScope(r) {
   const q = $("searchInput").value.trim().toLowerCase();
@@ -306,7 +307,7 @@ function renderSummary() {
   $("kOld").textContent = fmt(old.length);
   $("kOldSales").textContent = `USD ${fmt(sum(old))}`;
   $("kReceived").textContent = fmt(open.filter(r => r.status === "received").length);
-  if (!state.loading) $("lead").textContent = `${fmt(open.length)} flown AWBs and USD ${fmt(sum(open))} waiting to be billed.`;
+  if (!state.loading) $("lead").textContent = `${fmt(open.length)} AWBs to request and USD ${fmt(sum(open))} waiting to be billed.`;
 
   const statusNow = $("statusFilter").value, ageNow = $("ageFilter").value;
   const counts = Object.keys(STATUS_COLOR).map(k => ({ key: k, n: open.filter(r => r.status === k).length }));
@@ -428,6 +429,7 @@ async function load() {
     state.selected.clear();
     fillSelect($("companyFilter"), [...new Set(state.rows.map(r => r.company))].sort());
     fillSelect($("gsaFilter"), [...new Set(state.rows.map(r => r.gsa))].sort());
+    $("retIndBox").hidden = data.ret_ind_available !== false;
     $("dataAsOf").textContent = data.data_as_of ? new Date(data.data_as_of).toLocaleString() : "Unknown";
     if (data.truncated) showError(`Only the first ${fmt(data.count)} AWBs were loaded. Narrow the flight dates to see the rest.`);
     setStatus("Ready");
@@ -482,8 +484,7 @@ function exportCsv() {
 function resetDates() {
   const now = new Date();
   $("dateFrom").value = `${now.getFullYear()}-01-01`;
-  $("dateTo").value = isoDate(now);
-  $("dateTo").max = isoDate(now);
+  $("dateTo").value = `${now.getFullYear()}-12-31`;
 }
 function initAwbRecovery() {
   state.user = getDataforceUser();
