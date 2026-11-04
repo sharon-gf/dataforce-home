@@ -85,12 +85,10 @@
   .list-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:16px 17px 10px; }
   .list-head h2 { margin:0; }
   .note { color:var(--text3); font-size:12px; margin-left:8px; font-weight:400; }
-  .filters { display:grid; grid-template-columns:1.7fr repeat(4,minmax(105px,1fr)) repeat(2,minmax(120px,1fr)); gap:8px; padding:0 17px 12px; }
+  .filters { display:grid; grid-template-columns:1.7fr repeat(3,minmax(105px,1fr)) repeat(2,minmax(120px,1fr)); gap:8px; padding:0 17px 12px; }
   label { display:block; font-size:11px; font-weight:500; color:var(--text3); margin-bottom:4px; }
   input, select { width:100%; height:34px; border:1px solid var(--line2); border-radius:9px; background:#fff; color:var(--text1); padding:5px 10px; outline:none; font-size:12.5px; }
   input:focus, select:focus { border-color:var(--indigo); box-shadow:0 0 0 3px rgba(79,70,229,.12); }
-  .bulk { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:9px 17px; background:#fafbfe; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-  .bulk-count { color:var(--text2); font-size:12px; font-weight:500; }
   .actions { display:flex; gap:6px; flex-wrap:wrap; }
   .btn { height:32px; border:1px solid var(--line2); background:#fff; color:var(--text1); border-radius:9px; padding:0 12px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
   .btn:hover:not(:disabled) { border-color:var(--indigo); color:var(--indigo); }
@@ -107,17 +105,10 @@
   th.sort-desc::after { content:" ▼"; font-size:8px; }
   td { border-bottom:1px solid #f3f4fa; padding:10px; white-space:nowrap; color:var(--text1); font-size:12.5px; }
   tbody tr:hover td { background:#f8f8ff; }
-  tbody tr.selected td { background:var(--indigo-bg); }
   .awb { color:var(--indigo); font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .customer { max-width:250px; overflow:hidden; text-overflow:ellipsis; }
-  .check { width:15px; height:15px; cursor:pointer; accent-color:var(--indigo); padding:0; }
   .days-warn { color:#c97a06; font-weight:700; }
   .days-bad { color:var(--red); font-weight:700; }
-  .chip { display:inline-block; padding:3px 10px; border-radius:99px; font-size:11.5px; font-weight:600; }
-  .chip.pending { background:var(--grey-bg); color:var(--text2); }
-  .chip.requested { background:var(--indigo-bg); color:var(--indigo); }
-  .chip.received { background:var(--amber-bg); color:var(--amber); }
-  .chip.recovered { background:var(--teal-bg); color:var(--teal); }
   .muted { color:var(--text3); font-size:12px; }
   .view-switch { display:inline-flex; background:var(--grey-bg); border-radius:9px; padding:3px; }
   .view-switch button { border:0; background:none; border-radius:7px; padding:5px 12px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; }
@@ -166,16 +157,16 @@
       <div class="card hero"><div class="k-label">Sales on hold (USD)</div><div class="k-value" id="kSales">0</div><div class="k-note">Open AWBs whose copy can be requested</div></div>
       <div class="card"><div class="k-label">Pending AWBs</div><div class="k-value" id="kOpen">0</div><div class="k-note" id="kDays">-</div></div>
       <div class="card"><div class="k-label">Over 30 days</div><div class="k-value t-red" id="kOld">0</div><div class="k-note" id="kOldSales">USD 0</div></div>
-      <div class="card"><div class="k-label">Received, to mark</div><div class="k-value t-teal" id="kReceived">0</div><div class="k-note">Ready to mark as recovered</div></div>
+      <div class="card"><div class="k-label">Customers</div><div class="k-value" id="kCustomers">0</div><div class="k-note">With pending AWBs</div></div>
     </section>
 
     <section class="charts">
-      <div class="card"><h2>AWB status</h2><div class="donut-wrap"><div id="donut"></div><div class="legend" id="legend"></div></div></div>
+      <div class="card"><h2>By company</h2><div class="donut-wrap"><div id="donut"></div><div class="legend" id="legend"></div></div></div>
       <div class="card"><h2>Age since flight</h2><div id="aging"></div></div>
       <div class="card"><h2>Customers with most AWBs</h2><div id="customers"></div></div>
     </section>
 
-    <div class="notice"><b>Preview:</b> these figures have not been validated yet against the Finance recovery list. Rules: Seg_St FLOWN, IN_ROUTE or WHR; BILL_St OPEN or blank; Bkg_AWBRetInd blank. Status is tracked in Dataforce only: nothing is emailed to customers and nothing is written to CargoSystem.</div>
+    <div class="notice"><b>Preview:</b> these figures have not been validated yet against the Finance recovery list. Rules: Seg_St FLOWN, IN_ROUTE or WHR; BILL_St OPEN or blank; Bkg_AWBRetInd blank. Read-only: nothing is emailed to customers and nothing is written to CargoSystem.</div>
     <div class="notice" id="retIndBox" hidden><b>Not filtered yet:</b> Bkg_AWBRetInd has not been loaded into Dataforce, so AWBs already marked in CargoSystem still appear here and totals may be too high.</div>
     <div class="notice error" id="errorBox" hidden></div>
 
@@ -188,37 +179,18 @@
         <div><label for="searchInput">Search</label><input id="searchInput" type="search" placeholder="AWB, customer, GSA, sales person"></div>
         <div><label for="companyFilter">Company</label><select id="companyFilter"></select></div>
         <div><label for="gsaFilter">GSA</label><select id="gsaFilter"></select></div>
-        <div><label for="statusFilter">Status</label>
-          <select id="statusFilter">
-            <option value="open">Open</option>
-            <option value="pending">Not requested</option>
-            <option value="requested">Requested</option>
-            <option value="received">Received</option>
-            <option value="recovered">Recovered</option>
-            <option value="all">All</option>
-          </select></div>
         <div><label for="ageFilter">Age</label>
           <select id="ageFilter"><option value="">Any</option><option value="a">0-7 days</option><option value="b">8-15 days</option><option value="c">16-30 days</option><option value="d">Over 30 days</option></select></div>
         <div><label for="dateFrom">Flight from</label><input id="dateFrom" type="date"></div>
         <div><label for="dateTo">Flight to</label><input id="dateTo" type="date"></div>
       </div>
-      <div class="bulk">
-        <span class="bulk-count" id="selCount">0 selected</span>
-        <div class="actions">
-          <button class="btn primary bulk-btn" data-status="requested" type="button" disabled>Mark requested</button>
-          <button class="btn bulk-btn" data-status="received" type="button" disabled>Mark received</button>
-          <button class="btn bulk-btn" data-status="recovered" type="button" disabled>Mark recovered</button>
-          <button class="btn bulk-btn" data-status="pending" type="button" disabled>Clear status</button>
-        </div>
-      </div>
       <div class="table-wrap">
         <table id="groupTable" hidden>
-          <thead><tr><th>GSA / Sales person / Customer / AWB</th><th class="num">AWBs</th><th class="num">Rows</th><th class="num">Over 30 d</th><th class="num">Sales USD</th><th>Status</th></tr></thead>
+          <thead><tr><th>GSA / Sales person / Customer / AWB</th><th class="num">AWBs</th><th class="num">Rows</th><th class="num">Over 30 d</th><th class="num">Sales USD</th></tr></thead>
           <tbody id="groupBody"></tbody>
         </table>
         <table id="listTable">
           <thead><tr>
-            <th><input class="check" id="selectAll" type="checkbox" aria-label="Select all shown"></th>
             <th class="sortable" data-sort="awb">AWB</th>
             <th class="sortable" data-sort="customer">Customer</th>
             <th class="sortable" data-sort="route">Route</th>
@@ -230,8 +202,6 @@
             <th class="sortable num" data-sort="chw">CHW</th>
             <th class="sortable num" data-sort="rev">Sales USD</th>
             <th class="sortable" data-sort="bill_status">Billing</th>
-            <th class="sortable" data-sort="status">Status</th>
-            <th class="sortable" data-sort="marked_at">Updated</th>
           </tr></thead>
           <tbody id="rowsBody"></tbody>
         </table>
@@ -244,8 +214,7 @@
 <script src="../../permission-guard.js"></script>
 <script>
 const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
-const STATUS_LABEL = { pending: "Not requested", requested: "Requested", received: "Received", recovered: "Recovered" };
-const STATUS_COLOR = { pending: "#c7c9df", requested: "#4f46e5", received: "#22b8a0" };
+const COMPANY_COLORS = ["#4f46e5", "#22b8a0", "#c7c9df"];
 const AGE_BUCKETS = [
   { key: "a", label: "0-7 d", color: "#22b8a0", test: d => d <= 7 },
   { key: "b", label: "8-15 d", color: "#6366f1", test: d => d >= 8 && d <= 15 },
@@ -253,7 +222,7 @@ const AGE_BUCKETS = [
   { key: "d", label: "+30 d", color: "#ef4444", test: d => d > 30 }
 ];
 const MAX_ROWS_SHOWN = 1000;
-const state = { rows: [], selected: new Set(), sort: "days", dir: -1, user: null, loading: false, view: "list", open: new Set() };
+const state = { rows: [], sort: "days", dir: -1, user: null, loading: false, view: "list", open: new Set() };
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = n => Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
@@ -281,12 +250,10 @@ function matchesScope(r) {
   return !q || `${r.awb} ${r.customer} ${r.gsa} ${r.sales_person}`.toLowerCase().includes(q);
 }
 function filtered() {
-  const status = $("statusFilter").value, age = $("ageFilter").value;
+  const age = $("ageFilter").value;
   const bucket = AGE_BUCKETS.find(b => b.key === age);
   const rows = state.rows.filter(r => {
     if (!matchesScope(r)) return false;
-    if (status === "open" && r.status === "recovered") return false;
-    if (status !== "open" && status !== "all" && r.status !== status) return false;
     return !bucket || (r.days !== null && bucket.test(r.days));
   });
   const key = state.sort;
@@ -296,7 +263,7 @@ function filtered() {
   });
 }
 function renderSummary() {
-  const open = state.rows.filter(r => r.status !== "recovered" && matchesScope(r));
+  const open = state.rows.filter(matchesScope);
   const sum = list => list.reduce((total, r) => total + r.rev, 0);
   const old = open.filter(r => r.days > 30);
   const withDays = open.filter(r => r.days !== null);
@@ -306,21 +273,21 @@ function renderSummary() {
   $("kDays").textContent = `Average ${avg.toFixed(1)} days since flight`;
   $("kOld").textContent = fmt(old.length);
   $("kOldSales").textContent = `USD ${fmt(sum(old))}`;
-  $("kReceived").textContent = fmt(open.filter(r => r.status === "received").length);
+  $("kCustomers").textContent = fmt(new Set(open.map(r => r.customer)).size);
   if (!state.loading) $("lead").textContent = `${fmt(open.length)} AWBs to request and USD ${fmt(sum(open))} waiting to be billed.`;
 
-  const statusNow = $("statusFilter").value, ageNow = $("ageFilter").value;
-  const counts = Object.keys(STATUS_COLOR).map(k => ({ key: k, n: open.filter(r => r.status === k).length }));
+  const companyNow = $("companyFilter").value, ageNow = $("ageFilter").value;
+  const counts = [...new Set(state.rows.map(r => r.company))].sort().map((key, i) => ({ key, color: COMPANY_COLORS[i % COMPANY_COLORS.length], n: open.filter(r => r.company === key).length }));
   const radius = 44, circle = 2 * Math.PI * radius;
   let offset = 0;
   const arcs = counts.filter(c => c.n).map(c => {
     const length = c.n / open.length * circle;
-    const arc = `<circle cx="60" cy="60" r="${radius}" fill="none" stroke="${STATUS_COLOR[c.key]}" stroke-width="15" stroke-dasharray="${length} ${circle - length}" stroke-dashoffset="${-offset}" transform="rotate(-90 60 60)"/>`;
+    const arc = `<circle cx="60" cy="60" r="${radius}" fill="none" stroke="${c.color}" stroke-width="15" stroke-dasharray="${length} ${circle - length}" stroke-dashoffset="${-offset}" transform="rotate(-90 60 60)"/>`;
     offset += length;
     return arc;
   }).join("");
-  $("donut").innerHTML = `<svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="AWB status"><circle cx="60" cy="60" r="${radius}" fill="none" stroke="#eef0f6" stroke-width="15"/>${arcs}<text x="60" y="66" text-anchor="middle" font-size="21" font-weight="800" fill="#1e2340">${fmt(open.length)}</text></svg>`;
-  $("legend").innerHTML = counts.map(c => `<button class="pick ${statusNow === c.key ? "on" : ""}" type="button" data-status="${c.key}"><span class="swatch" style="background:${STATUS_COLOR[c.key]}"></span>${STATUS_LABEL[c.key]}<b>${fmt(c.n)}</b></button>`).join("");
+  $("donut").innerHTML = `<svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="AWBs by company"><circle cx="60" cy="60" r="${radius}" fill="none" stroke="#eef0f6" stroke-width="15"/>${arcs}<text x="60" y="66" text-anchor="middle" font-size="21" font-weight="800" fill="#1e2340">${fmt(open.length)}</text></svg>`;
+  $("legend").innerHTML = counts.map(c => `<button class="pick ${companyNow === c.key ? "on" : ""}" type="button" data-company="${esc(c.key)}"><span class="swatch" style="background:${c.color}"></span>${esc(c.key)}<b>${fmt(c.n)}</b></button>`).join("");
 
   const ages = AGE_BUCKETS.map(b => ({ ...b, n: open.filter(r => r.days !== null && b.test(r.days)).length }));
   const maxAge = Math.max(1, ...ages.map(a => a.n));
@@ -346,12 +313,9 @@ function render() {
   $("resultNote").textContent = rows.length > shown.length ? `Showing ${fmt(shown.length)} of ${fmt(rows.length)}` : `${fmt(rows.length)} rows`;
   $("rowsBody").innerHTML = shown.map(r => {
     const dayClass = r.days > 30 ? "days-bad" : r.days > 15 ? "days-warn" : "";
-    return `<tr class="${state.selected.has(r.awb) ? "selected" : ""}">
-      <td><input class="check row-check" type="checkbox" data-awb="${esc(r.awb)}" ${state.selected.has(r.awb) ? "checked" : ""} aria-label="Select ${esc(r.awb)}"></td>
+    return `<tr>
       <td class="awb">${esc(r.awb)}</td><td class="customer" title="${esc(r.customer)}">${esc(r.customer)}</td><td>${esc(r.route)}</td><td>${esc(r.company)}</td><td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td>${esc(r.flight_date)}</td>
-      <td class="num ${dayClass}">${r.days ?? "-"}</td><td class="num">${fmt(r.chw)}</td><td class="num">${fmt(r.rev)}</td><td>${esc(r.bill_status)}</td>
-      <td><span class="chip ${esc(r.status)}">${esc(STATUS_LABEL[r.status] || r.status)}</span></td>
-      <td class="muted" title="${esc(r.marked_by)}">${r.marked_at ? esc(String(r.marked_at).slice(0, 10)) : "-"}</td></tr>`;
+      <td class="num ${dayClass}">${r.days ?? "-"}</td><td class="num">${fmt(r.chw)}</td><td class="num">${fmt(r.rev)}</td><td>${esc(r.bill_status)}</td></tr>`;
   }).join("");
   const grouped = state.view === "group";
   $("listTable").hidden = grouped;
@@ -365,9 +329,6 @@ function render() {
   const empty = $("emptyBox");
   empty.hidden = shown.length > 0 || state.loading;
   empty.textContent = state.rows.length ? "No AWBs match these filters." : "There are no pending AWBs for these dates.";
-  $("selectAll").checked = shown.length > 0 && shown.every(r => state.selected.has(r.awb));
-  $("selCount").textContent = `${fmt(state.selected.size)} selected`;
-  document.querySelectorAll(".bulk-btn").forEach(b => { b.disabled = !state.selected.size; });
   document.querySelectorAll("th.sortable").forEach(th => {
     th.classList.toggle("sort-asc", th.dataset.sort === state.sort && state.dir > 0);
     th.classList.toggle("sort-desc", th.dataset.sort === state.sort && state.dir < 0);
@@ -396,11 +357,11 @@ function renderGroups(rows) {
     [...item.kids.values()].sort((a, b) => b.rows.length - a.rows.length || a.name.localeCompare(b.name)).forEach(kid => {
       const open = state.open.has(kid.key);
       const sum = field => kid.rows.reduce((total, r) => total + Number(r[field] || 0), 0);
-      html.push(`<tr class="g-row l${kid.level}" data-key="${esc(kid.key)}"><td class="g-name" title="${esc(kid.name)}"><span class="caret">${open ? "▼" : "▶"}</span>${esc(kid.name)}</td><td class="num">${fmt(kid.rows.length)}</td><td class="num">${fmt(sum("segments"))}</td><td class="num">${fmt(kid.rows.filter(r => r.days > 30).length)}</td><td class="num">${fmt(sum("rev"))}</td><td></td></tr>`);
+      html.push(`<tr class="g-row l${kid.level}" data-key="${esc(kid.key)}"><td class="g-name" title="${esc(kid.name)}"><span class="caret">${open ? "▼" : "▶"}</span>${esc(kid.name)}</td><td class="num">${fmt(kid.rows.length)}</td><td class="num">${fmt(sum("segments"))}</td><td class="num">${fmt(kid.rows.filter(r => r.days > 30).length)}</td><td class="num">${fmt(sum("rev"))}</td></tr>`);
       if (!open) return;
       if (kid.level < 2) { walk(kid); return; }
       kid.rows.forEach(r => {
-        html.push(`<tr class="leaf ${state.selected.has(r.awb) ? "selected" : ""}"><td class="g-name"><input class="check row-check" type="checkbox" data-awb="${esc(r.awb)}" ${state.selected.has(r.awb) ? "checked" : ""} aria-label="Select ${esc(r.awb)}"> <span class="awb">${esc(r.awb)}</span></td><td class="num">1</td><td class="num">${fmt(r.segments)}</td><td class="num">${r.days > 30 ? `<span class="days-bad">${r.days} d</span>` : "-"}</td><td class="num">${fmt(r.rev)}</td><td><span class="chip ${esc(r.status)}">${esc(STATUS_LABEL[r.status] || r.status)}</span></td></tr>`);
+        html.push(`<tr class="leaf"><td class="g-name"><span class="awb">${esc(r.awb)}</span></td><td class="num">1</td><td class="num">${fmt(r.segments)}</td><td class="num">${r.days > 30 ? `<span class="days-bad">${r.days} d</span>` : "-"}</td><td class="num">${fmt(r.rev)}</td></tr>`);
       });
     });
   };
@@ -426,7 +387,6 @@ async function load() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
     state.rows = data.rows.map(r => ({ ...r, days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
-    state.selected.clear();
     fillSelect($("companyFilter"), [...new Set(state.rows.map(r => r.company))].sort());
     fillSelect($("gsaFilter"), [...new Set(state.rows.map(r => r.gsa))].sort());
     $("retIndBox").hidden = data.ret_ind_available !== false;
@@ -442,40 +402,11 @@ async function load() {
   state.loading = false;
   render();
 }
-async function saveStatus(status) {
-  const keys = [...state.selected];
-  if (!keys.length) return;
-  setStatus("Saving"); showError("");
-  document.querySelectorAll(".bulk-btn").forEach(b => { b.disabled = true; });
-  try {
-    const response = await fetch(`${API_BASE}/api/awb_recovery_status?email=${encodeURIComponent(state.user.email)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keys, status })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
-    const now = isoDate(new Date());
-    state.rows.forEach(r => {
-      if (state.selected.has(r.awb)) {
-        r.status = status;
-        r.marked_at = status === "pending" ? null : now;
-        r.marked_by = status === "pending" ? null : state.user.email;
-      }
-    });
-    state.selected.clear();
-    setStatus("Ready");
-  } catch (e) {
-    showError(`Could not save the status: ${e.message}`);
-    setStatus("Error");
-  }
-  render();
-}
 function exportCsv() {
   const rows = filtered();
   const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const lines = [["AWB", "Customer", "Route", "Company", "GSA", "Sales Person", "Flight Date", "Days", "CHW", "Sales USD", "Billing", "Status", "Updated", "Updated By"].join(",")]
-    .concat(rows.map(r => [r.awb, r.customer, r.route, r.company, r.gsa, r.sales_person, r.flight_date, r.days, r.chw, r.rev, r.bill_status, STATUS_LABEL[r.status], r.marked_at, r.marked_by].map(cell).join(",")));
+  const lines = [["AWB", "Customer", "Route", "Company", "GSA", "Sales Person", "Flight Date", "Days", "CHW", "Sales USD", "Billing"].join(",")]
+    .concat(rows.map(r => [r.awb, r.customer, r.route, r.company, r.gsa, r.sales_person, r.flight_date, r.days, r.chw, r.rev, r.bill_status].map(cell).join(",")));
   const url = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url; a.download = `awb_recovery_${isoDate(new Date())}.csv`; a.click();
@@ -491,19 +422,18 @@ function initAwbRecovery() {
   $("userLabel").textContent = state.user.name || state.user.email || "";
   resetDates();
   $("searchInput").addEventListener("input", render);
-  ["companyFilter", "gsaFilter", "statusFilter", "ageFilter"].forEach(id => $(id).addEventListener("change", render));
+  ["companyFilter", "gsaFilter", "ageFilter"].forEach(id => $(id).addEventListener("change", render));
   ["dateFrom", "dateTo"].forEach(id => $(id).addEventListener("change", load));
   $("resetBtn").addEventListener("click", () => {
     $("searchInput").value = "";
     ["companyFilter", "gsaFilter", "ageFilter"].forEach(id => { $(id).selectedIndex = 0; });
-    $("statusFilter").value = "open";
     resetDates(); load();
   });
   $("exportBtn").addEventListener("click", exportCsv);
   // Los gráficos también filtran: otro clic en la misma opción lo quita
   $("legend").addEventListener("click", e => {
-    const b = e.target.closest("[data-status]"); if (!b) return;
-    $("statusFilter").value = $("statusFilter").value === b.dataset.status ? "open" : b.dataset.status;
+    const b = e.target.closest("[data-company]"); if (!b) return;
+    $("companyFilter").value = $("companyFilter").value === b.dataset.company ? "" : b.dataset.company;
     render();
   });
   $("aging").addEventListener("click", e => {
@@ -515,11 +445,6 @@ function initAwbRecovery() {
     const b = e.target.closest("[data-customer]"); if (!b) return;
     const input = $("searchInput");
     input.value = input.value.trim().toLowerCase() === b.dataset.customer.toLowerCase() ? "" : b.dataset.customer;
-    render();
-  });
-  $("rowsBody").addEventListener("change", e => {
-    if (!e.target.classList.contains("row-check")) return;
-    e.target.checked ? state.selected.add(e.target.dataset.awb) : state.selected.delete(e.target.dataset.awb);
     render();
   });
   $("viewList").addEventListener("click", () => setView("list"));
@@ -534,20 +459,10 @@ function initAwbRecovery() {
     state.open.has(row.dataset.key) ? state.open.delete(row.dataset.key) : state.open.add(row.dataset.key);
     render();
   });
-  $("groupBody").addEventListener("change", e => {
-    if (!e.target.classList.contains("row-check")) return;
-    e.target.checked ? state.selected.add(e.target.dataset.awb) : state.selected.delete(e.target.dataset.awb);
-    render();
-  });
-  $("selectAll").addEventListener("change", e => {
-    filtered().slice(0, MAX_ROWS_SHOWN).forEach(r => { e.target.checked ? state.selected.add(r.awb) : state.selected.delete(r.awb); });
-    render();
-  });
   document.querySelectorAll("th.sortable").forEach(th => th.addEventListener("click", () => {
     if (state.sort === th.dataset.sort) state.dir *= -1; else { state.sort = th.dataset.sort; state.dir = 1; }
     render();
   }));
-  document.querySelectorAll(".bulk-btn").forEach(b => b.addEventListener("click", () => saveStatus(b.dataset.status)));
   load();
 }
 checkModuleAccess("finance", initAwbRecovery);
