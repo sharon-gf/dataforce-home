@@ -198,7 +198,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
       </a>
 
       <!-- 23 oct, cony: Dashboard 2.0 (../dashboard-v2), con mercado, market
-           share y minuta — en prueba, solo la ve ella (ver DASHBOARD_V2_EMAILS) -->
+           share y minuta — se da con su casilla en Users -->
       <a class="card card-dashboard-v2" href="https://dataforce.gsaforce.com/dashboard-v2/" style="display:none;">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><circle cx="19" cy="8" r="1.5"/></svg></div>
         <div><div class="card-name">Dashboard 2.0</div><div class="card-desc">Our KPIs next to market size and market share, with meeting notes</div></div>
@@ -463,6 +463,7 @@ async function applyModulePermissions() {
     // Show only allowed modules based on their class name
     const classMap = {
       'dashboard': '.card-dashboard',
+      'dashboard_v2': '.card-dashboard-v2',
       'booked': '.card-booked',
       'flown': '.card-summary',
       'my_bookings': '.card-my-bookings',
@@ -496,11 +497,6 @@ async function applyModulePermissions() {
       }
     });
 
-    // 23 oct, cony: Dashboard 2.0 en prueba — solo para estos correos
-    const DASHBOARD_V2_EMAILS = ['crobles@gsaforce.com', 'sharon@gsaforce.com'];
-    document.querySelectorAll('.card-dashboard-v2').forEach(el => {
-      el.style.display = DASHBOARD_V2_EMAILS.includes(String(currentUserEmail || '').toLowerCase()) ? 'block' : 'none';
-    });
     
     // If no modules allowed, show message
     // FIXED: Properly target the container wrapper to attach the access message safely

@@ -18,6 +18,7 @@
     "check_rates",
     "cod",
     "airline_reports",
+    "dashboard_v2",
     "finance",
     "jet_fuel",
     "industry_monitor",
