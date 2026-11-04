@@ -53,6 +53,23 @@
   tr.total td { background:var(--total); font-weight:600; border-bottom:0; }
   tr.total td.label { text-align:left; }
   .empty { padding:18px; text-align:center; color:var(--text3); }
+  .hub { width:min(var(--content-width),100%); margin:18px auto 8px; }
+  .hub h1 { font-size:20px; font-weight:600; }
+  .hub-lead { color:var(--text2); margin:3px 0 16px; font-size:13px; }
+  .airlines { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+  .airline { position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:flex-start; gap:10px; min-height:132px; padding:18px 16px 14px; text-align:left; color:inherit; cursor:pointer; background:var(--surface); border:1px solid var(--border); border-radius:12px; transition:transform .15s, box-shadow .15s, border-color .15s; }
+  .airline::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--blue); }
+  .airline.pending::before { background:#c5cfe0; }
+  @media (hover:hover) { .airline:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(13,31,60,.12); border-color:#c5cfe0; } }
+  .airline-code { width:36px; height:36px; border-radius:8px; display:grid; place-items:center; background:#eef3fb; color:var(--blue); font-weight:600; }
+  .airline.pending .airline-code { background:#eef0f4; color:var(--text2); }
+  .airline-name { font-size:13px; font-weight:600; }
+  .airline-tag { margin-top:auto; font-size:10px; font-weight:500; padding:3px 8px; border-radius:4px; background:var(--green3); color:#3b5d24; }
+  .airline.pending .airline-tag { background:#eef0f4; color:var(--text2); }
+  .hub-note { min-height:18px; margin-top:12px; color:var(--text2); font-size:12px; }
+  .report-head { width:min(var(--content-width),100%); margin:0 auto 8px; display:flex; align-items:center; gap:12px; }
+  .report-head h1 { font-size:16px; font-weight:600; }
+  [hidden] { display:none !important; }
   @media (max-width:760px) {
     .header { grid-template-columns:1fr; }
     .hdr-mid { text-align:left; }
@@ -81,9 +98,20 @@
     </div>
   </div>
 
+  <section class="hub" id="hub" hidden>
+    <h1>Airline Reports</h1>
+    <p class="hub-lead">Choose an airline to open its report</p>
+    <div class="airlines" id="airlines"></div>
+    <div class="hub-note" id="hubNote" role="status"></div>
+  </section>
+
+  <div id="reportView" hidden>
+  <div class="report-head">
+    <button class="tool-btn" id="backBtn" type="button">&larr; All airlines</button>
+    <h1 id="reportTitle"></h1>
+  </div>
   <section class="panel">
     <div class="filters">
-      <div class="field"><label for="carrier">Carrier</label><select id="carrier"></select></div>
       <div class="field"><label for="prefix">AWB prefix</label><select id="prefix"></select></div>
       <div class="field"><label for="reportType">Report</label>
         <select id="reportType">
@@ -104,6 +132,7 @@
   </section>
 
   <div id="report"></div>
+  </div>
 </div>
 
 <script src="../permission-guard.js"></script>
@@ -117,14 +146,25 @@ const FLIGHTS = { ET: { EWR: "ET515", JFK: "ET513" } };
 const OWN_PREFIX = { ET: 71 };
 // Stations that start unchecked; they can be added with their checkbox.
 const UNCHECKED_STATIONS = { ET: ["LGG"] };
+// 4 nov, cony: each airline has its own report format, so the module opens with
+// one card per client airline. "ready" = its format is built; the others open
+// once they have one.
+const AIRLINES = [
+  { code: "ET", name: "Ethiopian", ready: true },
+  { code: "LY", name: "El Al" },
+  { code: "CX", name: "Cathay" },
+  { code: "5X", name: "UPS" },
+  { code: "AV", name: "Avianca" },
+  { code: "4X", name: "Mercury" },
+];
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 let data = null;
-let hiddenStations = new Set(UNCHECKED_STATIONS.ET);
+let carrier = null;
+let hiddenStations = new Set();
 let requestSeq = 0;
 
 const els = {
-  carrier: document.getElementById("carrier"),
   prefix: document.getElementById("prefix"),
   reportType: document.getElementById("reportType"),
   dateFrom: document.getElementById("dateFrom"),
@@ -258,7 +298,6 @@ function fillSelect(select, options, value) {
 async function load() {
   const u = user();
   const seq = ++requestSeq;
-  const carrier = els.carrier.value || "ET";
   const params = new URLSearchParams({
     email: u.email,
     report_type: els.reportType.value,
@@ -275,9 +314,6 @@ async function load() {
     if (seq !== requestSeq) return;
     if (!response.ok) throw new Error(body.detail || "Could not load the report");
     data = body;
-    const carriers = body.carriers.map(c => ({ value: c.code, label: c.name || c.code }));
-    if (!carriers.some(c => c.value === body.carrier)) carriers.unshift({ value: body.carrier, label: body.carrier });
-    fillSelect(els.carrier, carriers, body.carrier);
     fillSelect(els.prefix, [{ value: "ALL", label: "All" }].concat(body.prefixes.map(p => ({ value: p, label: String(p).padStart(3, "0") }))), body.prefix ?? "ALL");
     renderDays();
     renderStations();
@@ -371,6 +407,34 @@ async function exportImage() {
   canvas.toBlob(blob => downloadBlob(blob, exportName("png")), "image/png");
 }
 
+function renderAirlines() {
+  document.getElementById("airlines").innerHTML = AIRLINES.map(a => `<button class="airline ${a.ready ? "" : "pending"}" type="button" data-airline="${esc(a.code)}">
+      <span class="airline-code">${esc(a.code)}</span>
+      <span class="airline-name">${esc(a.name)}</span>
+      <span class="airline-tag">${a.ready ? "Report ready" : "Format pending"}</span>
+    </button>`).join("");
+}
+
+// The chosen airline lives in the address (#ET), so the browser's back button works.
+function showView() {
+  const airline = AIRLINES.find(a => a.ready && a.code === window.location.hash.slice(1));
+  document.getElementById("hub").hidden = !!airline;
+  document.getElementById("reportView").hidden = !airline;
+  document.getElementById("hubNote").textContent = "";
+  if (!airline) {
+    carrier = null;
+    requestSeq++;
+    els.status.textContent = "Ready";
+    return;
+  }
+  carrier = airline.code;
+  document.getElementById("reportTitle").textContent = `${airline.name} report`;
+  els.reportType.value = "friday";
+  els.day.value = "ALL";
+  setDefaults();
+  reloadWithPrefixReset();
+}
+
 function setDefaults() {
   const day = iso(new Date());
   els.dateFrom.value = day;
@@ -378,12 +442,11 @@ function setDefaults() {
 }
 
 function reloadWithPrefixReset() {
-  hiddenStations = new Set(UNCHECKED_STATIONS[els.carrier.value || "ET"] || []);
+  hiddenStations = new Set(UNCHECKED_STATIONS[carrier] || []);
   els.prefix.innerHTML = "";
   load();
 }
 
-els.carrier.addEventListener("change", reloadWithPrefixReset);
 els.prefix.addEventListener("change", load);
 els.reportType.addEventListener("change", () => { setDefaults(); load(); });
 els.dateFrom.addEventListener("change", () => {
@@ -403,12 +466,20 @@ els.stations.addEventListener("change", event => {
   renderReport();
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
-  els.carrier.innerHTML = "";
   els.reportType.value = "friday";
   els.day.value = "ALL";
   setDefaults();
   reloadWithPrefixReset();
 });
+document.getElementById("airlines").addEventListener("click", event => {
+  const card = event.target.closest("[data-airline]");
+  if (!card) return;
+  const airline = AIRLINES.find(a => a.code === card.dataset.airline);
+  if (airline.ready) window.location.hash = airline.code;
+  else document.getElementById("hubNote").textContent = `${airline.name}: the report opens once its format is defined.`;
+});
+document.getElementById("backBtn").addEventListener("click", () => { window.location.hash = ""; });
+window.addEventListener("hashchange", showView);
 document.getElementById("exportBtn").addEventListener("click", exportExcel);
 document.getElementById("csvBtn").addEventListener("click", exportCsv);
 document.getElementById("imageBtn").addEventListener("click", exportImage);
@@ -441,8 +512,8 @@ async function checkAirlineReportsAccess(initFunction) {
   }
 }
 
-setDefaults();
-checkAirlineReportsAccess(load);
+renderAirlines();
+checkAirlineReportsAccess(showView);
 </script>
 </body>
 </html>
