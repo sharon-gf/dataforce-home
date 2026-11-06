@@ -18,6 +18,7 @@
     "check_rates",
     "cod",
     "airline_reports",
+    "awb_recovery",
     "dashboard_v2",
     "finance",
     "jet_fuel",

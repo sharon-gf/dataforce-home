@@ -81,11 +81,39 @@
 
   .notice { background:var(--amber-bg); color:#6b4a0a; border:1px solid #e8dcc0; border-radius:6px; padding:9px 13px; margin-bottom:13px; font-size:12px; line-height:1.45; }
   .notice.error { background:var(--red-bg); color:#9a3412; border-color:#f0d5c8; }
-  .list { padding:0; overflow:hidden; }
+  .list { padding:0; overflow:visible; }
   .list-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:16px 17px 10px; }
   .list-head h2 { margin:0; }
   .note { color:var(--text3); font-size:12px; margin-left:8px; font-weight:400; }
-  .filters { display:grid; grid-template-columns:1.7fr repeat(3,minmax(105px,1fr)) repeat(2,minmax(120px,1fr)); gap:8px; padding:0 17px 12px; }
+  .filters { display:grid; grid-template-columns:1.6fr minmax(150px,1.2fr) minmax(105px,1fr) repeat(2,minmax(190px,1.3fr)); gap:8px; padding:0 17px 12px; }
+  .rp { position:relative; }
+  @media (min-width:1181px) { .filters > .rp:last-child .rp-pop { left:auto; right:0; } }
+  .rp-pop { position:absolute; top:calc(100% + 4px); left:0; z-index:20; width:268px; background:#fff; border:1px solid var(--line2); border-radius:9px; box-shadow:0 12px 32px rgba(13,31,60,.16); padding:10px; }
+  .rp-head { display:flex; align-items:center; gap:2px; margin-bottom:6px; }
+  .rp-head b { flex:1; text-align:center; font-size:12.5px; }
+  .rp-nav { width:26px; height:26px; border:0; background:none; border-radius:6px; color:var(--text2); cursor:pointer; font-size:13px; }
+  .rp-nav:hover { background:var(--indigo-bg); color:var(--indigo); }
+  .rp-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px 0; }
+  .rp-dow { text-align:center; color:var(--text3); font-size:10.5px; padding:3px 0; }
+  .rp-day { height:30px; border:0; background:none; font-size:12px; color:var(--text1); cursor:pointer; border-radius:0; }
+  .rp-day:hover { background:var(--indigo-bg); }
+  .rp-day.in { background:var(--indigo-bg); }
+  .rp-day.edge { background:var(--indigo); color:#fff; border-radius:7px; }
+  .rp-day.today { font-weight:800; }
+  .rp-foot { display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top:8px; color:var(--text3); font-size:11.5px; }
+  .rp-foot .btn { height:28px; padding:0 10px; }
+  .gsa-pick { position:relative; }
+  .gsa-btn { width:100%; height:34px; border:1px solid var(--line2); border-radius:9px; background:#fff; color:var(--text1); padding:5px 10px; font-size:12.5px; display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; text-align:left; }
+  .gsa-btn span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gsa-menu { position:absolute; top:38px; left:0; z-index:20; min-width:240px; max-height:360px; overflow:auto; background:#fff; border:1px solid var(--line2); border-radius:9px; box-shadow:0 12px 32px rgba(13,31,60,.16); padding:6px; }
+  .gsa-group { display:flex; align-items:center; gap:4px; }
+  .gsa-line { display:flex; align-items:center; gap:8px; flex:1; margin:0; padding:6px 7px; border-radius:7px; color:var(--text1); font-size:12.5px; font-weight:400; cursor:pointer; }
+  .gsa-line:hover { background:var(--indigo-bg); }
+  .gsa-line input { width:14px; height:14px; flex:none; }
+  .gsa-line .n { margin-left:auto; color:var(--text3); font-size:11.5px; }
+  .gsa-child { padding-left:30px; }
+  .gsa-arrow { width:26px; height:26px; flex:none; border:0; background:none; border-radius:6px; color:var(--text3); font-size:10px; cursor:pointer; }
+  .gsa-arrow:hover { background:var(--indigo-bg); color:var(--indigo); }
   label { display:block; font-size:11px; font-weight:500; color:var(--text3); margin-bottom:4px; }
   input, select { width:100%; height:34px; border:1px solid var(--line2); border-radius:9px; background:#fff; color:var(--text1); padding:5px 10px; outline:none; font-size:12.5px; }
   input:focus, select:focus { border-color:var(--indigo); box-shadow:0 0 0 3px rgba(26,86,219,.12); }
@@ -177,12 +205,11 @@
       </div>
       <div class="filters">
         <div><label for="searchInput">Search</label><input id="searchInput" type="search" placeholder="AWB, customer, GSA, sales person"></div>
-        <div><label for="companyFilter">Company</label><select id="companyFilter"></select></div>
-        <div><label for="gsaFilter">GSA</label><select id="gsaFilter"></select></div>
+        <div class="gsa-pick" id="gsaPick"><label for="gsaBtn">GSA</label><button class="gsa-btn" id="gsaBtn" type="button" aria-haspopup="true" aria-expanded="false"><span id="gsaLabel">All</span><span aria-hidden="true">▾</span></button><div class="gsa-menu" id="gsaMenu" hidden></div></div>
         <div><label for="ageFilter">Age</label>
           <select id="ageFilter"><option value="">Any</option><option value="a">0-7 days</option><option value="b">8-15 days</option><option value="c">16-30 days</option><option value="d">Over 30 days</option></select></div>
-        <div><label for="dateFrom">Flight from</label><input id="dateFrom" type="date"></div>
-        <div><label for="dateTo">Flight to</label><input id="dateTo" type="date"></div>
+        <div class="rp" id="flightRange"><label for="flightRangeBtn">Flight range</label></div>
+        <div class="rp" id="bookingRange"><label for="bookingRangeBtn">Booking range</label></div>
       </div>
       <div class="table-wrap">
         <table id="groupTable" hidden>
@@ -191,17 +218,18 @@
         </table>
         <table id="listTable">
           <thead><tr>
-            <th class="sortable" data-sort="awb">AWB</th>
-            <th class="sortable" data-sort="customer">Customer</th>
-            <th class="sortable" data-sort="route">Route</th>
-            <th class="sortable" data-sort="company">Company</th>
             <th class="sortable" data-sort="gsa">GSA</th>
             <th class="sortable" data-sort="sales_person">Sales person</th>
-            <th class="sortable" data-sort="flight_date">Flight</th>
+            <th class="sortable" data-sort="customer">Customer</th>
+            <th class="sortable" data-sort="awb">AWB</th>
+            <th class="sortable" data-sort="route">Route</th>
             <th class="sortable num" data-sort="days">Days</th>
+            <th class="sortable" data-sort="bill_status">Billing</th>
+            <th class="sortable" data-sort="booking_date">Booking</th>
+            <th class="sortable" data-sort="company">Company</th>
+            <th class="sortable" data-sort="flight_date">Flight</th>
             <th class="sortable num" data-sort="chw">CHW</th>
             <th class="sortable num" data-sort="rev">Sales USD</th>
-            <th class="sortable" data-sort="bill_status">Billing</th>
           </tr></thead>
           <tbody id="rowsBody"></tbody>
         </table>
@@ -222,7 +250,8 @@ const AGE_BUCKETS = [
   { key: "d", label: "+30 d", color: "#c2410c", test: d => d > 30 }
 ];
 const MAX_ROWS_SHOWN = 1000;
-const state = { rows: [], sort: "days", dir: -1, user: null, loading: false, view: "list", open: new Set() };
+const state = { rows: [], sort: "days", dir: -1, user: null, loading: false, view: "list", open: new Set(), gsaOff: new Set(), gsaOpen: new Set() };
+const COMPANY_ORDER = ["Mercury", "GSA Force"];
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = n => Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
@@ -244,9 +273,7 @@ function daysSince(value) {
 }
 function matchesScope(r) {
   const q = $("searchInput").value.trim().toLowerCase();
-  const company = $("companyFilter").value, gsa = $("gsaFilter").value;
-  if (company && r.company !== company) return false;
-  if (gsa && r.gsa !== gsa) return false;
+  if (state.gsaOff.has(r.gsa)) return false;
   return !q || `${r.awb} ${r.customer} ${r.gsa} ${r.sales_person}`.toLowerCase().includes(q);
 }
 function filtered() {
@@ -276,7 +303,7 @@ function renderSummary() {
   $("kCustomers").textContent = fmt(new Set(open.map(r => r.customer)).size);
   if (!state.loading) $("lead").textContent = `${fmt(open.length)} AWBs to request and USD ${fmt(sum(open))} waiting to be billed.`;
 
-  const companyNow = $("companyFilter").value, ageNow = $("ageFilter").value;
+  const companyNow = onlyCompany(), ageNow = $("ageFilter").value;
   const counts = [...new Set(state.rows.map(r => r.company))].sort().map((key, i) => ({ key, color: COMPANY_COLORS[i % COMPANY_COLORS.length], n: open.filter(r => r.company === key).length }));
   const radius = 44, circle = 2 * Math.PI * radius;
   let offset = 0;
@@ -314,8 +341,8 @@ function render() {
   $("rowsBody").innerHTML = shown.map(r => {
     const dayClass = r.days > 30 ? "days-bad" : r.days > 15 ? "days-warn" : "";
     return `<tr>
-      <td class="awb">${esc(r.awb)}</td><td class="customer" title="${esc(r.customer)}">${esc(r.customer)}</td><td>${esc(r.route)}</td><td>${esc(r.company)}</td><td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td>${esc(r.flight_date)}</td>
-      <td class="num ${dayClass}">${r.days ?? "-"}</td><td class="num">${fmt(r.chw)}</td><td class="num">${fmt(r.rev)}</td><td>${esc(r.bill_status)}</td></tr>`;
+      <td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td class="customer" title="${esc(r.customer)}">${esc(r.customer)}</td><td class="awb">${esc(r.awb)}</td><td>${esc(r.route)}</td>
+      <td class="num ${dayClass}">${r.days ?? "-"}</td><td>${esc(r.bill_status)}</td><td>${esc(r.booking_date)}</td><td>${esc(r.company)}</td><td>${esc(r.flight_date)}</td><td class="num">${fmt(r.chw)}</td><td class="num">${fmt(r.rev)}</td></tr>`;
   }).join("");
   const grouped = state.view === "group";
   $("listTable").hidden = grouped;
@@ -374,21 +401,61 @@ function setView(view) {
   $("viewGroup").classList.toggle("on", view === "group");
   render();
 }
-function fillSelect(select, values) {
-  const current = select.value;
-  select.innerHTML = `<option value="">All</option>` + values.map(v => `<option>${esc(v)}</option>`).join("");
-  if (values.includes(current)) select.value = current;
+// GSA filter: Mercury and GSA Force with a checkbox each; the arrow shows their GSAs
+function gsaGroups() {
+  const groups = new Map();
+  state.rows.forEach(r => {
+    if (!groups.has(r.company)) groups.set(r.company, new Map());
+    const gsas = groups.get(r.company);
+    gsas.set(r.gsa, (gsas.get(r.gsa) || 0) + 1);
+  });
+  const rank = c => { const i = COMPANY_ORDER.indexOf(c); return i < 0 ? 99 : i; };
+  return [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]))
+    .map(([company, gsas]) => ({ company, gsas: [...gsas.entries()].sort((a, b) => a[0].localeCompare(b[0])) }));
+}
+function onlyCompany() {
+  const groups = gsaGroups();
+  const full = groups.filter(g => g.gsas.every(([gsa]) => !state.gsaOff.has(gsa)));
+  const empty = groups.filter(g => g.gsas.every(([gsa]) => state.gsaOff.has(gsa)));
+  return groups.length > 1 && full.length === 1 && empty.length === groups.length - 1 ? full[0].company : "";
+}
+function selectOnlyCompany(company) {
+  const groups = gsaGroups();
+  const already = onlyCompany() === company;
+  state.gsaOff.clear();
+  if (!already) groups.filter(g => g.company !== company).forEach(g => g.gsas.forEach(([gsa]) => state.gsaOff.add(gsa)));
+  renderGsaMenu();
+}
+function renderGsaMenu() {
+  const groups = gsaGroups();
+  const all = groups.flatMap(g => g.gsas.map(([gsa]) => gsa));
+  const on = all.filter(gsa => !state.gsaOff.has(gsa)).length;
+  $("gsaLabel").textContent = !state.gsaOff.size || on === all.length ? "All" : onlyCompany() || (on ? `${on} of ${all.length} GSAs` : "None");
+  $("gsaMenu").innerHTML = groups.length ? groups.map(g => {
+    const onCount = g.gsas.filter(([gsa]) => !state.gsaOff.has(gsa)).length;
+    const total = g.gsas.reduce((sum, [, n]) => sum + n, 0);
+    const open = state.gsaOpen.has(g.company);
+    const head = `<div class="gsa-group"><label class="gsa-line"><input type="checkbox" data-company="${esc(g.company)}" data-partial="${onCount > 0 && onCount < g.gsas.length}" ${onCount === g.gsas.length ? "checked" : ""}><b>${esc(g.company)}</b><span class="n">${fmt(total)}</span></label><button class="gsa-arrow" type="button" data-toggle="${esc(g.company)}" aria-label="Show ${esc(g.company)} GSAs">${open ? "▼" : "▶"}</button></div>`;
+    const kids = open ? g.gsas.map(([gsa, n]) => `<label class="gsa-line gsa-child"><input type="checkbox" data-gsa="${esc(gsa)}" ${state.gsaOff.has(gsa) ? "" : "checked"}>${esc(gsa)}<span class="n">${fmt(n)}</span></label>`).join("") : "";
+    return head + kids;
+  }).join("") : `<div class="none">No GSAs to show.</div>`;
+  $("gsaMenu").querySelectorAll('[data-partial="true"]').forEach(box => { box.indeterminate = true; });
+}
+function setGsaMenu(open) {
+  $("gsaMenu").hidden = !open;
+  $("gsaBtn").setAttribute("aria-expanded", String(open));
 }
 async function load() {
   state.loading = true; setStatus("Loading"); showError(""); render();
-  const params = new URLSearchParams({ email: state.user.email, date_from: $("dateFrom").value, date_to: $("dateTo").value });
+  const params = new URLSearchParams({ email: state.user.email, date_from: pickers.flight.from, date_to: pickers.flight.to });
+  if (pickers.booking.from) params.set("booking_from", pickers.booking.from);
+  if (pickers.booking.to) params.set("booking_to", pickers.booking.to);
   try {
     const response = await fetch(`${API_BASE}/api/awb_recovery?${params}`);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
     state.rows = data.rows.map(r => ({ ...r, days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
-    fillSelect($("companyFilter"), [...new Set(state.rows.map(r => r.company))].sort());
-    fillSelect($("gsaFilter"), [...new Set(state.rows.map(r => r.gsa))].sort());
+    renderGsaMenu();
     $("retIndBox").hidden = data.ret_ind_available !== false;
     $("dataAsOf").textContent = data.data_as_of ? new Date(data.data_as_of).toLocaleString() : "Unknown";
     if (data.truncated) showError(`Only the first ${fmt(data.count)} AWBs were loaded. Narrow the flight dates to see the rest.`);
@@ -414,26 +481,104 @@ function exportCsv() {
 }
 function resetDates() {
   const now = new Date();
-  $("dateFrom").value = `${now.getFullYear()}-01-01`;
-  $("dateTo").value = `${now.getFullYear()}-12-31`;
+  pickers.flight.set(`${now.getFullYear()}-01-01`, `${now.getFullYear()}-12-31`);
+  pickers.booking.set("", "");
 }
+// One box per range: first click on the calendar is the start, second click the end
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function showDate(iso) { const p = iso.split("-"); return `${+p[2]} ${MONTHS[+p[1] - 1]} ${p[0]}`; }
+function makeRangePicker(rootId, emptyLabel, defaults) {
+  const root = $(rootId);
+  const picker = { from: "", to: "", pending: "", view: new Date() };
+  root.insertAdjacentHTML("beforeend", `<button class="gsa-btn" id="${rootId}Btn" type="button" aria-haspopup="true" aria-expanded="false"><span></span><span aria-hidden="true">▾</span></button><div class="rp-pop" hidden></div>`);
+  const btn = root.querySelector("button"), pop = root.querySelector(".rp-pop");
+  const label = () => {
+    btn.firstElementChild.textContent = picker.from && picker.to ? `${showDate(picker.from)} – ${showDate(picker.to)}` : emptyLabel;
+  };
+  const draw = () => {
+    const y = picker.view.getFullYear(), m = picker.view.getMonth();
+    const first = (new Date(y, m, 1).getDay() + 6) % 7;
+    const days = new Date(y, m + 1, 0).getDate();
+    const today = isoDate(new Date());
+    const start = picker.pending || picker.from, end = picker.pending ? "" : picker.to;
+    let cells = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map(d => `<span class="rp-dow">${d}</span>`).join("") + "<span></span>".repeat(first);
+    for (let d = 1; d <= days; d++) {
+      const iso = isoDate(new Date(y, m, d));
+      const cls = [iso === start || iso === end ? "edge" : start && end && iso > start && iso < end ? "in" : "", iso === today ? "today" : ""].join(" ");
+      cells += `<button class="rp-day ${cls}" type="button" data-day="${iso}">${d}</button>`;
+    }
+    pop.innerHTML = `<div class="rp-head"><button class="rp-nav" type="button" data-step="-12" aria-label="Previous year">«</button><button class="rp-nav" type="button" data-step="-1" aria-label="Previous month">‹</button><b>${MONTHS[m]} ${y}</b><button class="rp-nav" type="button" data-step="1" aria-label="Next month">›</button><button class="rp-nav" type="button" data-step="12" aria-label="Next year">»</button></div>
+      <div class="rp-grid">${cells}</div>
+      <div class="rp-foot"><span>${picker.pending ? "Now pick the end date" : "Pick the start date"}</span><button class="btn" type="button" data-clear>${defaults ? "This year" : "Clear"}</button></div>`;
+  };
+  const open = show => {
+    pop.hidden = !show;
+    btn.setAttribute("aria-expanded", String(show));
+    if (show) { picker.pending = ""; picker.view = picker.from ? new Date(`${picker.from}T00:00:00`) : new Date(); draw(); }
+  };
+  picker.set = (from, to) => { picker.from = from; picker.to = to; label(); };
+  btn.addEventListener("click", () => open(pop.hidden));
+  pop.addEventListener("click", e => {
+    const step = e.target.closest("[data-step]");
+    if (step) { picker.view = new Date(picker.view.getFullYear(), picker.view.getMonth() + Number(step.dataset.step), 1); draw(); return; }
+    if (e.target.closest("[data-clear]")) {
+      const [from, to] = defaults ? defaults() : ["", ""];
+      picker.set(from, to); open(false); load(); return;
+    }
+    const day = e.target.closest("[data-day]");
+    if (!day) return;
+    if (!picker.pending) { picker.pending = day.dataset.day; draw(); return; }
+    const [from, to] = [picker.pending, day.dataset.day].sort();
+    picker.pending = "";
+    picker.set(from, to); open(false); load();
+  });
+  document.addEventListener("click", e => { if (!e.composedPath().includes(root)) open(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") open(false); });
+  label();
+  return picker;
+}
+const thisYear = () => { const y = new Date().getFullYear(); return [`${y}-01-01`, `${y}-12-31`]; };
+const pickers = {};
 function initAwbRecovery() {
   state.user = getDataforceUser();
   $("userLabel").textContent = state.user.name || state.user.email || "";
+  pickers.flight = makeRangePicker("flightRange", "This year", thisYear);
+  pickers.booking = makeRangePicker("bookingRange", "Any date", null);
   resetDates();
   $("searchInput").addEventListener("input", render);
-  ["companyFilter", "gsaFilter", "ageFilter"].forEach(id => $(id).addEventListener("change", render));
-  ["dateFrom", "dateTo"].forEach(id => $(id).addEventListener("change", load));
+  $("ageFilter").addEventListener("change", render);
+  $("gsaBtn").addEventListener("click", () => setGsaMenu($("gsaMenu").hidden));
+  document.addEventListener("click", e => { if (!e.composedPath().includes($("gsaPick"))) setGsaMenu(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") setGsaMenu(false); });
+  $("gsaMenu").addEventListener("click", e => {
+    const arrow = e.target.closest("[data-toggle]"); if (!arrow) return;
+    const company = arrow.dataset.toggle;
+    state.gsaOpen.has(company) ? state.gsaOpen.delete(company) : state.gsaOpen.add(company);
+    renderGsaMenu();
+  });
+  $("gsaMenu").addEventListener("change", e => {
+    const box = e.target;
+    if (box.dataset.company !== undefined) {
+      const group = gsaGroups().find(g => g.company === box.dataset.company);
+      if (group) group.gsas.forEach(([gsa]) => box.checked ? state.gsaOff.delete(gsa) : state.gsaOff.add(gsa));
+    } else if (box.dataset.gsa !== undefined) {
+      box.checked ? state.gsaOff.delete(box.dataset.gsa) : state.gsaOff.add(box.dataset.gsa);
+    }
+    renderGsaMenu();
+    render();
+  });
   $("resetBtn").addEventListener("click", () => {
     $("searchInput").value = "";
-    ["companyFilter", "gsaFilter", "ageFilter"].forEach(id => { $(id).selectedIndex = 0; });
+    $("ageFilter").selectedIndex = 0;
+    state.gsaOff.clear();
+    renderGsaMenu();
     resetDates(); load();
   });
   $("exportBtn").addEventListener("click", exportCsv);
   // Los gráficos también filtran: otro clic en la misma opción lo quita
   $("legend").addEventListener("click", e => {
     const b = e.target.closest("[data-company]"); if (!b) return;
-    $("companyFilter").value = $("companyFilter").value === b.dataset.company ? "" : b.dataset.company;
+    selectOnlyCompany(b.dataset.company);
     render();
   });
   $("aging").addEventListener("click", e => {
@@ -465,7 +610,21 @@ function initAwbRecovery() {
   }));
   load();
 }
-checkModuleAccess("finance", initAwbRecovery);
+// Se abre con la casilla Finance o con la casilla AWB Recovery (sin entrar a Finance)
+async function openAwbRecovery() {
+  let moduleName = "finance";
+  try {
+    const user = getDataforceUser();
+    const response = await fetch(`${API_BASE}/api/user_modules?email=${encodeURIComponent(user && user.email ? user.email : "")}`);
+    const data = await response.json();
+    const modules = (data.modules || []).map(m => String(m).toLowerCase().replace(/-/g, "_"));
+    if (!modules.includes("finance") && modules.includes("awb_recovery")) moduleName = "awb_recovery";
+  } catch (e) {
+    console.error("Error reading modules:", e);
+  }
+  checkModuleAccess(moduleName, initAwbRecovery);
+}
+openAwbRecovery();
 </script>
 </body>
 </html>

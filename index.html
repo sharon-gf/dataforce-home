@@ -122,6 +122,7 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
 .card-check-rates { --card-accent:#7c3aed; --card-icon-bg:#f3e8ff; }
 .card-cod { --card-accent:#b91c1c; --card-icon-bg:#fef2f2; }
 .card-airline-reports { --card-accent:#548235; --card-icon-bg:#e2efda; }
+.card-awb-recovery { --card-accent:#0f766e; --card-icon-bg:#e6f5f3; }
 .card-finance { --card-accent:#0f766e; --card-icon-bg:#e6f5f3; }
 .card-jet-fuel { --card-accent:#1a3360; --card-icon-bg:#edf4fb; }
 .card-industry-monitor { --card-accent:#c97a06; --card-icon-bg:#fef6e8; }
@@ -275,6 +276,12 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#548235" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18H5z"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h3"/></svg></div>
         <div><div class="card-name">Airline Reports</div><div class="card-desc">Weekly report for the airline by flight and station</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#548235" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+
+      <a class="card card-awb-recovery" href="https://dataforce.gsaforce.com/finance/awb-recovery/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9 15 2 2 4-4"/></svg></div>
+        <div><div class="card-name">AWB Recovery</div><div class="card-desc">AWBs whose copy can be requested</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#0f766e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
 
       <a class="card card-finance" href="https://dataforce.gsaforce.com/finance/">
@@ -477,6 +484,7 @@ async function applyModulePermissions() {
       'check_rates': '.card-check-rates',
       'cod': '.card-cod',
       'airline_reports': '.card-airline-reports',
+      'awb_recovery': '.card-awb-recovery',
       'finance': '.card-finance',
       'jet_fuel': '.card-jet-fuel',
       'industry_monitor': '.card-industry-monitor',
