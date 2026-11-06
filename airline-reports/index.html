@@ -53,6 +53,10 @@
   tr.total td { background:var(--total); font-weight:600; border-bottom:0; }
   tr.total td.label { text-align:left; }
   .empty { padding:18px; text-align:center; color:var(--text3); }
+  .df-table th { background:#1a3360; color:#c8d8f0; font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; padding:8px; }
+  .df-table td { border-bottom:1px solid var(--border); padding:8px; font-size:11px; }
+  .df-table tbody tr:nth-child(even) td { background:#f0f2f6; }
+  .df-table tbody tr:hover td { background:#e4ecfb; }
   .hub { width:min(var(--content-width),100%); margin:18px auto 8px; }
   .hub h1 { font-size:20px; font-weight:600; }
   .hub-lead { color:var(--text2); margin:3px 0 16px; font-size:13px; }
@@ -143,7 +147,9 @@ const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
 // The flight number is not in CargoSystem: only the flights given for each carrier.
 const FLIGHTS = { ET: { EWR: "ET515", JFK: "ET513" } };
 // AWB prefix each carrier opens with; its segments on other airlines' AWBs stay out until chosen.
-const OWN_PREFIX = { ET: 71 };
+const OWN_PREFIX = { ET: 71, LY: 805 };
+// 6 nov, cony: El Al's report is last week's 805 AWBs flown on El Al, Monday to Sunday.
+const PREVIOUS_WEEK = { LY: true };
 // Stations that start unchecked; they can be added with their checkbox.
 const UNCHECKED_STATIONS = { ET: ["LGG"] };
 // 4 nov, cony: each airline has its own report format, so the module opens with
@@ -151,7 +157,7 @@ const UNCHECKED_STATIONS = { ET: ["LGG"] };
 // once they have one.
 const AIRLINES = [
   { code: "ET", name: "Ethiopian", ready: true },
-  { code: "LY", name: "El Al" },
+  { code: "LY", name: "El Al", ready: true },
   { code: "CX", name: "Cathay" },
   { code: "5X", name: "UPS" },
   { code: "AV", name: "Avianca" },
@@ -248,7 +254,52 @@ function renderStations() {
     : "";
 }
 
+function money(value) {
+  return Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function usDate(text) {
+  const d = parseDay(text);
+  return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+// One line per El Al segment: the rate and the minimum are the ones entered in CargoSystem.
+function elAlLines(block) {
+  return block.groups.flatMap(group => group.rows.map(row => ({
+    awb: row.awb,
+    date: usDate(group.flight_date),
+    gateway: group.station,
+    destination: row.destination,
+    chw: Number(row.kilos || 0),
+    rate: row.rate == null ? "" : money(row.rate),
+    minimum: Number(row.minimum) > 0 ? money(row.minimum) : "",
+  })));
+}
+
+const EL_AL_COLUMNS = ["AWB", "Flight Date", "Gateway", "Destination", "CHW (Kg)", "Rate $/kg", "Min $"];
+
+function renderElAl() {
+  els.report.innerHTML = visibleBlocks().map(block => {
+    const lines = elAlLines(block);
+    if (!lines.length) {
+      return `<section class="panel"><div class="block-title">${esc(blockTitle(block))}</div><div class="empty">No segments for these filters.</div></section>`;
+    }
+    const body = lines.map(l => `<tr>
+        <td>${esc(l.awb)}</td><td>${esc(l.date)}</td><td>${esc(l.gateway)}</td><td>${esc(l.destination)}</td>
+        <td class="num">${money(l.chw)}</td><td class="num">${esc(l.rate)}</td><td class="num">${esc(l.minimum)}</td>
+      </tr>`).join("");
+    return `<section class="panel">
+      <div class="block-title">${esc(blockTitle(block))}</div>
+      <div class="table-wrap"><table class="df-table">
+        <thead><tr>${EL_AL_COLUMNS.map((c, i) => `<th${i > 3 ? ' class="num"' : ""}>${esc(c)}</th>`).join("")}</tr></thead>
+        <tbody>${body}</tbody>
+      </table></div>
+    </section>`;
+  }).join("");
+}
+
 function renderReport() {
+  if (data && data.carrier === "LY") return renderElAl();
   const carrier = data ? data.carrier : "";
   const blocks = visibleBlocks();
   const html = blocks.map(block => {
@@ -318,7 +369,11 @@ async function load() {
     renderDays();
     renderStations();
     renderReport();
-    els.note.textContent = (FLIGHTS[body.carrier] ? "" : "CargoSystem has no flight number, so this carrier shows only the date. ");
+    if (body.carrier === "LY") {
+      els.note.textContent = body.with_rates ? "" : "Rate and minimum will show once Seg_IntRate and Seg_IntMin reach the database.";
+    } else {
+      els.note.textContent = (FLIGHTS[body.carrier] ? "" : "CargoSystem has no flight number, so this carrier shows only the date. ");
+    }
     els.status.textContent = "Live";
   } catch (error) {
     if (seq !== requestSeq) return;
@@ -331,10 +386,31 @@ async function load() {
   }
 }
 
+async function exportElAlExcel(book, sheet) {
+  const fill = argb => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
+  [16, 13, 10, 12, 12, 11, 10].forEach((width, i) => { sheet.getColumn(i + 1).width = width; });
+  visibleBlocks().forEach(block => {
+    const lines = elAlLines(block);
+    if (!lines.length) return;
+    sheet.addRow([blockTitle(block)]).font = { bold: true };
+    const head = sheet.addRow(EL_AL_COLUMNS);
+    head.eachCell(cell => { cell.fill = fill("FF4472C4"); cell.font = { color: { argb: "FFFFFFFF" }, bold: true }; cell.alignment = { horizontal: "center" }; });
+    lines.forEach(l => {
+      const r = sheet.addRow([l.awb, l.date, l.gateway, l.destination, l.chw, l.rate === "" ? null : Number(l.rate.replace(/,/g, "")), l.minimum === "" ? null : Number(l.minimum.replace(/,/g, ""))]);
+      r.eachCell({ includeEmpty: true }, cell => { cell.fill = fill("FFDDEBF7"); cell.alignment = { horizontal: "center" }; });
+      [5, 6, 7].forEach(i => { r.getCell(i).numFmt = "#,##0.00"; });
+    });
+    sheet.addRow([]);
+  });
+  const buffer = await book.xlsx.writeBuffer();
+  downloadBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), exportName("xlsx"));
+}
+
 async function exportExcel() {
   if (!data || !window.ExcelJS) return;
   const book = new ExcelJS.Workbook();
   const sheet = book.addWorksheet("Report");
+  if (data.carrier === "LY") return exportElAlExcel(book, sheet);
   const columns = ["Day of the week", "Station", "Flight/Date", "Destination", "AWB", "PRODUCT", "Kilos", "REVENUE", "PMC"];
   [16, 9, 15, 12, 16, 24, 10, 12, 7].forEach((width, i) => { sheet.getColumn(i + 1).width = width; });
   const fill = argb => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
@@ -387,6 +463,14 @@ function exportCsv() {
   if (!data) return;
   const cell = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
   const round = value => Math.floor(Number(value || 0) + 0.5);
+  if (data.carrier === "LY") {
+    const rows = [["Report", ...EL_AL_COLUMNS]];
+    visibleBlocks().forEach(block => elAlLines(block).forEach(l =>
+      rows.push([blockTitle(block), l.awb, l.date, l.gateway, l.destination, l.chw.toFixed(2), l.rate.replace(/,/g, ""), l.minimum.replace(/,/g, "")])));
+    const csv = rows.map(line => line.map(cell).join(",")).join("\r\n");
+    downloadBlob(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }), exportName("csv"));
+    return;
+  }
   const lines = [["Report", "Day of the week", "Station", "Flight/Date", "Destination", "AWB", "PRODUCT", "Kilos", "REVENUE", "PMC"]];
   visibleBlocks().forEach(block => {
     block.groups.forEach(group => {
@@ -429,14 +513,16 @@ function showView() {
   }
   carrier = airline.code;
   document.getElementById("reportTitle").textContent = `${airline.name} report`;
-  els.reportType.value = "friday";
+  els.reportType.value = PREVIOUS_WEEK[carrier] ? "monday" : "friday";
   els.day.value = "ALL";
   setDefaults();
   reloadWithPrefixReset();
 }
 
 function setDefaults() {
-  const day = iso(new Date());
+  const d = new Date();
+  if (PREVIOUS_WEEK[carrier]) d.setDate(d.getDate() - 7);
+  const day = iso(d);
   els.dateFrom.value = day;
   els.dateTo.value = day;
 }
@@ -466,7 +552,7 @@ els.stations.addEventListener("change", event => {
   renderReport();
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
-  els.reportType.value = "friday";
+  els.reportType.value = PREVIOUS_WEEK[carrier] ? "monday" : "friday";
   els.day.value = "ALL";
   setDefaults();
   reloadWithPrefixReset();
