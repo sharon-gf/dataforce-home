@@ -31,6 +31,7 @@
     { key: "check_rates", label: "Check Rates", href: "https://dataforce.gsaforce.com/check-rates/" },
     { key: "cod", label: "COD", href: "https://dataforce.gsaforce.com/cod/" },
     { key: "airline_reports", label: "Airline Reports", href: "https://dataforce.gsaforce.com/airline-reports/" },
+    { key: "awb_recovery", label: "AWB Recovery", href: "https://dataforce.gsaforce.com/finance/awb-recovery/" },
     { key: "finance", label: "Finance", href: "https://dataforce.gsaforce.com/finance/" },
     { key: "jet_fuel", label: "Jet Fuel", href: "https://dataforce.gsaforce.com/jet-fuel/" },
     { key: "industry_monitor", label: "Industry Monitor", href: "https://dataforce.gsaforce.com/industry-monitor/" },

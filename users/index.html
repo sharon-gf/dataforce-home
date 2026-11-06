@@ -382,6 +382,7 @@ th.name-col, th.email-col { z-index:26; }
         <option value="forwarding_automatico">Forwarding Automático</option>
         <option value="cod">COD</option>
         <option value="airline_reports">Airline Reports</option>
+        <option value="awb_recovery">AWB Recovery</option>
         <option value="dashboard_v2">Dashboard 2.0</option>
         <option value="mkt_data_review">MKT DATA REVIEW</option>
         <option value="upload">Upload</option>
@@ -443,6 +444,7 @@ th.name-col, th.email-col { z-index:26; }
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Forwarding Automático: CargoSystem AUTOMATIC FWD report uploaded to Nodes twice a day.">FWD</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="COD: all bookings of customers that must pay before the cargo flies (Cust_IntType = COD).">COD</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Airline Reports: weekly report for the airline by flight and station. Only users with this box checked can open it; Admin does not include it.">AIR</th>
+            <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="AWB Recovery: only this screen, without Finance. A user with a Sales Person sees only their own AWBs.">AWB</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Dashboard 2.0: our KPIs next to market size and market share, with meeting notes. Only users with this box checked can open it; Admin does not include it. They also need the Dashboard box.">DB 2.0</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="MKT DATA REVIEW: monthly kilos and row trends, source comparisons, and exact duplicate checks.">MKT REV</th>
             <th class="module-col desktop-col module-info-header" tabindex="0" data-tip="Admin: user administration, access requests, permissions, and user scope management.">ADMIN</th>
@@ -577,6 +579,10 @@ th.name-col, th.email-col { z-index:26; }
         <div class="checkbox-item">
           <input type="checkbox" id="mod-airline-reports" value="airline_reports" onchange="updateSelectAllModules()" />
           <label for="mod-airline-reports">Airline Reports</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="mod-awb-recovery" value="awb_recovery" onchange="updateSelectAllModules()" />
+          <label for="mod-awb-recovery">AWB Recovery</label>
         </div>
         <div class="checkbox-item">
           <input type="checkbox" id="mod-dashboard-v2" value="dashboard_v2" onchange="updateSelectAllModules()" />
@@ -825,6 +831,7 @@ th.name-col, th.email-col { z-index:26; }
     { key: 'forwarding_automatico', label: 'FWD' },
     { key: 'cod', label: 'COD' },
     { key: 'airline_reports', label: 'AIR' },
+    { key: 'awb_recovery', label: 'AWB' },
     { key: 'dashboard_v2', label: 'DB 2.0' },
     { key: 'mkt_data_review', label: 'MKT REV' },
     { key: 'admin', label: 'ADMIN' }
