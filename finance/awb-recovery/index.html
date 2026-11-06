@@ -149,6 +149,34 @@
   .l1 .g-name { padding-left:20px; } .l2 .g-name { padding-left:40px; } .leaf .g-name { padding-left:64px; }
   .g-name { max-width:430px; overflow:hidden; text-overflow:ellipsis; }
   .empty { padding:38px 16px; color:var(--text3); text-align:center; }
+  th.pick-col, td.pick-col { width:34px; padding-right:0; }
+  .pick-col input { width:15px; height:15px; cursor:pointer; vertical-align:middle; }
+  tbody tr.sel td { background:#eef3fd; }
+  .sel-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 17px 12px; padding:8px 12px; background:var(--indigo-bg); border-radius:9px; color:var(--text1); font-size:12.5px; }
+  .sel-bar b { margin-right:auto; }
+  .sel-bar .btn { height:30px; }
+  .modal-back { position:fixed; inset:0; z-index:50; background:rgba(13,31,60,.45); display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; overflow:auto; }
+  .modal { width:min(820px,100%); background:#fff; border-radius:12px; box-shadow:0 24px 60px rgba(13,31,60,.3); padding:20px; }
+  .modal h2 { font-size:16px; margin-bottom:4px; }
+  .modal .muted { margin-bottom:14px; }
+  .m-field { margin-bottom:10px; }
+  .modal textarea { width:100%; border:1px solid var(--line2); border-radius:9px; padding:8px 10px; font:inherit; font-size:12.5px; color:var(--text1); resize:vertical; outline:none; }
+  .modal textarea:focus { border-color:var(--indigo); box-shadow:0 0 0 3px rgba(26,86,219,.12); }
+  .m-body { border:1px solid var(--line2); border-radius:9px; padding:12px; }
+  .m-body textarea { margin-bottom:10px; }
+  .m-text { white-space:pre-wrap; font-size:13px; line-height:1.45; margin-bottom:10px; }
+  .m-preview { overflow:auto; max-height:260px; margin-bottom:10px; }
+  .m-preview th { position:static; background:#fff; }
+  .m-table td { border-bottom:0; }
+  .m-table tbody tr:nth-child(even) td { background:#edf0f4; }
+  .m-table tbody tr:hover td { background:inherit; }
+  .m-table tbody tr:nth-child(even):hover td { background:#edf0f4; }
+  .m-foot { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:14px; }
+  .m-foot .msg { margin-right:auto; font-size:12px; color:var(--text3); }
+  .m-foot .msg.err { color:var(--red); }
+  .m-foot .msg.ok { color:var(--teal); }
+  .not-flown { color:var(--text3); }
+  .sel-bar[hidden], .modal-back[hidden] { display:none; }
   .none { color:var(--text3); padding:8px 7px; font-size:12.5px; }
   @media (prefers-reduced-motion:no-preference) { .fill { transition:width .25s ease; } }
   @media (max-width:1180px) { .filters { grid-template-columns:repeat(3,minmax(0,1fr)); } .charts { grid-template-columns:1fr 1fr; } .kpis { grid-template-columns:1fr 1fr; } }
@@ -194,7 +222,7 @@
       <div class="card"><h2>Customers with most AWBs</h2><div id="customers"></div></div>
     </section>
 
-    <div class="notice"><b>Preview:</b> these figures have not been validated yet against the Finance recovery list. Rules: Seg_St FLOWN, IN_ROUTE or WHR; BILL_St OPEN or blank; Bkg_AWBRetInd blank. Read-only: nothing is emailed to customers and nothing is written to CargoSystem.</div>
+    <div class="notice"><b>Preview:</b> these figures have not been validated yet against the Finance recovery list. Rules: Seg_St FLOWN, IN_ROUTE or WHR; BILL_St OPEN or blank; Bkg_AWBRetInd blank. Flight is the first air segment already flown (trucks are not counted) and Days count from it. Nothing is written to CargoSystem; an email is only sent when you press Send.</div>
     <div class="notice" id="retIndBox" hidden><b>Not filtered yet:</b> Bkg_AWBRetInd has not been loaded into Dataforce, so AWBs already marked in CargoSystem still appear here and totals may be too high.</div>
     <div class="notice error" id="errorBox" hidden></div>
 
@@ -211,6 +239,7 @@
         <div class="rp" id="flightRange"><label for="flightRangeBtn">Flight range</label></div>
         <div class="rp" id="bookingRange"><label for="bookingRangeBtn">Booking range</label></div>
       </div>
+      <div class="sel-bar" id="selBar" hidden><b id="selText">0 AWBs selected</b><button class="btn" id="selClear" type="button">Clear selection</button><button class="btn" id="selCopy" type="button">Copy AWB</button><button class="btn primary" id="selEmail" type="button">Write email</button></div>
       <div class="table-wrap">
         <table id="groupTable" hidden>
           <thead><tr><th>GSA / Sales person / Customer / AWB</th><th class="num">AWBs</th><th class="num">Rows</th><th class="num">Over 30 d</th><th class="num">Sales USD</th></tr></thead>
@@ -218,6 +247,7 @@
         </table>
         <table id="listTable">
           <thead><tr>
+            <th class="pick-col"><input type="checkbox" id="pickAll" aria-label="Select all AWBs shown"></th>
             <th class="sortable" data-sort="gsa">GSA</th>
             <th class="sortable" data-sort="sales_person">Sales person</th>
             <th class="sortable" data-sort="customer">Customer</th>
@@ -239,6 +269,23 @@
   </div>
 </div>
 
+<div class="modal-back" id="mailBack" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
+    <h2 id="mailTitle">Email about these AWBs</h2>
+    <div class="muted">Sent from no-reply@gsaforce.com. Only company addresses; separate several with commas.</div>
+    <div class="m-field"><label for="mailTo">To</label><input id="mailTo" type="text" placeholder="name@mercuryamericas.com, name@gsaforce.com"></div>
+    <div class="m-field"><label for="mailCc">CC</label><input id="mailCc" type="text"></div>
+    <div class="m-field"><label for="mailSubject">Subject</label><input id="mailSubject" type="text"></div>
+    <label>Email</label>
+    <div class="m-body">
+      <div class="m-text" id="mailMessageView"></div><textarea id="mailMessage" rows="4" hidden aria-label="Message"></textarea>
+      <div class="m-preview"><table class="m-table"><thead><tr><th>GSA</th><th>Sales person</th><th>Customer</th><th>AWB</th><th>Route</th><th class="num">Days</th></tr></thead><tbody id="mailRows"></tbody></table></div>
+      <div class="m-text" id="mailClosingView"></div><textarea id="mailClosing" rows="2" hidden aria-label="Closing"></textarea>
+    </div>
+    <div class="m-foot"><span class="msg" id="mailMsg"></span><button class="btn" id="mailEdit" type="button">Edit text</button><button class="btn" id="mailCopy" type="button">Copy email</button><button class="btn" id="mailCancel" type="button">Cancel</button><button class="btn primary" id="mailSend" type="button">Send</button></div>
+  </div>
+</div>
+
 <script src="../../permission-guard.js"></script>
 <script>
 const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
@@ -250,7 +297,7 @@ const AGE_BUCKETS = [
   { key: "d", label: "+30 d", color: "#c2410c", test: d => d > 30 }
 ];
 const MAX_ROWS_SHOWN = 1000;
-const state = { rows: [], sort: "days", dir: -1, user: null, loading: false, view: "list", open: new Set(), gsaOff: new Set(), gsaOpen: new Set() };
+const state = { rows: [], sort: "days", dir: -1, user: null, loading: false, view: "list", open: new Set(), gsaOff: new Set(), gsaOpen: new Set(), selected: new Set(), restored: false };
 const COMPANY_ORDER = ["Mercury", "GSA Force"];
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -270,6 +317,45 @@ function daysSince(value) {
   if (!p) return null;
   const now = new Date();
   return Math.max(0, Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(+p[1], +p[2] - 1, +p[3])) / 86400000));
+}
+// Flight = carrier + date of the first air segment already flown, e.g. AV03-09-2026
+function flightLabel(r) {
+  const p = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(r.flight_date || ""));
+  return p ? `${r.flight_carrier || ""}${p[3]}-${p[2]}-${p[1]}` : "";
+}
+// Each user's filters stay saved in this browser until they change them or press Reset
+function filtersKey() { return `awb_recovery_filters:${String(state.user && state.user.email || "").toLowerCase()}`; }
+function saveFilters() {
+  if (!state.restored || !pickers.flight) return;
+  try {
+    localStorage.setItem(filtersKey(), JSON.stringify({
+      search: $("searchInput").value, age: $("ageFilter").value, gsaOff: [...state.gsaOff],
+      flight: [pickers.flight.from, pickers.flight.to], booking: [pickers.booking.from, pickers.booking.to],
+      sort: state.sort, dir: state.dir, view: state.view
+    }));
+  } catch (e) { /* storage blocked: filters just are not remembered */ }
+}
+function restoreFilters() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(filtersKey()) || "null"); } catch (e) { saved = null; }
+  state.restored = true;
+  if (!saved || typeof saved !== "object") return false;
+  const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ""));
+  $("searchInput").value = String(saved.search || "");
+  if ([...$("ageFilter").options].some(o => o.value === saved.age)) $("ageFilter").value = saved.age;
+  state.gsaOff = new Set(Array.isArray(saved.gsaOff) ? saved.gsaOff.map(String) : []);
+  const [flightFrom, flightTo] = Array.isArray(saved.flight) ? saved.flight : [];
+  if (isDate(flightFrom) && isDate(flightTo)) pickers.flight.set(flightFrom, flightTo); else pickers.flight.set(...thisYear());
+  const [bookingFrom, bookingTo] = Array.isArray(saved.booking) ? saved.booking : [];
+  pickers.booking.set(isDate(bookingFrom) ? bookingFrom : "", isDate(bookingTo) ? bookingTo : "");
+  if (typeof saved.sort === "string" && document.querySelector(`th[data-sort="${CSS.escape(saved.sort)}"]`)) state.sort = saved.sort;
+  if (saved.dir === 1 || saved.dir === -1) state.dir = saved.dir;
+  if (saved.view === "group" || saved.view === "list") {
+    state.view = saved.view;
+    $("viewList").classList.toggle("on", state.view === "list");
+    $("viewGroup").classList.toggle("on", state.view === "group");
+  }
+  return true;
 }
 function matchesScope(r) {
   const q = $("searchInput").value.trim().toLowerCase();
@@ -340,10 +426,20 @@ function render() {
   $("resultNote").textContent = rows.length > shown.length ? `Showing ${fmt(shown.length)} of ${fmt(rows.length)}` : `${fmt(rows.length)} rows`;
   $("rowsBody").innerHTML = shown.map(r => {
     const dayClass = r.days > 30 ? "days-bad" : r.days > 15 ? "days-warn" : "";
-    return `<tr>
+    const picked = state.selected.has(r.awb);
+    const flight = r.flight ? esc(r.flight) : `<span class="not-flown" title="No air segment flown yet">Not flown</span>`;
+    return `<tr class="${picked ? "sel" : ""}">
+      <td class="pick-col"><input type="checkbox" data-pick="${esc(r.awb)}" ${picked ? "checked" : ""} aria-label="Select ${esc(r.awb)}"></td>
       <td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td class="customer" title="${esc(r.customer)}">${esc(r.customer)}</td><td class="awb">${esc(r.awb)}</td><td>${esc(r.route)}</td>
-      <td class="num ${dayClass}">${r.days ?? "-"}</td><td>${esc(r.bill_status)}</td><td>${esc(r.booking_date)}</td><td>${esc(r.company)}</td><td>${esc(r.flight_date)}</td><td class="num">${fmt(r.chw)}</td><td class="num">${fmt(r.rev)}</td></tr>`;
+      <td class="num ${dayClass}">${r.days ?? "-"}</td><td>${esc(r.bill_status)}</td><td>${esc(r.booking_date)}</td><td>${esc(r.company)}</td><td>${flight}</td><td class="num">${fmt(r.chw)}</td><td class="num">${fmt(r.rev)}</td></tr>`;
   }).join("");
+  const pickAll = $("pickAll");
+  const shownPicked = shown.filter(r => state.selected.has(r.awb)).length;
+  pickAll.checked = shown.length > 0 && shownPicked === shown.length;
+  pickAll.indeterminate = shownPicked > 0 && shownPicked < shown.length;
+  $("selBar").hidden = !state.selected.size || state.view !== "list";
+  $("selText").textContent = `${fmt(state.selected.size)} AWB${state.selected.size === 1 ? "" : "s"} selected`;
+  saveFilters();
   const grouped = state.view === "group";
   $("listTable").hidden = grouped;
   $("groupTable").hidden = !grouped;
@@ -454,7 +550,9 @@ async function load() {
     const response = await fetch(`${API_BASE}/api/awb_recovery?${params}`);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
-    state.rows = data.rows.map(r => ({ ...r, days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
+    state.rows = data.rows.map(r => ({ ...r, flight: flightLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
+    const present = new Set(state.rows.map(r => r.awb));
+    [...state.selected].forEach(awb => { if (!present.has(awb)) state.selected.delete(awb); });
     renderGsaMenu();
     $("retIndBox").hidden = data.ret_ind_available !== false;
     $("dataAsOf").textContent = data.data_as_of ? new Date(data.data_as_of).toLocaleString() : "Unknown";
@@ -473,11 +571,113 @@ function exportCsv() {
   const rows = filtered();
   const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const lines = [["AWB", "Customer", "Route", "Company", "GSA", "Sales Person", "Flight Date", "Days", "CHW", "Sales USD", "Billing"].join(",")]
-    .concat(rows.map(r => [r.awb, r.customer, r.route, r.company, r.gsa, r.sales_person, r.flight_date, r.days, r.chw, r.rev, r.bill_status].map(cell).join(",")));
+    .concat(rows.map(r => [r.awb, r.customer, r.route, r.company, r.gsa, r.sales_person, r.flight || "Not flown", r.days, r.chw, r.rev, r.bill_status].map(cell).join(",")));
   const url = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url; a.download = `awb_recovery_${isoDate(new Date())}.csv`; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+// Email popup: the AWBs checked in the list, sent from no-reply@gsaforce.com by the API
+function selectedRows() { return state.rows.filter(r => state.selected.has(r.awb)); }
+function setMailMsg(text, kind) { const m = $("mailMsg"); m.textContent = text || ""; m.className = `msg ${kind || ""}`; }
+function openMail() {
+  const rows = selectedRows();
+  if (!rows.length) return;
+  const uniq = list => [...new Set(list.filter(v => v && v !== "Unknown"))];
+  $("mailSubject").value = `${uniq(rows.map(r => r.gsa)).join(", ")} | ${uniq(rows.map(r => r.customer)).join(", ")} **URGENTE** ${rows.map(r => r.awb).join(" ")}`;
+  $("mailMessage").value = "Hola,\nSe tienen estas guías que aún no se han podido recuperar. Favor su ayuda urgente.";
+  $("mailClosing").value = `Saludos\n${state.user.name || ""}`.trim();
+  $("mailRows").innerHTML = rows.map(r => `<tr><td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td>${esc(r.customer)}</td><td class="awb">${esc(r.awb)}</td><td>${esc(r.route)}</td><td class="num">${r.days ?? "-"}</td></tr>`).join("");
+  setMailEditing(false);
+  setMailMsg(`${fmt(rows.length)} AWB${rows.length === 1 ? "" : "s"} in this email`);
+  $("mailSend").disabled = false;
+  $("mailBack").hidden = false;
+  $("mailTo").focus();
+}
+function closeMail() { $("mailBack").hidden = true; }
+// The text is fixed unless the user presses Edit text
+function setMailEditing(on) {
+  ["mailMessage", "mailClosing"].forEach(id => {
+    $(id).hidden = !on;
+    $(`${id}View`).hidden = on;
+    $(`${id}View`).textContent = $(id).value;
+  });
+  $("mailEdit").textContent = on ? "Done editing" : "Edit text";
+  if (on) $("mailMessage").focus();
+}
+// Same email the API sends: message, table with alternate grey rows, closing
+function emailHtml(rows) {
+  const text = v => { const t = String(v || "").trim(); return t ? `<p style="margin:0 0 14px">${t.split(/\r?\n/).map(esc).join("<br>")}</p>` : ""; };
+  const head = ["GSA", "Sales person", "Customer", "AWB", "Route", "Days"].map(h => `<th style="text-align:left;padding:7px 12px;border-bottom:1px solid #d5dbe5;color:#64748b;font-weight:600">${h}</th>`).join("");
+  const body = rows.map((r, i) => `<tr style="background:${i % 2 ? "#edf0f4" : "#ffffff"}">${[r.gsa, r.sales_person, r.customer, r.awb, r.route, r.days ?? "-"].map(c => `<td style="padding:7px 12px">${esc(c)}</td>`).join("")}</tr>`).join("");
+  return `<div style="font-family:Arial,sans-serif;font-size:14px;color:#0d1f3c">${text($("mailMessage").value)}<table style="border-collapse:collapse;font-size:13px;margin:0 0 16px"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>${text($("mailClosing").value)}</div>`;
+}
+function emailText(rows) {
+  const lines = rows.map(r => [r.gsa, r.sales_person, r.customer, r.awb, r.route, r.days ?? "-"].join("\t"));
+  return [$("mailMessage").value.trim(), "", ["GSA", "Sales person", "Customer", "AWB", "Route", "Days"].join("\t"), ...lines, "", $("mailClosing").value.trim()].join("\n");
+}
+// Older copy method, used when the browser blocks the clipboard API
+function legacyCopy(html, text) {
+  const box = document.createElement(html ? "div" : "textarea");
+  box.style.cssText = "position:fixed;left:-9999px;top:0;background:#fff;";
+  if (html) { box.innerHTML = html; } else { box.value = text; }
+  document.body.appendChild(box);
+  if (html) {
+    const range = document.createRange(); range.selectNodeContents(box);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  } else { box.select(); }
+  const ok = document.execCommand("copy");
+  window.getSelection().removeAllRanges();
+  box.remove();
+  if (!ok) throw new Error("copy blocked");
+}
+async function copyToClipboard(html, text) {
+  try {
+    if (html && window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([text], { type: "text/plain" }) })]);
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
+  } catch (e) {
+    legacyCopy(html, text);
+  }
+}
+async function copyEmail() {
+  const rows = selectedRows();
+  try { await copyToClipboard(emailHtml(rows), emailText(rows)); setMailMsg("Email copied. Paste it in your email.", "ok"); }
+  catch (e) { setMailMsg("Could not copy: the browser blocked it.", "err"); }
+}
+async function copyAwbs() {
+  const awbs = selectedRows().map(r => r.awb);
+  const btn = $("selCopy");
+  try { await copyToClipboard("", awbs.join("\n")); btn.textContent = `Copied ${awbs.length}`; }
+  catch (e) { btn.textContent = "Could not copy"; }
+  setTimeout(() => { btn.textContent = "Copy AWB"; }, 1500);
+}
+async function sendMail() {
+  const split = v => v.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+  const to = split($("mailTo").value), cc = split($("mailCc").value);
+  const rows = selectedRows();
+  if (!to.length) { setMailMsg("Add at least one recipient in To.", "err"); return; }
+  if (!$("mailSubject").value.trim()) { setMailMsg("The subject is empty.", "err"); return; }
+  $("mailSend").disabled = true;
+  setMailMsg("Sending…");
+  try {
+    const response = await fetch(`${API_BASE}/api/awb_recovery/email?email=${encodeURIComponent(state.user.email)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, cc, subject: $("mailSubject").value, message: $("mailMessage").value, closing: $("mailClosing").value, awbs: rows.map(r => r.awb) })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : `The API answered with an error (${response.status})`);
+    setMailMsg(`Sent to ${data.sent_to.join(", ")}`, "ok");
+    state.selected.clear();
+    render();
+    setTimeout(closeMail, 1500);
+  } catch (e) {
+    setMailMsg(`Not sent: ${e.message}`, "err");
+    $("mailSend").disabled = false;
+  }
 }
 function resetDates() {
   const now = new Date();
@@ -544,7 +744,25 @@ function initAwbRecovery() {
   $("userLabel").textContent = state.user.name || state.user.email || "";
   pickers.flight = makeRangePicker("flightRange", "This year", thisYear);
   pickers.booking = makeRangePicker("bookingRange", "Any date", null);
-  resetDates();
+  if (!restoreFilters()) resetDates();
+  $("rowsBody").addEventListener("change", e => {
+    const box = e.target.closest("[data-pick]"); if (!box) return;
+    box.checked ? state.selected.add(box.dataset.pick) : state.selected.delete(box.dataset.pick);
+    render();
+  });
+  $("pickAll").addEventListener("change", e => {
+    filtered().slice(0, MAX_ROWS_SHOWN).forEach(r => e.target.checked ? state.selected.add(r.awb) : state.selected.delete(r.awb));
+    render();
+  });
+  $("selClear").addEventListener("click", () => { state.selected.clear(); render(); });
+  $("selEmail").addEventListener("click", openMail);
+  $("selCopy").addEventListener("click", copyAwbs);
+  $("mailEdit").addEventListener("click", () => setMailEditing($("mailMessage").hidden));
+  $("mailCopy").addEventListener("click", copyEmail);
+  $("mailCancel").addEventListener("click", closeMail);
+  $("mailSend").addEventListener("click", sendMail);
+  $("mailBack").addEventListener("click", e => { if (e.target === $("mailBack")) closeMail(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mailBack").hidden) closeMail(); });
   $("searchInput").addEventListener("input", render);
   $("ageFilter").addEventListener("change", render);
   $("gsaBtn").addEventListener("click", () => setGsaMenu($("gsaMenu").hidden));
