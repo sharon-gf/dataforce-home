@@ -247,7 +247,8 @@ function blockTitle(block) {
 }
 
 function renderStations() {
-  const stations = data ? data.stations : [];
+  // El Al's report has no station filter: every gateway is always in it.
+  const stations = data && !PREVIOUS_WEEK[data.carrier] ? data.stations : [];
   els.stations.innerHTML = stations.length
     ? `<span class="field-label">Station</span>` + stations.map(s =>
         `<label class="chip"><input type="checkbox" data-station="${esc(s)}" ${hiddenStations.has(s) ? "" : "checked"}>${esc(s)}</label>`).join("")
@@ -514,6 +515,8 @@ function showView() {
   carrier = airline.code;
   document.getElementById("reportTitle").textContent = `${airline.name} report`;
   els.reportType.value = PREVIOUS_WEEK[carrier] ? "monday" : "friday";
+  // El Al's report is always Monday to Sunday, so it has no report type to choose.
+  els.reportType.closest(".field").hidden = !!PREVIOUS_WEEK[carrier];
   els.day.value = "ALL";
   setDefaults();
   reloadWithPrefixReset();
