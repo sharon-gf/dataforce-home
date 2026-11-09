@@ -50,7 +50,7 @@
   .page { width:min(var(--content-width),100%); margin:0 auto; padding:20px 18px 34px; }
   h1 { font-size:24px; font-weight:800; letter-spacing:-.4px; }
   .lead { color:var(--text3); margin:3px 0 16px; font-size:14px; }
-  .kpis { display:grid; grid-template-columns:1.4fr repeat(3,minmax(0,1fr)); gap:13px; margin-bottom:13px; }
+  .kpis { display:grid; grid-template-columns:1.4fr repeat(4,minmax(0,1fr)); gap:13px; margin-bottom:13px; }
   .card { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:17px; box-shadow:0 1px 3px rgba(13,31,60,.06); min-width:0; }
   .hero { background:#0d1f3c; border-color:#0d1f3c; color:#fff; }
   .k-label { color:var(--text3); font-size:12px; font-weight:500; }
@@ -218,6 +218,7 @@
       <div class="card"><div class="k-label">Pending AWBs</div><div class="k-value" id="kOpen">0</div><div class="k-note" id="kDays">-</div></div>
       <div class="card"><div class="k-label">Over 30 days</div><div class="k-value t-red" id="kOld">0</div><div class="k-note" id="kOldSales">USD 0</div></div>
       <div class="card"><div class="k-label">Customers</div><div class="k-value" id="kCustomers">0</div><div class="k-note">With pending AWBs</div></div>
+      <div class="card"><div class="k-label">Email sent</div><div class="k-value" id="kSent">0</div><div class="k-note" id="kSentNote">Pending AWBs already emailed from here</div></div>
     </section>
 
     <section class="charts">
@@ -258,6 +259,7 @@
             <th class="sortable" data-sort="awb">AWB</th>
             <th class="sortable" data-sort="route">Route</th>
             <th class="sortable num" data-sort="days">Days</th>
+            <th class="sortable" data-sort="sent_at">Action</th>
             <th class="sortable" data-sort="bill_status">Billing</th>
             <th class="sortable" data-sort="booking_date">Booking</th>
             <th class="sortable" data-sort="company">Company</th>
@@ -315,6 +317,20 @@ function signOut() {
 }
 function setStatus(text) { $("statusText").textContent = text; }
 function showError(message) { const box = $("errorBox"); box.textContent = message || ""; box.hidden = !message; }
+// Last automatic action on this AWB. Today only the email sent from the
+// module: "Email sent 09-11 · lrovegno (2)" (date, who, how many emails)
+function sentLabel(r) {
+  if (!r.sent_at) return "";
+  const d = new Date(r.sent_at);
+  const who = String(r.sent_by || "").split("@")[0];
+  const times = r.sent_count > 1 ? ` (${r.sent_count})` : "";
+  return `Email sent ${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}${who ? ` · ${who}` : ""}${times}`;
+}
+function sentCell(r) {
+  if (!r.sent_at) return `<span class="not-flown">-</span>`;
+  const d = new Date(r.sent_at);
+  return `<span title="Last email ${esc(isoDate(d))} by ${esc(r.sent_by || "")}${r.sent_count > 1 ? `, ${r.sent_count} emails in total` : ""}">${esc(sentLabel(r))}</span>`;
+}
 function isoDate(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function daysSince(value) {
   const p = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
@@ -395,6 +411,12 @@ function renderSummary() {
   $("kOld").textContent = fmt(old.length);
   $("kOldSales").textContent = `USD ${fmt(sum(old))}`;
   $("kCustomers").textContent = fmt(new Set(open.map(r => r.customer)).size);
+  const sent = open.filter(r => r.sent_at);
+  const today = isoDate(new Date());
+  $("kSent").textContent = state.sentAvailable ? fmt(sent.length) : "-";
+  $("kSentNote").textContent = state.sentAvailable
+    ? `${fmt(sent.filter(r => isoDate(new Date(r.sent_at)) === today).length)} today · ${fmt(open.length - sent.length)} not emailed yet`
+    : "Email record not available";
   if (!state.loading) $("lead").textContent = `${fmt(open.length)} AWBs to request and USD ${fmt(sum(open))} waiting to be billed.`;
 
   const companyNow = onlyCompany(), ageNow = $("ageFilter").value;
@@ -439,7 +461,7 @@ function render() {
     return `<tr class="${picked ? "sel" : ""}">
       <td class="pick-col"><input type="checkbox" data-pick="${esc(r.awb)}" ${picked ? "checked" : ""} aria-label="Select ${esc(r.awb)}"></td>
       <td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td class="customer" title="${esc(r.customer)}">${esc(r.customer)}</td><td class="awb">${esc(r.awb)}</td><td>${esc(r.route)}</td>
-      <td class="num ${dayClass}">${r.days ?? "-"}</td><td>${esc(r.bill_status)}</td><td>${esc(r.booking_date)}</td><td>${esc(r.company)}</td><td>${flight}</td><td class="num">${fmt(r.chw)}</td><td class="num">${fmt(r.rev)}</td></tr>`;
+      <td class="num ${dayClass}">${r.days ?? "-"}</td><td>${sentCell(r)}</td><td>${esc(r.bill_status)}</td><td>${esc(r.booking_date)}</td><td>${esc(r.company)}</td><td>${flight}</td><td class="num">${fmt(r.chw)}</td><td class="num">${fmt(r.rev)}</td></tr>`;
   }).join("");
   const pickAll = $("pickAll");
   const shownPicked = shown.filter(r => state.selected.has(r.awb)).length;
@@ -558,7 +580,8 @@ async function load() {
     const response = await fetch(`${API_BASE}/api/awb_recovery?${params}`);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
-    state.rows = data.rows.map(r => ({ ...r, flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
+    state.sentAvailable = data.sent_available === true;
+    state.rows = data.rows.map(r => ({ ...r, sent_count: Number(r.sent_count || 0), flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
     const present = new Set(state.rows.map(r => r.awb));
     [...state.selected].forEach(awb => { if (!present.has(awb)) state.selected.delete(awb); });
     renderGsaMenu();
@@ -578,8 +601,8 @@ async function load() {
 function exportCsv() {
   const rows = filtered();
   const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const lines = [["AWB", "Customer", "Route", "Company", "GSA", "Sales Person", "Flight Date", "Days", "CHW", "Sales USD", "Billing"].join(",")]
-    .concat(rows.map(r => [r.awb, r.customer, r.route, r.company, r.gsa, r.sales_person, r.flight || r.status, r.days, r.chw, r.rev, r.bill_status].map(cell).join(",")));
+  const lines = [["AWB", "Customer", "Route", "Company", "GSA", "Sales Person", "Flight Date", "Days", "Action", "Emails sent", "CHW", "Sales USD", "Billing"].join(",")]
+    .concat(rows.map(r => [r.awb, r.customer, r.route, r.company, r.gsa, r.sales_person, r.flight || r.status, r.days, sentLabel(r), r.sent_count || 0, r.chw, r.rev, r.bill_status].map(cell).join(",")));
   const url = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url; a.download = `awb_recovery_${isoDate(new Date())}.csv`; a.click();
@@ -692,6 +715,23 @@ function mimeMessage(to, cc, subject, html, text) {
     `--${boundary}--`, ""
   ].filter(v => v !== null).join("\r\n");
 }
+// After Gmail sent it: the API keeps a record of who sent which AWBs and when
+async function recordSent(to, cc, subject, rows) {
+  try {
+    const response = await fetch(`${API_BASE}/api/awb_recovery/sent?email=${encodeURIComponent(state.user.email)}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, cc, subject, awbs: rows.map(r => r.awb) })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || response.status);
+    const done = new Set(data.awbs || []);
+    rows.forEach(r => { if (done.has(r.awb)) { r.sent_at = data.at; r.sent_by = state.user.email; r.sent_count = (r.sent_count || 0) + 1; } });
+    return true;
+  } catch (e) {
+    console.warn("Send not recorded", e);
+    return false;
+  }
+}
 async function sendMail() {
   const split = v => v.split(/[,;\s]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
   const to = split($("mailTo").value), cc = split($("mailCc").value);
@@ -717,10 +757,11 @@ async function sendMail() {
     const data = await response.json().catch(() => ({}));
     if (response.status === 401) gmailToken = null;
     if (!response.ok) throw new Error((data.error && data.error.message) || `Gmail answered with an error (${response.status})`);
-    setMailMsg(`Sent from ${state.user.email} to ${to.join(", ")}`, "ok");
+    const recorded = await recordSent(to, cc, subject, rows);
+    setMailMsg(recorded ? `Sent from ${state.user.email} to ${to.join(", ")}` : "Sent, but it could not be recorded in the module.", recorded ? "ok" : "err");
     state.selected.clear();
     render();
-    setTimeout(closeMail, 1500);
+    setTimeout(closeMail, recorded ? 1500 : 4000);
   } catch (e) {
     setMailMsg(`Not sent: ${e.message}`, "err");
     $("mailSend").disabled = false;
