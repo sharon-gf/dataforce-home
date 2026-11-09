@@ -168,7 +168,6 @@
   .modal textarea:focus { border-color:var(--indigo); box-shadow:0 0 0 3px rgba(26,86,219,.12); }
   .m-body { border:1px solid var(--line2); border-radius:9px; padding:12px; }
   .m-body textarea { margin-bottom:10px; }
-  .m-text { white-space:pre-wrap; font-size:13px; line-height:1.45; margin-bottom:10px; }
   .m-preview { overflow:auto; max-height:260px; margin-bottom:10px; }
   .m-preview th { position:static; background:#fff; }
   .m-table td { border-bottom:0; }
@@ -283,11 +282,11 @@
     <div class="m-field"><label for="mailSubject">Subject</label><input id="mailSubject" type="text"></div>
     <label>Email</label>
     <div class="m-body">
-      <div class="m-text" id="mailMessageView"></div><textarea id="mailMessage" rows="4" hidden aria-label="Message"></textarea>
+      <textarea id="mailMessage" rows="4" aria-label="Message"></textarea>
       <div class="m-preview"><table class="m-table"><thead><tr><th>GSA</th><th>Sales person</th><th>Customer</th><th>AWB</th><th>Route</th><th class="num">Days</th></tr></thead><tbody id="mailRows"></tbody></table></div>
-      <div class="m-text" id="mailClosingView"></div><textarea id="mailClosing" rows="2" hidden aria-label="Closing"></textarea>
+      <textarea id="mailClosing" rows="2" aria-label="Closing"></textarea>
     </div>
-    <div class="m-foot"><span class="msg" id="mailMsg"></span><button class="btn" id="mailEdit" type="button">Edit text</button><button class="btn" id="mailCopy" type="button">Copy email</button><button class="btn" id="mailCancel" type="button">Cancel</button><button class="btn primary" id="mailSend" type="button">Send</button></div>
+    <div class="m-foot"><span class="msg" id="mailMsg"></span><button class="btn" id="mailCancel" type="button">Cancel</button><button class="btn primary" id="mailSend" type="button">Send</button></div>
   </div>
 </div>
 
@@ -327,6 +326,10 @@ function daysSince(value) {
 function flightLabel(r) {
   const p = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(r.flight_date || ""));
   return p ? `${r.flight_carrier || ""}${p[3]}-${p[2]}-${p[1]}` : "";
+}
+// AWB not flown by air yet: status of its most advanced segment, e.g. "IN_ROUTE (truck)"
+function statusLabel(r) {
+  return r.seg_status ? `${r.seg_status} (${r.seg_kind || "air"})` : "Not flown";
 }
 // Each user's filters stay saved in this browser until they change them or press Reset
 function filtersKey() { return `awb_recovery_filters:${String(state.user && state.user.email || "").toLowerCase()}`; }
@@ -432,7 +435,7 @@ function render() {
   $("rowsBody").innerHTML = shown.map(r => {
     const dayClass = r.days > 30 ? "days-bad" : r.days > 15 ? "days-warn" : "";
     const picked = state.selected.has(r.awb);
-    const flight = r.flight ? esc(r.flight) : `<span class="not-flown" title="No air segment flown yet">Not flown</span>`;
+    const flight = r.flight ? esc(r.flight) : `<span class="not-flown" title="No air segment flown yet">${esc(r.status)}</span>`;
     return `<tr class="${picked ? "sel" : ""}">
       <td class="pick-col"><input type="checkbox" data-pick="${esc(r.awb)}" ${picked ? "checked" : ""} aria-label="Select ${esc(r.awb)}"></td>
       <td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td class="customer" title="${esc(r.customer)}">${esc(r.customer)}</td><td class="awb">${esc(r.awb)}</td><td>${esc(r.route)}</td>
@@ -555,7 +558,7 @@ async function load() {
     const response = await fetch(`${API_BASE}/api/awb_recovery?${params}`);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
-    state.rows = data.rows.map(r => ({ ...r, flight: flightLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
+    state.rows = data.rows.map(r => ({ ...r, flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
     const present = new Set(state.rows.map(r => r.awb));
     [...state.selected].forEach(awb => { if (!present.has(awb)) state.selected.delete(awb); });
     renderGsaMenu();
@@ -576,7 +579,7 @@ function exportCsv() {
   const rows = filtered();
   const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const lines = [["AWB", "Customer", "Route", "Company", "GSA", "Sales Person", "Flight Date", "Days", "CHW", "Sales USD", "Billing"].join(",")]
-    .concat(rows.map(r => [r.awb, r.customer, r.route, r.company, r.gsa, r.sales_person, r.flight || "Not flown", r.days, r.chw, r.rev, r.bill_status].map(cell).join(",")));
+    .concat(rows.map(r => [r.awb, r.customer, r.route, r.company, r.gsa, r.sales_person, r.flight || r.status, r.days, r.chw, r.rev, r.bill_status].map(cell).join(",")));
   const url = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url; a.download = `awb_recovery_${isoDate(new Date())}.csv`; a.click();
@@ -594,23 +597,12 @@ function openMail() {
   $("mailClosing").value = `Saludos\n${state.user.name || ""}`.trim();
   $("mailFrom").textContent = state.user.email;
   $("mailRows").innerHTML = rows.map(r => `<tr><td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td>${esc(r.customer)}</td><td class="awb">${esc(r.awb)}</td><td>${esc(r.route)}</td><td class="num">${r.days ?? "-"}</td></tr>`).join("");
-  setMailEditing(false);
   setMailMsg(`${fmt(rows.length)} AWB${rows.length === 1 ? "" : "s"} in this email`);
   $("mailSend").disabled = false;
   $("mailBack").hidden = false;
   $("mailTo").focus();
 }
 function closeMail() { $("mailBack").hidden = true; }
-// The text is fixed unless the user presses Edit text
-function setMailEditing(on) {
-  ["mailMessage", "mailClosing"].forEach(id => {
-    $(id).hidden = !on;
-    $(`${id}View`).hidden = on;
-    $(`${id}View`).textContent = $(id).value;
-  });
-  $("mailEdit").textContent = on ? "Done editing" : "Edit text";
-  if (on) $("mailMessage").focus();
-}
 // Same email the API sends: message, table with alternate grey rows, closing
 function emailHtml(rows) {
   const text = v => { const t = String(v || "").trim(); return t ? `<p style="margin:0 0 14px">${t.split(/\r?\n/).map(esc).join("<br>")}</p>` : ""; };
@@ -647,11 +639,6 @@ async function copyToClipboard(html, text) {
   } catch (e) {
     legacyCopy(html, text);
   }
-}
-async function copyEmail() {
-  const rows = selectedRows();
-  try { await copyToClipboard(emailHtml(rows), emailText(rows)); setMailMsg("Email copied. Paste it in your email.", "ok"); }
-  catch (e) { setMailMsg("Could not copy: the browser blocked it.", "err"); }
 }
 async function copyAwbs() {
   const awbs = selectedRows().map(r => r.awb);
@@ -817,8 +804,6 @@ function initAwbRecovery() {
   $("selClear").addEventListener("click", () => { state.selected.clear(); render(); });
   $("selEmail").addEventListener("click", openMail);
   $("selCopy").addEventListener("click", copyAwbs);
-  $("mailEdit").addEventListener("click", () => setMailEditing($("mailMessage").hidden));
-  $("mailCopy").addEventListener("click", copyEmail);
   $("mailCancel").addEventListener("click", closeMail);
   $("mailSend").addEventListener("click", sendMail);
   $("mailBack").addEventListener("click", e => { if (e.target === $("mailBack")) closeMail(); });
