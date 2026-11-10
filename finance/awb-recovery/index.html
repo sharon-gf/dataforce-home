@@ -314,8 +314,8 @@
 <div class="modal-back" id="mailBack" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
     <h2 id="mailTitle">Email about these AWBs</h2>
-    <div class="muted">Sent from your own email account (<span id="mailFrom"></span>). The first time, Google asks you to allow it. Only company addresses; separate several with commas.</div>
-    <div class="m-field"><label for="mailTo">To</label><input id="mailTo" type="text" placeholder="name@mercuryamericas.com, name@gsaforce.com"></div>
+    <div class="muted">Sent from your own email account (<span id="mailFrom"></span>). The first time, Google asks you to allow it. Separate several addresses with commas.</div>
+    <div class="m-field"><label for="mailTo">To</label><input id="mailTo" type="text" placeholder="name@customer.com, other@customer.com"></div>
     <div class="m-field"><label for="mailCc">CC</label><input id="mailCc" type="text"></div>
     <div class="m-field"><label for="mailSubject">Subject</label><input id="mailSubject" type="text"></div>
     <label>Email</label>
@@ -961,7 +961,6 @@ async function copyAwbs() {
 // Gmail of the signed-in user: Google asks once for permission to send; the token stays only in this page
 const GOOGLE_CLIENT_ID = "911713216717-0434lgkd25hk5jf62jam67go19h78vsg.apps.googleusercontent.com";
 const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.send";
-const MAIL_DOMAINS = ["gsaforce.com", "asia-force.com", "mercuryamericas.com", "gocargogsa.com"];
 let gmailToken = null;
 function gmailAccess() {
   if (gmailToken && gmailToken.expires > Date.now() + 60000) return Promise.resolve(gmailToken.value);
@@ -1021,15 +1020,21 @@ async function recordSent(to, cc, subject, rows) {
   }
 }
 async function sendMail() {
-  const split = v => v.split(/[,;\s]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
-  const to = split($("mailTo").value), cc = split($("mailCc").value);
+  // Pasted from Outlook as "Name <name@x.com>": only the addresses are kept
+  const split = v => {
+    const hasNames = /[<"]/.test(v);
+    const parts = v.replace(/"[^"]*"/g, " ").split(/[,;\s]+/).map(s => s.replace(/^[<(\[]+|[>)\].:]+$/g, "").trim().toLowerCase())
+      .filter(Boolean).filter(s => s.includes("@") || !hasNames);
+    return [...new Set(parts)];
+  };
+  const to = split($("mailTo").value), cc = split($("mailCc").value).filter(a => !to.includes(a));
   const rows = selectedRows();
   const subject = $("mailSubject").value.replace(/[\r\n]+/g, " ").trim();
   if (!to.length) { setMailMsg("Add at least one recipient in To.", "err"); return; }
   if (!subject) { setMailMsg("The subject is empty.", "err"); return; }
   if (!rows.length) { setMailMsg("No AWBs selected.", "err"); return; }
-  const bad = [...to, ...cc].filter(a => !/^[^@\s<>"]+@[^@\s<>"]+$/.test(a) || !MAIL_DOMAINS.includes(a.split("@")[1]));
-  if (bad.length) { setMailMsg(`Only company addresses: ${bad.join(", ")}`, "err"); return; }
+  const bad = [...to, ...cc].filter(a => !/^[^@\s<>"(),;:]+@[^@\s<>"(),;:]+\.[a-z]{2,}$/i.test(a));
+  if (bad.length) { setMailMsg(`Check these addresses: ${bad.join(", ")}`, "err"); return; }
   if (to.length + cc.length > 20) { setMailMsg("Up to 20 recipients.", "err"); return; }
   $("mailSend").disabled = true;
   setMailMsg("Waiting for Google…");
@@ -1043,10 +1048,10 @@ async function sendMail() {
       body: JSON.stringify({ raw })
     });
     const data = await response.json().catch(() => ({}));
-    if (response.status === 401) gmailToken = null;
+    if (response.status === 401) { gmailToken = null; throw new Error("the Google permission expired. Press Send again"); }
     if (!response.ok) throw new Error((data.error && data.error.message) || `Gmail answered with an error (${response.status})`);
     const recorded = await recordSent(to, cc, subject, rows);
-    setMailMsg(recorded ? `Sent from ${state.user.email} to ${to.join(", ")}` : "Sent, but it could not be recorded in the module.", recorded ? "ok" : "err");
+    setMailMsg(recorded ? `Sent from ${state.user.email} to ${to.join(", ")}` : `Sent to ${to.join(", ")}. It could not be marked in the Action column.`, "ok");
     state.selected.clear();
     render();
     setTimeout(closeMail, recorded ? 1500 : 4000);
