@@ -10,7 +10,14 @@
   function expireStoredSession() {
     if (isLocalPreview()) return;
     for (const storage of [localStorage, sessionStorage]) {
-      const expires = Number(safeGet(storage, EXPIRY_KEY));
+      const storedExpiry = safeGet(storage, EXPIRY_KEY);
+      // Older cached login pages did not write an expiry. Migrate once instead
+      // of signing the user out when navigating to an updated module.
+      if (storedExpiry === null && safeGet(storage, USER_KEY)) {
+        safeSet(storage, EXPIRY_KEY, String(Date.now() + MAX_SESSION_AGE));
+        continue;
+      }
+      const expires = Number(storedExpiry);
       if (!Number.isFinite(expires) || expires <= Date.now()) {
         for (const key of [USER_KEY, PERMISSIONS_KEY, REMEMBER_KEY,
           "df_google_id_token", "df_shared_session", EXPIRY_KEY]) safeRemove(storage, key);

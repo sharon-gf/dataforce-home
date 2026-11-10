@@ -43,7 +43,17 @@ test('browser session expires after 14 days and removes credentials',()=>{
   assert.equal(storage.getItem('df_user'),null);
  }
 });
-test('legacy sessions without an expiry require a fresh login',()=>{
+test('legacy cached login migrates to a dated session when opening a module',()=>{
  const local=storage();local.setItem('df_user',JSON.stringify({email:'sharon@gsaforce.com'}));
- const a=tab(local);assert.equal(a.auth.getUser(),null);
+ const a=tab(local);assert.equal(a.auth.getUser().email,'sharon@gsaforce.com');
+ const expiry=Number(local.getItem('df_session_expires_at'));
+ assert(Math.abs(expiry-Date.now()-14*86400000)<1000);
+ const b=tab(local);assert.equal(b.auth.getUser().email,'sharon@gsaforce.com');
+ assert.equal(Number(local.getItem('df_session_expires_at')),expiry);
+});
+
+test('invalid expiry is rejected rather than migrated',()=>{
+ const local=storage();local.setItem('df_user',JSON.stringify({email:'test@gsaforce.com'}));
+ local.setItem('df_session_expires_at','invalid');
+ assert.equal(tab(local).auth.getUser(),null);
 });
