@@ -30,3 +30,20 @@ test('concurrent first requests exchange the saved Google credential only once',
  const a=tab();a.auth.setUser({email:'sharon@gsaforce.com'},true);a.auth.setItem('df_google_id_token','google');
  const values=await Promise.all([a.auth.getSessionToken(),a.auth.getSessionToken()]);assert.deepEqual(values,['signed-session','signed-session']);assert.equal(a.calls(),1);
 });
+
+test('browser session expires after 14 days and removes credentials',()=>{
+ const a=tab();a.auth.setUser({email:'sharon@gsaforce.com'},true);
+ const expires=Number(a.local.getItem('df_session_expires_at'));
+ assert(Math.abs(expires-Date.now()-14*86400000)<1000);
+ a.auth.setItem('df_google_id_token','credential');
+ for(const storage of [a.local,a.session])storage.setItem('df_session_expires_at',Date.now()-1);
+ assert.equal(a.auth.getUser(),null);
+ for(const storage of [a.local,a.session]){
+  assert.equal(storage.getItem('df_google_id_token'),null);
+  assert.equal(storage.getItem('df_user'),null);
+ }
+});
+test('legacy sessions without an expiry require a fresh login',()=>{
+ const local=storage();local.setItem('df_user',JSON.stringify({email:'sharon@gsaforce.com'}));
+ const a=tab(local);assert.equal(a.auth.getUser(),null);
+});

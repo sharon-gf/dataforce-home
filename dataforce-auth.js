@@ -4,6 +4,19 @@
   const USER_KEY = "df_user";
   const PERMISSIONS_KEY = "df_permissions";
   const REMEMBER_KEY = "df_remember_login";
+  const EXPIRY_KEY = "df_session_expires_at";
+  const MAX_SESSION_AGE = 14 * 24 * 60 * 60 * 1000;
+
+  function expireStoredSession() {
+    if (isLocalPreview()) return;
+    for (const storage of [localStorage, sessionStorage]) {
+      const expires = Number(safeGet(storage, EXPIRY_KEY));
+      if (!Number.isFinite(expires) || expires <= Date.now()) {
+        for (const key of [USER_KEY, PERMISSIONS_KEY, REMEMBER_KEY,
+          "df_google_id_token", "df_shared_session", EXPIRY_KEY]) safeRemove(storage, key);
+      }
+    }
+  }
   const LOCAL_MODULES = [
     "dashboard",
     "flown",
@@ -77,6 +90,7 @@
   }
 
   function getItem(key) {
+    expireStoredSession();
     if (isLocalPreview()) {
       if (key === USER_KEY && !safeGet(localStorage, key) && !safeGet(sessionStorage, key)) {
         return JSON.stringify(localUser());
@@ -98,6 +112,10 @@
       safeRemove(other, key);
     }
     if (key === USER_KEY) {
+      const expires = String(Date.now() + MAX_SESSION_AGE);
+      safeSet(storage, EXPIRY_KEY, expires);
+      if (storage === localStorage) safeSet(sessionStorage, EXPIRY_KEY, expires);
+      else safeRemove(localStorage, EXPIRY_KEY);
       if (storage === localStorage) safeSet(localStorage, REMEMBER_KEY, "true");
       else safeRemove(localStorage, REMEMBER_KEY);
     }
@@ -175,7 +193,10 @@
     removeItem(PERMISSIONS_KEY);
     removeItem("df_google_id_token");
     removeItem(SESSION_KEY);
+    removeItem(EXPIRY_KEY);
   }
+
+  expireStoredSession();
 
   window.DataforceAuth = {
     getSessionToken,
