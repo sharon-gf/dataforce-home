@@ -695,7 +695,10 @@ function takeContacts(data) {
 async function contactsCall(path, options) {
   const response = await fetch(`${API_BASE}/api/awb_recovery/contacts${path}?email=${encodeURIComponent(state.user.email)}`, options);
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
+  if (!response.ok) {
+    const detail = Array.isArray(data.detail) ? data.detail.map(d => d.msg || JSON.stringify(d)).join("; ") : data.detail;
+    throw new Error(detail || `The API answered with an error (${response.status})`);
+  }
   return data;
 }
 async function openContacts() {
@@ -784,35 +787,54 @@ function renderContacts() {
 
 // ---- Suggest parents: same company in several stations, by its name ----
 const NAME_STOP = new Set(("GFAVCL GSAFORCE CX CXSCL CXBOG CXMDE SCL UIO GYE MIA LAX ORD JFK ATL IAD BOS DFW IAH SFO LTDA SA S A SAS SPA LIMITADA DE DEL CHILE INC LLC LTD CORP GF AV HKG TW VN " +
-  "ECU BRA PERU PE COL LIM BOG MDE GRU VCP MA MAMEX MAPE UPSCL UPSMEX ETUSA ET USA MEX GDL PER GC THE Y AND CO CIA LOGISTICS LOGISTIC CARGO INTERNATIONAL INT GROUP EXPRESS PILOT").split(" "));
+  "ECU BRA PERU PE COL LIM BOG MDE GRU VCP MA MAMEX MAPE UPSCL UPSMEX ETUSA ET USA MEX GDL PER GC THE Y AND CO CIA LOGISTICS LOGISTIC CARGO INTERNATIONAL INT GROUP EXPRESS PILOT C SAC SRL EIRL RL CV DE").split(" "));
 function companyKey(name) {
   const words = String(name || "").toUpperCase().replace(/&/g, " Y ").split(/[^A-Z0-9]+/).filter(w => w && !NAME_STOP.has(w) && !/^\d+$/.test(w));
   return words.slice(0, 2).join(" ");
 }
-function buildSuggestions() {
-  const names = new Map();
-  pendingByCustomer().forEach((v, k) => names.set(k, v.name));
-  contacts.customers.forEach((c, k) => { if (!names.has(k)) names.set(k, c.customer); });
+function buildSuggestions(history) {
   const pending = pendingByCustomer();
+  // Customers to classify: with pending AWBs or already in the contacts
+  const mine = new Map();
+  pending.forEach((v, k) => mine.set(k, v.name));
+  contacts.customers.forEach((c, k) => { if (!mine.has(k)) mine.set(k, c.customer); });
+  // All names known (history too), so a company's other stations are found
+  const all = new Map(mine);
+  (history || []).forEach(n => { const k = ckey(n); if (!all.has(k)) all.set(k, n); });
   const existing = new Map([...parentList().values()].map(n => [companyKey(n), n]));
   const groups = new Map();
-  names.forEach((name, k) => {
+  all.forEach((name, k) => {
     const c = contacts.customers.get(k) || {};
     if (c.parent) return;
-    const key = companyKey(name);
-    if (!key) return;
-    const g = groups.get(key) || { key, parent: existing.get(key) || key, kids: [] };
-    g.kids.push({ name, n: (pending.get(k) || {}).n || 0, on: true });
+    const key = companyKey(name) || ckey(name);
+    const g = groups.get(key) || { key, parent: existing.get(key) || key, kids: [], mine: 0 };
+    g.kids.push({ name, n: (pending.get(k) || {}).n || 0, on: true, mine: mine.has(k) });
+    if (mine.has(k)) g.mine += 1;
     groups.set(key, g);
   });
-  return [...groups.values()].filter(g => g.kids.length > 1 || existing.has(g.key))
-    .map(g => ({ ...g, on: true, kids: g.kids.sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)) }))
-    .sort((a, b) => b.kids.reduce((t, x) => t + x.n, 0) - a.kids.reduce((t, x) => t + x.n, 0));
+  const shared = [], own = [];
+  groups.forEach(g => {
+    if (!g.mine) return;                       // nothing pending or saved: not needed now
+    if (g.kids.length > 1 || existing.has(g.key)) shared.push(g);
+    else own.push({ ...g, parent: g.kids[0].name, own: true });   // one station: its own parent
+  });
+  const size = g => g.kids.reduce((t, x) => t + x.n, 0);
+  const tidy = g => ({ ...g, on: true, kids: g.kids.sort((a, b) => b.n - a.n || (b.mine - a.mine) || a.name.localeCompare(b.name)) });
+  return shared.map(tidy).sort((a, b) => size(b) - size(a))
+    .concat(own.map(tidy).sort((a, b) => size(b) - size(a) || a.parent.localeCompare(b.parent)));
 }
-function openSuggestions() {
-  contacts.suggestions = buildSuggestions();
+async function openSuggestions() {
   contacts.mode = "suggest";
-  setContactsMsg(contacts.suggestions.length ? "Uncheck what is not the same company and fix the parent name if needed." : "No suggestions: every group of stations already has a parent.");
+  setContactsMsg("Reading the customers of CargoSystem…");
+  $("cBody").innerHTML = "";
+  let history = [];
+  try { history = (await contactsCall("/customer_names", {})).names || []; }
+  catch (e) { console.warn("Customer names not available", e); }
+  contacts.suggestions = buildSuggestions(history);
+  const own = contacts.suggestions.filter(g => g.own).length;
+  setContactsMsg(contacts.suggestions.length
+    ? `${fmt(contacts.suggestions.length - own)} companies with several stations, ${fmt(own)} with one station (their own parent). Uncheck what is wrong and fix names if needed.`
+    : "Every customer already has a parent.");
   renderSuggestions();
 }
 function renderSuggestions() {
@@ -820,8 +842,8 @@ function renderSuggestions() {
   $("cHead").innerHTML = `<tr><th>Suggested parent / stations</th><th class="num">Pending AWBs</th><th colspan="4"></th></tr>`;
   $("cBody").innerHTML = contacts.suggestions.map((g, gi) => `<tr class="s-group">
       <td class="c-name"><input type="checkbox" data-sg="${gi}" ${g.on ? "checked" : ""} aria-label="Use this parent"> <input type="text" data-sname="${gi}" value="${esc(g.parent)}" aria-label="Parent name"></td>
-      <td class="num"><b>${g.kids.reduce((t, x) => t + x.n, 0) || "-"}</b></td><td colspan="4" class="c-group-note">${g.kids.length} stations</td></tr>`
-    + g.kids.map((x, xi) => `<tr class="s-child"><td class="c-name" title="${esc(x.name)}"><input type="checkbox" data-sk="${gi}:${xi}" ${x.on && g.on ? "checked" : ""} ${g.on ? "" : "disabled"} aria-label="Include ${esc(x.name)}"> ${esc(x.name)}</td><td class="num">${x.n || "-"}</td><td colspan="4"></td></tr>`).join("")).join("")
+      <td class="num"><b>${g.kids.reduce((t, x) => t + x.n, 0) || "-"}</b></td><td colspan="4" class="c-group-note">${g.own ? "One station: it is its own parent" : `${g.kids.length} stations`}</td></tr>`
+    + g.kids.map((x, xi) => `<tr class="s-child"><td class="c-name" title="${esc(x.name)}"><input type="checkbox" data-sk="${gi}:${xi}" ${x.on && g.on ? "checked" : ""} ${g.on ? "" : "disabled"} aria-label="Include ${esc(x.name)}"> ${esc(x.name)}</td><td class="num">${x.n || "-"}</td><td colspan="4" class="c-group-note">${x.mine ? "" : "No pending AWBs now"}</td></tr>`).join("")).join("")
     || `<tr><td colspan="6" class="empty">No suggestions.</td></tr>`;
   const n = contacts.suggestions.filter(g => g.on).reduce((t, g) => t + g.kids.filter(x => x.on).length, 0);
   $("cCount").textContent = `${fmt(contacts.suggestions.length)} suggested parents · ${fmt(n)} stations checked`;
@@ -845,7 +867,7 @@ async function saveContactRow(input) {
   const tr = input.closest("tr");
   const cell = tr.querySelector(".c-state");
   cell.textContent = "Saving…"; cell.className = "c-state";
-  const emails = tr.querySelector('[data-field="emails"]').value;
+  const emails = tr.querySelector('[data-field="emails"]').value.split(/[;,\s]+/).map(v => v.trim()).filter(Boolean);
   try {
     let data;
     if (tr.dataset.customer !== undefined) {
