@@ -162,7 +162,19 @@
   .btn-icon { display:inline-flex; align-items:center; gap:6px; }
   .btn-icon svg { width:15px; height:15px; }
   .modal.wide { width:min(1180px,100%); }
-  .c-tabs { margin:4px 0 12px; }
+  .page-top { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+  .top-actions { display:flex; gap:8px; margin-bottom:16px; }
+  .top-actions .btn { height:36px; }
+  .c-table tr.c-group td { background:#f3f5f9; border-top:2px solid var(--line2); }
+  .c-table tr.c-group td.c-name { font-weight:800; font-size:12.5px; }
+  .c-table tr.c-group .c-sub { font-weight:500; color:var(--text3); font-size:11px; margin-left:6px; }
+  .c-table tr.c-child td.c-name { padding-left:28px; font-weight:500; }
+  .c-table tr.c-nogroup td { background:#fbf4ec; }
+  .c-group-note { color:var(--text3); font-size:11px; }
+  .s-group td { background:#f3f5f9; border-top:2px solid var(--line2); }
+  .s-group input[type=text] { width:240px; }
+  .s-child td.c-name { padding-left:34px; font-weight:500; }
+  .c-table input[type=checkbox] { width:15px; height:15px; vertical-align:middle; }
   .c-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
   .c-bar input[type=search] { width:260px; }
   .c-bar select { width:200px; }
@@ -231,8 +243,11 @@
   </header>
 
   <div class="page">
-    <h1>AWB Recovery</h1>
-    <p class="lead" id="lead">Loading AWBs…</p>
+    <div class="page-top">
+      <div><h1>AWB Recovery</h1>
+      <p class="lead" id="lead">Loading AWBs…</p></div>
+      <div class="top-actions"><button class="btn btn-icon" id="contactsBtn" type="button" hidden title="Customer emails used to request the AWBs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 8h2M3 12h2M3 16h2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5c.7-1.6 2-2.5 3.5-2.5s2.8.9 3.5 2.5"/></svg>Customer contacts</button></div>
+    </div>
 
     <section class="kpis">
       <div class="card hero"><div class="k-label">Sales on hold (USD)</div><div class="k-value" id="kSales">0</div><div class="k-note">Open AWBs whose copy can be requested</div></div>
@@ -255,7 +270,7 @@
     <section class="card list">
       <div class="list-head">
         <h2>AWBs to manage<span class="note" id="resultNote">0 rows</span></h2>
-        <div class="actions"><span class="view-switch"><button class="on" id="viewList" type="button">List</button><button id="viewGroup" type="button">By GSA</button></span><button class="btn" id="expandBtn" type="button" hidden>Expand all</button><button class="btn" id="resetBtn" type="button">Reset</button><button class="btn" id="exportBtn" type="button">Export</button><button class="btn btn-icon" id="contactsBtn" type="button" hidden title="Customer emails used to request the AWBs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 8h2M3 12h2M3 16h2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5c.7-1.6 2-2.5 3.5-2.5s2.8.9 3.5 2.5"/></svg>Customer contacts</button></div>
+        <div class="actions"><span class="view-switch"><button class="on" id="viewList" type="button">List</button><button id="viewGroup" type="button">By GSA</button></span><button class="btn" id="expandBtn" type="button" hidden>Expand all</button><button class="btn" id="resetBtn" type="button">Reset</button><button class="btn" id="exportBtn" type="button">Export</button></div>
       </div>
       <div class="filters">
         <div><label for="searchInput">Search</label><input id="searchInput" type="search" placeholder="AWB, customer, GSA, sales person"></div>
@@ -316,19 +331,19 @@
 <div class="modal-back" id="contactsBack" hidden>
   <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="contactsTitle">
     <h2 id="contactsTitle">Customer contacts</h2>
-    <div class="muted">Emails used to ask customers for the AWB. The customer's own emails (as named in CargoSystem) are used; if it has none, the emails of its parent customer. Changes are saved when you leave the field. Only the AWB Recovery admins see this.</div>
-    <div class="c-tabs view-switch"><button class="on" id="cTabCustomers" type="button">Customers</button><button id="cTabParents" type="button">Parent customers</button></div>
+    <div class="muted" style="margin-bottom:12px">Each parent customer shows all its stations (customers as named in CargoSystem). A station uses its own emails; if it has none, the parent emails. Changes are saved when you leave the field. Only the AWB Recovery admins see this.</div>
     <div class="c-bar">
       <input type="search" id="cSearch" placeholder="Search customer or email" aria-label="Search">
       <select id="cFilter" aria-label="Show"><option value="pending">With pending AWBs</option><option value="noemail">Pending, without email</option><option value="all">All customers</option></select>
       <span class="muted" id="cCount"></span>
       <span class="grow"></span>
       <input type="file" id="cFile" accept=".xlsx,.xlsm" hidden>
+      <button class="btn" id="cSuggest" type="button" title="Groups stations of the same company by their name, for you to check">Suggest parents</button>
       <button class="btn" id="cImport" type="button" title="Excel with the columns Customer and Customer_Email. Only fills customers that have no emails yet.">Import Excel</button>
     </div>
     <div class="c-wrap"><table class="c-table" id="cTable"><thead id="cHead"></thead><tbody id="cBody"></tbody></table></div>
     <datalist id="cParents"></datalist>
-    <div class="m-foot"><span class="msg" id="cMsg"></span><button class="btn" id="cClose" type="button">Close</button></div>
+    <div class="m-foot"><span class="msg" id="cMsg"></span><button class="btn" id="cBack" type="button" hidden>Back</button><button class="btn primary" id="cApply" type="button" hidden>Save checked parents</button><button class="btn" id="cClose" type="button">Close</button></div>
   </div>
 </div>
 
@@ -669,7 +684,7 @@ function openMail() {
 function closeMail() { $("mailBack").hidden = true; }
 
 // ---- Customer contacts (only the AWB Recovery admins) ----
-const contacts = { customers: new Map(), parents: new Map(), tab: "customers" };
+const contacts = { customers: new Map(), parents: new Map(), mode: "list", suggestions: [] };
 const ckey = name => String(name || "").trim().replace(/\s+/g, " ").toUpperCase();
 const emailList = list => (list || []).join("; ");
 function setContactsMsg(text, kind) { const m = $("cMsg"); m.textContent = text || ""; m.className = `msg ${kind || ""}`; }
@@ -713,48 +728,118 @@ function pendingByCustomer() {
   state.rows.forEach(r => { const k = ckey(r.customer); const it = map.get(k) || { name: r.customer, n: 0 }; it.n += 1; map.set(k, it); });
   return map;
 }
+function parentList() {
+  const names = new Map([...contacts.parents.values()].map(p => [ckey(p.parent), p.parent]));
+  contacts.customers.forEach(c => { if (c.parent && !names.has(ckey(c.parent))) names.set(ckey(c.parent), c.parent); });
+  return names;
+}
+function fillParentOptions() {
+  $("cParents").innerHTML = [...parentList().values()].sort().map(n => `<option value="${esc(n)}">`).join("");
+}
+// Parent first, with its emails, and all its stations below (always open)
 function renderContacts() {
-  const customersTab = contacts.tab === "customers";
-  $("cTabCustomers").classList.toggle("on", customersTab);
-  $("cTabParents").classList.toggle("on", !customersTab);
-  $("cFilter").hidden = !customersTab;
+  if (contacts.mode === "suggest") { renderSuggestions(); return; }
+  $("cBack").hidden = true; $("cApply").hidden = true; $("cFilter").hidden = false;
   const search = $("cSearch").value.trim().toLowerCase();
+  const filter = $("cFilter").value;
   const pending = pendingByCustomer();
-  const parentNames = new Map([...contacts.parents.values()].map(p => [ckey(p.parent), p.parent]));
-  contacts.customers.forEach(c => { if (c.parent && !parentNames.has(ckey(c.parent))) parentNames.set(ckey(c.parent), c.parent); });
-  $("cParents").innerHTML = [...parentNames.values()].sort().map(n => `<option value="${esc(n)}">`).join("");
-  let html = "", shown = 0;
-  if (customersTab) {
-    const names = new Map();
-    pending.forEach((v, k) => names.set(k, v.name));
-    contacts.customers.forEach((c, k) => { if (!names.has(k)) names.set(k, c.customer); });
-    const filter = $("cFilter").value;
-    const list = [...names.entries()].map(([k, name]) => ({ k, name, n: (pending.get(k) || {}).n || 0, c: contacts.customers.get(k) || {} }))
-      .filter(x => filter === "all" || (x.n > 0 && (filter === "pending" || !usedEmails(x.name).emails.length)))
-      .filter(x => !search || x.name.toLowerCase().includes(search) || emailList(x.c.emails).includes(search) || String(x.c.parent || "").toLowerCase().includes(search))
-      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
-    shown = list.length;
-    $("cHead").innerHTML = `<tr><th>Customer (CargoSystem)</th><th class="num">Pending AWBs</th><th>Parent customer</th><th>Customer emails</th><th>Email that will be used</th><th></th></tr>`;
-    html = list.slice(0, 600).map(x => `<tr data-customer="${esc(x.name)}">
+  fillParentOptions();
+  const names = new Map();
+  pending.forEach((v, k) => names.set(k, v.name));
+  contacts.customers.forEach((c, k) => { if (!names.has(k)) names.set(k, c.customer); });
+  const stations = [...names.entries()].map(([k, name]) => ({ k, name, n: (pending.get(k) || {}).n || 0, c: contacts.customers.get(k) || {} }));
+  const groups = new Map();
+  parentList().forEach((name, k) => groups.set(k, { k, name, p: contacts.parents.get(k) || {}, kids: [] }));
+  const orphans = { k: "", name: "", kids: [] };
+  stations.forEach(x => (x.c.parent ? groups.get(ckey(x.c.parent)) : orphans).kids.push(x));
+  const keep = (x, g) => (filter === "all" || (x.n > 0 && (filter === "pending" || !usedEmails(x.name).emails.length)))
+    && (!search || x.name.toLowerCase().includes(search) || emailList(x.c.emails).includes(search) || (g && g.name.toLowerCase().includes(search)) || (g && emailList(g.p.emails).includes(search)));
+  const childRow = x => `<tr class="c-child" data-customer="${esc(x.name)}">
       <td class="c-name" title="${esc(x.name)}">${esc(x.name)}</td><td class="num">${x.n || "-"}</td>
       <td><input class="c-parent" list="cParents" data-field="parent" value="${esc(x.c.parent || "")}" placeholder="-" aria-label="Parent customer of ${esc(x.name)}"></td>
-      <td><input data-field="emails" value="${esc(emailList(x.c.emails))}" placeholder="email@customer.com; other@customer.com" aria-label="Emails of ${esc(x.name)}"></td>
-      <td>${usedCell(x.name)}</td><td class="c-state"></td></tr>`).join("");
-  } else {
-    const counts = new Map();
-    contacts.customers.forEach(c => { if (c.parent) counts.set(ckey(c.parent), (counts.get(ckey(c.parent)) || 0) + 1); });
-    const list = [...parentNames.entries()].map(([k, name]) => ({ k, name, n: counts.get(k) || 0, p: contacts.parents.get(k) || {} }))
-      .filter(x => !search || x.name.toLowerCase().includes(search) || emailList(x.p.emails).includes(search))
-      .sort((a, b) => a.name.localeCompare(b.name));
-    shown = list.length;
-    $("cHead").innerHTML = `<tr><th>Parent customer</th><th class="num">Customers</th><th>Parent emails (used when the customer has none)</th><th></th></tr>`;
-    html = list.map(x => `<tr data-parent="${esc(x.name)}">
-      <td class="c-name" title="${esc(x.name)}">${esc(x.name)}</td><td class="num">${x.n}</td>
-      <td><input data-field="emails" value="${esc(emailList(x.p.emails))}" placeholder="email@customer.com" aria-label="Emails of ${esc(x.name)}"></td><td class="c-state"></td></tr>`).join("");
-    if (!list.length) html = `<tr><td colspan="4" class="empty">No parent customers yet. Write a parent name in the Customers tab first.</td></tr>`;
+      <td><input data-field="emails" value="${esc(emailList(x.c.emails))}" placeholder="${x.c.parent ? "empty: uses the parent emails" : "email@customer.com; other@customer.com"}" aria-label="Emails of ${esc(x.name)}"></td>
+      <td>${usedCell(x.name)}</td><td class="c-state"></td></tr>`;
+  let html = "", shownStations = 0, shownParents = 0;
+  [...groups.values()].sort((a, b) => b.kids.reduce((t, x) => t + x.n, 0) - a.kids.reduce((t, x) => t + x.n, 0) || a.name.localeCompare(b.name)).forEach(g => {
+    const kids = g.kids.filter(x => keep(x, g)).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+    if (!kids.length) return;
+    shownParents += 1; shownStations += kids.length;
+    const total = g.kids.reduce((t, x) => t + x.n, 0);
+    html += `<tr class="c-group" data-parent="${esc(g.name)}">
+      <td class="c-name" title="${esc(g.name)}">${esc(g.name)}<span class="c-sub">${g.kids.length} station${g.kids.length === 1 ? "" : "s"}</span></td><td class="num"><b>${total || "-"}</b></td>
+      <td class="c-group-note">Parent customer</td>
+      <td><input data-field="emails" value="${esc(emailList(g.p.emails))}" placeholder="Parent email, for stations without their own" aria-label="Emails of parent ${esc(g.name)}"></td>
+      <td class="c-group-note">Used by stations with no email</td><td class="c-state"></td></tr>` + kids.map(childRow).join("");
+  });
+  const lonely = orphans.kids.filter(x => keep(x, null)).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+  if (lonely.length) {
+    shownStations += lonely.length;
+    html += `<tr class="c-group c-nogroup"><td class="c-name" colspan="6">Without parent<span class="c-sub">${lonely.length} customers · write a parent name or use Suggest parents</span></td></tr>`
+      + lonely.slice(0, 600).map(childRow).join("");
   }
-  $("cBody").innerHTML = html;
-  $("cCount").textContent = `${fmt(shown)} ${customersTab ? "customers" : "parents"}${shown > 600 && customersTab ? " (first 600 shown, use the search)" : ""}`;
+  $("cHead").innerHTML = `<tr><th>Parent / station (CargoSystem)</th><th class="num">Pending AWBs</th><th>Parent customer</th><th>Emails</th><th>Email that will be used</th><th></th></tr>`;
+  $("cBody").innerHTML = html || `<tr><td colspan="6" class="empty">No customers match.</td></tr>`;
+  $("cCount").textContent = `${fmt(shownParents)} parents · ${fmt(shownStations)} stations`;
+}
+
+// ---- Suggest parents: same company in several stations, by its name ----
+const NAME_STOP = new Set(("GFAVCL GSAFORCE CX CXSCL CXBOG CXMDE SCL UIO GYE MIA LAX ORD JFK ATL IAD BOS DFW IAH SFO LTDA SA S A SAS SPA LIMITADA DE DEL CHILE INC LLC LTD CORP GF AV HKG TW VN " +
+  "ECU BRA PERU PE COL LIM BOG MDE GRU VCP MA MAMEX MAPE UPSCL UPSMEX ETUSA ET USA MEX GDL PER GC THE Y AND CO CIA LOGISTICS LOGISTIC CARGO INTERNATIONAL INT GROUP EXPRESS PILOT").split(" "));
+function companyKey(name) {
+  const words = String(name || "").toUpperCase().replace(/&/g, " Y ").split(/[^A-Z0-9]+/).filter(w => w && !NAME_STOP.has(w) && !/^\d+$/.test(w));
+  return words.slice(0, 2).join(" ");
+}
+function buildSuggestions() {
+  const names = new Map();
+  pendingByCustomer().forEach((v, k) => names.set(k, v.name));
+  contacts.customers.forEach((c, k) => { if (!names.has(k)) names.set(k, c.customer); });
+  const pending = pendingByCustomer();
+  const existing = new Map([...parentList().values()].map(n => [companyKey(n), n]));
+  const groups = new Map();
+  names.forEach((name, k) => {
+    const c = contacts.customers.get(k) || {};
+    if (c.parent) return;
+    const key = companyKey(name);
+    if (!key) return;
+    const g = groups.get(key) || { key, parent: existing.get(key) || key, kids: [] };
+    g.kids.push({ name, n: (pending.get(k) || {}).n || 0, on: true });
+    groups.set(key, g);
+  });
+  return [...groups.values()].filter(g => g.kids.length > 1 || existing.has(g.key))
+    .map(g => ({ ...g, on: true, kids: g.kids.sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)) }))
+    .sort((a, b) => b.kids.reduce((t, x) => t + x.n, 0) - a.kids.reduce((t, x) => t + x.n, 0));
+}
+function openSuggestions() {
+  contacts.suggestions = buildSuggestions();
+  contacts.mode = "suggest";
+  setContactsMsg(contacts.suggestions.length ? "Uncheck what is not the same company and fix the parent name if needed." : "No suggestions: every group of stations already has a parent.");
+  renderSuggestions();
+}
+function renderSuggestions() {
+  $("cBack").hidden = false; $("cApply").hidden = !contacts.suggestions.length; $("cFilter").hidden = true;
+  $("cHead").innerHTML = `<tr><th>Suggested parent / stations</th><th class="num">Pending AWBs</th><th colspan="4"></th></tr>`;
+  $("cBody").innerHTML = contacts.suggestions.map((g, gi) => `<tr class="s-group">
+      <td class="c-name"><input type="checkbox" data-sg="${gi}" ${g.on ? "checked" : ""} aria-label="Use this parent"> <input type="text" data-sname="${gi}" value="${esc(g.parent)}" aria-label="Parent name"></td>
+      <td class="num"><b>${g.kids.reduce((t, x) => t + x.n, 0) || "-"}</b></td><td colspan="4" class="c-group-note">${g.kids.length} stations</td></tr>`
+    + g.kids.map((x, xi) => `<tr class="s-child"><td class="c-name" title="${esc(x.name)}"><input type="checkbox" data-sk="${gi}:${xi}" ${x.on && g.on ? "checked" : ""} ${g.on ? "" : "disabled"} aria-label="Include ${esc(x.name)}"> ${esc(x.name)}</td><td class="num">${x.n || "-"}</td><td colspan="4"></td></tr>`).join("")).join("")
+    || `<tr><td colspan="6" class="empty">No suggestions.</td></tr>`;
+  const n = contacts.suggestions.filter(g => g.on).reduce((t, g) => t + g.kids.filter(x => x.on).length, 0);
+  $("cCount").textContent = `${fmt(contacts.suggestions.length)} suggested parents · ${fmt(n)} stations checked`;
+}
+async function applySuggestions() {
+  const assignments = [];
+  contacts.suggestions.forEach(g => { if (g.on && g.parent.trim()) g.kids.forEach(x => { if (x.on) assignments.push({ customer: x.name, parent: g.parent.trim() }); }); });
+  if (!assignments.length) { setContactsMsg("Nothing checked.", "err"); return; }
+  $("cApply").disabled = true;
+  setContactsMsg("Saving…");
+  try {
+    const data = await contactsCall("/assign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assignments }) });
+    takeContacts(data);
+    contacts.mode = "list";
+    renderContacts();
+    setContactsMsg(`${fmt(data.assigned)} stations now have a parent. Write each parent email in its grey row.`, "ok");
+  } catch (e) { setContactsMsg(`Not saved: ${e.message}`, "err"); }
+  $("cApply").disabled = false;
 }
 async function saveContactRow(input) {
   const tr = input.closest("tr");
@@ -770,15 +855,24 @@ async function saveContactRow(input) {
       data = await contactsCall("/parent", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ parent: tr.dataset.parent, emails }) });
     }
+    const oldParent = tr.dataset.customer !== undefined ? ckey((contacts.customers.get(ckey(tr.dataset.customer)) || {}).parent) : null;
     takeContacts(data);
+    if (tr.dataset.customer !== undefined && oldParent !== ckey((contacts.customers.get(ckey(tr.dataset.customer)) || {}).parent)) {
+      // The station moved to another parent: draw the groups again, same scroll
+      const scroll = document.querySelector(".c-wrap").scrollTop;
+      renderContacts();
+      document.querySelector(".c-wrap").scrollTop = scroll;
+      const again = document.querySelector(`#cBody tr[data-customer="${CSS.escape(tr.dataset.customer)}"] .c-state`);
+      if (again) { again.textContent = "Saved"; again.className = "c-state ok"; }
+      return;
+    }
+    // Same place: update only the emails and the "will be used" cells, so the cursor stays where it is
     if (tr.dataset.customer !== undefined) {
-      const c = contacts.customers.get(ckey(tr.dataset.customer)) || {};
-      tr.querySelector('[data-field="emails"]').value = emailList(c.emails);
-      tr.children[4].innerHTML = usedCell(tr.dataset.customer);
+      tr.querySelector('[data-field="emails"]').value = emailList((contacts.customers.get(ckey(tr.dataset.customer)) || {}).emails);
     } else {
       tr.querySelector('[data-field="emails"]').value = emailList((contacts.parents.get(ckey(tr.dataset.parent)) || {}).emails);
     }
-    $("cParents").innerHTML = [...new Set([...contacts.parents.values()].map(p => p.parent).concat([...contacts.customers.values()].map(c => c.parent).filter(Boolean)))].sort().map(n => `<option value="${esc(n)}">`).join("");
+    document.querySelectorAll("#cBody tr.c-child").forEach(row => { row.children[4].innerHTML = usedCell(row.dataset.customer); });
     cell.textContent = "Saved"; cell.className = "c-state ok";
   } catch (e) {
     cell.textContent = "Not saved"; cell.className = "c-state err"; cell.title = e.message;
@@ -1020,15 +1114,25 @@ function initAwbRecovery() {
   $("mailCancel").addEventListener("click", closeMail);
   $("mailSend").addEventListener("click", sendMail);
   $("mailBack").addEventListener("click", e => { if (e.target === $("mailBack")) closeMail(); });
-  $("contactsBtn").addEventListener("click", openContacts);
+  $("contactsBtn").addEventListener("click", () => { contacts.mode = "list"; openContacts(); });
   $("cClose").addEventListener("click", closeContacts);
   $("contactsBack").addEventListener("click", e => { if (e.target === $("contactsBack")) closeContacts(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("contactsBack").hidden) closeContacts(); });
-  $("cTabCustomers").addEventListener("click", () => { contacts.tab = "customers"; renderContacts(); });
-  $("cTabParents").addEventListener("click", () => { contacts.tab = "parents"; renderContacts(); });
+  $("cSuggest").addEventListener("click", openSuggestions);
+  $("cBack").addEventListener("click", () => { contacts.mode = "list"; setContactsMsg(""); renderContacts(); });
+  $("cApply").addEventListener("click", applySuggestions);
+  $("cBody").addEventListener("input", e => {
+    const t = e.target;
+    if (t.dataset.sname !== undefined) contacts.suggestions[+t.dataset.sname].parent = t.value;
+  });
+  $("cBody").addEventListener("click", e => {
+    const t = e.target;
+    if (t.dataset.sg !== undefined) { contacts.suggestions[+t.dataset.sg].on = t.checked; renderSuggestions(); }
+    if (t.dataset.sk !== undefined) { const [gi, xi] = t.dataset.sk.split(":").map(Number); contacts.suggestions[gi].kids[xi].on = t.checked; renderSuggestions(); }
+  });
   $("cSearch").addEventListener("input", renderContacts);
   $("cFilter").addEventListener("change", renderContacts);
-  $("cBody").addEventListener("change", e => { if (e.target.matches("input[data-field]")) saveContactRow(e.target); });
+  $("cBody").addEventListener("change", e => { if (contacts.mode === "list" && e.target.matches("input[data-field]")) saveContactRow(e.target); });
   $("cImport").addEventListener("click", () => $("cFile").click());
   $("cFile").addEventListener("change", e => importContacts(e.target.files[0]));
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("mailBack").hidden) closeMail(); });
