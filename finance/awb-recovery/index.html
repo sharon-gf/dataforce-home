@@ -210,6 +210,10 @@
   .m-body textarea { margin-bottom:10px; }
   .m-preview { overflow:auto; max-height:260px; margin-bottom:10px; }
   .m-preview th { position:static; background:#fff; }
+  .m-per td { vertical-align:middle; }
+  .m-per input { height:30px; font-size:12px; }
+  .m-per .m-to { min-width:240px; } .m-per .m-subj { min-width:260px; }
+  .m-per .m-st { font-size:11px; white-space:nowrap; } .m-per .m-st.ok { color:var(--teal); } .m-per .m-st.err { color:var(--red); }
   .m-table td { border-bottom:0; }
   .m-table tbody tr:nth-child(even) td { background:#edf0f4; }
   .m-table tbody tr:hover td { background:inherit; }
@@ -318,16 +322,23 @@
 </div>
 
 <div class="modal-back" id="mailBack" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
     <h2 id="mailTitle">Email about these AWBs</h2>
     <div class="muted">Sent from your own email account (<span id="mailFrom"></span>). The first time, Google asks you to allow it. Separate several addresses with commas.</div>
-    <div class="m-field"><label for="mailTo">To</label><input id="mailTo" type="text" placeholder="name@customer.com, other@customer.com"></div>
+    <div class="view-switch" style="margin:10px 0 12px"><button class="on" id="mailModePer" type="button">One email per AWB</button><button id="mailModeOne" type="button">All in one email</button></div>
+    <div class="muted" id="mailModeNote" style="margin-bottom:10px"></div>
+    <div id="mailOneFields" hidden>
+      <div class="m-field"><label for="mailTo">To</label><input id="mailTo" type="text" placeholder="name@company.com"></div>
+      <div class="m-field"><label for="mailSubject">Subject</label><input id="mailSubject" type="text"></div>
+    </div>
     <div class="m-field"><label for="mailCc">CC</label><input id="mailCc" type="text"></div>
-    <div class="m-field"><label for="mailSubject">Subject</label><input id="mailSubject" type="text"></div>
-    <label>Email</label>
+    <div class="m-field" id="mailToAllBox"><label for="mailToAll">To for all the emails (optional, e.g. to test with your own address)</label>
+      <div style="display:flex;gap:8px"><input id="mailToAll" type="text" placeholder="name@customer.com"><button class="btn" id="mailToAllBtn" type="button">Use for all</button></div></div>
+    <label id="mailRowsLabel">Emails to send</label>
+    <div class="m-preview"><table class="m-table m-per"><thead><tr><th>AWB</th><th>Station (CargoSystem)</th><th>To</th><th>Subject</th><th></th></tr></thead><tbody id="mailRows"></tbody></table></div>
+    <label for="mailMessage">Text of each email (the AWB goes below it)</label>
     <div class="m-body">
       <textarea id="mailMessage" rows="7" aria-label="Email text"></textarea>
-      <div class="m-preview"><table class="m-table"><thead><tr><th>GSA</th><th>Sales person</th><th>Customer</th><th>AWB</th><th>Route</th><th class="num">Days</th></tr></thead><tbody id="mailRows"></tbody></table></div>
     </div>
     <div class="m-foot"><span class="msg" id="mailMsg"></span><button class="btn" id="mailCancel" type="button">Cancel</button><button class="btn primary" id="mailSend" type="button">Send</button></div>
   </div>
@@ -674,6 +685,7 @@ async function load() {
     if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
     state.sentAvailable = data.sent_available === true;
     $("contactsBtn").hidden = data.contacts_admin !== true;
+    state.contactsAdmin = data.contacts_admin === true;
     $("requestsBtn").hidden = data.contacts_admin !== true;
     $("robotBtn").hidden = data.contacts_admin !== true;
     state.mailbox = data.mailbox || "";
@@ -707,18 +719,60 @@ function exportCsv() {
 // Email popup: the AWBs checked in the list, sent from the signed-in user's Gmail
 function selectedRows() { return state.rows.filter(r => state.selected.has(r.awb)); }
 function setMailMsg(text, kind) { const m = $("mailMsg"); m.textContent = text || ""; m.className = `msg ${kind || ""}`; }
-function openMail() {
+const mail = { rows: [] };
+async function openMail() {
   const rows = selectedRows();
   if (!rows.length) return;
-  const uniq = list => [...new Set(list.filter(v => v && v !== "Unknown"))];
-  $("mailSubject").value = mailSubject(rows);
   $("mailMessage").value = `Estimados/as,\n\nMe pueden ayudar con la recuperación de la guía de los embarques de la lista de abajo.\n\nRegards\n${state.user.name || ""}`.trim();
   $("mailFrom").textContent = state.user.email;
-  $("mailRows").innerHTML = rows.map(r => `<tr><td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td>${esc(r.customer)}</td><td class="awb">${esc(r.awb)}</td><td>${esc(r.route)}</td><td class="num">${r.days ?? "-"}</td></tr>`).join("");
-  setMailMsg(`${fmt(rows.length)} AWB${rows.length === 1 ? "" : "s"} in this email`);
+  $("mailCc").value = state.user.email;
+  $("mailToAll").value = "";
+  mail.rows = rows.map(r => ({ row: r, to: "", subject: mailSubject([r]), done: false, error: "" }));
+  mail.one = { to: "", done: false };
+  $("mailTo").value = "";
+  $("mailSubject").value = mailSubject(rows);
+  // The station's emails, or the parent's (Customer contacts, admins only)
+  if (state.contactsAdmin) {
+    try { takeContacts(await contactsCall("", {})); mail.rows.forEach(m => { m.to = usedEmails(m.row.customer).emails.join(", "); }); }
+    catch (e) { console.warn("Contacts not loaded", e); }
+  }
+  setMailMode("per");
   $("mailSend").disabled = false;
   $("mailBack").hidden = false;
-  $("mailTo").focus();
+}
+// "per": one email per AWB to its station or parent; "one": all the AWBs in one email
+function setMailMode(mode) {
+  mail.mode = mode;
+  const per = mode === "per";
+  $("mailModePer").classList.toggle("on", per);
+  $("mailModeOne").classList.toggle("on", !per);
+  $("mailOneFields").hidden = per;
+  $("mailToAllBox").hidden = !per;
+  $("mailRowsLabel").textContent = per ? "Emails to send" : "AWBs in the email";
+  $("mailModeNote").textContent = per
+    ? "Each AWB goes in its own email, to the emails of its station, or of its parent customer when the station has none. You can change them."
+    : "One email with all the AWBs below, to the people you write in To.";
+  renderMailRows();
+  if (per) {
+    const missing = mail.rows.filter(m => !m.to && !m.done).length;
+    setMailMsg(`${fmt(mail.rows.length)} email${mail.rows.length === 1 ? "" : "s"}, one per AWB.${missing ? ` ${missing} without email: write it in To.` : ""}`);
+  } else {
+    setMailMsg(`1 email with ${fmt(mail.rows.length)} AWB${mail.rows.length === 1 ? "" : "s"}.`);
+    $("mailTo").focus();
+  }
+}
+function renderMailRows() {
+  if (mail.mode === "one") {
+    $("mailRows").closest("table").querySelector("thead").innerHTML = `<tr><th>AWB</th><th>Station (CargoSystem)</th><th>GSA</th><th>Route</th><th class="num">Days</th></tr>`;
+    $("mailRows").innerHTML = mail.rows.map(m => `<tr><td class="awb">${esc(m.row.awb)}</td><td class="c-name" title="${esc(m.row.customer)}">${esc(m.row.customer)}</td><td>${esc(m.row.gsa)}</td><td>${esc(m.row.route)}</td><td class="num">${m.row.days ?? "-"}</td></tr>`).join("");
+    return;
+  }
+  $("mailRows").closest("table").querySelector("thead").innerHTML = `<tr><th>AWB</th><th>Station (CargoSystem)</th><th>To</th><th>Subject</th><th></th></tr>`;
+  $("mailRows").innerHTML = mail.rows.map((m, i) => `<tr>
+    <td class="awb">${esc(m.row.awb)}</td><td class="c-name" title="${esc(m.row.customer)}">${esc(m.row.customer)}</td>
+    <td><input class="m-to" data-mi="${i}" data-mf="to" value="${esc(m.to)}" placeholder="name@customer.com" ${m.done ? "disabled" : ""} aria-label="To for ${esc(m.row.awb)}"></td>
+    <td><input class="m-subj" data-mi="${i}" data-mf="subject" value="${esc(m.subject)}" ${m.done ? "disabled" : ""} aria-label="Subject for ${esc(m.row.awb)}"></td>
+    <td class="m-st ${m.done ? "ok" : m.error ? "err" : ""}" title="${esc(m.error)}">${m.done ? "Sent" : m.error ? "Not sent" : ""}</td></tr>`).join("");
 }
 // ---- Robot: requests to customers, search in the mailbox, recovered AWBs ----
 async function apiCall(path, options, extra) {
@@ -1181,21 +1235,34 @@ async function recordSent(to, cc, subject, rows) {
     return false;
   }
 }
-async function sendMail() {
-  // Pasted from Outlook as "Name <name@x.com>": only the addresses are kept
-  const split = v => {
-    const hasNames = /[<"]/.test(v);
-    const parts = v.replace(/"[^"]*"/g, " ").split(/[,;\s]+/).map(s => s.replace(/^[<(\[]+|[>)\].:]+$/g, "").trim().toLowerCase())
-      .filter(Boolean).filter(s => s.includes("@") || !hasNames);
-    return [...new Set(parts)];
-  };
-  const to = split($("mailTo").value), cc = split($("mailCc").value).filter(a => !to.includes(a));
-  const rows = selectedRows();
+// Pasted from Outlook as "Name <name@x.com>": only the addresses are kept
+function splitAddresses(v) {
+  const hasNames = /[<"]/.test(v);
+  const parts = String(v || "").replace(/"[^"]*"/g, " ").split(/[,;\s]+/).map(x => x.replace(/^[<(\[]+|[>)\].:]+$/g, "").trim().toLowerCase())
+    .filter(Boolean).filter(x => x.includes("@") || !hasNames);
+  return [...new Set(parts)];
+}
+const goodAddress = a => /^[^@\s<>"(),;:]+@[^@\s<>"(),;:]+\.[a-z]{2,}$/i.test(a);
+async function gmailSend(token, to, cc, subject, rows) {
+  const raw = b64(mimeMessage(to, cc, subject, emailHtml(rows), emailText(rows))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ raw })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401) { gmailToken = null; throw new Error("the Google permission expired. Press Send again"); }
+  if (!response.ok) throw new Error((data.error && data.error.message) || `Gmail answered with an error (${response.status})`);
+}
+async function sendAllInOne() {
+  const to = splitAddresses($("mailTo").value);
+  const cc = splitAddresses($("mailCc").value).filter(a => !to.includes(a));
   const subject = $("mailSubject").value.replace(/[\r\n]+/g, " ").trim();
+  const rows = mail.rows.filter(m => !m.done).map(m => m.row);
+  if (!rows.length) { closeMail(); return; }
   if (!to.length) { setMailMsg("Add at least one recipient in To.", "err"); return; }
   if (!subject) { setMailMsg("The subject is empty.", "err"); return; }
-  if (!rows.length) { setMailMsg("No AWBs selected.", "err"); return; }
-  const bad = [...to, ...cc].filter(a => !/^[^@\s<>"(),;:]+@[^@\s<>"(),;:]+\.[a-z]{2,}$/i.test(a));
+  const bad = [...to, ...cc].filter(a => !goodAddress(a));
   if (bad.length) { setMailMsg(`Check these addresses: ${bad.join(", ")}`, "err"); return; }
   if (to.length + cc.length > 20) { setMailMsg("Up to 20 recipients.", "err"); return; }
   $("mailSend").disabled = true;
@@ -1203,22 +1270,59 @@ async function sendMail() {
   try {
     const token = await gmailAccess();
     setMailMsg("Sending…");
-    const raw = b64(mimeMessage(to, cc, subject, emailHtml(rows), emailText(rows))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    const response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ raw })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (response.status === 401) { gmailToken = null; throw new Error("the Google permission expired. Press Send again"); }
-    if (!response.ok) throw new Error((data.error && data.error.message) || `Gmail answered with an error (${response.status})`);
+    await gmailSend(token, to, cc, subject, rows);
     const recorded = await recordSent(to, cc, subject, rows);
+    mail.rows.forEach(m => { if (rows.includes(m.row)) { m.done = true; state.selected.delete(m.row.awb); } });
     setMailMsg(recorded ? `Sent from ${state.user.email} to ${to.join(", ")}` : `Sent to ${to.join(", ")}. It could not be marked in the Action column.`, "ok");
-    state.selected.clear();
     render();
-    setTimeout(closeMail, recorded ? 1500 : 4000);
+    setTimeout(closeMail, 1500);
   } catch (e) {
     setMailMsg(`Not sent: ${e.message}`, "err");
+    $("mailSend").disabled = false;
+  }
+}
+async function sendMail() {
+  if (mail.mode === "one") { await sendAllInOne(); return; }
+  const pending = mail.rows.filter(m => !m.done);
+  if (!pending.length) { closeMail(); return; }
+  const ccAll = splitAddresses($("mailCc").value);
+  // Check everything before sending anything
+  for (const m of pending) {
+    m.toList = splitAddresses(m.to);
+    m.ccList = ccAll.filter(a => !m.toList.includes(a));
+    m.subject = m.subject.replace(/[\r\n]+/g, " ").trim();
+    const bad = [...m.toList, ...m.ccList].filter(a => !goodAddress(a));
+    m.error = !m.toList.length ? "No email in To" : !m.subject ? "The subject is empty"
+      : bad.length ? `Check these addresses: ${bad.join(", ")}` : m.toList.length + m.ccList.length > 20 ? "Up to 20 recipients" : "";
+  }
+  const wrong = pending.filter(m => m.error);
+  if (wrong.length) { renderMailRows(); setMailMsg(`${wrong[0].row.awb}: ${wrong[0].error}`, "err"); return; }
+  $("mailSend").disabled = true;
+  setMailMsg("Waiting for Google…");
+  let token;
+  try { token = await gmailAccess(); }
+  catch (e) { setMailMsg(`Not sent: ${e.message}`, "err"); $("mailSend").disabled = false; return; }
+  let sent = 0, notRecorded = 0;
+  for (const [n, m] of pending.entries()) {
+    setMailMsg(`Sending ${n + 1} of ${pending.length}…`);
+    try {
+      await gmailSend(token, m.toList, m.ccList, m.subject, [m.row]);
+      m.done = true; m.error = ""; sent += 1;
+      state.selected.delete(m.row.awb);
+      if (!(await recordSent(m.toList, m.ccList, m.subject, [m.row]))) notRecorded += 1;
+    } catch (e) {
+      m.error = e.message;
+      if (/permission expired/.test(e.message)) break;
+    }
+    renderMailRows();
+  }
+  render();
+  const failed = mail.rows.filter(m => !m.done);
+  if (!failed.length) {
+    setMailMsg(`${fmt(sent)} email${sent === 1 ? "" : "s"} sent from ${state.user.email}.${notRecorded ? ` ${notRecorded} could not be marked in the Action column.` : ""}`, "ok");
+    setTimeout(closeMail, 2000);
+  } else {
+    setMailMsg(`${fmt(sent)} sent, ${fmt(failed.length)} not sent: ${failed[0].row.awb} (${failed[0].error || "not tried"}). Press Send to try the rest again.`, "err");
     $("mailSend").disabled = false;
   }
 }
@@ -1302,6 +1406,10 @@ function initAwbRecovery() {
   $("selCopy").addEventListener("click", copyAwbs);
   $("mailCancel").addEventListener("click", closeMail);
   $("mailSend").addEventListener("click", sendMail);
+  $("mailRows").addEventListener("input", e => { const t = e.target; if (t.dataset.mi !== undefined) mail.rows[+t.dataset.mi][t.dataset.mf] = t.value; });
+  $("mailModePer").addEventListener("click", () => setMailMode("per"));
+  $("mailModeOne").addEventListener("click", () => setMailMode("one"));
+  $("mailToAllBtn").addEventListener("click", () => { const v = $("mailToAll").value.trim(); if (!v) return; mail.rows.forEach(m => { if (!m.done) m.to = v; }); renderMailRows(); });
   $("contactsBtn").addEventListener("click", () => { contacts.mode = "list"; openContacts(); });
   $("requestsBtn").addEventListener("click", openRequests);
   $("reqClose").addEventListener("click", () => { $("reqBack").hidden = true; });
