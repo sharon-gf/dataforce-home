@@ -175,6 +175,8 @@
   .s-group input[type=text] { width:240px; }
   .s-child td.c-name { padding-left:34px; font-weight:500; }
   .c-table input[type=checkbox] { width:15px; height:15px; vertical-align:middle; }
+  .found { color:var(--teal); font-weight:700; }
+  .st-ready { color:var(--amber); font-weight:700; } .st-marked { color:var(--teal); font-weight:700; }
   .c-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
   .c-bar input[type=search] { width:260px; }
   .c-bar select { width:200px; }
@@ -251,7 +253,7 @@
     <div class="page-top">
       <div><h1>AWB Recovery</h1>
       <p class="lead" id="lead">Loading AWBs…</p></div>
-      <div class="top-actions"><button class="btn btn-icon" id="contactsBtn" type="button" hidden title="Customer emails used to request the AWBs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 8h2M3 12h2M3 16h2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5c.7-1.6 2-2.5 3.5-2.5s2.8.9 3.5 2.5"/></svg>Customer contacts</button></div>
+      <div class="top-actions"><button class="btn primary" id="requestsBtn" type="button" hidden title="One email per station asking for its pending AWBs, from the awbrecovery mailbox">Send AWB requests</button><button class="btn" id="robotBtn" type="button" hidden title="Reads the AWBs that customers sent to the awbrecovery mailbox">Search AWBs</button><button class="btn" id="recoveredBtn" type="button" title="AWBs the robot found">Recovered AWBs</button><button class="btn btn-icon" id="contactsBtn" type="button" hidden title="Customer emails used to request the AWBs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 8h2M3 12h2M3 16h2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5c.7-1.6 2-2.5 3.5-2.5s2.8.9 3.5 2.5"/></svg>Customer contacts</button></div>
     </div>
 
     <section class="kpis">
@@ -350,6 +352,34 @@
   </div>
 </div>
 
+<div class="modal-back" id="reqBack" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="reqTitle">
+    <h2 id="reqTitle">Send AWB requests</h2>
+    <div class="muted" id="reqNote" style="margin-bottom:12px"></div>
+    <div class="c-wrap"><table class="c-table"><thead><tr><th>Station (CargoSystem)</th><th>Company</th><th class="num">AWBs</th><th>To</th><th>Subject</th></tr></thead><tbody id="reqBody"></tbody></table></div>
+    <div class="m-foot"><span class="msg" id="reqMsg"></span><button class="btn" id="reqClose" type="button">Close</button><button class="btn primary" id="reqSend" type="button" disabled>Send</button></div>
+  </div>
+</div>
+
+<div class="modal-back" id="recBack" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="recTitle">
+    <h2 id="recTitle">Recovered AWBs</h2>
+    <div class="muted" style="margin-bottom:12px">AWBs the robot found in the emails of the awbrecovery mailbox. "Ready to mark": still to be marked as recovered in CargoSystem. "Marked": CargoSystem already shows it.</div>
+    <div class="c-bar"><input type="search" id="recSearch" placeholder="Search AWB or customer" aria-label="Search"><span class="muted" id="recCount"></span></div>
+    <div class="c-wrap"><table class="c-table"><thead><tr><th>AWB</th><th>Station (CargoSystem)</th><th>Parent</th><th>Found</th><th>Sent by</th><th>Status</th><th>File</th></tr></thead><tbody id="recBody"></tbody></table></div>
+    <div class="m-foot"><span class="msg" id="recMsg"></span><button class="btn" id="recClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<div class="modal-back" id="robotBack" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="robotTitle">
+    <h2 id="robotTitle">Search AWBs</h2>
+    <div class="muted" style="margin-bottom:12px">The robot reads the emails in the Input folder of the awbrecovery mailbox, finds the AWB number in the PDF or image, keeps the file and moves the email to Processed, or to Error when it finds no pending AWB.</div>
+    <div class="c-wrap"><table class="c-table"><thead><tr><th>Email</th><th>From</th><th>Result</th></tr></thead><tbody id="robotBody"></tbody></table></div>
+    <div class="m-foot"><span class="msg" id="robotMsg"></span><button class="btn" id="robotClose" type="button">Close</button></div>
+  </div>
+</div>
+
 <script src="../../permission-guard.js"></script>
 <script>
 const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
@@ -385,6 +415,10 @@ function sentLabel(r) {
   return `Email sent ${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}${who ? ` · ${who}` : ""}${times}`;
 }
 function sentCell(r) {
+  if (r.found_at) {
+    const f = new Date(r.found_at);
+    return `<span class="found" title="The robot found this AWB in an email on ${esc(isoDate(f))}">Found by robot ${String(f.getDate()).padStart(2, "0")}-${String(f.getMonth() + 1).padStart(2, "0")}</span>`;
+  }
   if (!r.sent_at) return `<span class="not-flown">-</span>`;
   const d = new Date(r.sent_at);
   return `<span title="Last email ${esc(isoDate(d))} by ${esc(r.sent_by || "")}${r.sent_count > 1 ? `, ${r.sent_count} emails in total` : ""}">${esc(sentLabel(r))}</span>`;
@@ -640,6 +674,9 @@ async function load() {
     if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
     state.sentAvailable = data.sent_available === true;
     $("contactsBtn").hidden = data.contacts_admin !== true;
+    $("requestsBtn").hidden = data.contacts_admin !== true;
+    $("robotBtn").hidden = data.contacts_admin !== true;
+    state.mailbox = data.mailbox || "";
     state.rows = data.rows.map(r => ({ ...r, sent_count: Number(r.sent_count || 0), flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
     const present = new Set(state.rows.map(r => r.awb));
     [...state.selected].forEach(awb => { if (!present.has(awb)) state.selected.delete(awb); });
@@ -682,6 +719,100 @@ function openMail() {
   $("mailSend").disabled = false;
   $("mailBack").hidden = false;
   $("mailTo").focus();
+}
+// ---- Robot: requests to customers, search in the mailbox, recovered AWBs ----
+async function apiCall(path, options, extra) {
+  const params = new URLSearchParams({ email: state.user.email, ...(extra || {}) });
+  const response = await fetch(`${API_BASE}/api/awb_recovery${path}?${params}`, options || {});
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = Array.isArray(data.detail) ? data.detail.map(d => d.msg || JSON.stringify(d)).join("; ") : data.detail;
+    throw new Error(detail || `The API answered with an error (${response.status})`);
+  }
+  return data;
+}
+const req = { emails: [] };
+async function openRequests() {
+  $("reqBack").hidden = false;
+  $("reqBody").innerHTML = "";
+  $("reqSend").disabled = true;
+  $("reqNote").textContent = "";
+  $("reqMsg").textContent = "Preparing the emails…"; $("reqMsg").className = "msg";
+  try {
+    const data = await apiCall("/requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ send: false }) },
+      { date_from: pickers.flight.from, date_to: pickers.flight.to });
+    req.emails = data.emails || [];
+    const ready = req.emails.filter(e => e.to.length);
+    const awbs = ready.reduce((t, e) => t + e.awbs.length, 0);
+    $("reqNote").textContent = `One email per station with its pending AWBs (flight dates of the page), from ${data.mailbox || "the awbrecovery mailbox"} with you in CC. Subject: company | Copy AWB. Text: Dear Customer, please send copy of AWB below. Best Regards. Stations without email are skipped: add them in Customer contacts.`;
+    $("reqBody").innerHTML = req.emails.map(e => `<tr><td class="c-name" title="${esc(e.customer)}">${esc(e.customer)}</td><td>${esc(e.company)}</td><td class="num">${e.awbs.length}</td>
+      <td>${e.to.length ? `<span class="c-used" title="${esc(e.to.join("; "))}">${esc(e.to.join("; "))}${e.via === "parent" ? ' <span class="via">(parent)</span>' : ""}</span>` : '<span class="c-used none">No email: skipped</span>'}</td>
+      <td><span class="c-used" title="${esc(e.subject)}">${esc(e.subject)}</span></td></tr>`).join("") || `<tr><td colspan="5" class="empty">No pending AWBs to request.</td></tr>`;
+    $("reqSend").textContent = `Send ${fmt(ready.length)} email${ready.length === 1 ? "" : "s"}`;
+    $("reqSend").disabled = !ready.length || !data.mailbox;
+    $("reqMsg").textContent = data.mailbox
+      ? `${fmt(ready.length)} emails, ${fmt(awbs)} AWBs. ${fmt(req.emails.length - ready.length)} stations without email.`
+      : "The awbrecovery mailbox is not connected yet: this is only a preview, nothing can be sent.";
+    $("reqMsg").className = data.mailbox ? "msg" : "msg err";
+  } catch (e) { $("reqMsg").textContent = `Could not prepare: ${e.message}`; $("reqMsg").className = "msg err"; }
+}
+async function sendRequests() {
+  const ready = req.emails.filter(e => e.to.length);
+  if (!ready.length) return;
+  $("reqSend").disabled = true;
+  $("reqMsg").textContent = `Sending ${fmt(ready.length)} emails…`; $("reqMsg").className = "msg";
+  try {
+    const data = await apiCall("/requests", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ send: true, customers: ready.map(e => e.customer) }) }, { date_from: pickers.flight.from, date_to: pickers.flight.to });
+    const failed = (data.not_sent || []).filter(r => r.error !== "No email");
+    $("reqMsg").textContent = `${fmt(data.sent)} emails sent.${failed.length ? ` ${failed.length} failed: ${failed.slice(0, 3).map(f => `${f.customer} (${f.error})`).join("; ")}` : ""}`;
+    $("reqMsg").className = failed.length ? "msg err" : "msg ok";
+    load();
+  } catch (e) { $("reqMsg").textContent = `Not sent: ${e.message}`; $("reqMsg").className = "msg err"; $("reqSend").disabled = false; }
+}
+async function runRobot() {
+  $("robotBack").hidden = false;
+  $("robotBody").innerHTML = "";
+  $("robotMsg").textContent = "Reading the mailbox…"; $("robotMsg").className = "msg";
+  try {
+    const data = await apiCall("/robot/run", { method: "POST" });
+    $("robotBody").innerHTML = (data.details || []).map(d => `<tr><td class="c-name" title="${esc(d.subject || "")}">${esc(d.subject || d.id)}</td><td><span class="c-used">${esc(d.sender || "")}</span></td>
+      <td>${d.found && d.found.length ? `<span class="found">Found ${esc(d.found.join(", "))}</span>` : `<span class="c-used none" title="${esc(d.error || "")}">Error: ${esc(d.error || "")}</span>`}</td></tr>`).join("")
+      || `<tr><td colspan="3" class="empty">No new emails in Input.</td></tr>`;
+    $("robotMsg").textContent = `${fmt(data.emails)} emails read: ${fmt(data.processed)} to Processed, ${fmt(data.errors)} to Error. ${fmt((data.found || []).length)} AWBs found.`;
+    $("robotMsg").className = "msg ok";
+    load();
+  } catch (e) { $("robotMsg").textContent = `The robot could not run: ${e.message}`; $("robotMsg").className = "msg err"; }
+}
+const rec = { rows: [] };
+async function openRecovered() {
+  $("recBack").hidden = false;
+  $("recBody").innerHTML = "";
+  $("recMsg").textContent = "Loading…"; $("recMsg").className = "msg";
+  try {
+    rec.rows = (await apiCall("/recovered")).rows || [];
+    $("recMsg").textContent = "";
+    renderRecovered();
+  } catch (e) { $("recMsg").textContent = `Could not load: ${e.message}`; $("recMsg").className = "msg err"; }
+}
+function renderRecovered() {
+  const q = $("recSearch").value.trim().toLowerCase();
+  const rows = rec.rows.filter(r => !q || [r.awb, r.customer, r.parent].some(v => String(v || "").toLowerCase().includes(q)));
+  const ready = rec.rows.filter(r => r.status === "Ready to mark").length;
+  $("recCount").textContent = `${fmt(rows.length)} AWBs · ${fmt(ready)} ready to mark in CargoSystem`;
+  $("recBody").innerHTML = rows.map(r => `<tr><td class="awb">${esc(r.awb)}</td><td class="c-name" title="${esc(r.customer)}">${esc(r.customer)}</td><td>${esc(r.parent || "")}</td>
+    <td>${r.found_at ? esc(isoDate(new Date(r.found_at))) : ""}</td><td><span class="c-used" title="${esc(r.sender || "")}">${esc(r.sender || "")}</span></td>
+    <td><span class="${r.status === "Ready to mark" ? "st-ready" : "st-marked"}">${esc(r.status)}</span></td>
+    <td><button class="btn" type="button" data-file="${esc(r.awb)}">Open</button></td></tr>`).join("") || `<tr><td colspan="7" class="empty">No AWBs found by the robot yet.</td></tr>`;
+}
+async function openRecoveredFile(awb) {
+  const win = window.open("", "_blank");
+  try {
+    const response = await fetch(`${API_BASE}/api/awb_recovery/recovered/file?${new URLSearchParams({ email: state.user.email, awb })}`);
+    if (!response.ok) throw new Error(`The API answered ${response.status}`);
+    const url = URL.createObjectURL(await response.blob());
+    if (win) win.location = url; else window.location = url;
+  } catch (e) { if (win) win.close(); $("recMsg").textContent = `Could not open the file: ${e.message}`; $("recMsg").className = "msg err"; }
 }
 // "GSA Force | Copy AWB 805-11998711 805-13605815"; more than 3 AWBs: only "Copy AWB"
 function mailSubject(rows) {
@@ -1172,6 +1303,15 @@ function initAwbRecovery() {
   $("mailCancel").addEventListener("click", closeMail);
   $("mailSend").addEventListener("click", sendMail);
   $("contactsBtn").addEventListener("click", () => { contacts.mode = "list"; openContacts(); });
+  $("requestsBtn").addEventListener("click", openRequests);
+  $("reqClose").addEventListener("click", () => { $("reqBack").hidden = true; });
+  $("reqSend").addEventListener("click", sendRequests);
+  $("robotBtn").addEventListener("click", runRobot);
+  $("robotClose").addEventListener("click", () => { $("robotBack").hidden = true; });
+  $("recoveredBtn").addEventListener("click", openRecovered);
+  $("recClose").addEventListener("click", () => { $("recBack").hidden = true; });
+  $("recSearch").addEventListener("input", renderRecovered);
+  $("recBody").addEventListener("click", e => { const b = e.target.closest("[data-file]"); if (b) openRecoveredFile(b.dataset.file); });
   $("cClose").addEventListener("click", closeContacts);
   $("cHead").addEventListener("mousedown", e => { if (e.target.classList.contains("c-resize")) startNameResize(e); });
   try { const w = Number(localStorage.getItem("awb_recovery_cname_w")); if (w) setNameWidth(w); } catch (err) {}
