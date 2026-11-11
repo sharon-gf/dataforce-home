@@ -257,7 +257,7 @@
     <div class="page-top">
       <div><h1>AWB Recovery</h1>
       <p class="lead" id="lead">Loading AWBs…</p></div>
-      <div class="top-actions"><button class="btn primary" id="requestsBtn" type="button" hidden title="One email per station asking for its pending AWBs, from the awbrecovery mailbox">Send AWB requests</button><button class="btn" id="robotBtn" type="button" hidden title="Reads the AWBs that customers sent to the awbrecovery mailbox">Search AWBs</button><button class="btn" id="recoveredBtn" type="button" title="AWBs the robot found">Recovered AWBs</button><button class="btn btn-icon" id="contactsBtn" type="button" hidden title="Customer emails used to request the AWBs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 8h2M3 12h2M3 16h2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5c.7-1.6 2-2.5 3.5-2.5s2.8.9 3.5 2.5"/></svg>Customer contacts</button></div>
+      <div class="top-actions"><button class="btn primary" id="requestsBtn" type="button" hidden title="One email per station asking for its pending AWBs, sent as awbrecovery@">Send AWB requests</button><button class="btn" id="robotBtn" type="button" hidden title="Reads the AWBs that customers sent to awbrecovery@">Search AWBs</button><button class="btn" id="recoveredBtn" type="button" title="AWBs the robot found">Recovered AWBs</button><button class="btn btn-icon" id="contactsBtn" type="button" hidden title="Customer emails used to request the AWBs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 8h2M3 12h2M3 16h2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5c.7-1.6 2-2.5 3.5-2.5s2.8.9 3.5 2.5"/></svg>Customer contacts</button></div>
     </div>
 
     <section class="kpis">
@@ -324,7 +324,7 @@
 <div class="modal-back" id="mailBack" hidden>
   <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
     <h2 id="mailTitle">Email about these AWBs</h2>
-    <div class="muted">Sent from your own email account (<span id="mailFrom"></span>). The first time, Google asks you to allow it. Separate several addresses with commas.</div>
+    <div class="muted">Sent from your Gmail as <b id="mailSender">awbrecovery@gsaforce.com</b> (<span id="mailFrom"></span>). If that alias is not set up in your Gmail ("Send mail as"), Gmail sends it from your own address. The first time, Google asks you to allow it. Separate several addresses with commas.</div>
     <div class="view-switch" style="margin:10px 0 12px"><button class="on" id="mailModePer" type="button">One email per AWB</button><button id="mailModeOne" type="button">All in one email</button></div>
     <div class="muted" id="mailModeNote" style="margin-bottom:10px"></div>
     <div id="mailOneFields" hidden>
@@ -375,7 +375,7 @@
 <div class="modal-back" id="recBack" hidden>
   <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="recTitle">
     <h2 id="recTitle">Recovered AWBs</h2>
-    <div class="muted" style="margin-bottom:12px">AWBs the robot found in the emails of the awbrecovery mailbox. "Ready to mark": still to be marked as recovered in CargoSystem. "Marked": CargoSystem already shows it.</div>
+    <div class="muted" style="margin-bottom:12px">AWBs the robot found in the emails sent to awbrecovery@. "Ready to mark": still to be marked as recovered in CargoSystem. "Marked": CargoSystem already shows it.</div>
     <div class="c-bar"><input type="search" id="recSearch" placeholder="Search AWB or customer" aria-label="Search"><span class="muted" id="recCount"></span></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th>AWB</th><th>Station (CargoSystem)</th><th>Parent</th><th>Found</th><th>Sent by</th><th>Status</th><th>File</th></tr></thead><tbody id="recBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="recMsg"></span><button class="btn" id="recClose" type="button">Close</button></div>
@@ -385,7 +385,8 @@
 <div class="modal-back" id="robotBack" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="robotTitle">
     <h2 id="robotTitle">Search AWBs</h2>
-    <div class="muted" style="margin-bottom:12px">The robot reads the emails in the Input folder of the awbrecovery mailbox, finds the AWB number in the PDF or image, keeps the file and moves the email to Processed, or to Error when it finds no pending AWB.</div>
+    <div class="muted" style="margin-bottom:10px">The robot reads the label "AWB Input" in the Gmail of the reader (a member of the awbrecovery@ group whose Gmail filter puts those emails there), finds the AWB number in the PDF or image, keeps the file and moves the email to "AWB Processed", or to "AWB Error" when it finds no pending AWB.</div>
+    <div class="c-bar"><span id="robotReader" class="muted"></span><span class="grow"></span><button class="btn" id="robotConnect" type="button">Connect my Gmail as reader</button><button class="btn" id="robotDisconnect" type="button" hidden>Disconnect</button><button class="btn primary" id="robotRun" type="button" disabled>Search now</button></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th>Email</th><th>From</th><th>Result</th></tr></thead><tbody id="robotBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="robotMsg"></span><button class="btn" id="robotClose" type="button">Close</button></div>
   </div>
@@ -688,7 +689,7 @@ async function load() {
     state.contactsAdmin = data.contacts_admin === true;
     $("requestsBtn").hidden = data.contacts_admin !== true;
     $("robotBtn").hidden = data.contacts_admin !== true;
-    state.mailbox = data.mailbox || "";
+    state.sender = data.sender || "awbrecovery@gsaforce.com";
     state.rows = data.rows.map(r => ({ ...r, sent_count: Number(r.sent_count || 0), flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
     const present = new Set(state.rows.map(r => r.awb));
     [...state.selected].forEach(awb => { if (!present.has(awb)) state.selected.delete(awb); });
@@ -725,6 +726,7 @@ async function openMail() {
   if (!rows.length) return;
   $("mailMessage").value = `Estimados/as,\n\nMe pueden ayudar con la recuperación de la guía de los embarques de la lista de abajo.\n\nRegards\n${state.user.name || ""}`.trim();
   $("mailFrom").textContent = state.user.email;
+  $("mailSender").textContent = state.sender || "awbrecovery@gsaforce.com";
   $("mailCc").value = state.user.email;
   $("mailToAll").value = "";
   mail.rows = rows.map(r => ({ row: r, to: "", subject: mailSubject([r]), done: false, error: "" }));
@@ -774,7 +776,7 @@ function renderMailRows() {
     <td><input class="m-subj" data-mi="${i}" data-mf="subject" value="${esc(m.subject)}" ${m.done ? "disabled" : ""} aria-label="Subject for ${esc(m.row.awb)}"></td>
     <td class="m-st ${m.done ? "ok" : m.error ? "err" : ""}" title="${esc(m.error)}">${m.done ? "Sent" : m.error ? "Not sent" : ""}</td></tr>`).join("");
 }
-// ---- Robot: requests to customers, search in the mailbox, recovered AWBs ----
+// ---- Robot: requests to customers, search AWBs (reader Gmail), recovered AWBs ----
 async function apiCall(path, options, extra) {
   const params = new URLSearchParams({ email: state.user.email, ...(extra || {}) });
   const response = await fetch(`${API_BASE}/api/awb_recovery${path}?${params}`, options || {});
@@ -798,45 +800,113 @@ async function openRequests() {
     req.emails = data.emails || [];
     const ready = req.emails.filter(e => e.to.length);
     const awbs = ready.reduce((t, e) => t + e.awbs.length, 0);
-    $("reqNote").textContent = `One email per station with its pending AWBs (flight dates of the page), from ${data.mailbox || "the awbrecovery mailbox"} with you in CC. Subject: company | Copy AWB. Text: Dear Customer, please send copy of AWB below. Best Regards. Stations without email are skipped: add them in Customer contacts.`;
+    $("reqNote").textContent = `One email per station with its pending AWBs (flight dates of the page), sent from your Gmail as ${data.sender || state.sender} with you in CC. Subject: company | Copy AWB. Text: Dear Customer, please send copy of AWB below. Best Regards. Stations without email are skipped: add them in Customer contacts.`;
     $("reqBody").innerHTML = req.emails.map(e => `<tr><td class="c-name" title="${esc(e.customer)}">${esc(e.customer)}</td><td>${esc(e.company)}</td><td class="num">${e.awbs.length}</td>
       <td>${e.to.length ? `<span class="c-used" title="${esc(e.to.join("; "))}">${esc(e.to.join("; "))}${e.via === "parent" ? ' <span class="via">(parent)</span>' : ""}</span>` : '<span class="c-used none">No email: skipped</span>'}</td>
       <td><span class="c-used" title="${esc(e.subject)}">${esc(e.subject)}</span></td></tr>`).join("") || `<tr><td colspan="5" class="empty">No pending AWBs to request.</td></tr>`;
     $("reqSend").textContent = `Send ${fmt(ready.length)} email${ready.length === 1 ? "" : "s"}`;
-    $("reqSend").disabled = !ready.length || !data.mailbox;
-    $("reqMsg").textContent = data.mailbox
-      ? `${fmt(ready.length)} emails, ${fmt(awbs)} AWBs. ${fmt(req.emails.length - ready.length)} stations without email.`
-      : "The awbrecovery mailbox is not connected yet: this is only a preview, nothing can be sent.";
-    $("reqMsg").className = data.mailbox ? "msg" : "msg err";
+    $("reqSend").disabled = !ready.length;
+    $("reqMsg").textContent = `${fmt(ready.length)} emails, ${fmt(awbs)} AWBs. ${fmt(req.emails.length - ready.length)} stations without email.`;
+    $("reqMsg").className = "msg";
   } catch (e) { $("reqMsg").textContent = `Could not prepare: ${e.message}`; $("reqMsg").className = "msg err"; }
 }
+// "Dear Customer, please send copy of AWB below" with the station's AWBs
+function requestHtml(rows) {
+  const th = ["AWB", "Route", "Flight date"].map(h => `<th style="text-align:left;padding:7px 12px;border-bottom:1px solid #d5dbe5;color:#64748b;font-weight:600">${h}</th>`).join("");
+  const body = rows.map((r, i) => `<tr style="background:${i % 2 ? "#edf0f4" : "#ffffff"}">${[r.awb, r.route, String(r.flight_date || "").slice(0, 10)].map(c => `<td style="padding:7px 12px">${esc(c)}</td>`).join("")}</tr>`).join("");
+  return `<div style="font-family:Arial,sans-serif;font-size:14px;color:#0d1f3c"><p style="margin:0 0 14px">Dear Customer,</p><p style="margin:0 0 14px">Please send copy of AWB below.</p><table style="border-collapse:collapse;font-size:13px;margin:0 0 16px"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table><p style="margin:0">Best Regards</p></div>`;
+}
+function requestText(rows) {
+  return ["Dear Customer,", "", "Please send copy of AWB below.", "", "AWB\tRoute\tFlight date",
+    ...rows.map(r => `${r.awb}\t${r.route}\t${String(r.flight_date || "").slice(0, 10)}`), "", "Best Regards"].join("\n");
+}
 async function sendRequests() {
-  const ready = req.emails.filter(e => e.to.length);
+  const ready = req.emails.filter(e => e.to.length && !e.done);
   if (!ready.length) return;
   $("reqSend").disabled = true;
-  $("reqMsg").textContent = `Sending ${fmt(ready.length)} emails…`; $("reqMsg").className = "msg";
-  try {
-    const data = await apiCall("/requests", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ send: true, customers: ready.map(e => e.customer) }) }, { date_from: pickers.flight.from, date_to: pickers.flight.to });
-    const failed = (data.not_sent || []).filter(r => r.error !== "No email");
-    $("reqMsg").textContent = `${fmt(data.sent)} emails sent.${failed.length ? ` ${failed.length} failed: ${failed.slice(0, 3).map(f => `${f.customer} (${f.error})`).join("; ")}` : ""}`;
-    $("reqMsg").className = failed.length ? "msg err" : "msg ok";
-    load();
-  } catch (e) { $("reqMsg").textContent = `Not sent: ${e.message}`; $("reqMsg").className = "msg err"; $("reqSend").disabled = false; }
+  $("reqMsg").textContent = "Waiting for Google…"; $("reqMsg").className = "msg";
+  let token;
+  try { token = await gmailAccess(); }
+  catch (e) { $("reqMsg").textContent = `Not sent: ${e.message}`; $("reqMsg").className = "msg err"; $("reqSend").disabled = false; return; }
+  const byAwb = new Map(state.rows.map(r => [r.awb, r]));
+  const cc = [state.user.email];
+  let sent = 0;
+  const failed = [];
+  for (const [n, e] of ready.entries()) {
+    $("reqMsg").textContent = `Sending ${n + 1} of ${ready.length}…`;
+    const rows = e.awbs.map(a => byAwb.get(a) || { awb: a, route: "", flight_date: "" });
+    const ccList = cc.filter(a => !e.to.includes(a));
+    try {
+      await gmailSend(token, e.to, ccList, e.subject, rows, requestHtml(rows), requestText(rows));
+      e.done = true; sent += 1;
+      await recordSent(e.to, ccList, e.subject, rows.filter(r => byAwb.has(r.awb)));
+    } catch (err) {
+      failed.push(`${e.customer} (${err.message})`);
+      if (/permission expired/.test(err.message)) break;
+    }
+  }
+  $("reqMsg").textContent = `${fmt(sent)} emails sent.${failed.length ? ` ${failed.length} not sent: ${failed.slice(0, 3).join("; ")}. Press Send to try them again.` : ""}`;
+  $("reqMsg").className = failed.length ? "msg err" : "msg ok";
+  $("reqSend").disabled = !failed.length;
+  render();
 }
-async function runRobot() {
+function setRobotMsg(text, kind) { $("robotMsg").textContent = text || ""; $("robotMsg").className = `msg ${kind || ""}`; }
+async function openRobot() {
   $("robotBack").hidden = false;
   $("robotBody").innerHTML = "";
-  $("robotMsg").textContent = "Reading the mailbox…"; $("robotMsg").className = "msg";
+  setRobotMsg("Loading…");
+  await robotStatus();
+}
+async function robotStatus() {
   try {
-    const data = await apiCall("/robot/run", { method: "POST" });
+    const st = await apiCall("/robot/status");
+    $("robotReader").innerHTML = st.reader
+      ? `Reader: <b>${esc(st.reader)}</b> since ${esc(isoDate(new Date(st.connected_at)))}`
+      : "No reader connected yet.";
+    $("robotConnect").hidden = !!st.reader;
+    $("robotDisconnect").hidden = !st.reader || st.reader !== state.user.email;
+    $("robotRun").disabled = !st.reader || !st.ready;
+    setRobotMsg(!st.ready ? "The robot is not set up yet on the server (Google permission missing)." : "", st.ready ? "" : "err");
+  } catch (e) { setRobotMsg(`Could not read the robot status: ${e.message}`, "err"); }
+}
+// The reader gives permission once; the server keeps it to read only "AWB Input"
+function connectReader() {
+  if (!window.google || !google.accounts || !google.accounts.oauth2) { setRobotMsg("Google sign-in did not load; reload the page", "err"); return; }
+  const client = google.accounts.oauth2.initCodeClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: "https://www.googleapis.com/auth/gmail.modify",
+    ux_mode: "popup",
+    hint: state.user.email,
+    callback: async r => {
+      if (r.error || !r.code) { setRobotMsg(`Permission not given: ${r.error_description || r.error || "closed"}`, "err"); return; }
+      setRobotMsg("Connecting…");
+      try {
+        const data = await apiCall("/robot/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: r.code }) });
+        await robotStatus();
+        setRobotMsg(`Connected. In your Gmail, make a filter: to ${state.sender || "awbrecovery@gsaforce.com"} → skip the inbox, apply the label "AWB Input". The labels ${data.labels.join(", ")} are ready.`, "ok");
+      } catch (e) { setRobotMsg(`Not connected: ${e.message}`, "err"); }
+    },
+    error_callback: () => setRobotMsg("The Google window was closed or blocked (check pop-ups)", "err")
+  });
+  client.requestCode();
+}
+async function disconnectReader() {
+  try { await apiCall("/robot/disconnect", { method: "POST", body: "" }); await robotStatus(); setRobotMsg("Disconnected.", "ok"); }
+  catch (e) { setRobotMsg(`Could not disconnect: ${e.message}`, "err"); }
+}
+async function runRobot() {
+  $("robotRun").disabled = true;
+  $("robotBody").innerHTML = "";
+  setRobotMsg("Reading AWB Input…");
+  try {
+    const data = await apiCall("/robot/run", { method: "POST", body: "" });
     $("robotBody").innerHTML = (data.details || []).map(d => `<tr><td class="c-name" title="${esc(d.subject || "")}">${esc(d.subject || d.id)}</td><td><span class="c-used">${esc(d.sender || "")}</span></td>
       <td>${d.found && d.found.length ? `<span class="found">Found ${esc(d.found.join(", "))}</span>` : `<span class="c-used none" title="${esc(d.error || "")}">Error: ${esc(d.error || "")}</span>`}</td></tr>`).join("")
-      || `<tr><td colspan="3" class="empty">No new emails in Input.</td></tr>`;
-    $("robotMsg").textContent = `${fmt(data.emails)} emails read: ${fmt(data.processed)} to Processed, ${fmt(data.errors)} to Error. ${fmt((data.found || []).length)} AWBs found.`;
-    $("robotMsg").className = "msg ok";
+      || `<tr><td colspan="3" class="empty">No new emails in AWB Input.</td></tr>`;
+    setRobotMsg(`${fmt(data.emails)} emails read: ${fmt(data.processed)} to AWB Processed, ${fmt(data.errors)} to AWB Error. ${fmt((data.found || []).length)} AWBs found.`, "ok");
     load();
-  } catch (e) { $("robotMsg").textContent = `The robot could not run: ${e.message}`; $("robotMsg").className = "msg err"; }
+  } catch (e) { setRobotMsg(`The robot could not run: ${e.message}`, "err"); }
+  $("robotRun").disabled = false;
 }
 const rec = { rows: [] };
 async function openRecovered() {
@@ -1084,6 +1154,13 @@ async function saveContactRow(input) {
   const cell = tr.querySelector(".c-state");
   cell.textContent = "Saving…"; cell.className = "c-state";
   const emails = tr.querySelector('[data-field="emails"]').value.split(/[;,\s]+/).map(v => v.trim()).filter(Boolean);
+  const incomplete = emails.filter(a => !/^[^@\s<>"(),;:]+@[^@\s<>"(),;:]+\.[a-z]{2,}$/i.test(a));
+  if (incomplete.length) {
+    const msg = `${incomplete.join(", ")} is not a complete email (it needs @company.com)`;
+    cell.textContent = "Not saved"; cell.className = "c-state err"; cell.title = msg;
+    setContactsMsg(msg, "err");
+    return;
+  }
   try {
     let data;
     if (tr.dataset.customer !== undefined) {
@@ -1207,6 +1284,7 @@ function mimeMessage(to, cc, subject, html, text) {
   const boundary = "df" + Math.random().toString(36).slice(2);
   const wrap = v => b64(v).replace(/.{1,76}/g, "$&\r\n");
   return [
+    state.sender ? `From: ${state.sender}` : null,
     `To: ${to.join(", ")}`,
     cc.length ? `Cc: ${cc.join(", ")}` : null,
     `Subject: =?UTF-8?B?${b64(subject)}?=`,
@@ -1243,8 +1321,8 @@ function splitAddresses(v) {
   return [...new Set(parts)];
 }
 const goodAddress = a => /^[^@\s<>"(),;:]+@[^@\s<>"(),;:]+\.[a-z]{2,}$/i.test(a);
-async function gmailSend(token, to, cc, subject, rows) {
-  const raw = b64(mimeMessage(to, cc, subject, emailHtml(rows), emailText(rows))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function gmailSend(token, to, cc, subject, rows, html, text) {
+  const raw = b64(mimeMessage(to, cc, subject, html || emailHtml(rows), text || emailText(rows))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -1414,7 +1492,10 @@ function initAwbRecovery() {
   $("requestsBtn").addEventListener("click", openRequests);
   $("reqClose").addEventListener("click", () => { $("reqBack").hidden = true; });
   $("reqSend").addEventListener("click", sendRequests);
-  $("robotBtn").addEventListener("click", runRobot);
+  $("robotBtn").addEventListener("click", openRobot);
+  $("robotRun").addEventListener("click", runRobot);
+  $("robotConnect").addEventListener("click", connectReader);
+  $("robotDisconnect").addEventListener("click", disconnectReader);
   $("robotClose").addEventListener("click", () => { $("robotBack").hidden = true; });
   $("recoveredBtn").addEventListener("click", openRecovered);
   $("recClose").addEventListener("click", () => { $("recBack").hidden = true; });
@@ -1427,6 +1508,11 @@ function initAwbRecovery() {
   $("cBack").addEventListener("click", () => { contacts.mode = "list"; setContactsMsg(""); renderContacts(); });
   $("cApply").addEventListener("click", applySuggestions);
   $("cBody").addEventListener("input", e => {
+    if (contacts.mode === "list" && e.target.matches("input[data-field]")) {
+      const cell = e.target.closest("tr").querySelector(".c-state");
+      if (cell && cell.classList.contains("err")) { cell.textContent = ""; cell.className = "c-state"; cell.title = ""; }
+      if ($("cMsg").classList.contains("err")) setContactsMsg("");
+    }
     const t = e.target;
     if (t.dataset.sname !== undefined) contacts.suggestions[+t.dataset.sname].parent = t.value;
   });
