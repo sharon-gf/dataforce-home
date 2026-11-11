@@ -165,6 +165,10 @@
   .page-top { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
   .top-actions { display:flex; gap:8px; margin-bottom:16px; }
   .top-actions .btn { height:36px; }
+  .tools { position:relative; }
+  .tools-menu { position:absolute; right:0; top:calc(100% + 6px); z-index:40; min-width:210px; background:#fff; border:1px solid var(--line2); border-radius:10px; box-shadow:0 12px 30px rgba(13,31,60,.16); padding:6px; }
+  .tools-menu button { display:block; width:100%; text-align:left; border:0; background:none; padding:9px 12px; border-radius:7px; font:inherit; font-size:13px; font-weight:600; color:var(--text1); cursor:pointer; }
+  .tools-menu button:hover { background:var(--indigo-bg); color:var(--indigo); }
   .c-table tr.c-group td { background:#f3f5f9; border-top:2px solid var(--line2); }
   .c-table tr.c-group td.c-name { font-weight:800; font-size:12.5px; }
   .c-table tr.c-group .c-sub { font-weight:500; color:var(--text3); font-size:11px; margin-left:6px; }
@@ -257,7 +261,14 @@
     <div class="page-top">
       <div><h1>AWB Recovery</h1>
       <p class="lead" id="lead">Loading AWBs…</p></div>
-      <div class="top-actions"><button class="btn primary" id="requestsBtn" type="button" hidden title="One email per station asking for its pending AWBs, sent as awbrecovery@">Send AWB requests</button><button class="btn" id="robotBtn" type="button" hidden title="Reads the AWBs that customers sent to awbrecovery@">Search AWBs</button><button class="btn" id="recoveredBtn" type="button" title="AWBs the robot found">Recovered AWBs</button><button class="btn btn-icon" id="contactsBtn" type="button" hidden title="Customer emails used to request the AWBs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 8h2M3 12h2M3 16h2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5c.7-1.6 2-2.5 3.5-2.5s2.8.9 3.5 2.5"/></svg>Customer contacts</button></div>
+      <div class="top-actions"><div class="tools" id="tools">
+        <button class="btn" id="toolsBtn" type="button" aria-haspopup="true" aria-expanded="false">Tools ▾</button>
+        <div class="tools-menu" id="toolsMenu" hidden>
+          <button type="button" id="robotBtn" hidden>Search AWB</button>
+          <button type="button" id="recoveredBtn">AWB Recovered</button>
+          <button type="button" id="contactsBtn" hidden>Customer contacts</button>
+        </div>
+      </div></div>
     </div>
 
     <section class="kpis">
@@ -290,7 +301,7 @@
         <div class="rp" id="flightRange"><label for="flightRangeBtn">Flight range</label></div>
         <div class="rp" id="bookingRange"><label for="bookingRangeBtn">Booking range</label></div>
       </div>
-      <div class="sel-bar" id="selBar" hidden><b id="selText">0 AWBs selected</b><button class="btn" id="selClear" type="button">Clear selection</button><button class="btn" id="selCopy" type="button">Copy AWB</button><button class="btn primary" id="selEmail" type="button">Write email</button></div>
+      <div class="sel-bar" id="selBar" hidden><b id="selText">0 AWBs selected</b><button class="btn" id="selClear" type="button">Clear selection</button><button class="btn" id="selCopy" type="button">Copy AWB</button><button class="btn" id="selEmail" type="button">Write email</button><button class="btn primary" id="selRequest" type="button" hidden>Send request customer</button></div>
       <div class="table-wrap">
         <table id="groupTable" hidden>
           <thead><tr><th>GSA / Sales person / Customer / AWB</th><th class="num">AWBs</th><th class="num">Rows</th><th class="num">Over 30 d</th><th class="num">Sales USD</th></tr></thead>
@@ -322,23 +333,16 @@
 </div>
 
 <div class="modal-back" id="mailBack" hidden>
-  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
     <h2 id="mailTitle">Email about these AWBs</h2>
     <div class="muted">Sent from your Gmail as <b id="mailSender">awbrecovery@gsaforce.com</b> (<span id="mailFrom"></span>). If that alias is not set up in your Gmail ("Send mail as"), Gmail sends it from your own address. The first time, Google asks you to allow it. Separate several addresses with commas.</div>
-    <div class="view-switch" style="margin:10px 0 12px"><button class="on" id="mailModePer" type="button">One email per AWB</button><button id="mailModeOne" type="button">All in one email</button></div>
-    <div class="muted" id="mailModeNote" style="margin-bottom:10px"></div>
-    <div id="mailOneFields" hidden>
-      <div class="m-field"><label for="mailTo">To</label><input id="mailTo" type="text" placeholder="name@company.com"></div>
-      <div class="m-field"><label for="mailSubject">Subject</label><input id="mailSubject" type="text"></div>
-    </div>
+    <div class="m-field"><label for="mailTo">To</label><input id="mailTo" type="text" placeholder="name@customer.com, other@customer.com"></div>
     <div class="m-field"><label for="mailCc">CC</label><input id="mailCc" type="text"></div>
-    <div class="m-field" id="mailToAllBox"><label for="mailToAll">To for all the emails (optional, e.g. to test with your own address)</label>
-      <div style="display:flex;gap:8px"><input id="mailToAll" type="text" placeholder="name@customer.com"><button class="btn" id="mailToAllBtn" type="button">Use for all</button></div></div>
-    <label id="mailRowsLabel">Emails to send</label>
-    <div class="m-preview"><table class="m-table m-per"><thead><tr><th>AWB</th><th>Station (CargoSystem)</th><th>To</th><th>Subject</th><th></th></tr></thead><tbody id="mailRows"></tbody></table></div>
-    <label for="mailMessage">Text of each email (the AWB goes below it)</label>
+    <div class="m-field"><label for="mailSubject">Subject</label><input id="mailSubject" type="text"></div>
+    <label>Email</label>
     <div class="m-body">
       <textarea id="mailMessage" rows="7" aria-label="Email text"></textarea>
+      <div class="m-preview"><table class="m-table"><thead><tr><th>GSA</th><th>Sales person</th><th>Customer</th><th>AWB</th><th>Route</th><th class="num">Days</th></tr></thead><tbody id="mailRows"></tbody></table></div>
     </div>
     <div class="m-foot"><span class="msg" id="mailMsg"></span><button class="btn" id="mailCancel" type="button">Cancel</button><button class="btn primary" id="mailSend" type="button">Send</button></div>
   </div>
@@ -350,7 +354,8 @@
     <div class="muted" style="margin-bottom:12px">Each parent customer shows all its stations (customers as named in CargoSystem). A station uses its own emails; if it has none, the parent emails. Changes are saved when you leave the field. Only the AWB Recovery admins see this.</div>
     <div class="c-bar">
       <input type="search" id="cSearch" placeholder="Search customer or email" aria-label="Search">
-      <select id="cFilter" aria-label="Show"><option value="pending">With pending AWBs</option><option value="noemail">Pending, without email</option><option value="all">All customers</option></select>
+      <select id="cFilter" aria-label="Show"><option value="all" selected>All customers</option><option value="pending">With pending AWBs</option><option value="noemail">Pending, without email</option></select>
+      <select id="cGsa" aria-label="GSA"><option value="">All GSAs</option></select>
       <span class="muted" id="cCount"></span>
       <span class="grow"></span>
       <input type="file" id="cFile" accept=".xlsx,.xlsm" hidden>
@@ -365,9 +370,11 @@
 
 <div class="modal-back" id="reqBack" hidden>
   <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="reqTitle">
-    <h2 id="reqTitle">Send AWB requests</h2>
+    <h2 id="reqTitle">Send request customer</h2>
     <div class="muted" id="reqNote" style="margin-bottom:12px"></div>
-    <div class="c-wrap"><table class="c-table"><thead><tr><th>Station (CargoSystem)</th><th>Company</th><th class="num">AWBs</th><th>To</th><th>Subject</th></tr></thead><tbody id="reqBody"></tbody></table></div>
+    <div class="m-field"><label for="reqToAll">Send all to (optional, only to test with your own address)</label>
+      <div style="display:flex;gap:8px"><input id="reqToAll" type="text" placeholder="name@gmail.com"><button class="btn" id="reqToAllBtn" type="button">Use for all</button></div></div>
+    <div class="c-wrap"><table class="c-table"><thead><tr><th>AWB</th><th>Station (CargoSystem)</th><th>GSA</th><th>To</th><th>Subject</th><th></th></tr></thead><tbody id="reqBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="reqMsg"></span><button class="btn" id="reqClose" type="button">Close</button><button class="btn primary" id="reqSend" type="button" disabled>Send</button></div>
   </div>
 </div>
@@ -687,7 +694,7 @@ async function load() {
     state.sentAvailable = data.sent_available === true;
     $("contactsBtn").hidden = data.contacts_admin !== true;
     state.contactsAdmin = data.contacts_admin === true;
-    $("requestsBtn").hidden = data.contacts_admin !== true;
+    $("selRequest").hidden = data.contacts_admin !== true;
     $("robotBtn").hidden = data.contacts_admin !== true;
     state.sender = data.sender || "awbrecovery@gsaforce.com";
     state.rows = data.rows.map(r => ({ ...r, sent_count: Number(r.sent_count || 0), flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
@@ -720,61 +727,20 @@ function exportCsv() {
 // Email popup: the AWBs checked in the list, sent from the signed-in user's Gmail
 function selectedRows() { return state.rows.filter(r => state.selected.has(r.awb)); }
 function setMailMsg(text, kind) { const m = $("mailMsg"); m.textContent = text || ""; m.className = `msg ${kind || ""}`; }
-const mail = { rows: [] };
-async function openMail() {
+function openMail() {
   const rows = selectedRows();
   if (!rows.length) return;
-  $("mailMessage").value = `Estimados/as,\n\nMe pueden ayudar con la recuperación de la guía de los embarques de la lista de abajo.\n\nRegards\n${state.user.name || ""}`.trim();
+  $("mailSubject").value = mailSubject(rows);
+  $("mailMessage").value = `Dear all,\n\nCould you please help us recover the AWBs of the shipments listed below?\n\nRegards\n${state.user.name || ""}`.trim();
   $("mailFrom").textContent = state.user.email;
   $("mailSender").textContent = state.sender || "awbrecovery@gsaforce.com";
-  $("mailCc").value = state.user.email;
-  $("mailToAll").value = "";
-  mail.rows = rows.map(r => ({ row: r, to: "", subject: mailSubject([r]), done: false, error: "" }));
-  mail.one = { to: "", done: false };
   $("mailTo").value = "";
-  $("mailSubject").value = mailSubject(rows);
-  // The station's emails, or the parent's (Customer contacts, admins only)
-  if (state.contactsAdmin) {
-    try { takeContacts(await contactsCall("", {})); mail.rows.forEach(m => { m.to = usedEmails(m.row.customer).emails.join(", "); }); }
-    catch (e) { console.warn("Contacts not loaded", e); }
-  }
-  setMailMode("per");
+  $("mailCc").value = "";
+  $("mailRows").innerHTML = rows.map(r => `<tr><td>${esc(r.gsa)}</td><td>${esc(r.sales_person)}</td><td>${esc(r.customer)}</td><td class="awb">${esc(r.awb)}</td><td>${esc(r.route)}</td><td class="num">${r.days ?? "-"}</td></tr>`).join("");
+  setMailMsg(`${fmt(rows.length)} AWB${rows.length === 1 ? "" : "s"} in this email`);
   $("mailSend").disabled = false;
   $("mailBack").hidden = false;
-}
-// "per": one email per AWB to its station or parent; "one": all the AWBs in one email
-function setMailMode(mode) {
-  mail.mode = mode;
-  const per = mode === "per";
-  $("mailModePer").classList.toggle("on", per);
-  $("mailModeOne").classList.toggle("on", !per);
-  $("mailOneFields").hidden = per;
-  $("mailToAllBox").hidden = !per;
-  $("mailRowsLabel").textContent = per ? "Emails to send" : "AWBs in the email";
-  $("mailModeNote").textContent = per
-    ? "Each AWB goes in its own email, to the emails of its station, or of its parent customer when the station has none. You can change them."
-    : "One email with all the AWBs below, to the people you write in To.";
-  renderMailRows();
-  if (per) {
-    const missing = mail.rows.filter(m => !m.to && !m.done).length;
-    setMailMsg(`${fmt(mail.rows.length)} email${mail.rows.length === 1 ? "" : "s"}, one per AWB.${missing ? ` ${missing} without email: write it in To.` : ""}`);
-  } else {
-    setMailMsg(`1 email with ${fmt(mail.rows.length)} AWB${mail.rows.length === 1 ? "" : "s"}.`);
-    $("mailTo").focus();
-  }
-}
-function renderMailRows() {
-  if (mail.mode === "one") {
-    $("mailRows").closest("table").querySelector("thead").innerHTML = `<tr><th>AWB</th><th>Station (CargoSystem)</th><th>GSA</th><th>Route</th><th class="num">Days</th></tr>`;
-    $("mailRows").innerHTML = mail.rows.map(m => `<tr><td class="awb">${esc(m.row.awb)}</td><td class="c-name" title="${esc(m.row.customer)}">${esc(m.row.customer)}</td><td>${esc(m.row.gsa)}</td><td>${esc(m.row.route)}</td><td class="num">${m.row.days ?? "-"}</td></tr>`).join("");
-    return;
-  }
-  $("mailRows").closest("table").querySelector("thead").innerHTML = `<tr><th>AWB</th><th>Station (CargoSystem)</th><th>To</th><th>Subject</th><th></th></tr>`;
-  $("mailRows").innerHTML = mail.rows.map((m, i) => `<tr>
-    <td class="awb">${esc(m.row.awb)}</td><td class="c-name" title="${esc(m.row.customer)}">${esc(m.row.customer)}</td>
-    <td><input class="m-to" data-mi="${i}" data-mf="to" value="${esc(m.to)}" placeholder="name@customer.com" ${m.done ? "disabled" : ""} aria-label="To for ${esc(m.row.awb)}"></td>
-    <td><input class="m-subj" data-mi="${i}" data-mf="subject" value="${esc(m.subject)}" ${m.done ? "disabled" : ""} aria-label="Subject for ${esc(m.row.awb)}"></td>
-    <td class="m-st ${m.done ? "ok" : m.error ? "err" : ""}" title="${esc(m.error)}">${m.done ? "Sent" : m.error ? "Not sent" : ""}</td></tr>`).join("");
+  $("mailTo").focus();
 }
 // ---- Robot: requests to customers, search AWBs (reader Gmail), recovered AWBs ----
 async function apiCall(path, options, extra) {
@@ -787,30 +753,34 @@ async function apiCall(path, options, extra) {
   }
   return data;
 }
-const req = { emails: [] };
+// One email per selected AWB, to its station's emails or its parent's (Customer contacts)
+const req = { rows: [] };
 async function openRequests() {
+  const rows = selectedRows();
+  if (!rows.length) return;
   $("reqBack").hidden = false;
   $("reqBody").innerHTML = "";
   $("reqSend").disabled = true;
-  $("reqNote").textContent = "";
-  $("reqMsg").textContent = "Preparing the emails…"; $("reqMsg").className = "msg";
-  try {
-    const data = await apiCall("/requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ send: false }) },
-      { date_from: pickers.flight.from, date_to: pickers.flight.to });
-    req.emails = data.emails || [];
-    const ready = req.emails.filter(e => e.to.length);
-    const awbs = ready.reduce((t, e) => t + e.awbs.length, 0);
-    $("reqNote").textContent = `One email per station with its pending AWBs (flight dates of the page), sent from your Gmail as ${data.sender || state.sender} with you in CC. Subject: company | Copy AWB. Text: Dear Customer, please send copy of AWB below. Best Regards. Stations without email are skipped: add them in Customer contacts.`;
-    $("reqBody").innerHTML = req.emails.map(e => `<tr><td class="c-name" title="${esc(e.customer)}">${esc(e.customer)}</td><td>${esc(e.company)}</td><td class="num">${e.awbs.length}</td>
-      <td>${e.to.length ? `<span class="c-used" title="${esc(e.to.join("; "))}">${esc(e.to.join("; "))}${e.via === "parent" ? ' <span class="via">(parent)</span>' : ""}</span>` : '<span class="c-used none">No email: skipped</span>'}</td>
-      <td><span class="c-used" title="${esc(e.subject)}">${esc(e.subject)}</span></td></tr>`).join("") || `<tr><td colspan="5" class="empty">No pending AWBs to request.</td></tr>`;
-    $("reqSend").textContent = `Send ${fmt(ready.length)} email${ready.length === 1 ? "" : "s"}`;
-    $("reqSend").disabled = !ready.length;
-    $("reqMsg").textContent = `${fmt(ready.length)} emails, ${fmt(awbs)} AWBs. ${fmt(req.emails.length - ready.length)} stations without email.`;
-    $("reqMsg").className = "msg";
-  } catch (e) { $("reqMsg").textContent = `Could not prepare: ${e.message}`; $("reqMsg").className = "msg err"; }
+  $("reqToAll").value = "";
+  $("reqNote").textContent = `One email per AWB, sent from your Gmail as ${state.sender || "awbrecovery@gsaforce.com"} with you in CC. Each AWB goes to the emails of its station, or of its parent customer when the station has none. Text: Dear Customer, please send copy of AWB below. Best Regards.`;
+  setReqMsg("Reading the customer emails…");
+  try { takeContacts(await contactsCall("", {})); }
+  catch (e) { setReqMsg(`Could not read Customer contacts: ${e.message}`, "err"); return; }
+  req.rows = rows.map(r => ({ row: r, to: usedEmails(r.customer).emails.join(", "), via: usedEmails(r.customer).via, subject: mailSubject([r]), done: false, error: "" }));
+  renderRequests();
 }
-// "Dear Customer, please send copy of AWB below" with the station's AWBs
+function setReqMsg(text, kind) { $("reqMsg").textContent = text || ""; $("reqMsg").className = `msg ${kind || ""}`; }
+function renderRequests() {
+  $("reqBody").innerHTML = req.rows.map((m, i) => `<tr><td class="awb">${esc(m.row.awb)}</td><td class="c-name" title="${esc(m.row.customer)}">${esc(m.row.customer)}</td><td>${esc(m.row.gsa)}</td>
+    <td><input data-ri="${i}" value="${esc(m.to)}" placeholder="No email: write one or add it in Customer contacts" ${m.done ? "disabled" : ""} aria-label="To for ${esc(m.row.awb)}" style="min-width:260px"></td>
+    <td><span class="c-used" title="${esc(m.subject)}">${esc(m.subject)}</span></td>
+    <td class="c-state ${m.done ? "ok" : m.error ? "err" : ""}" title="${esc(m.error)}">${m.done ? "Sent" : m.error ? "Not sent" : ""}</td></tr>`).join("");
+  const left = req.rows.filter(m => !m.done);
+  const noEmail = left.filter(m => !m.to.trim()).length;
+  $("reqSend").textContent = `Send ${fmt(left.length - noEmail)} email${left.length - noEmail === 1 ? "" : "s"}`;
+  $("reqSend").disabled = !(left.length - noEmail);
+  setReqMsg(`${fmt(req.rows.length)} AWBs, one email each.${noEmail ? ` ${noEmail} without email will be skipped.` : ""}`, noEmail ? "err" : "");
+}
 function requestHtml(rows) {
   const th = ["AWB", "Route", "Flight date"].map(h => `<th style="text-align:left;padding:7px 12px;border-bottom:1px solid #d5dbe5;color:#64748b;font-weight:600">${h}</th>`).join("");
   const body = rows.map((r, i) => `<tr style="background:${i % 2 ? "#edf0f4" : "#ffffff"}">${[r.awb, r.route, String(r.flight_date || "").slice(0, 10)].map(c => `<td style="padding:7px 12px">${esc(c)}</td>`).join("")}</tr>`).join("");
@@ -821,34 +791,37 @@ function requestText(rows) {
     ...rows.map(r => `${r.awb}\t${r.route}\t${String(r.flight_date || "").slice(0, 10)}`), "", "Best Regards"].join("\n");
 }
 async function sendRequests() {
-  const ready = req.emails.filter(e => e.to.length && !e.done);
-  if (!ready.length) return;
+  const ready = req.rows.filter(m => !m.done && m.to.trim());
+  for (const m of ready) {
+    m.toList = splitAddresses(m.to);
+    const bad = m.toList.filter(a => !goodAddress(a));
+    m.error = !m.toList.length ? "No email" : bad.length ? `Check these addresses: ${bad.join(", ")}` : m.toList.length > 19 ? "Up to 20 recipients" : "";
+  }
+  const wrong = ready.find(m => m.error);
+  if (wrong) { renderRequests(); setReqMsg(`${wrong.row.awb}: ${wrong.error}`, "err"); return; }
   $("reqSend").disabled = true;
-  $("reqMsg").textContent = "Waiting for Google…"; $("reqMsg").className = "msg";
+  setReqMsg("Waiting for Google…");
   let token;
   try { token = await gmailAccess(); }
-  catch (e) { $("reqMsg").textContent = `Not sent: ${e.message}`; $("reqMsg").className = "msg err"; $("reqSend").disabled = false; return; }
-  const byAwb = new Map(state.rows.map(r => [r.awb, r]));
-  const cc = [state.user.email];
+  catch (e) { setReqMsg(`Not sent: ${e.message}`, "err"); $("reqSend").disabled = false; return; }
   let sent = 0;
-  const failed = [];
-  for (const [n, e] of ready.entries()) {
-    $("reqMsg").textContent = `Sending ${n + 1} of ${ready.length}…`;
-    const rows = e.awbs.map(a => byAwb.get(a) || { awb: a, route: "", flight_date: "" });
-    const ccList = cc.filter(a => !e.to.includes(a));
+  for (const [n, m] of ready.entries()) {
+    setReqMsg(`Sending ${n + 1} of ${ready.length}…`);
+    const cc = [state.user.email].filter(a => !m.toList.includes(a));
     try {
-      await gmailSend(token, e.to, ccList, e.subject, rows, requestHtml(rows), requestText(rows));
-      e.done = true; sent += 1;
-      await recordSent(e.to, ccList, e.subject, rows.filter(r => byAwb.has(r.awb)));
+      await gmailSend(token, m.toList, cc, m.subject, [m.row], requestHtml([m.row]), requestText([m.row]));
+      m.done = true; m.error = ""; sent += 1;
+      state.selected.delete(m.row.awb);
+      await recordSent(m.toList, cc, m.subject, [m.row]);
     } catch (err) {
-      failed.push(`${e.customer} (${err.message})`);
+      m.error = err.message;
       if (/permission expired/.test(err.message)) break;
     }
   }
-  $("reqMsg").textContent = `${fmt(sent)} emails sent.${failed.length ? ` ${failed.length} not sent: ${failed.slice(0, 3).join("; ")}. Press Send to try them again.` : ""}`;
-  $("reqMsg").className = failed.length ? "msg err" : "msg ok";
-  $("reqSend").disabled = !failed.length;
+  renderRequests();
   render();
+  const failed = req.rows.filter(m => !m.done && m.to.trim());
+  setReqMsg(`${fmt(sent)} email${sent === 1 ? "" : "s"} sent.${failed.length ? ` ${failed.length} not sent: ${failed[0].row.awb} (${failed[0].error}). Press Send to try again.` : ""}`, failed.length ? "err" : "ok");
 }
 function setRobotMsg(text, kind) { $("robotMsg").textContent = text || ""; $("robotMsg").className = `msg ${kind || ""}`; }
 async function openRobot() {
@@ -970,6 +943,13 @@ async function openContacts() {
   $("cBody").innerHTML = "";
   try {
     takeContacts(await contactsCall("", {}));
+    await loadCustomerNames();
+    const gsas = new Set();
+    (contacts.names || new Map()).forEach(c => c.gsa && c.gsa.split(", ").forEach(g => gsas.add(g)));
+    state.rows.forEach(r => r.gsa && gsas.add(r.gsa));
+    const current = $("cGsa").value;
+    $("cGsa").innerHTML = `<option value="">All GSAs</option>` + [...gsas].sort().map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join("");
+    $("cGsa").value = current;
     setContactsMsg("");
     renderContacts();
     $("cSearch").focus();
@@ -1014,8 +994,20 @@ function usedCell(name) {
 }
 function pendingByCustomer() {
   const map = new Map();
-  state.rows.forEach(r => { const k = ckey(r.customer); const it = map.get(k) || { name: r.customer, n: 0 }; it.n += 1; map.set(k, it); });
+  state.rows.forEach(r => { const k = ckey(r.customer); const it = map.get(k) || { name: r.customer, n: 0, gsa: r.gsa }; it.n += 1; map.set(k, it); });
   return map;
+}
+// Every customer of CargoSystem since 2025, with its GSA (read once per page)
+async function loadCustomerNames() {
+  if (contacts.names) return;
+  try {
+    const data = await contactsCall("/customer_names", {});
+    contacts.names = new Map((data.customers || (data.names || []).map(n => ({ name: n, gsa: [] }))).map(c => [ckey(c.name), { name: c.name, gsa: (c.gsa || []).join(", ") }]));
+  } catch (e) { console.warn("Customer names not loaded", e); contacts.names = new Map(); }
+}
+function gsaOf(k) {
+  const p = pendingByCustomer().get(k);
+  return (p && p.gsa) || ((contacts.names || new Map()).get(k) || {}).gsa || "";
 }
 function parentList() {
   const names = new Map([...contacts.parents.values()].map(p => [ckey(p.parent), p.parent]));
@@ -1033,18 +1025,20 @@ function renderContacts() {
   const filter = $("cFilter").value;
   const pending = pendingByCustomer();
   fillParentOptions();
+  const gsaPick = $("cGsa").value;
   const names = new Map();
   pending.forEach((v, k) => names.set(k, v.name));
   contacts.customers.forEach((c, k) => { if (!names.has(k)) names.set(k, c.customer); });
-  const stations = [...names.entries()].map(([k, name]) => ({ k, name, n: (pending.get(k) || {}).n || 0, c: contacts.customers.get(k) || {} }));
+  (contacts.names || new Map()).forEach((c, k) => { if (!names.has(k)) names.set(k, c.name); });
+  const stations = [...names.entries()].map(([k, name]) => ({ k, name, n: (pending.get(k) || {}).n || 0, c: contacts.customers.get(k) || {}, gsa: gsaOf(k) }));
   const groups = new Map();
   parentList().forEach((name, k) => groups.set(k, { k, name, p: contacts.parents.get(k) || {}, kids: [] }));
   const orphans = { k: "", name: "", kids: [] };
   stations.forEach(x => (x.c.parent ? groups.get(ckey(x.c.parent)) : orphans).kids.push(x));
-  const keep = (x, g) => (filter === "all" || (x.n > 0 && (filter === "pending" || !usedEmails(x.name).emails.length)))
+  const keep = (x, g) => (!gsaPick || x.gsa.split(", ").includes(gsaPick)) && (filter === "all" || (x.n > 0 && (filter === "pending" || !usedEmails(x.name).emails.length)))
     && (!search || x.name.toLowerCase().includes(search) || emailList(x.c.emails).includes(search) || (g && g.name.toLowerCase().includes(search)) || (g && emailList(g.p.emails).includes(search)));
   const childRow = x => `<tr class="c-child" data-customer="${esc(x.name)}">
-      <td class="c-name" title="${esc(x.name)}">${esc(x.name)}</td><td class="num">${x.n || "-"}</td>
+      <td class="c-name" title="${esc(x.name)}">${esc(x.name)}</td><td>${esc(x.gsa)}</td><td class="num">${x.n || "-"}</td>
       <td><input class="c-parent" list="cParents" data-field="parent" value="${esc(x.c.parent || "")}" placeholder="-" aria-label="Parent customer of ${esc(x.name)}"></td>
       <td><input data-field="emails" value="${esc(emailList(x.c.emails))}" placeholder="${x.c.parent ? "empty: uses the parent emails" : "email@customer.com; other@customer.com"}" aria-label="Emails of ${esc(x.name)}"></td>
       <td>${usedCell(x.name)}</td><td class="c-state"></td></tr>`;
@@ -1055,7 +1049,7 @@ function renderContacts() {
     shownParents += 1; shownStations += kids.length;
     const total = g.kids.reduce((t, x) => t + x.n, 0);
     html += `<tr class="c-group" data-parent="${esc(g.name)}">
-      <td class="c-name" title="${esc(g.name)}">${esc(g.name)}<span class="c-sub">${g.kids.length} station${g.kids.length === 1 ? "" : "s"}</span></td><td class="num"><b>${total || "-"}</b></td>
+      <td class="c-name" title="${esc(g.name)}">${esc(g.name)}<span class="c-sub">${g.kids.length} station${g.kids.length === 1 ? "" : "s"}</span></td><td class="c-group-note">${esc([...new Set(g.kids.map(x => x.gsa).filter(Boolean))].join(", "))}</td><td class="num"><b>${total || "-"}</b></td>
       <td class="c-group-note">Parent customer</td>
       <td><input data-field="emails" value="${esc(emailList(g.p.emails))}" placeholder="Parent email, for stations without their own" aria-label="Emails of parent ${esc(g.name)}"></td>
       <td class="c-group-note">Used by stations with no email</td><td class="c-state"></td></tr>` + kids.map(childRow).join("");
@@ -1063,11 +1057,11 @@ function renderContacts() {
   const lonely = orphans.kids.filter(x => keep(x, null)).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
   if (lonely.length) {
     shownStations += lonely.length;
-    html += `<tr class="c-group c-nogroup"><td class="c-name" colspan="6">Without parent<span class="c-sub">${lonely.length} customers · write a parent name or use Suggest parents</span></td></tr>`
-      + lonely.slice(0, 600).map(childRow).join("");
+    html += `<tr class="c-group c-nogroup"><td class="c-name" colspan="7">Without parent<span class="c-sub">${lonely.length} customers · write a parent name or use Suggest parents</span></td></tr>`
+      + lonely.slice(0, 3000).map(childRow).join("");
   }
-  $("cHead").innerHTML = `<tr><th>Parent / station (CargoSystem)${RESIZER}</th><th class="num">Pending AWBs</th><th>Parent customer</th><th>Emails</th><th>Email that will be used</th><th></th></tr>`;
-  $("cBody").innerHTML = html || `<tr><td colspan="6" class="empty">No customers match.</td></tr>`;
+  $("cHead").innerHTML = `<tr><th>Parent / station (CargoSystem)${RESIZER}</th><th>GSA</th><th class="num">Pending AWBs</th><th>Parent customer</th><th>Emails</th><th>Email that will be used</th><th></th></tr>`;
+  $("cBody").innerHTML = html || `<tr><td colspan="7" class="empty">No customers match.</td></tr>`;
   $("cCount").textContent = `${fmt(shownParents)} parents · ${fmt(shownStations)} stations`;
 }
 
@@ -1114,8 +1108,8 @@ async function openSuggestions() {
   setContactsMsg("Reading the customers of CargoSystem…");
   $("cBody").innerHTML = "";
   let history = [];
-  try { history = (await contactsCall("/customer_names", {})).names || []; }
-  catch (e) { console.warn("Customer names not available", e); }
+  await loadCustomerNames();
+  history = [...(contacts.names || new Map()).values()].map(c => c.name);
   contacts.suggestions = buildSuggestions(history);
   const own = contacts.suggestions.filter(g => g.own).length;
   setContactsMsg(contacts.suggestions.length
@@ -1187,7 +1181,7 @@ async function saveContactRow(input) {
     } else {
       tr.querySelector('[data-field="emails"]').value = emailList((contacts.parents.get(ckey(tr.dataset.parent)) || {}).emails);
     }
-    document.querySelectorAll("#cBody tr.c-child").forEach(row => { row.children[4].innerHTML = usedCell(row.dataset.customer); });
+    document.querySelectorAll("#cBody tr.c-child").forEach(row => { row.children[5].innerHTML = usedCell(row.dataset.customer); });
     cell.textContent = "Saved"; cell.className = "c-state ok";
   } catch (e) {
     cell.textContent = "Not saved"; cell.className = "c-state err"; cell.title = e.message;
@@ -1332,14 +1326,14 @@ async function gmailSend(token, to, cc, subject, rows, html, text) {
   if (response.status === 401) { gmailToken = null; throw new Error("the Google permission expired. Press Send again"); }
   if (!response.ok) throw new Error((data.error && data.error.message) || `Gmail answered with an error (${response.status})`);
 }
-async function sendAllInOne() {
+async function sendMail() {
   const to = splitAddresses($("mailTo").value);
   const cc = splitAddresses($("mailCc").value).filter(a => !to.includes(a));
   const subject = $("mailSubject").value.replace(/[\r\n]+/g, " ").trim();
-  const rows = mail.rows.filter(m => !m.done).map(m => m.row);
-  if (!rows.length) { closeMail(); return; }
+  const rows = selectedRows();
   if (!to.length) { setMailMsg("Add at least one recipient in To.", "err"); return; }
   if (!subject) { setMailMsg("The subject is empty.", "err"); return; }
+  if (!rows.length) { setMailMsg("No AWBs selected.", "err"); return; }
   const bad = [...to, ...cc].filter(a => !goodAddress(a));
   if (bad.length) { setMailMsg(`Check these addresses: ${bad.join(", ")}`, "err"); return; }
   if (to.length + cc.length > 20) { setMailMsg("Up to 20 recipients.", "err"); return; }
@@ -1350,57 +1344,12 @@ async function sendAllInOne() {
     setMailMsg("Sending…");
     await gmailSend(token, to, cc, subject, rows);
     const recorded = await recordSent(to, cc, subject, rows);
-    mail.rows.forEach(m => { if (rows.includes(m.row)) { m.done = true; state.selected.delete(m.row.awb); } });
     setMailMsg(recorded ? `Sent from ${state.user.email} to ${to.join(", ")}` : `Sent to ${to.join(", ")}. It could not be marked in the Action column.`, "ok");
+    state.selected.clear();
     render();
     setTimeout(closeMail, 1500);
   } catch (e) {
     setMailMsg(`Not sent: ${e.message}`, "err");
-    $("mailSend").disabled = false;
-  }
-}
-async function sendMail() {
-  if (mail.mode === "one") { await sendAllInOne(); return; }
-  const pending = mail.rows.filter(m => !m.done);
-  if (!pending.length) { closeMail(); return; }
-  const ccAll = splitAddresses($("mailCc").value);
-  // Check everything before sending anything
-  for (const m of pending) {
-    m.toList = splitAddresses(m.to);
-    m.ccList = ccAll.filter(a => !m.toList.includes(a));
-    m.subject = m.subject.replace(/[\r\n]+/g, " ").trim();
-    const bad = [...m.toList, ...m.ccList].filter(a => !goodAddress(a));
-    m.error = !m.toList.length ? "No email in To" : !m.subject ? "The subject is empty"
-      : bad.length ? `Check these addresses: ${bad.join(", ")}` : m.toList.length + m.ccList.length > 20 ? "Up to 20 recipients" : "";
-  }
-  const wrong = pending.filter(m => m.error);
-  if (wrong.length) { renderMailRows(); setMailMsg(`${wrong[0].row.awb}: ${wrong[0].error}`, "err"); return; }
-  $("mailSend").disabled = true;
-  setMailMsg("Waiting for Google…");
-  let token;
-  try { token = await gmailAccess(); }
-  catch (e) { setMailMsg(`Not sent: ${e.message}`, "err"); $("mailSend").disabled = false; return; }
-  let sent = 0, notRecorded = 0;
-  for (const [n, m] of pending.entries()) {
-    setMailMsg(`Sending ${n + 1} of ${pending.length}…`);
-    try {
-      await gmailSend(token, m.toList, m.ccList, m.subject, [m.row]);
-      m.done = true; m.error = ""; sent += 1;
-      state.selected.delete(m.row.awb);
-      if (!(await recordSent(m.toList, m.ccList, m.subject, [m.row]))) notRecorded += 1;
-    } catch (e) {
-      m.error = e.message;
-      if (/permission expired/.test(e.message)) break;
-    }
-    renderMailRows();
-  }
-  render();
-  const failed = mail.rows.filter(m => !m.done);
-  if (!failed.length) {
-    setMailMsg(`${fmt(sent)} email${sent === 1 ? "" : "s"} sent from ${state.user.email}.${notRecorded ? ` ${notRecorded} could not be marked in the Action column.` : ""}`, "ok");
-    setTimeout(closeMail, 2000);
-  } else {
-    setMailMsg(`${fmt(sent)} sent, ${fmt(failed.length)} not sent: ${failed[0].row.awb} (${failed[0].error || "not tried"}). Press Send to try the rest again.`, "err");
     $("mailSend").disabled = false;
   }
 }
@@ -1484,12 +1433,13 @@ function initAwbRecovery() {
   $("selCopy").addEventListener("click", copyAwbs);
   $("mailCancel").addEventListener("click", closeMail);
   $("mailSend").addEventListener("click", sendMail);
-  $("mailRows").addEventListener("input", e => { const t = e.target; if (t.dataset.mi !== undefined) mail.rows[+t.dataset.mi][t.dataset.mf] = t.value; });
-  $("mailModePer").addEventListener("click", () => setMailMode("per"));
-  $("mailModeOne").addEventListener("click", () => setMailMode("one"));
-  $("mailToAllBtn").addEventListener("click", () => { const v = $("mailToAll").value.trim(); if (!v) return; mail.rows.forEach(m => { if (!m.done) m.to = v; }); renderMailRows(); });
   $("contactsBtn").addEventListener("click", () => { contacts.mode = "list"; openContacts(); });
-  $("requestsBtn").addEventListener("click", openRequests);
+  $("selRequest").addEventListener("click", openRequests);
+  $("reqBody").addEventListener("input", e => { const t = e.target; if (t.dataset.ri !== undefined) req.rows[+t.dataset.ri].to = t.value; });
+  $("reqToAllBtn").addEventListener("click", () => { const v = $("reqToAll").value.trim(); if (!v) return; req.rows.forEach(m => { if (!m.done) m.to = v; }); renderRequests(); });
+  $("toolsBtn").addEventListener("click", e => { e.stopPropagation(); const open = $("toolsMenu").hidden; $("toolsMenu").hidden = !open; $("toolsBtn").setAttribute("aria-expanded", String(open)); });
+  $("toolsMenu").addEventListener("click", () => { $("toolsMenu").hidden = true; $("toolsBtn").setAttribute("aria-expanded", "false"); });
+  document.addEventListener("click", e => { if (!e.composedPath().includes($("tools"))) { $("toolsMenu").hidden = true; $("toolsBtn").setAttribute("aria-expanded", "false"); } });
   $("reqClose").addEventListener("click", () => { $("reqBack").hidden = true; });
   $("reqSend").addEventListener("click", sendRequests);
   $("robotBtn").addEventListener("click", openRobot);
@@ -1523,6 +1473,7 @@ function initAwbRecovery() {
   });
   $("cSearch").addEventListener("input", renderContacts);
   $("cFilter").addEventListener("change", renderContacts);
+  $("cGsa").addEventListener("change", renderContacts);
   $("cBody").addEventListener("change", e => { if (contacts.mode === "list" && e.target.matches("input[data-field]")) saveContactRow(e.target); });
   $("cImport").addEventListener("click", () => $("cFile").click());
   $("cFile").addEventListener("change", e => importContacts(e.target.files[0]));
