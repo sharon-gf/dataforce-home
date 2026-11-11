@@ -135,10 +135,14 @@
   tbody tr:hover td { background:#f5f7fb; }
   .awb { color:var(--indigo); font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .customer { max-width:220px; overflow:hidden; text-overflow:ellipsis; }
+  #listTable { --cust-w:220px; }
+  #listTable .customer { max-width:var(--cust-w); }
+  #listTable th[data-sort="customer"] { position:sticky; }
+  #listTable.cust-set .customer { min-width:var(--cust-w); }
   #listTable th, #listTable td { padding:9px 8px; }
   #listTable .pick-col { padding-right:0; }
-  @media (max-width:1600px) { #listTable th, #listTable td { padding:8px 6px; font-size:12px; } #listTable .pick-col { padding-right:0; } #listTable .customer { max-width:170px; } }
-  @media (max-width:1300px) { #listTable .customer { max-width:130px; } }
+  @media (max-width:1600px) { #listTable th, #listTable td { padding:8px 6px; font-size:12px; } #listTable .pick-col { padding-right:0; } #listTable:not(.cust-set) { --cust-w:170px; } }
+  @media (max-width:1300px) { #listTable:not(.cust-set) { --cust-w:130px; } }
   .days-warn { color:var(--amber); font-weight:700; }
   .days-bad { color:var(--red); font-weight:700; }
   .muted { color:var(--text3); font-size:12px; }
@@ -312,7 +316,7 @@
             <th class="pick-col"><input type="checkbox" id="pickAll" aria-label="Select all AWBs shown"></th>
             <th class="sortable" data-sort="gsa">GSA</th>
             <th class="sortable" data-sort="sales_person">Sales person</th>
-            <th class="sortable" data-sort="customer">Customer</th>
+            <th class="sortable" data-sort="customer">Customer<span class="c-resize" id="custResize" title="Drag to make the column wider"></span></th>
             <th class="sortable" data-sort="awb">AWB</th>
             <th class="sortable" data-sort="route">Route</th>
             <th class="sortable num" data-sort="days">Days</th>
@@ -1535,6 +1539,28 @@ function initAwbRecovery() {
     const row = e.target.closest(".g-row"); if (!row) return;
     state.open.has(row.dataset.key) ? state.open.delete(row.dataset.key) : state.open.add(row.dataset.key);
     render();
+  });
+  // Customer column: drag the edge of its title to see longer names; remembered in this browser
+  const setCustWidth = px => { const w = Math.max(110, Math.min(700, Math.round(px))); $("listTable").style.setProperty("--cust-w", `${w}px`); $("listTable").classList.add("cust-set"); return w; };
+  try { const w = Number(localStorage.getItem("awb_recovery_cust_w")); if (w) setCustWidth(w); } catch (err) {}
+  $("custResize").addEventListener("click", e => e.stopPropagation());
+  $("custResize").addEventListener("mousedown", e => {
+    e.preventDefault(); e.stopPropagation();
+    const th = e.target.closest("th"), startX = e.clientX, startW = th.getBoundingClientRect().width;
+    let w = startW;
+    document.body.classList.add("c-resizing");
+    const move = ev => { w = setCustWidth(startW + ev.clientX - startX); };
+    const up = () => {
+      document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up);
+      document.body.classList.remove("c-resizing");
+      try { localStorage.setItem("awb_recovery_cust_w", String(w)); } catch (err) {}
+    };
+    document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+  });
+  $("custResize").addEventListener("dblclick", e => {
+    e.stopPropagation();
+    $("listTable").style.removeProperty("--cust-w"); $("listTable").classList.remove("cust-set");
+    try { localStorage.removeItem("awb_recovery_cust_w"); } catch (err) {}
   });
   document.querySelectorAll("th.sortable").forEach(th => th.addEventListener("click", () => {
     if (state.sort === th.dataset.sort) state.dir *= -1; else { state.sort = th.dataset.sort; state.dir = 1; }
