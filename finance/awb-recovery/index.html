@@ -169,10 +169,40 @@
   .page-top { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
   .top-actions { display:flex; gap:8px; margin-bottom:16px; }
   .top-actions .btn { height:36px; }
+  .top-actions { align-items:center; }
+  .top-actions[hidden] { display:none; }
+  .top-btn { display:inline-flex; align-items:center; gap:7px; height:38px; padding:0 15px; border-radius:10px; border:1px solid var(--line2); background:#fff; color:var(--text1); font:inherit; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 1px 2px rgba(13,31,60,.06); transition:border-color .15s, color .15s, box-shadow .15s; }
+  .top-btn svg { width:16px; height:16px; flex:none; }
+  .top-btn:hover:not(:disabled) { border-color:var(--indigo); color:var(--indigo); box-shadow:0 4px 12px rgba(26,86,219,.12); }
+  .top-btn:disabled { opacity:.6; cursor:progress; }
+  .top-btn.settings { background:linear-gradient(135deg,#1a56db,#3b7bf0); border-color:#1a56db; color:#fff; }
+  .top-btn.settings:hover:not(:disabled) { color:#fff; box-shadow:0 6px 16px rgba(26,86,219,.3); }
+  .top-btn .chev { font-size:10px; opacity:.85; }
+  .top-btn.spin svg { animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .top-msg { font-size:12px; color:var(--text3); max-width:330px; text-align:right; }
+  .top-msg.ok { color:var(--teal); } .top-msg.err { color:var(--red); }
   .tools { position:relative; }
-  .tools-menu { position:absolute; right:0; top:calc(100% + 6px); z-index:40; min-width:210px; background:#fff; border:1px solid var(--line2); border-radius:10px; box-shadow:0 12px 30px rgba(13,31,60,.16); padding:6px; }
-  .tools-menu button { display:block; width:100%; text-align:left; border:0; background:none; padding:9px 12px; border-radius:7px; font:inherit; font-size:13px; font-weight:600; color:var(--text1); cursor:pointer; }
+  .tools-menu { position:absolute; right:0; top:calc(100% + 8px); z-index:40; min-width:250px; background:#fff; border:1px solid var(--line2); border-radius:12px; box-shadow:0 14px 34px rgba(13,31,60,.18); padding:6px; }
+  .tools-menu button { display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:0; background:none; padding:10px 12px; border-radius:8px; font:inherit; font-size:13px; font-weight:600; color:var(--text1); cursor:pointer; }
+  .tools-menu button svg { width:16px; height:16px; color:var(--indigo); flex:none; }
   .tools-menu button:hover { background:var(--indigo-bg); color:var(--indigo); }
+  .mb-tabs { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .mb-tabs button { border:1px solid var(--line2); background:#fff; border-radius:999px; padding:6px 14px; font:inherit; font-size:12.5px; font-weight:700; color:var(--text2); cursor:pointer; }
+  .mb-tabs button.on { background:var(--indigo); border-color:var(--indigo); color:#fff; }
+  .mb-tabs button.t-err.on { background:var(--red); border-color:var(--red); }
+  .mb-tabs button.t-ok.on { background:var(--teal); border-color:var(--teal); }
+  .mb-row { cursor:pointer; }
+  .mb-row:hover td { background:#f6f8fb; }
+  .mb-row.open td { background:#eef3fd; }
+  .mb-subj { max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+  .mb-snip { color:var(--text3); font-weight:400; }
+  .mb-files a, .mb-file { display:inline-block; margin:1px 6px 1px 0; color:var(--indigo); font-weight:600; text-decoration:none; cursor:pointer; }
+  .mb-files a:hover { text-decoration:underline; }
+  .mb-detail td { background:#fbfcfe; }
+  .mb-text { white-space:pre-wrap; font-size:12px; line-height:1.5; max-height:260px; overflow:auto; border:1px solid var(--line2); border-radius:8px; padding:10px; background:#fff; margin-top:6px; }
+  .mb-res { font-size:11.5px; }
+  .mb-res.err { color:var(--red); font-weight:600; } .mb-res.ok { color:var(--teal); font-weight:600; } .mb-res.warn { color:var(--amber); font-weight:600; }
   .c-table tr.c-group td { background:#f3f5f9; border-top:2px solid var(--line2); }
   .c-table tr.c-group td.c-name { font-weight:800; font-size:12.5px; }
   .c-table tr.c-group .c-sub { font-weight:500; color:var(--text3); font-size:11px; margin-left:6px; }
@@ -265,14 +295,19 @@
     <div class="page-top">
       <div><h1>AWB Recovery</h1>
       <p class="lead" id="lead">Loading AWBs…</p></div>
-      <div class="top-actions"><div class="tools" id="tools">
-        <button class="btn" id="toolsBtn" type="button" aria-haspopup="true" aria-expanded="false">Tools ▾</button>
-        <div class="tools-menu" id="toolsMenu" hidden>
-          <button type="button" id="robotBtn" hidden>Search AWB</button>
-          <button type="button" id="recoveredBtn">AWB Recovered</button>
-          <button type="button" id="contactsBtn" hidden>Customer contacts</button>
+      <div class="top-actions" id="adminActions" hidden>
+        <span class="top-msg" id="refreshMsg"></span>
+        <button class="top-btn" id="refreshBtn" type="button" title="Brings the latest data from Cargo System now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Refresh</button>
+        <button class="top-btn" id="mailboxBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>AWB mailbox</button>
+        <div class="tools" id="tools">
+          <button class="top-btn settings" id="toolsBtn" type="button" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings<span class="chev">▾</span></button>
+          <div class="tools-menu" id="toolsMenu" hidden>
+            <button type="button" id="robotBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Find AWB in email</button>
+            <button type="button" id="recoveredBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>AWB Found</button>
+            <button type="button" id="contactsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>Customer email</button>
+          </div>
         </div>
-      </div></div>
+      </div>
     </div>
 
     <section class="kpis">
@@ -354,7 +389,7 @@
 
 <div class="modal-back" id="contactsBack" hidden>
   <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="contactsTitle">
-    <h2 id="contactsTitle">Customer contacts</h2>
+    <h2 id="contactsTitle">Customer email</h2>
     <div class="muted" style="margin-bottom:12px">Each parent customer shows all its stations (customers as named in CargoSystem). A station uses its own emails; if it has none, the parent emails. Changes are saved when you leave the field. Only the AWB Recovery admins see this.</div>
     <div class="c-bar">
       <input type="search" id="cSearch" placeholder="Search customer or email" aria-label="Search">
@@ -385,7 +420,7 @@
 
 <div class="modal-back" id="recBack" hidden>
   <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="recTitle">
-    <h2 id="recTitle">Recovered AWBs</h2>
+    <h2 id="recTitle">AWB Found</h2>
     <div class="muted" style="margin-bottom:12px">AWBs the robot found in the emails sent to awbrecovery@. "Ready to mark": still to be marked as recovered in CargoSystem. "Marked": CargoSystem already shows it.</div>
     <div class="c-bar"><input type="search" id="recSearch" placeholder="Search AWB or customer" aria-label="Search"><span class="muted" id="recCount"></span></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th>AWB</th><th>Station (CargoSystem)</th><th>Parent</th><th>Found</th><th>Sent by</th><th>Status</th><th>File</th></tr></thead><tbody id="recBody"></tbody></table></div>
@@ -393,10 +428,20 @@
   </div>
 </div>
 
+<div class="modal-back" id="mbBack" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="mbTitle">
+    <h2 id="mbTitle">AWB mailbox</h2>
+    <div class="muted" style="margin-bottom:10px" id="mbLead">The three AWB labels of the robot's Gmail, without going into Gmail.</div>
+    <div class="mb-tabs" id="mbTabs"><button type="button" data-l="input" class="on">AWB Input <span data-c="input"></span></button><button type="button" data-l="processed" class="t-ok">AWB Processed <span data-c="processed"></span></button><button type="button" data-l="error" class="t-err">AWB Error <span data-c="error"></span></button></div>
+    <div class="c-wrap"><table class="c-table"><thead><tr><th style="width:120px">Date</th><th style="width:210px">From</th><th>Subject</th><th>Files</th><th>Robot</th></tr></thead><tbody id="mbBody"></tbody></table></div>
+    <div class="m-foot"><span class="msg" id="mbMsg"></span><button class="btn" id="mbMore" type="button" hidden>Load more</button><button class="btn" id="mbReload" type="button">Reload</button><button class="btn" id="mbClose" type="button">Close</button></div>
+  </div>
+</div>
+
 <div class="modal-back" id="robotBack" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="robotTitle">
-    <h2 id="robotTitle">Search AWBs</h2>
-    <div class="muted" style="margin-bottom:10px">The robot reads the label "AWB Input" in the Gmail of the reader (a member of the awbrecovery@ group whose Gmail filter puts those emails there), finds the AWB number in the PDF or image, keeps the file and moves the email to "AWB Processed", or to "AWB Error" when it finds no pending AWB.</div>
+    <h2 id="robotTitle">Find AWB in email</h2>
+    <div class="muted" style="margin-bottom:10px">The robot reads the label "AWB Input" in the Gmail of the reader (a member of the awbrecovery@ group whose Gmail filter puts those emails there), finds the AWB number in every PDF page or picture, keeps the page of each pending AWB and moves the email to "AWB Processed" (also when the AWB was already recovered), or to "AWB Error" with the reason. See them in AWB mailbox.</div>
     <div class="c-bar"><span id="robotReader" class="muted"></span><span class="grow"></span><button class="btn" id="robotConnect" type="button">Connect my Gmail as reader</button><button class="btn" id="robotDisconnect" type="button" hidden>Disconnect</button><button class="btn primary" id="robotRun" type="button" disabled>Search now</button></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th>Email</th><th>From</th><th>Result</th></tr></thead><tbody id="robotBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="robotMsg"></span><button class="btn" id="robotClose" type="button">Close</button></div>
@@ -696,10 +741,9 @@ async function load() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || `The API answered with an error (${response.status})`);
     state.sentAvailable = data.sent_available === true;
-    $("contactsBtn").hidden = data.contacts_admin !== true;
     state.contactsAdmin = data.contacts_admin === true;
-    $("selRequest").hidden = data.contacts_admin !== true;
-    $("robotBtn").hidden = data.contacts_admin !== true;
+    $("adminActions").hidden = !state.contactsAdmin;
+    $("selRequest").hidden = !state.contactsAdmin;
     state.sender = data.sender || "awbrecovery@gsaforce.com";
     state.rows = data.rows.map(r => ({ ...r, sent_count: Number(r.sent_count || 0), flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
     const present = new Set(state.rows.map(r => r.awb));
@@ -769,14 +813,14 @@ async function openRequests() {
   $("reqNote").textContent = `One email per AWB, sent from your Gmail as ${state.sender || "awbrecovery@gsaforce.com"} with you in CC. Each AWB goes to the emails of its station, or of its parent customer when the station has none. Text: Dear Customer, please send copy of AWB below. Best Regards.`;
   setReqMsg("Reading the customer emails…");
   try { takeContacts(await contactsCall("", {})); }
-  catch (e) { setReqMsg(`Could not read Customer contacts: ${e.message}`, "err"); return; }
+  catch (e) { setReqMsg(`Could not read Customer email: ${e.message}`, "err"); return; }
   req.rows = rows.map(r => ({ row: r, to: usedEmails(r.customer).emails.join(", "), via: usedEmails(r.customer).via, subject: mailSubject([r]), done: false, error: "" }));
   renderRequests();
 }
 function setReqMsg(text, kind) { $("reqMsg").textContent = text || ""; $("reqMsg").className = `msg ${kind || ""}`; }
 function renderRequests() {
   $("reqBody").innerHTML = req.rows.map((m, i) => `<tr><td class="awb">${esc(m.row.awb)}</td><td class="c-name" title="${esc(m.row.customer)}">${esc(m.row.customer)}</td><td>${esc(m.row.gsa)}</td>
-    <td><input data-ri="${i}" value="${esc(m.to)}" placeholder="No email: write one or add it in Customer contacts" ${m.done ? "disabled" : ""} aria-label="To for ${esc(m.row.awb)}" style="min-width:260px"></td>
+    <td><input data-ri="${i}" value="${esc(m.to)}" placeholder="No email: write one or add it in Customer email" ${m.done ? "disabled" : ""} aria-label="To for ${esc(m.row.awb)}" style="min-width:260px"></td>
     <td><span class="c-used" title="${esc(m.subject)}">${esc(m.subject)}</span></td>
     <td class="c-state ${m.done ? "ok" : m.error ? "err" : ""}" title="${esc(m.error)}">${m.done ? "Sent" : m.error ? "Not sent" : ""}</td></tr>`).join("");
   const left = req.rows.filter(m => !m.done);
@@ -878,7 +922,7 @@ async function runRobot() {
   try {
     const data = await apiCall("/robot/run", { method: "POST", body: "" });
     $("robotBody").innerHTML = (data.details || []).map(d => `<tr><td class="c-name" title="${esc(d.subject || "")}">${esc(d.subject || d.id)}</td><td><span class="c-used">${esc(d.sender || "")}</span></td>
-      <td>${d.found && d.found.length ? `<span class="found">Found ${esc(d.found.join(", "))}</span>` : `<span class="c-used none" title="${esc(d.error || "")}">Error: ${esc(d.error || "")}</span>`}</td></tr>`).join("")
+      <td>${d.error ? `<span class="mb-res err" title="${esc(d.error)}">Error: ${esc(d.error)}</span>` : `<span class="mb-res ${d.found && d.found.length ? "ok" : "warn"}">${esc(d.note || "Processed")}</span>`}</td></tr>`).join("")
       || `<tr><td colspan="3" class="empty">No new emails in AWB Input.</td></tr>`;
     setRobotMsg(`${fmt(data.emails)} emails read: ${fmt(data.processed)} to AWB Processed, ${fmt(data.errors)} to AWB Error. ${fmt((data.found || []).length)} AWBs found.`, "ok");
     load();
@@ -915,6 +959,94 @@ async function openRecoveredFile(awb) {
     if (win) win.location = url; else window.location = url;
   } catch (e) { if (win) win.close(); $("recMsg").textContent = `Could not open the file: ${e.message}`; $("recMsg").className = "msg err"; }
 }
+// ---- Refresh: the CargoSystem update that runs every 3 hours, started now (admins) ----
+const refresh = { timer: null, since: null, until: 0 };
+function setRefreshMsg(text, kind) { $("refreshMsg").textContent = text || ""; $("refreshMsg").className = `top-msg ${kind || ""}`; }
+const hhmm = iso => iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+function refreshBusy(on) { $("refreshBtn").disabled = on; $("refreshBtn").classList.toggle("spin", on); }
+async function startRefresh() {
+  refreshBusy(true);
+  setRefreshMsg("Checking…");
+  try {
+    const st = await apiCall("/refresh", { method: "POST", body: "" });
+    if (st.status === "recent") {
+      await load();
+      refreshBusy(false);
+      setRefreshMsg(`Cargo System data from ${hhmm(st.last_upload_at)}. Next update possible in ${st.wait_minutes} min.`, "ok");
+      return;
+    }
+    setRefreshMsg(st.status === "running" ? "An update from Cargo System is already running… (a few minutes)" : "Updating from Cargo System… (a few minutes)");
+    refresh.since = st.last_upload_at; refresh.until = Date.now() + 20 * 60 * 1000;
+    clearInterval(refresh.timer);
+    refresh.timer = setInterval(checkRefresh, 20000);
+  } catch (e) { refreshBusy(false); setRefreshMsg(`Could not update: ${e.message}`, "err"); }
+}
+async function checkRefresh() {
+  try {
+    const st = await apiCall("/refresh");
+    if (st.last_upload_at && st.last_upload_at !== refresh.since && st.running === false) {
+      clearInterval(refresh.timer);
+      await load();
+      refreshBusy(false);
+      setRefreshMsg(`Updated with Cargo System at ${hhmm(st.last_upload_at)}.`, "ok");
+      return;
+    }
+    if (st.running === false && Date.now() > refresh.until - 15 * 60 * 1000 && st.last_upload_at === refresh.since) {
+      clearInterval(refresh.timer); refreshBusy(false);
+      setRefreshMsg("The update from Cargo System did not finish. Try again later.", "err");
+      return;
+    }
+  } catch (e) { /* keep waiting */ }
+  if (Date.now() > refresh.until) { clearInterval(refresh.timer); refreshBusy(false); setRefreshMsg("The update is taking long. Press Refresh again in a few minutes.", "err"); }
+}
+
+// ---- AWB mailbox: the three labels of the robot's Gmail ----
+const mb = { label: "input", rows: [], next: null, open: null };
+function setMbMsg(text, kind) { $("mbMsg").textContent = text || ""; $("mbMsg").className = `msg ${kind || ""}`; }
+function openMailbox() { $("mbBack").hidden = false; loadMailbox(false); }
+async function loadMailbox(more) {
+  if (!more) { mb.rows = []; mb.next = null; mb.open = null; $("mbBody").innerHTML = ""; }
+  setMbMsg("Loading…");
+  $("mbMore").hidden = true;
+  try {
+    const data = await apiCall("/mailbox", {}, { label: mb.label, ...(more && mb.next ? { page_token: mb.next } : {}) });
+    mb.rows = mb.rows.concat(data.rows || []); mb.next = data.next_page_token || null;
+    Object.entries(data.counts || {}).forEach(([k, v]) => { const el = document.querySelector(`#mbTabs [data-c="${k}"]`); if (el) el.textContent = v == null ? "" : `(${fmt(v)})`; });
+    $("mbLead").textContent = `The three AWB labels in the Gmail of ${data.reader || "the reader"}, without going into Gmail.`;
+    setMbMsg("");
+    renderMailbox();
+  } catch (e) { setMbMsg(`Could not load: ${e.message}`, "err"); }
+}
+function mbResult(r) {
+  if (r.error) return `<span class="mb-res err" title="${esc(r.error)}">${esc(r.error)}</span>`;
+  if (r.note) return `<span class="mb-res ${r.found.length ? "ok" : "warn"}" title="${esc(r.note)}">${esc(r.note)}</span>`;
+  return mb.label === "input" ? `<span class="mb-res">Waiting for the robot</span>` : `<span class="mb-res">-</span>`;
+}
+function mbDate(ms) { if (!ms) return ""; const d = new Date(ms); return `${isoDate(d)} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; }
+function mbFiles(r) { return r.files.map(f => `<span class="mb-file" data-mid="${esc(r.id)}" data-n="${f.n}" title="Open ${esc(f.name)}">${esc(f.name)}</span>`).join("") || `<span class="mb-snip">-</span>`; }
+function renderMailbox() {
+  $("mbBody").innerHTML = mb.rows.map(r => `<tr class="mb-row ${mb.open && mb.open.id === r.id ? "open" : ""}" data-row="${esc(r.id)}"><td>${esc(mbDate(r.date))}</td><td><span class="c-used" title="${esc(r.from)}">${esc(r.from)}</span></td>
+    <td><div class="mb-subj" title="${esc(r.subject)}">${esc(r.subject || "(no subject)")} <span class="mb-snip">${esc(r.snippet || "")}</span></div></td>
+    <td class="mb-files">${mbFiles(r)}</td><td>${mbResult(r)}</td></tr>${mb.open && mb.open.id === r.id ? `<tr class="mb-detail"><td colspan="5"><b>To:</b> ${esc(mb.open.to || "")}<div class="mb-text">${esc(mb.open.text || "Loading…")}</div></td></tr>` : ""}`).join("")
+    || `<tr><td colspan="5" class="empty">No emails in this label.</td></tr>`;
+  $("mbMore").hidden = !mb.next;
+}
+async function openMailboxRow(id) {
+  if (mb.open && mb.open.id === id) { mb.open = null; renderMailbox(); return; }
+  mb.open = { id, text: "" }; renderMailbox();
+  try { const m = await apiCall("/mailbox/message", {}, { id }); if (mb.open && mb.open.id === id) { mb.open = m; renderMailbox(); } }
+  catch (e) { if (mb.open && mb.open.id === id) { mb.open = { id, text: `Could not open the email: ${e.message}` }; renderMailbox(); } }
+}
+async function openMailboxFile(id, n) {
+  const win = window.open("", "_blank");
+  try {
+    const response = await fetch(`${API_BASE}/api/awb_recovery/mailbox/file?${new URLSearchParams({ email: state.user.email, id, n })}`);
+    if (!response.ok) throw new Error(`The API answered ${response.status}`);
+    const url = URL.createObjectURL(await response.blob());
+    if (win) win.location = url; else window.location = url;
+  } catch (e) { if (win) win.close(); setMbMsg(`Could not open the file: ${e.message}`, "err"); }
+}
+
 // "GSA Force | Copy AWB 805-11998711 805-13605815"; more than 3 AWBs: only "Copy AWB"
 function mailSubject(rows) {
   const companies = [...new Set(rows.map(r => r.company).filter(Boolean))].join(" / ");
@@ -1452,6 +1584,21 @@ function initAwbRecovery() {
   $("robotDisconnect").addEventListener("click", disconnectReader);
   $("robotClose").addEventListener("click", () => { $("robotBack").hidden = true; });
   $("recoveredBtn").addEventListener("click", openRecovered);
+  $("refreshBtn").addEventListener("click", startRefresh);
+  $("mailboxBtn").addEventListener("click", openMailbox);
+  $("mbClose").addEventListener("click", () => { $("mbBack").hidden = true; });
+  $("mbReload").addEventListener("click", () => loadMailbox(false));
+  $("mbMore").addEventListener("click", () => loadMailbox(true));
+  $("mbTabs").addEventListener("click", e => {
+    const b = e.target.closest("[data-l]"); if (!b || b.dataset.l === mb.label) return;
+    mb.label = b.dataset.l;
+    document.querySelectorAll("#mbTabs [data-l]").forEach(x => x.classList.toggle("on", x === b));
+    loadMailbox(false);
+  });
+  $("mbBody").addEventListener("click", e => {
+    const f = e.target.closest("[data-mid]"); if (f) { e.stopPropagation(); openMailboxFile(f.dataset.mid, f.dataset.n); return; }
+    const r = e.target.closest("[data-row]"); if (r) openMailboxRow(r.dataset.row);
+  });
   $("recClose").addEventListener("click", () => { $("recBack").hidden = true; });
   $("recSearch").addEventListener("input", renderRecovered);
   $("recBody").addEventListener("click", e => { const b = e.target.closest("[data-file]"); if (b) openRecoveredFile(b.dataset.file); });
