@@ -924,7 +924,7 @@ async function runRobot() {
     $("robotBody").innerHTML = (data.details || []).map(d => `<tr><td class="c-name" title="${esc(d.subject || "")}">${esc(d.subject || d.id)}</td><td><span class="c-used">${esc(d.sender || "")}</span></td>
       <td>${d.error ? `<span class="mb-res err" title="${esc(d.error)}">Error: ${esc(d.error)}</span>` : `<span class="mb-res ${d.found && d.found.length ? "ok" : "warn"}">${esc(d.note || "Processed")}</span>`}</td></tr>`).join("")
       || `<tr><td colspan="3" class="empty">No new emails in AWB Input.</td></tr>`;
-    setRobotMsg(`${fmt(data.emails)} emails read: ${fmt(data.processed)} to AWB Processed, ${fmt(data.errors)} to AWB Error. ${fmt((data.found || []).length)} AWBs found.`, "ok");
+    setRobotMsg(`${fmt(data.emails)} emails read: ${fmt(data.processed)} to AWB Processed, ${fmt(data.errors)} to AWB Error${data.waiting ? `, ${fmt(data.waiting)} waiting for the reply in AWB Input` : ""}. ${fmt((data.found || []).length)} AWBs found.`, "ok");
     load();
   } catch (e) { setRobotMsg(`The robot could not run: ${e.message}`, "err"); }
   $("robotRun").disabled = false;
