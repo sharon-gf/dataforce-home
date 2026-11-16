@@ -192,6 +192,15 @@
   .mb-tabs button.on { background:var(--indigo); border-color:var(--indigo); color:#fff; }
   .mb-tabs button.t-err.on { background:var(--red); border-color:var(--red); }
   .mb-tabs button.t-ok.on { background:var(--teal); border-color:var(--teal); }
+  .mb-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .mb-head .mb-tabs { margin-bottom:0; }
+  .mb-head .grow { flex:1; }
+  .mb-views { display:flex; gap:6px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .mb-views button.v { border:1px solid var(--line2); background:#fff; border-radius:8px; padding:4px 12px; font:inherit; font-size:12px; font-weight:700; color:var(--text2); cursor:pointer; }
+  .mb-views button.v.on { background:var(--teal); border-color:var(--teal); color:#fff; }
+  .mb-dismiss { border:1px solid var(--line2); background:#fff; border-radius:8px; padding:3px 10px; font:inherit; font-size:12px; font-weight:700; color:var(--text2); cursor:pointer; white-space:nowrap; }
+  .mb-dismiss:hover { border-color:var(--teal); color:var(--teal); }
+  .mb-by { display:block; color:var(--text3); font-size:11.5px; margin-top:2px; }
   .mb-row { cursor:pointer; }
   .mb-row:hover td { background:#f6f8fb; }
   .mb-row.open td { background:#eef3fd; }
@@ -302,8 +311,6 @@
         <div class="tools" id="tools">
           <button class="top-btn settings" id="toolsBtn" type="button" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings<span class="chev">▾</span></button>
           <div class="tools-menu" id="toolsMenu" hidden>
-            <button type="button" id="robotBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Find AWB in email</button>
-            <button type="button" id="recoveredBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>AWB Found</button>
             <button type="button" id="contactsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>Customer email</button>
           </div>
         </div>
@@ -432,8 +439,9 @@
   <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="mbTitle">
     <h2 id="mbTitle">AWB mailbox</h2>
     <div class="muted" style="margin-bottom:10px" id="mbLead">The three AWB labels of the robot's Gmail, without going into Gmail.</div>
-    <div class="mb-tabs" id="mbTabs"><button type="button" data-l="input" class="on">AWB Input <span data-c="input"></span></button><button type="button" data-l="processed" class="t-ok">AWB Processed <span data-c="processed"></span></button><button type="button" data-l="error" class="t-err">AWB Error <span data-c="error"></span></button></div>
-    <div class="c-wrap"><table class="c-table"><thead><tr><th style="width:120px">Date</th><th style="width:210px">From</th><th>Subject</th><th>Files</th><th>Robot</th></tr></thead><tbody id="mbBody"></tbody></table></div>
+    <div class="mb-head"><div class="mb-tabs" id="mbTabs"><button type="button" data-l="input" class="on">AWB Input <span data-c="input"></span></button><button type="button" data-l="processed" class="t-ok">AWB Processed <span data-c="processed"></span></button><button type="button" data-l="error" class="t-err">AWB Error <span data-c="error"></span></button></div><span class="grow"></span><button class="btn primary" id="robotBtn" type="button">Find AWB in email</button></div>
+    <div class="mb-views" id="mbViews" hidden><button type="button" class="v on" data-v="new">New <span data-c="processed"></span></button><button type="button" class="v" data-v="history">History <span data-c="history"></span></button><span class="grow"></span><button class="btn" id="mbDismissSel" type="button" hidden>Dismiss selected</button></div>
+    <div class="c-wrap"><table class="c-table"><thead><tr><th id="mbSelHead" style="width:34px" hidden><input type="checkbox" id="mbSelAll" aria-label="Select all"></th><th style="width:120px">Date</th><th style="width:210px">From</th><th>Subject</th><th>Files</th><th>Robot</th><th id="mbActHead" style="width:90px" hidden></th></tr></thead><tbody id="mbBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="mbMsg"></span><button class="btn" id="mbMore" type="button" hidden>Load more</button><button class="btn" id="mbReload" type="button">Reload</button><button class="btn" id="mbClose" type="button">Close</button></div>
   </div>
 </div>
@@ -743,6 +751,7 @@ async function load() {
     state.sentAvailable = data.sent_available === true;
     state.contactsAdmin = data.contacts_admin === true;
     $("adminActions").hidden = !state.contactsAdmin;
+    if (state.contactsAdmin && !refresh.timer) loadRefreshInfo();
     $("selRequest").hidden = !state.contactsAdmin;
     state.sender = data.sender || "awbrecovery@gsaforce.com";
     state.rows = data.rows.map(r => ({ ...r, sent_count: Number(r.sent_count || 0), flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
@@ -751,6 +760,10 @@ async function load() {
     renderGsaMenu();
     $("retIndBox").hidden = data.ret_ind_available !== false;
     $("dataAsOf").textContent = data.data_as_of ? new Date(data.data_as_of).toLocaleString() : "Unknown";
+    if (data.date_from && pickers.flight.from && pickers.flight.from < data.date_from) {
+      pickers.flight.set(data.date_from, data.date_to);
+      showError(`Only flights from ${data.date_from.slice(0, 4)}: older years are not updated from Cargo System.`);
+    }
     if (data.truncated) showError(`Only the first ${fmt(data.count)} AWBs were loaded. Narrow the flight dates to see the rest.`);
     setStatus("Ready");
   } catch (e) {
@@ -924,7 +937,8 @@ async function runRobot() {
     $("robotBody").innerHTML = (data.details || []).map(d => `<tr><td class="c-name" title="${esc(d.subject || "")}">${esc(d.subject || d.id)}</td><td><span class="c-used">${esc(d.sender || "")}</span></td>
       <td>${d.error ? `<span class="mb-res err" title="${esc(d.error)}">Error: ${esc(d.error)}</span>` : `<span class="mb-res ${d.found && d.found.length ? "ok" : "warn"}">${esc(d.note || "Processed")}</span>`}</td></tr>`).join("")
       || `<tr><td colspan="3" class="empty">No new emails in AWB Input.</td></tr>`;
-    setRobotMsg(`${fmt(data.emails)} emails read: ${fmt(data.processed)} to AWB Processed, ${fmt(data.errors)} to AWB Error${data.waiting ? `, ${fmt(data.waiting)} waiting for the reply in AWB Input` : ""}. ${fmt((data.found || []).length)} AWBs found.`, "ok");
+    setRobotMsg(`${fmt(data.emails)} emails read: ${fmt(data.processed)} to AWB Processed, ${fmt(data.errors)} to AWB Error${data.waiting ? `, ${fmt(data.waiting)} waiting for the reply in AWB Input` : ""}. ${fmt((data.found || []).length)} AWBs found.${data.left ? ` ${fmt(data.left)} emails left for the next search.` : ""}`, "ok");
+    if (!$("mbBack").hidden) loadMailbox(false);
     load();
   } catch (e) { setRobotMsg(`The robot could not run: ${e.message}`, "err"); }
   $("robotRun").disabled = false;
@@ -969,17 +983,20 @@ async function startRefresh() {
   setRefreshMsg("Checking…");
   try {
     const st = await apiCall("/refresh", { method: "POST", body: "" });
-    if (st.status === "recent") {
-      await load();
-      refreshBusy(false);
-      setRefreshMsg(`Cargo System data from ${hhmm(st.last_upload_at)}. Next update possible in ${st.wait_minutes} min.`, "ok");
-      return;
-    }
     setRefreshMsg(st.status === "running" ? "An update from Cargo System is already running… (a few minutes)" : "Updating from Cargo System… (a few minutes)");
     refresh.since = st.last_upload_at; refresh.until = Date.now() + 20 * 60 * 1000;
     clearInterval(refresh.timer);
     refresh.timer = setInterval(checkRefresh, 20000);
   } catch (e) { refreshBusy(false); setRefreshMsg(`Could not update: ${e.message}`, "err"); }
+}
+const dayHour = iso => iso ? new Date(iso).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+function showLastRefresh(st) {
+  const press = st.last_press_at ? `Last Refresh: ${dayHour(st.last_press_at)} by ${String(st.last_press_by || "").split("@")[0]}` : "";
+  const data = st.last_upload_at ? `Cargo System data from ${dayHour(st.last_upload_at)}` : "";
+  setRefreshMsg([press, data].filter(Boolean).join(" · "), "ok");
+}
+async function loadRefreshInfo() {
+  try { const st = await apiCall("/refresh"); if (!refresh.timer) showLastRefresh(st); } catch (e) { /* the button still works */ }
 }
 async function checkRefresh() {
   try {
@@ -988,7 +1005,7 @@ async function checkRefresh() {
       clearInterval(refresh.timer);
       await load();
       refreshBusy(false);
-      setRefreshMsg(`Updated with Cargo System at ${hhmm(st.last_upload_at)}.`, "ok");
+      showLastRefresh(st);
       return;
     }
     if (st.running === false && Date.now() > refresh.until - 15 * 60 * 1000 && st.last_upload_at === refresh.since) {
@@ -1001,17 +1018,17 @@ async function checkRefresh() {
 }
 
 // ---- AWB mailbox: the three labels of the robot's Gmail ----
-const mb = { label: "input", rows: [], next: null, open: null };
+const mb = { label: "input", view: "new", rows: [], next: null, open: null, sel: new Set() };
 function setMbMsg(text, kind) { $("mbMsg").textContent = text || ""; $("mbMsg").className = `msg ${kind || ""}`; }
 function openMailbox() { $("mbBack").hidden = false; loadMailbox(false); }
 async function loadMailbox(more) {
-  if (!more) { mb.rows = []; mb.next = null; mb.open = null; $("mbBody").innerHTML = ""; }
+  if (!more) { mb.rows = []; mb.next = null; mb.open = null; mb.sel.clear(); $("mbBody").innerHTML = ""; }
   setMbMsg("Loading…");
   $("mbMore").hidden = true;
   try {
-    const data = await apiCall("/mailbox", {}, { label: mb.label, ...(more && mb.next ? { page_token: mb.next } : {}) });
+    const data = await apiCall("/mailbox", {}, { label: mb.label, ...(mb.label === "processed" ? { view: mb.view } : {}), ...(more && mb.next ? { page_token: mb.next } : {}) });
     mb.rows = mb.rows.concat(data.rows || []); mb.next = data.next_page_token || null;
-    Object.entries(data.counts || {}).forEach(([k, v]) => { const el = document.querySelector(`#mbTabs [data-c="${k}"]`); if (el) el.textContent = v == null ? "" : `(${fmt(v)})`; });
+    Object.entries(data.counts || {}).forEach(([k, v]) => document.querySelectorAll(`#mbBack [data-c="${k}"]`).forEach(el => { el.textContent = v == null ? "" : `(${fmt(v)})`; }));
     $("mbLead").textContent = `The three AWB labels in the Gmail of ${data.reader || "the reader"}, without going into Gmail.`;
     setMbMsg("");
     renderMailbox();
@@ -1025,11 +1042,32 @@ function mbResult(r) {
 function mbDate(ms) { if (!ms) return ""; const d = new Date(ms); return `${isoDate(d)} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; }
 function mbFiles(r) { return r.files.map(f => `<span class="mb-file" data-mid="${esc(r.id)}" data-n="${f.n}" title="Open ${esc(f.name)}">${esc(f.name)}</span>`).join("") || `<span class="mb-snip">-</span>`; }
 function renderMailbox() {
-  $("mbBody").innerHTML = mb.rows.map(r => `<tr class="mb-row ${mb.open && mb.open.id === r.id ? "open" : ""}" data-row="${esc(r.id)}"><td>${esc(mbDate(r.date))}</td><td><span class="c-used" title="${esc(r.from)}">${esc(r.from)}</span></td>
+  const canDismiss = mb.label === "processed" && mb.view === "new";
+  const history = mb.label === "processed" && mb.view === "history";
+  const cols = 5 + (canDismiss ? 2 : 0);
+  $("mbViews").hidden = mb.label !== "processed";
+  $("mbSelHead").hidden = !canDismiss; $("mbActHead").hidden = !canDismiss;
+  $("mbDismissSel").hidden = !canDismiss || !mb.sel.size;
+  $("mbDismissSel").textContent = `Dismiss selected (${fmt(mb.sel.size)})`;
+  $("mbSelAll").checked = canDismiss && mb.rows.length > 0 && mb.rows.every(r => mb.sel.has(r.id));
+  const dismissedBy = r => history && r.dismissed_at ? `<span class="mb-by">Dismissed ${esc(mbDate(Date.parse(r.dismissed_at)))} by ${esc(String(r.dismissed_by || "").split("@")[0])}</span>` : "";
+  $("mbBody").innerHTML = mb.rows.map(r => `<tr class="mb-row ${mb.open && mb.open.id === r.id ? "open" : ""}" data-row="${esc(r.id)}">${canDismiss ? `<td><input type="checkbox" data-sel="${esc(r.id)}" ${mb.sel.has(r.id) ? "checked" : ""} aria-label="Select"></td>` : ""}<td>${esc(mbDate(r.date))}</td><td><span class="c-used" title="${esc(r.from)}">${esc(r.from)}</span></td>
     <td><div class="mb-subj" title="${esc(r.subject)}">${esc(r.subject || "(no subject)")} <span class="mb-snip">${esc(r.snippet || "")}</span></div></td>
-    <td class="mb-files">${mbFiles(r)}</td><td>${mbResult(r)}</td></tr>${mb.open && mb.open.id === r.id ? `<tr class="mb-detail"><td colspan="5"><b>To:</b> ${esc(mb.open.to || "")}<div class="mb-text">${esc(mb.open.text || "Loading…")}</div></td></tr>` : ""}`).join("")
-    || `<tr><td colspan="5" class="empty">No emails in this label.</td></tr>`;
+    <td class="mb-files">${mbFiles(r)}</td><td>${mbResult(r)}${dismissedBy(r)}</td>${canDismiss ? `<td><button type="button" class="mb-dismiss" data-dismiss="${esc(r.id)}">Dismiss</button></td>` : ""}</tr>${mb.open && mb.open.id === r.id ? `<tr class="mb-detail"><td colspan="${cols}"><b>To:</b> ${esc(mb.open.to || "")}<div class="mb-text">${esc(mb.open.text || "Loading…")}</div></td></tr>` : ""}`).join("")
+    || `<tr><td colspan="${cols}" class="empty">${history ? "Nothing dismissed yet." : "No emails in this label."}</td></tr>`;
   $("mbMore").hidden = !mb.next;
+}
+async function dismissMail(ids) {
+  if (!ids.length) return;
+  $("mbDismissSel").disabled = true;
+  setMbMsg("Moving to History…");
+  try {
+    await apiCall("/mailbox/dismiss", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids }) });
+    setMbMsg(`${fmt(ids.length)} moved to History. The emails stay in Gmail.`, "ok");
+    mb.rows = mb.rows.filter(r => !ids.includes(r.id)); ids.forEach(id => mb.sel.delete(id));
+    loadMailbox(false).then(() => setMbMsg(`${fmt(ids.length)} moved to History. The emails stay in Gmail.`, "ok"));
+  } catch (e) { setMbMsg(`Could not dismiss: ${e.message}`, "err"); }
+  $("mbDismissSel").disabled = false;
 }
 async function openMailboxRow(id) {
   if (mb.open && mb.open.id === id) { mb.open = null; renderMailbox(); return; }
@@ -1583,12 +1621,19 @@ function initAwbRecovery() {
   $("robotConnect").addEventListener("click", connectReader);
   $("robotDisconnect").addEventListener("click", disconnectReader);
   $("robotClose").addEventListener("click", () => { $("robotBack").hidden = true; });
-  $("recoveredBtn").addEventListener("click", openRecovered);
   $("refreshBtn").addEventListener("click", startRefresh);
   $("mailboxBtn").addEventListener("click", openMailbox);
   $("mbClose").addEventListener("click", () => { $("mbBack").hidden = true; });
   $("mbReload").addEventListener("click", () => loadMailbox(false));
   $("mbMore").addEventListener("click", () => loadMailbox(true));
+  $("mbViews").addEventListener("click", e => {
+    const b = e.target.closest("[data-v]"); if (!b || b.dataset.v === mb.view) return;
+    mb.view = b.dataset.v;
+    document.querySelectorAll("#mbViews [data-v]").forEach(x => x.classList.toggle("on", x === b));
+    loadMailbox(false);
+  });
+  $("mbDismissSel").addEventListener("click", () => dismissMail([...mb.sel]));
+  $("mbSelAll").addEventListener("change", e => { mb.rows.forEach(r => e.target.checked ? mb.sel.add(r.id) : mb.sel.delete(r.id)); renderMailbox(); });
   $("mbTabs").addEventListener("click", e => {
     const b = e.target.closest("[data-l]"); if (!b || b.dataset.l === mb.label) return;
     mb.label = b.dataset.l;
@@ -1597,6 +1642,8 @@ function initAwbRecovery() {
   });
   $("mbBody").addEventListener("click", e => {
     const f = e.target.closest("[data-mid]"); if (f) { e.stopPropagation(); openMailboxFile(f.dataset.mid, f.dataset.n); return; }
+    const c = e.target.closest("[data-sel]"); if (c) { e.stopPropagation(); c.checked ? mb.sel.add(c.dataset.sel) : mb.sel.delete(c.dataset.sel); renderMailbox(); return; }
+    const d = e.target.closest("[data-dismiss]"); if (d) { e.stopPropagation(); dismissMail([d.dataset.dismiss]); return; }
     const r = e.target.closest("[data-row]"); if (r) openMailboxRow(r.dataset.row);
   });
   $("recClose").addEventListener("click", () => { $("recBack").hidden = true; });
