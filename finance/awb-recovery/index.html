@@ -201,6 +201,9 @@
   .mb-dismiss { border:1px solid var(--line2); background:#fff; border-radius:8px; padding:3px 10px; font:inherit; font-size:12px; font-weight:700; color:var(--text2); cursor:pointer; white-space:nowrap; }
   .mb-dismiss:hover { border-color:var(--teal); color:var(--teal); }
   .mb-by { display:block; color:var(--text3); font-size:11.5px; margin-top:2px; }
+  .mb-cs { display:inline-block; margin:4px 6px 0 0; padding:3px 10px; border-radius:8px; background:var(--indigo); color:#fff; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap; }
+  .mb-cs:hover { filter:brightness(1.1); }
+  .mb-cs-none { display:block; color:var(--text3); font-size:11.5px; margin-top:4px; }
   .mb-row { cursor:pointer; }
   .mb-row:hover td { background:#f6f8fb; }
   .mb-row.open td { background:#eef3fd; }
@@ -1018,7 +1021,7 @@ async function checkRefresh() {
 }
 
 // ---- AWB mailbox: the three labels of the robot's Gmail ----
-const mb = { label: "input", view: "new", rows: [], next: null, open: null, sel: new Set() };
+const mb = { label: "input", view: "new", rows: [], next: null, open: null, sel: new Set(), bookingUrl: "" };
 function setMbMsg(text, kind) { $("mbMsg").textContent = text || ""; $("mbMsg").className = `msg ${kind || ""}`; }
 function openMailbox() { $("mbBack").hidden = false; loadMailbox(false); }
 async function loadMailbox(more) {
@@ -1027,16 +1030,25 @@ async function loadMailbox(more) {
   $("mbMore").hidden = true;
   try {
     const data = await apiCall("/mailbox", {}, { label: mb.label, ...(mb.label === "processed" ? { view: mb.view } : {}), ...(more && mb.next ? { page_token: mb.next } : {}) });
-    mb.rows = mb.rows.concat(data.rows || []); mb.next = data.next_page_token || null;
+    mb.rows = mb.rows.concat(data.rows || []); mb.next = data.next_page_token || null; mb.bookingUrl = data.booking_url || mb.bookingUrl;
     Object.entries(data.counts || {}).forEach(([k, v]) => document.querySelectorAll(`#mbBack [data-c="${k}"]`).forEach(el => { el.textContent = v == null ? "" : `(${fmt(v)})`; }));
     $("mbLead").textContent = `The three AWB labels in the Gmail of ${data.reader || "the reader"}, without going into Gmail.`;
     setMbMsg("");
     renderMailbox();
   } catch (e) { setMbMsg(`Could not load: ${e.message}`, "err"); }
 }
+// Links to the booking in Cargo System, to mark the AWB as recovered there
+function mbCargoLinks(r) {
+  if (!r.found || !r.found.length || !mb.bookingUrl) return "";
+  return r.found.map(awb => {
+    const ids = (r.bookings || {})[awb] || [];
+    if (!ids.length) return `<span class="mb-cs-none">${esc(awb)}: no Cargo System ID yet (press Refresh)</span>`;
+    return ids.map(id => `<a class="mb-cs" href="${esc(mb.bookingUrl + id)}" target="_blank" rel="noopener" title="Opens booking ${id} in Cargo System">Mark ${esc(awb)} in Cargo System</a>`).join("");
+  }).join("");
+}
 function mbResult(r) {
   if (r.error) return `<span class="mb-res err" title="${esc(r.error)}">${esc(r.error)}</span>`;
-  if (r.note) return `<span class="mb-res ${r.found.length ? "ok" : "warn"}" title="${esc(r.note)}">${esc(r.note)}</span>`;
+  if (r.note) return `<span class="mb-res ${r.found.length ? "ok" : "warn"}" title="${esc(r.note)}">${esc(r.note)}</span>${mbCargoLinks(r)}`;
   return mb.label === "input" ? `<span class="mb-res">Waiting for the robot</span>` : `<span class="mb-res">-</span>`;
 }
 function mbDate(ms) { if (!ms) return ""; const d = new Date(ms); return `${isoDate(d)} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; }
@@ -1644,6 +1656,7 @@ function initAwbRecovery() {
     const f = e.target.closest("[data-mid]"); if (f) { e.stopPropagation(); openMailboxFile(f.dataset.mid, f.dataset.n); return; }
     const c = e.target.closest("[data-sel]"); if (c) { e.stopPropagation(); c.checked ? mb.sel.add(c.dataset.sel) : mb.sel.delete(c.dataset.sel); renderMailbox(); return; }
     const d = e.target.closest("[data-dismiss]"); if (d) { e.stopPropagation(); dismissMail([d.dataset.dismiss]); return; }
+    if (e.target.closest("a.mb-cs")) return;
     const r = e.target.closest("[data-row]"); if (r) openMailboxRow(r.dataset.row);
   });
   $("recClose").addEventListener("click", () => { $("recBack").hidden = true; });
