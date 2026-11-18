@@ -445,7 +445,7 @@
   <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="mbTitle">
     <h2 id="mbTitle">AWB mailbox</h2>
     <div class="muted" style="margin-bottom:10px" id="mbLead">The three AWB labels of the robot's Gmail, without going into Gmail.</div>
-    <div class="mb-head"><div class="mb-tabs" id="mbTabs"><button type="button" data-l="input" class="on">AWB Input <span data-c="input"></span></button><button type="button" data-l="processed" class="t-ok">AWB Processed <span data-c="processed"></span></button><button type="button" data-l="error" class="t-err">AWB Error <span data-c="error"></span></button></div><span class="grow"></span><button class="btn primary" id="robotBtn" type="button">Find AWB in email</button></div>
+    <div class="mb-head"><div class="mb-tabs" id="mbTabs"><button type="button" data-l="input" class="on">AWB Input <span data-c="input"></span></button><button type="button" data-l="processed" class="t-ok">AWB Processed <span data-c="processed"></span></button><button type="button" data-l="error" class="t-err">AWB Error <span data-c="error"></span></button></div><span class="grow"></span><button class="btn primary" id="robotBtn" type="button">Run process</button></div>
     <div class="mb-views" id="mbViews" hidden><button type="button" class="v on" data-v="new">New <span data-c="processed"></span></button><button type="button" class="v" data-v="history">History <span data-c="history"></span></button><span class="grow"></span><button class="btn" id="mbMarkSel" type="button" hidden disabled title="Coming soon: it needs the Cargo System API to mark the AWBs">Mark selected in Cargo System</button><button class="btn" id="mbDismissSel" type="button" hidden>Dismiss selected</button></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th id="mbSelHead" style="width:34px" hidden><input type="checkbox" id="mbSelAll" aria-label="Select all"></th><th style="width:120px">Date</th><th style="width:210px">From</th><th>Subject</th><th>Files</th><th>Robot</th><th id="mbActHead" style="width:90px" hidden></th></tr></thead><tbody id="mbBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="mbMsg"></span><button class="btn" id="mbMore" type="button" hidden>Load more</button><button class="btn" id="mbReload" type="button">Reload</button><button class="btn" id="mbClose" type="button">Close</button></div>
@@ -454,7 +454,7 @@
 
 <div class="modal-back" id="robotBack" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="robotTitle">
-    <h2 id="robotTitle">Find AWB in email</h2>
+    <h2 id="robotTitle">Run process</h2>
     <div class="muted" style="margin-bottom:10px">The robot reads the label "AWB Input" in the Gmail of the reader (a member of the awbrecovery@ group whose Gmail filter puts those emails there), finds the AWB number in every PDF page or picture, keeps the page of each pending AWB and moves the email to "AWB Processed" (also when the AWB was already recovered), or to "AWB Error" with the reason. Emails without a PDF or picture go straight to the History of "AWB Processed". It also runs by itself every 10 minutes. See them in AWB mailbox.</div>
     <div class="c-bar"><span id="robotReader" class="muted"></span><span class="grow"></span><button class="btn" id="robotConnect" type="button">Connect my Gmail as reader</button><button class="btn" id="robotDisconnect" type="button" hidden>Disconnect</button><button class="btn primary" id="robotRun" type="button" disabled>Search now</button></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th>Email</th><th>From</th><th>Result</th></tr></thead><tbody id="robotBody"></tbody></table></div>
@@ -952,7 +952,7 @@ async function runRobot() {
 async function findAwbNow() {
   const btn = $("robotBtn");
   if (btn.disabled) return;
-  btn.disabled = true; btn.textContent = "Finding…";
+  btn.disabled = true; btn.textContent = "Running…";
   setMbMsg("The robot is reading AWB Input…");
   try {
     const st = await apiCall("/robot/status");
@@ -962,7 +962,7 @@ async function findAwbNow() {
     setMbMsg(`Done: ${fmt((data.found || []).length)} AWBs found.${data.left ? ` ${fmt(data.left)} emails left for the next search.` : ""}`, "ok");
     load();
   } catch (e) { setMbMsg(`The robot could not run: ${e.message}`, "err"); }
-  finally { btn.disabled = false; btn.textContent = "Find AWB in email"; }
+  finally { btn.disabled = false; btn.textContent = "Run process"; }
 }
 const rec = { rows: [] };
 async function openRecovered() {
