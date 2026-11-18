@@ -196,13 +196,16 @@
   .mb-head .mb-tabs { margin-bottom:0; }
   .mb-head .grow { flex:1; }
   .mb-views { display:flex; gap:6px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .mb-views[hidden] { display:none; }
+  #mbSelHead { width:34px; min-width:0; }
   .mb-views button.v { border:1px solid var(--line2); background:#fff; border-radius:8px; padding:4px 12px; font:inherit; font-size:12px; font-weight:700; color:var(--text2); cursor:pointer; }
   .mb-views button.v.on { background:var(--teal); border-color:var(--teal); color:#fff; }
   .mb-dismiss { border:1px solid var(--line2); background:#fff; border-radius:8px; padding:3px 10px; font:inherit; font-size:12px; font-weight:700; color:var(--text2); cursor:pointer; white-space:nowrap; }
   .mb-dismiss:hover { border-color:var(--teal); color:var(--teal); }
   .mb-by { display:block; color:var(--text3); font-size:11.5px; margin-top:2px; }
-  .mb-cs { display:inline-block; margin:4px 6px 0 0; padding:3px 10px; border-radius:8px; background:var(--indigo); color:#fff; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap; }
-  .mb-cs:hover { filter:brightness(1.1); }
+  .mb-awbs { margin-top:4px; font-size:11.5px; color:var(--text3); }
+  .mb-cs { margin-left:6px; color:var(--indigo); font-weight:600; text-decoration:none; white-space:nowrap; }
+  .mb-cs:hover { text-decoration:underline; }
   .mb-cs-none { display:block; color:var(--text3); font-size:11.5px; margin-top:4px; }
   .mb-row { cursor:pointer; }
   .mb-row:hover td { background:#f6f8fb; }
@@ -339,7 +342,7 @@
 
     <section class="card list">
       <div class="list-head">
-        <h2>AWBs to manage<span class="note" id="resultNote">0 rows</span></h2>
+        <h2>AWB Manager<span class="note" id="resultNote">0 rows</span></h2>
         <div class="actions"><span class="view-switch"><button class="on" id="viewList" type="button">List</button><button id="viewGroup" type="button">By GSA</button></span><button class="btn" id="expandBtn" type="button" hidden>Expand all</button><button class="btn" id="resetBtn" type="button">Reset</button><button class="btn" id="exportBtn" type="button">Export</button></div>
       </div>
       <div class="filters">
@@ -443,7 +446,7 @@
     <h2 id="mbTitle">AWB mailbox</h2>
     <div class="muted" style="margin-bottom:10px" id="mbLead">The three AWB labels of the robot's Gmail, without going into Gmail.</div>
     <div class="mb-head"><div class="mb-tabs" id="mbTabs"><button type="button" data-l="input" class="on">AWB Input <span data-c="input"></span></button><button type="button" data-l="processed" class="t-ok">AWB Processed <span data-c="processed"></span></button><button type="button" data-l="error" class="t-err">AWB Error <span data-c="error"></span></button></div><span class="grow"></span><button class="btn primary" id="robotBtn" type="button">Find AWB in email</button></div>
-    <div class="mb-views" id="mbViews" hidden><button type="button" class="v on" data-v="new">New <span data-c="processed"></span></button><button type="button" class="v" data-v="history">History <span data-c="history"></span></button><span class="grow"></span><button class="btn" id="mbDismissSel" type="button" hidden>Dismiss selected</button></div>
+    <div class="mb-views" id="mbViews" hidden><button type="button" class="v on" data-v="new">New <span data-c="processed"></span></button><button type="button" class="v" data-v="history">History <span data-c="history"></span></button><span class="grow"></span><button class="btn" id="mbMarkSel" type="button" hidden disabled title="Coming soon: it needs the Cargo System API to mark the AWBs">Mark selected in Cargo System</button><button class="btn" id="mbDismissSel" type="button" hidden>Dismiss selected</button></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th id="mbSelHead" style="width:34px" hidden><input type="checkbox" id="mbSelAll" aria-label="Select all"></th><th style="width:120px">Date</th><th style="width:210px">From</th><th>Subject</th><th>Files</th><th>Robot</th><th id="mbActHead" style="width:90px" hidden></th></tr></thead><tbody id="mbBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="mbMsg"></span><button class="btn" id="mbMore" type="button" hidden>Load more</button><button class="btn" id="mbReload" type="button">Reload</button><button class="btn" id="mbClose" type="button">Close</button></div>
   </div>
@@ -452,7 +455,7 @@
 <div class="modal-back" id="robotBack" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="robotTitle">
     <h2 id="robotTitle">Find AWB in email</h2>
-    <div class="muted" style="margin-bottom:10px">The robot reads the label "AWB Input" in the Gmail of the reader (a member of the awbrecovery@ group whose Gmail filter puts those emails there), finds the AWB number in every PDF page or picture, keeps the page of each pending AWB and moves the email to "AWB Processed" (also when the AWB was already recovered), or to "AWB Error" with the reason. See them in AWB mailbox.</div>
+    <div class="muted" style="margin-bottom:10px">The robot reads the label "AWB Input" in the Gmail of the reader (a member of the awbrecovery@ group whose Gmail filter puts those emails there), finds the AWB number in every PDF page or picture, keeps the page of each pending AWB and moves the email to "AWB Processed" (also when the AWB was already recovered), or to "AWB Error" with the reason. Emails without a PDF or picture go straight to the History of "AWB Processed". It also runs by itself every 10 minutes. See them in AWB mailbox.</div>
     <div class="c-bar"><span id="robotReader" class="muted"></span><span class="grow"></span><button class="btn" id="robotConnect" type="button">Connect my Gmail as reader</button><button class="btn" id="robotDisconnect" type="button" hidden>Disconnect</button><button class="btn primary" id="robotRun" type="button" disabled>Search now</button></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th>Email</th><th>From</th><th>Result</th></tr></thead><tbody id="robotBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="robotMsg"></span><button class="btn" id="robotClose" type="button">Close</button></div>
@@ -940,11 +943,26 @@ async function runRobot() {
     $("robotBody").innerHTML = (data.details || []).map(d => `<tr><td class="c-name" title="${esc(d.subject || "")}">${esc(d.subject || d.id)}</td><td><span class="c-used">${esc(d.sender || "")}</span></td>
       <td>${d.error ? `<span class="mb-res err" title="${esc(d.error)}">Error: ${esc(d.error)}</span>` : `<span class="mb-res ${d.found && d.found.length ? "ok" : "warn"}">${esc(d.note || "Processed")}</span>`}</td></tr>`).join("")
       || `<tr><td colspan="3" class="empty">No new emails in AWB Input.</td></tr>`;
-    setRobotMsg(`${fmt(data.emails)} emails read: ${fmt(data.processed)} to AWB Processed, ${fmt(data.errors)} to AWB Error${data.waiting ? `, ${fmt(data.waiting)} waiting for the reply in AWB Input` : ""}. ${fmt((data.found || []).length)} AWBs found.${data.left ? ` ${fmt(data.left)} emails left for the next search.` : ""}`, "ok");
+    setRobotMsg(`${fmt(data.emails)} emails read: ${fmt(data.processed)} to AWB Processed, ${fmt(data.errors)} to AWB Error${data.no_copy ? `, ${fmt(data.no_copy)} without AWB copy to AWB Processed history` : ""}. ${fmt((data.found || []).length)} AWBs found.${data.left ? ` ${fmt(data.left)} emails left for the next search.` : ""}`, "ok");
     if (!$("mbBack").hidden) loadMailbox(false);
     load();
   } catch (e) { setRobotMsg(`The robot could not run: ${e.message}`, "err"); }
   $("robotRun").disabled = false;
+}
+async function findAwbNow() {
+  const btn = $("robotBtn");
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = "Finding…";
+  setMbMsg("The robot is reading AWB Input…");
+  try {
+    const st = await apiCall("/robot/status");
+    if (!st.reader || !st.ready) { setMbMsg(""); openRobot(); return; }
+    const data = await apiCall("/robot/run", { method: "POST", body: "" });
+    await loadMailbox(false);
+    setMbMsg(`Done: ${fmt((data.found || []).length)} AWBs found.${data.left ? ` ${fmt(data.left)} emails left for the next search.` : ""}`, "ok");
+    load();
+  } catch (e) { setMbMsg(`The robot could not run: ${e.message}`, "err"); }
+  finally { btn.disabled = false; btn.textContent = "Find AWB in email"; }
 }
 const rec = { rows: [] };
 async function openRecovered() {
@@ -1040,11 +1058,12 @@ async function loadMailbox(more) {
 // Links to the booking in Cargo System, to mark the AWB as recovered there
 function mbCargoLinks(r) {
   if (!r.found || !r.found.length || !mb.bookingUrl) return "";
-  return r.found.map(awb => {
+  const links = r.found.map(awb => {
     const ids = (r.bookings || {})[awb] || [];
-    if (!ids.length) return `<span class="mb-cs-none">${esc(awb)}: no Cargo System ID yet (press Refresh)</span>`;
-    return ids.map(id => `<a class="mb-cs" href="${esc(mb.bookingUrl + id)}" target="_blank" rel="noopener" title="Opens booking ${id} in Cargo System">Mark ${esc(awb)} in Cargo System</a>`).join("");
+    if (!ids.length) return `<span class="mb-cs" title="No Cargo System ID yet (press Refresh)" style="color:var(--text3)">${esc(awb)}</span>`;
+    return ids.map(id => `<a class="mb-cs" href="${esc(mb.bookingUrl + id)}" target="_blank" rel="noopener" title="Open booking ${id} in Cargo System">${esc(awb)} ↗</a>`).join("");
   }).join("");
+  return `<div class="mb-awbs">Cargo System:${links}</div>`;
 }
 function mbResult(r) {
   if (r.error) return `<span class="mb-res err" title="${esc(r.error)}">${esc(r.error)}</span>`;
@@ -1060,6 +1079,7 @@ function renderMailbox() {
   $("mbViews").hidden = mb.label !== "processed";
   $("mbSelHead").hidden = !canDismiss; $("mbActHead").hidden = !canDismiss;
   $("mbDismissSel").hidden = !canDismiss || !mb.sel.size;
+  $("mbMarkSel").hidden = !canDismiss;
   $("mbDismissSel").textContent = `Dismiss selected (${fmt(mb.sel.size)})`;
   $("mbSelAll").checked = canDismiss && mb.rows.length > 0 && mb.rows.every(r => mb.sel.has(r.id));
   const dismissedBy = r => history && r.dismissed_at ? `<span class="mb-by">Dismissed ${esc(mbDate(Date.parse(r.dismissed_at)))} by ${esc(String(r.dismissed_by || "").split("@")[0])}</span>` : "";
@@ -1628,7 +1648,7 @@ function initAwbRecovery() {
   document.addEventListener("click", e => { if (!e.composedPath().includes($("tools"))) { $("toolsMenu").hidden = true; $("toolsBtn").setAttribute("aria-expanded", "false"); } });
   $("reqClose").addEventListener("click", () => { $("reqBack").hidden = true; });
   $("reqSend").addEventListener("click", sendRequests);
-  $("robotBtn").addEventListener("click", openRobot);
+  $("robotBtn").addEventListener("click", findAwbNow);
   $("robotRun").addEventListener("click", runRobot);
   $("robotConnect").addEventListener("click", connectReader);
   $("robotDisconnect").addEventListener("click", disconnectReader);
