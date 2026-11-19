@@ -71,6 +71,10 @@
   .et-grid .tool-btn { margin-top:6px; height:26px; }
   .et-grid .et-x { margin:0; height:22px; padding:0 7px; }
   .et-missing td { background:#fff7ed !important; }
+  .et-st { font-size:11px; line-height:1.35; white-space:normal; min-width:150px; max-width:260px; }
+  .et-ok { color:#15803d; font-weight:600; }
+  .et-fix { color:#1d4ed8; }
+  .et-chk { color:#c2410c; }
   .et-warn { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:6px; padding:8px 10px; margin-bottom:10px; line-height:1.5; }
   .et-file { font-weight:400; color:var(--text3); font-size:11px; margin-left:6px; }
   @media (max-width:900px) { .et-grid { grid-template-columns:1fr; } }
@@ -672,6 +676,21 @@ function renderEtTable() {
   </table></div>` : `<div class="empty">No flights saved for ${esc(month)} yet.</div>`;
 }
 
+// What the reader verified or corrected on each AWB (19 nov, cony): the
+// cross-checks run in the API (rate x CW = total, pieces vs manifest, CW vs gross).
+function etStatus(a) {
+  const parts = [];
+  if (a.verified && !(a.checks || []).length) {
+    const rate = etNum(a.awb_rate), total = etNum(a.awb_total), cw = etNum(a.chargeable_weight);
+    const byRate = rate && total && cw && Math.abs(rate * cw - total) <= Math.max(1, 0.005 * total);
+    parts.push(`<div class="et-ok">✓ verified ${byRate ? `(${etFmt(rate)} × ${etFmt(cw)} = ${etFmt(total)})` : "(CW ≥ gross weight, pieces match the manifest)"}</div>`);
+  }
+  (a.fixes || []).forEach(f => parts.push(`<div class="et-fix">✎ ${esc(f)}</div>`));
+  (a.checks || []).forEach(c => parts.push(`<div class="et-chk">⚠ ${esc(c)}</div>`));
+  if (a.edited) parts.push('<div class="et-fix">edited by hand</div>');
+  return parts.join("") || "—";
+}
+
 function etInput(field, value, type = "number", attrs = "") {
   return `<input type="${type}" data-f="${field}" value="${esc(value ?? "")}" ${attrs}>`;
 }
@@ -706,14 +725,15 @@ function renderEtEditor() {
         ${(etRow.ulds || []).map((u, i) => `<tr><td><input type="text" data-uld="${i}" data-k="uld" value="${esc(u.uld)}"></td><td><input type="text" data-uld="${i}" data-k="type" value="${esc(u.type)}" style="width:60px"></td><td class="num">${ET_ULD_POS[String(u.type || "").toUpperCase()] ?? 0}</td><td><button class="tool-btn et-x" data-del-uld="${i}" type="button">×</button></td></tr>`).join("")}
         </tbody></table><button class="tool-btn" id="etAddUld" type="button">+ ULD</button></div>
       <div><div class="field-label">AWBs: CHW = chargeable weight ÷ AWB pieces × pieces flown</div>
-        <table class="df-table"><thead><tr><th>AWB</th><th>ULD</th><th class="num">Pieces flown</th><th class="num">AWB pieces</th><th class="num">Chargeable weight</th><th class="num">CHW</th><th></th></tr></thead><tbody>
-        ${r.awbs.map((a, i) => `<tr class="${a.chargeable_weight === null || a.chargeable_weight === undefined ? "et-missing" : ""}">
+        <table class="df-table"><thead><tr><th>AWB</th><th>ULD</th><th class="num">Pieces flown</th><th class="num">AWB pieces</th><th class="num">Chargeable weight</th><th class="num">CHW</th><th>Check</th><th></th></tr></thead><tbody>
+        ${r.awbs.map((a, i) => `<tr class="${a.chargeable_weight === null || a.chargeable_weight === undefined || (a.checks || []).length ? "et-missing" : ""}">
           <td><input type="text" data-awb="${i}" data-k="awb" value="${esc(a.awb)}" style="width:110px"></td>
           <td><input type="text" data-awb="${i}" data-k="uld" value="${esc(a.uld)}" style="width:95px"></td>
           <td class="num"><input type="number" data-awb="${i}" data-k="pieces_flown" value="${esc(a.pieces_flown ?? "")}"></td>
           <td class="num"><input type="number" data-awb="${i}" data-k="awb_pieces" value="${esc(a.awb_pieces ?? a.manifest_pieces_total ?? "")}"></td>
           <td class="num"><input type="number" step="0.01" data-awb="${i}" data-k="chargeable_weight" value="${esc(a.chargeable_weight ?? "")}"></td>
           <td class="num"><b>${etFmt(a.chw)}</b></td>
+          <td class="et-st">${etStatus(a)}</td>
           <td><button class="tool-btn et-x" data-del-awb="${i}" type="button">×</button></td></tr>`).join("")}
         </tbody></table><button class="tool-btn" id="etAddAwb" type="button">+ AWB</button></div>
     </div>
@@ -822,7 +842,12 @@ etEls.editor.addEventListener("input", e => {
   const t = e.target;
   if (!etRow) return;
   if (t.dataset.f) etRow[t.dataset.f] = t.type === "checkbox" ? t.checked : t.value;
-  else if (t.dataset.awb !== undefined) etRow.awbs[Number(t.dataset.awb)][t.dataset.k] = t.type === "number" ? etNum(t.value) : t.value;
+  else if (t.dataset.awb !== undefined) {
+    const a = etRow.awbs[Number(t.dataset.awb)];
+    a[t.dataset.k] = t.type === "number" ? etNum(t.value) : t.value;
+    a.edited = true;
+    a.checks = [];
+  }
   else if (t.dataset.uld !== undefined) etRow.ulds[Number(t.dataset.uld)][t.dataset.k] = t.value;
   else return;
   // Recalculate without losing the cursor: only the summary and the CHW cells change.
