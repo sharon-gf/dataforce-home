@@ -57,10 +57,40 @@
   .et-tabs { width:min(var(--content-width),100%); margin:0 auto 8px; display:flex; gap:6px; }
   .et-tabs button { height:30px; border:1px solid var(--border); border-radius:4px; padding:0 14px; background:#fff; color:var(--text2); cursor:pointer; }
   .et-tabs button.on { background:var(--green); border-color:var(--green); color:#fff; }
-  .et-table td, .et-table th { white-space:nowrap; }
-  .et-table td.num { text-align:right; }
+  .et-top { display:grid; grid-template-columns:minmax(280px,1fr) auto; gap:14px; align-items:center; }
+  .et-drop { display:flex; align-items:center; gap:14px; padding:14px 18px; border:1.5px dashed #b9c3d6; border-radius:10px; background:#f7f9fc; cursor:pointer; transition:background .15s, border-color .15s; }
+  .et-drop:hover, .et-drop.over { background:#eef6ea; border-color:var(--green); }
+  .et-drop input { display:none; }
+  .et-drop-icon { width:46px; height:46px; border-radius:10px; display:grid; place-items:center; background:#e2efda; color:var(--green); flex:none; }
+  .et-drop-text { display:flex; flex-direction:column; gap:2px; font-size:12px; color:var(--text2); }
+  .et-drop-text b { font-size:13px; color:var(--text1); }
+  .et-drop.busy { pointer-events:none; opacity:.75; }
+  .et-drop.busy .et-drop-icon { animation:etPulse 1s ease-in-out infinite; }
+  @keyframes etPulse { 50% { opacity:.35; } }
+  .et-actions { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; justify-content:flex-end; }
+  .et-note { grid-column:1 / -1; margin-top:0; }
+  .et-note:empty { display:none; }
+  .et-kpis { width:min(var(--content-width),100%); margin:0 auto 8px; display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; }
+  .et-kpis:empty { display:none; }
+  .et-kpi { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--green); border-radius:8px; padding:10px 12px; }
+  .et-kpi span { display:block; font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); }
+  .et-kpi b { display:block; font-size:20px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums; }
+  .et-kpi small { color:var(--text3); font-size:10px; }
+  .et-kpi.red { border-left-color:#dc2626; }
+  .et-table-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .et-table-head small { color:var(--text3); }
+  .et-table { table-layout:auto; font-variant-numeric:tabular-nums; }
+  .et-table th { white-space:normal; line-height:1.25; vertical-align:bottom; padding:8px 6px; font-size:8.5px; }
+  .et-table td { white-space:nowrap; padding:7px 6px; }
+  .et-table td.num, .et-table th.num { text-align:right; }
+  .et-table td.c, .et-table th.c { text-align:center; }
   .et-table tbody tr { cursor:pointer; }
-  .et-table tr.et-cancel td { color:#dc2626; }
+  .et-table tbody tr:hover td { background:#e9f3e3 !important; }
+  .et-table td.strong { font-weight:600; }
+  .et-table .wk { display:inline-block; min-width:30px; padding:1px 6px; border-radius:10px; background:#eef0f4; color:var(--text2); font-size:10px; font-weight:600; }
+  .et-table tr.et-cancel td { color:#b91c1c; background:#fff5f5 !important; }
+  .et-table .tag-cancel { display:inline-block; padding:1px 7px; border-radius:10px; background:#fee2e2; color:#b91c1c; font-size:10px; font-weight:600; }
+  .et-table td.comment { white-space:normal; min-width:120px; max-width:220px; color:var(--text2); }
   .et-head { margin-bottom:10px; }
   .et-head input { height:30px; border:1px solid var(--border); border-radius:4px; padding:0 8px; }
   .et-sum { display:flex; flex-wrap:wrap; gap:18px; padding:8px 12px; background:var(--green3); border-radius:6px; margin-bottom:10px; font-size:12px; }
@@ -186,15 +216,22 @@
     <button type="button" data-mode="pos">POS (payload)</button>
   </div>
   <div id="etPosView" hidden>
-    <section class="panel">
-      <div class="filters">
-        <div class="field"><label for="etPdf">Flight PDF (manifest + AWBs)</label><input type="file" id="etPdf" accept="application/pdf"></div>
-        <button class="tool-btn" id="etNewBtn" type="button">New flight without PDF</button>
+    <section class="panel et-top">
+      <label class="et-drop" id="etDrop" for="etPdf">
+        <input type="file" id="etPdf" accept="application/pdf">
+        <span class="et-drop-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6"/><path d="m9 13 3-3 3 3"/></svg>
+        </span>
+        <span class="et-drop-text"><b>Upload the flight PDF</b><span>Drop the manifest + AWBs here, or click to choose it</span></span>
+      </label>
+      <div class="et-actions">
+        <button class="tool-btn" id="etNewBtn" type="button">+ Flight without PDF</button>
         <div class="field"><label for="etMonth">Month</label><select id="etMonth"></select></div>
         <button class="tool-btn primary" id="etExcelBtn" type="button">Export Excel</button>
       </div>
-      <div class="note" id="etPosNote"></div>
+      <div class="note et-note" id="etPosNote"></div>
     </section>
+    <section class="et-kpis" id="etKpis"></section>
     <section class="panel" id="etPosEditor" hidden></section>
     <section class="panel" id="etPosTable"></section>
   </div>
@@ -599,6 +636,8 @@ const etEls = {
   note: document.getElementById("etPosNote"),
   editor: document.getElementById("etPosEditor"),
   month: document.getElementById("etMonth"),
+  kpis: document.getElementById("etKpis"),
+  drop: document.getElementById("etDrop"),
   table: document.getElementById("etPosTable"),
 };
 
@@ -667,13 +706,51 @@ async function loadEtPos() {
   }
 }
 
+// 19 nov, cony: same columns as the "data PAYLOAD" sheet, laid out to fit the screen.
+const ET_VIEW = [
+  ["Code", r => esc(`${r.origin}${etDateInfo(r.flight_date).serial}`), "strong"],
+  ["W#", r => `<span class="wk">${etDateInfo(r.flight_date).week}</span>`, "c"],
+  ["Day", r => esc(etDateInfo(r.flight_date).day), ""],
+  ["DOW", r => esc(etDateInfo(r.flight_date).dow.slice(0, 3)), ""],
+  ["Origin", r => esc(r.origin), "c"],
+  ["Flight", r => esc(r.flight || ""), ""],
+  ["#AWBs", r => r.total_awbs, "num"],
+  ["NETO", r => etFmt(r.neto ?? 0), "num"],
+  ["CBM", () => "", "num"],
+  ["CHW", r => etFmt(r.chw ?? 0), "num strong"],
+  ["Total POS disponibles", r => r.total_pos, "num"],
+  ["POS utilizadas", r => r.pos_used, "num"],
+  ["POS vacias", r => etNum(r.pos_vacias) ?? 0, "num"],
+  ["POS Maletas", r => r.pos_maletas, "num strong"],
+  ["Authorized POS by ET", r => etNum(r.authorized_pos) ?? "", "num"],
+  ["Comments", r => r.cancelled ? '<span class="tag-cancel">FLIGHT CANCELLED</span>' : esc(r.comments || ""), "comment"],
+];
+
+function renderEtKpis(rows) {
+  const flown = rows.filter(r => !r.cancelled);
+  const sum = k => flown.reduce((s, r) => s + (etNum(r[k]) || 0), 0);
+  const used = sum("pos_used"), total = sum("total_pos");
+  const card = (label, value, sub, cls = "") => `<div class="et-kpi ${cls}"><span>${label}</span><b>${value}</b>${sub ? `<small>${sub}</small>` : ""}</div>`;
+  etEls.kpis.innerHTML = rows.length ? [
+    card("Flights", flown.length, `${rows.length - flown.length} cancelled`, rows.length - flown.length ? "red" : ""),
+    card("AWBs", etFmt(sum("total_awbs"), 0)),
+    card("NETO (kg)", etFmt(sum("neto"), 0)),
+    card("CHW (kg)", etFmt(sum("chw"), 0)),
+    card("POS used", `${used} / ${total}`, total ? `${Math.round(used / total * 100)}% of the positions` : ""),
+    card("POS maletas", etFmt(sum("pos_maletas"), 0)),
+  ].join("") : "";
+}
+
 function renderEtTable() {
   const month = etEls.month.value;
-  const rows = etFlights.filter(f => month === "ALL" || f.flight_date.startsWith(month));
-  etEls.table.innerHTML = rows.length ? `<div class="table-wrap"><table class="df-table et-table">
-    <thead><tr>${ET_COLUMNS.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead>
-    <tbody>${rows.map(r => `<tr class="${r.cancelled ? "et-cancel" : ""}" data-key="${esc(r.flight_date + "|" + r.origin)}">${etExcelRow(r).map((v, i) => `<td class="${i >= 8 && i <= 16 ? "num" : ""}">${esc(typeof v === "number" && i !== 2 && i !== 3 ? etFmt(v) : v ?? "")}</td>`).join("")}</tr>`).join("")}</tbody>
-  </table></div>` : `<div class="empty">No flights saved for ${esc(month)} yet.</div>`;
+  const rows = etFlights.filter(f => month === "ALL" || f.flight_date.startsWith(month))
+    .sort((x, y) => (x.flight_date + x.origin).localeCompare(y.flight_date + y.origin));
+  renderEtKpis(rows);
+  etEls.table.innerHTML = rows.length ? `<div class="et-table-head"><div class="block-title">Flights · ${esc(month === "ALL" ? "all months" : month)}</div><small>Click a flight to open it</small></div>
+    <div class="table-wrap"><table class="df-table et-table">
+    <thead><tr>${ET_VIEW.map(([h, , cls]) => `<th class="${cls.includes("num") ? "num" : cls.includes("c") ? "c" : ""}">${esc(h)}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(r => `<tr class="${r.cancelled ? "et-cancel" : ""}" data-key="${esc(r.flight_date + "|" + r.origin)}">${ET_VIEW.map(([, f, cls]) => `<td class="${cls}">${f(r)}</td>`).join("")}</tr>`).join("")}</tbody>
+  </table></div>` : `<div class="empty">No flights saved for ${esc(month === "ALL" ? "any month" : month)} yet. Upload the first flight PDF above.</div>`;
 }
 
 // What the reader verified or corrected on each AWB (19 nov, cony): the
@@ -759,7 +836,8 @@ function etNewRow() {
 async function readEtPdf() {
   const file = etEls.file.files[0];
   if (!file) return;
-  etEls.note.textContent = `Reading ${file.name}… this takes about a minute.`;
+  etEls.note.textContent = `Reading ${file.name}… this takes a few seconds.`;
+  etEls.drop.classList.add("busy");
   els.status.textContent = "Reading PDF";
   const form = new FormData();
   form.append("file", file);
@@ -774,6 +852,7 @@ async function readEtPdf() {
   } finally {
     els.status.textContent = "Live";
     etEls.file.value = "";
+    etEls.drop.classList.remove("busy");
   }
 }
 
@@ -829,6 +908,13 @@ etEls.tabs.addEventListener("click", e => {
   if (b) setEtMode(b.dataset.mode);
 });
 etEls.file.addEventListener("change", readEtPdf);
+["dragenter", "dragover"].forEach(ev => etEls.drop.addEventListener(ev, e => { e.preventDefault(); etEls.drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => etEls.drop.addEventListener(ev, e => { e.preventDefault(); etEls.drop.classList.remove("over"); }));
+etEls.drop.addEventListener("drop", e => {
+  const f = [...(e.dataTransfer.files || [])].find(x => x.type === "application/pdf" || /\.pdf$/i.test(x.name));
+  if (!f) { etEls.note.textContent = "Drop a PDF file."; return; }
+  const dt = new DataTransfer(); dt.items.add(f); etEls.file.files = dt.files; readEtPdf();
+});
 etEls.month.addEventListener("change", renderEtTable);
 document.getElementById("etNewBtn").addEventListener("click", etNewRow);
 document.getElementById("etExcelBtn").addEventListener("click", exportEtExcel);
