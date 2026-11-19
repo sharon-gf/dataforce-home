@@ -488,7 +488,7 @@ th.name-col, th.email-col { z-index:26; }
 
     <div class="form-group">
       <label>Type</label>
-      <input type="text" id="formType" list="typeOptions" placeholder="Sales, Manager, Operations…" oninput="updateMarketDataRolDisplay()" />
+      <input type="text" id="formType" list="typeOptions" placeholder="Sales, Manager, Operations…" oninput="setMarketDataRolFromType()" />
       <datalist id="typeOptions"></datalist>
     </div>
 
@@ -624,8 +624,14 @@ th.name-col, th.email-col { z-index:26; }
 
     <div class="form-group">
       <label>Market Data role</label>
-      <div id="formMarketDataRolDisplay" style="padding:8px; border:1px solid var(--border); border-radius:4px; background:var(--surface2); font-size:11px; color:var(--text1);">—</div>
-      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Calculado solo del campo "Type" de arriba — ya no se elige a mano acá. Business Manager → Manager. Sales / GSA → Vendedor. C-Level y sin Type → Admin (ve todas las BD, la lista de abajo no le aplica). Operations, Manager (a secas) y cualquier otro Type → sin Market Data (Panel de Ventas ignora a esta persona, se sigue configurando a mano en su propia pestaña Permisos si hiciera falta).</div>
+      <select id="formMarketDataRol" onchange="updateMarketDataRolDisplay()">
+        <option value="">— None (no Market Data)</option>
+        <option value="admin">Admin</option>
+        <option value="ceo">CEO</option>
+        <option value="manager">Manager</option>
+        <option value="vendedor">Vendedor</option>
+      </select>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Se propone según el Type (Business Manager → Manager, Sales / GSA → Vendedor, C-Level y sin Type → Admin, el resto → None), pero se puede cambiar a mano. Con cualquier rol se pueden elegir abajo las bases de Market Data que ve la persona.</div>
     </div>
 
     <div class="form-group" id="mdManagedSellersGroup" style="display:none;">
@@ -639,7 +645,7 @@ th.name-col, th.email-col { z-index:26; }
       <label>Market Data databases</label>
       <button type="button" class="select-all-btn" onclick="toggleSelectAllMdSources()">Select All</button>
       <div class="checkbox-group" id="mdSourcesCheckboxes"></div>
-      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Restricts which databases this Vendedor/Manager can see in Market Data — leave all checked for no restriction.</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px;">Restricts which databases this person can see in Market Data (any role, Admin too) — leave all unchecked for no restriction.</div>
     </div>
 
     <div class="form-group" id="mdClientsGroup" style="display:none;">
@@ -1058,13 +1064,18 @@ th.name-col, th.email-col { z-index:26; }
     '': '— None (Operations, Manager a secas, u otro Type — no gestionado acá)',
   };
 
+  // 19 nov, cony: el rol de Market Data se puede elegir a mano (el Type solo
+  // lo propone) y la lista de bases aplica a cualquier rol, también Admin.
+  function setMarketDataRolFromType() {
+    document.getElementById('formMarketDataRol').value = marketDataRolForType(document.getElementById('formType').value);
+    updateMarketDataRolDisplay();
+  }
+
   function updateMarketDataRolDisplay() {
-    const type = document.getElementById('formType').value;
-    const rol = marketDataRolForType(type);
-    document.getElementById('formMarketDataRolDisplay').textContent = MARKET_DATA_ROL_LABELS[rol] || rol;
+    const rol = document.getElementById('formMarketDataRol').value;
     document.getElementById('mdManagedSellersGroup').style.display = rol === 'manager' ? '' : 'none';
-    document.getElementById('mdSourcesGroup').style.display = (rol === 'vendedor' || rol === 'manager') ? '' : 'none';
-    document.getElementById('mdClientsGroup').style.display = (rol === 'vendedor' || rol === 'manager') ? '' : 'none';
+    document.getElementById('mdSourcesGroup').style.display = rol ? '' : 'none';
+    document.getElementById('mdClientsGroup').style.display = rol ? '' : 'none';
   }
 
   function populateSalesPersonSelect() {
@@ -1465,7 +1476,7 @@ th.name-col, th.email-col { z-index:26; }
     document.getElementById('formStatus').value = 'active';
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
-    updateMarketDataRolDisplay();
+    setMarketDataRolFromType();
     document.getElementById('editModal').classList.add('active');
     document.getElementById('saveBtn').textContent = 'Create';
     updateSelectAllModules();
@@ -1520,6 +1531,9 @@ th.name-col, th.email-col { z-index:26; }
       cb.checked = asList(user.market_data_aerolineas).includes(cb.value);
     });
 
+    const savedRol = (user.market_data_rol || '').trim().toLowerCase();
+    document.getElementById('formMarketDataRol').value = MARKET_DATA_ROL_LABELS[savedRol] && savedRol
+      ? savedRol : marketDataRolForType(document.getElementById('formType').value);
     updateMarketDataRolDisplay();
     document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]').forEach(cb => {
       cb.checked = asList(user.market_data_managed_sellers).includes(cb.value);
@@ -1549,14 +1563,14 @@ th.name-col, th.email-col { z-index:26; }
     const gsaCheckboxes = Array.from(document.querySelectorAll('#gsasCheckboxes input[type="checkbox"]'));
     const selectedGsas = gsaCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
     const gsas = selectedGsas.length === 0 || selectedGsas.length === gsaCheckboxes.length ? [] : selectedGsas;
-    const marketDataRol = marketDataRolForType(type);
-    const marketDataFuentes = (marketDataRol === 'vendedor' || marketDataRol === 'manager')
+    const marketDataRol = document.getElementById('formMarketDataRol').value;
+    const marketDataFuentes = marketDataRol
       ? Array.from(document.querySelectorAll('#mdSourcesCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value)
       : [];
     const marketDataManagedSellers = marketDataRol === 'manager'
       ? Array.from(document.querySelectorAll('#mdManagedSellersCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value)
       : [];
-    const marketDataAerolineas = (marketDataRol === 'vendedor' || marketDataRol === 'manager')
+    const marketDataAerolineas = marketDataRol
       ? Array.from(document.querySelectorAll('#mdClientsCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value)
       : [];
     const status = document.getElementById('formStatus').value;
