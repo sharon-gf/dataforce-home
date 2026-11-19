@@ -117,12 +117,6 @@
   <section class="panel">
     <div class="filters">
       <div class="field"><label for="prefix">AWB prefix</label><select id="prefix"></select></div>
-      <div class="field"><label for="reportType">Report</label>
-        <select id="reportType">
-          <option value="friday">Friday (Friday to Tuesday)</option>
-          <option value="monday">Monday (Monday to Sunday)</option>
-        </select>
-      </div>
       <div class="field"><label for="dateFrom">From</label><input type="date" id="dateFrom"></div>
       <div class="field"><label for="dateTo">To</label><input type="date" id="dateTo"></div>
       <div class="field"><label for="dayFilter">Day</label><select id="dayFilter"><option value="ALL">All days</option></select></div>
@@ -172,7 +166,6 @@ let requestSeq = 0;
 
 const els = {
   prefix: document.getElementById("prefix"),
-  reportType: document.getElementById("reportType"),
   dateFrom: document.getElementById("dateFrom"),
   dateTo: document.getElementById("dateTo"),
   day: document.getElementById("dayFilter"),
@@ -220,9 +213,20 @@ function dayName(group) {
   return DAY_NAMES[parseDay(group.flight_date).getDay()];
 }
 
+// 19 nov, cony: no Friday/Monday report any more, only the calendar. The API
+// is asked for Monday-to-Sunday weeks (they cover every day) and the page
+// keeps exactly the days between From and To, in one table.
+function baseBlocks() {
+  if (!data) return [];
+  const { from, to } = data.range;
+  const groups = data.blocks.flatMap(block => block.groups)
+    .filter(g => from <= String(g.flight_date).slice(0, 10) && String(g.flight_date).slice(0, 10) <= to);
+  return [{ start: from, end: to, groups }];
+}
+
 function visibleBlocks() {
   const day = els.day.value;
-  return (data ? data.blocks : [])
+  return baseBlocks()
     .filter(block => day === "ALL" || (block.start <= day && day <= block.end))
     .map(block => ({
       ...block,
@@ -233,7 +237,7 @@ function visibleBlocks() {
 function renderDays() {
   const selected = els.day.value;
   const options = [{ value: "ALL", label: "All days" }];
-  (data ? data.blocks : []).forEach(block => {
+  baseBlocks().forEach(block => {
     for (let d = parseDay(block.start); iso(d) <= block.end; d.setDate(d.getDate() + 1)) {
       options.push({ value: iso(d), label: d.toLocaleDateString("en-US", { weekday: "long", month: "2-digit", day: "2-digit" }) });
     }
@@ -352,7 +356,7 @@ async function load() {
   const seq = ++requestSeq;
   const params = new URLSearchParams({
     email: u.email,
-    report_type: els.reportType.value,
+    report_type: "monday",
     date_from: els.dateFrom.value,
     date_to: els.dateTo.value || els.dateFrom.value,
     carrier,
@@ -366,6 +370,7 @@ async function load() {
     if (seq !== requestSeq) return;
     if (!response.ok) throw new Error(body.detail || "Could not load the report");
     data = body;
+    data.range = { from: params.get("date_from"), to: params.get("date_to") };
     fillSelect(els.prefix, [{ value: "ALL", label: "All" }].concat(body.prefixes.map(p => ({ value: p, label: String(p).padStart(3, "0") }))), body.prefix ?? "ALL");
     renderDays();
     renderStations();
@@ -442,7 +447,7 @@ async function exportExcel() {
   const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `airline-report-${data.carrier}-${data.report_type}-${els.dateFrom.value}.xlsx`;
+  a.download = exportName("xlsx");
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -457,7 +462,7 @@ function downloadBlob(blob, name) {
 }
 
 function exportName(extension) {
-  return `airline-report-${data.carrier}-${data.report_type}-${els.dateFrom.value}.${extension}`;
+  return `airline-report-${data.carrier}-${data.range.from}-to-${data.range.to}.${extension}`;
 }
 
 function exportCsv() {
@@ -514,9 +519,6 @@ function showView() {
   }
   carrier = airline.code;
   document.getElementById("reportTitle").textContent = `${airline.name} report`;
-  els.reportType.value = PREVIOUS_WEEK[carrier] ? "monday" : "friday";
-  // El Al's report is always Monday to Sunday, so it has no report type to choose.
-  els.reportType.closest(".field").hidden = !!PREVIOUS_WEEK[carrier];
   els.day.value = "ALL";
   setDefaults();
   reloadWithPrefixReset();
@@ -524,7 +526,14 @@ function showView() {
 
 function setDefaults() {
   const d = new Date();
-  if (PREVIOUS_WEEK[carrier]) d.setDate(d.getDate() - 7);
+  if (PREVIOUS_WEEK[carrier]) {
+    // El Al: last week, Monday to Sunday
+    d.setDate(d.getDate() - 7 - ((d.getDay() + 6) % 7));
+    els.dateFrom.value = iso(d);
+    d.setDate(d.getDate() + 6);
+    els.dateTo.value = iso(d);
+    return;
+  }
   const day = iso(d);
   els.dateFrom.value = day;
   els.dateTo.value = day;
@@ -537,7 +546,6 @@ function reloadWithPrefixReset() {
 }
 
 els.prefix.addEventListener("change", load);
-els.reportType.addEventListener("change", () => { setDefaults(); load(); });
 els.dateFrom.addEventListener("change", () => {
   if (els.dateTo.value < els.dateFrom.value) els.dateTo.value = els.dateFrom.value;
   load();
@@ -555,7 +563,6 @@ els.stations.addEventListener("change", event => {
   renderReport();
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
-  els.reportType.value = PREVIOUS_WEEK[carrier] ? "monday" : "friday";
   els.day.value = "ALL";
   setDefaults();
   reloadWithPrefixReset();
