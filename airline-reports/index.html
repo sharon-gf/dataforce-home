@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DATAFORCE - Airline Reports</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#e8eaee; --surface:#fff; --border:#d8dde8; --navy:#0d1f3c;
@@ -128,31 +128,135 @@
   .hub-note { min-height:18px; margin-top:12px; color:var(--text2); font-size:12px; }
   .report-head { width:min(var(--content-width),100%); margin:0 auto 8px; display:flex; align-items:center; gap:12px; }
   .report-head h1 { font-size:16px; font-weight:600; }
-  /* Avianca: Seguimiento de Mercado (19 nov, cony), same layout as the Excel, in Avianca red */
+  /* Avianca: Seguimiento de Mercado (19-20 nov, cony): same tables as the Excel, redesigned:
+     branded header, named sections, report week highlighted, cleaner chart and PDF */
   .av-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
   .av-bar .spacer { flex:1; }
-  .av-red { color:#da291c; }
-  .av-legend { display:flex; gap:12px; font-size:11px; color:var(--text2); margin-bottom:4px; }
-  .av-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+  .avdoc { width:min(var(--content-width),100%); margin:0 auto 10px; background:#fff; border:1px solid #eadde4; border-radius:12px; overflow:hidden;
+    font-family:'DM Sans',Inter,sans-serif; color:#1d1418; box-shadow:0 6px 22px rgba(60,20,40,.06); }
+  .avdoc-head { display:flex; justify-content:space-between; align-items:center; padding:18px 26px; background:linear-gradient(90deg,#e30613 0%,#d0123c 45%,#a3197e 100%); color:#fff; }
+  .avdoc-head h2 { font-size:24px; font-weight:700; letter-spacing:-.01em; }
+  .avdoc-head p { font-size:13px; opacity:.88; margin-top:2px; }
+  .avdoc-head .logos { display:flex; align-items:center; gap:14px; }
+  .avdoc-head .logos img { height:44px; } .avdoc-head .logos span { width:1px; height:38px; background:rgba(255,255,255,.55); }
+  .avdoc-sec { padding:18px 26px 6px; }
+  .avdoc-sec + .avdoc-sec { border-top:1px solid #f1e7ec; }
+  .avdoc-title { display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
+  .avdoc-title h3 { font-size:17px; font-weight:700; }
+  .avdoc-title span { font-size:12px; color:#8a7480; }
+  .avdoc-title .tag { margin-left:auto; font-size:11px; font-weight:600; color:#a3197e; background:#fbeef5; border-radius:20px; padding:3px 10px; }
+  .av-legend { display:flex; gap:14px; font-size:12px; color:#6f5a65; margin-bottom:6px; }
+  .av-legend i { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:5px; vertical-align:-2px; }
   .av-chart svg { width:100%; height:auto; display:block; }
-  .av-scroll { overflow-x:auto; border:1px solid #f1c4c0; border-radius:6px; }
-  .av-table { border-collapse:separate; border-spacing:0; width:max-content; table-layout:fixed; font-variant-numeric:tabular-nums; }
-  .av-table th, .av-table td { width:54px; min-width:54px; max-width:54px; height:24px; box-sizing:border-box; overflow:hidden; }
-  .av-table th { background:#da291c; color:#fff; font-size:10px; font-weight:600; padding:6px 6px; text-align:right; }
-  .av-table td { padding:0 8px; border-bottom:1px solid #f6e3e1; text-align:right; font-size:11px; line-height:24px; background:#fff; white-space:nowrap; }
-  .av-table tbody tr:nth-child(even) td { background:#fdf5f4; }
-  .av-table .yr { position:sticky; left:0; z-index:1; width:44px; min-width:44px; max-width:44px; text-align:left; color:var(--text2); }
-  .av-table th.yr { color:#fff; }
-  .av-table .lbl { position:sticky; left:44px; z-index:1; width:150px; min-width:150px; max-width:150px; text-align:left; font-weight:500; border-right:1px solid #f1c4c0; }
-  .av-table th.yr, .av-table th.lbl { z-index:2; text-align:left; }
-  .av-table .fl { text-align:left; width:96px; min-width:96px; max-width:96px; color:var(--text2); }
-  .av-table tr.blank td { background:#fff !important; height:10px; line-height:10px; padding:0; border-bottom:0; }
-  .av-table tr.qt td { font-weight:600; }
-  .av-table input { width:100%; height:18px; margin:0; border:1px solid #ecc9c5; border-radius:3px; text-align:right; padding:0 3px; font-size:11px; line-height:16px; background:#fffaf0; vertical-align:middle; font-variant-numeric:tabular-nums; -moz-appearance:textfield; }
+  .av-scroll { overflow-x:auto; border:1px solid #eadde4; border-radius:10px; }
+  .av-table { border-collapse:separate; border-spacing:0; width:max-content; table-layout:fixed; font-variant-numeric:tabular-nums; font-family:'DM Sans',Inter,sans-serif; }
+  .av-table th, .av-table td { width:52px; min-width:52px; max-width:52px; height:26px; box-sizing:border-box; overflow:hidden; }
+  .av-table th { background:#2a1620; color:#f3e6ec; font-size:10.5px; font-weight:600; padding:7px 6px; text-align:right; }
+  .av-table th.now { background:#a3197e; color:#fff; }
+  .av-table td { padding:0 8px; border-bottom:1px solid #f4ecf0; text-align:right; font-size:11.5px; line-height:26px; background:#fff; white-space:nowrap; color:#2b2026; }
+  .av-table tbody tr.row:nth-of-type(even) td { background:#fcf9fb; }
+  .av-table tbody tr.row:hover td { background:#f8eef3; }
+  .av-table td.now { background:#fbeef5 !important; font-weight:700; color:#7a1252; }
+  .av-table td.nil { color:#cbbcc4; }
+  .av-table .yr { position:sticky; left:0; z-index:1; width:46px; min-width:46px; max-width:46px; text-align:left; color:#9b8590; font-size:10.5px; }
+  .av-table .lbl { position:sticky; left:46px; z-index:1; width:158px; min-width:158px; max-width:158px; text-align:left; font-weight:600; color:#1d1418; border-right:1px solid #eadde4; box-shadow:inset 3px 0 0 var(--sec,#a3197e); }
+  .av-table th.yr, .av-table th.lbl { z-index:2; text-align:left; color:#fff; box-shadow:none; }
+  .av-table .fl { text-align:left; width:100px; min-width:100px; max-width:100px; color:#6f5a65; }
+  .av-table tr.sec td { height:24px; line-height:24px; background:#fdf6f9 !important; color:var(--sec,#a3197e); font-size:9.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; border-bottom:1px solid #f1e3ea; }
+  .av-table tr.sec td.lbl { color:var(--sec,#a3197e); }
+  .av-table tr.qt td { font-weight:700; }
+  .av-table .chip { display:inline-block; padding:0 8px; height:19px; line-height:19px; border-radius:10px; background:#fbeef5; color:#a3197e; font-size:10.5px; font-weight:600; }
+  .av-table input { width:100%; height:19px; margin:0; border:1px solid #e7c6d6; border-radius:5px; text-align:right; padding:0 4px; font-size:11.5px; line-height:17px; background:#fff; vertical-align:middle; font-variant-numeric:tabular-nums; font-family:inherit; -moz-appearance:textfield; }
+  .av-table input:focus { outline:none; border-color:#a3197e; box-shadow:0 0 0 3px rgba(163,25,126,.15); }
   .av-table input::-webkit-outer-spin-button, .av-table input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
-  .av-table td.fl input { width:34px; margin-right:4px; }
+  .av-table td.fl input { width:36px; margin-right:4px; }
   .av-table td:has(input) { padding:0 3px; }
   .av-table input.saving { border-color:#f59e0b; } .av-table input.saved { border-color:#16a34a; } .av-table input.err { border-color:#dc2626; background:#fef2f2; }
+  /* Avianca "Mercado SCL" (19 nov, cony): same design as the PDF sent to Avianca */
+  .av-tabs { width:min(var(--content-width),100%); margin:0 auto 8px; display:flex; gap:6px; }
+  .av-tabs button { height:30px; border:1px solid var(--border); border-radius:4px; padding:0 14px; background:#fff; color:var(--text2); cursor:pointer; }
+  .av-tabs button.on { background:#da291c; border-color:#da291c; color:#fff; }
+  .scl-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+  .scl-bar .grow { flex:1; min-width:220px; }
+  .scl-bar .grow input { width:100%; }
+  .scl-wrap { overflow-x:auto; padding-bottom:6px; }
+  #sclReport { width:1240px; margin:0 auto; }
+  .scl-page { --bg:#140d11; --card:#1f161b; --line:#33262d; --mag:#a3197e; --prev:#6e4f61; --red:#e30613; --pink:#e85aa7; --green:#34c47c; --txt:#f6eff3; --mut:#a8949f;
+    background:var(--bg); color:var(--txt); font-family:'DM Sans',Inter,sans-serif; font-size:14px; padding:0 0 26px; margin-bottom:18px; border-radius:6px; overflow:hidden; }
+  .scl-head { display:flex; justify-content:space-between; align-items:center; padding:22px 34px; background:linear-gradient(90deg,#e30613 0%,#d0123c 45%,#a3197e 100%); }
+  .scl-head h1 { font-size:30px; font-weight:700; letter-spacing:-.01em; color:#fff; }
+  .scl-head p { font-size:15px; color:rgba(255,255,255,.85); margin-top:3px; }
+  .scl-logos { display:flex; align-items:center; gap:16px; }
+  .scl-logos img { height:54px; }
+  .scl-logos span { width:1px; height:46px; background:rgba(255,255,255,.55); }
+  .scl-main { font-size:23px; font-weight:700; margin:22px 34px 16px; line-height:1.3; }
+  .scl-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:0 34px 14px; }
+  .scl-kpi { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--mag); border-radius:10px; padding:14px 18px; }
+  .scl-kpi span { font-size:13px; color:var(--mut); }
+  .scl-kpi b { display:block; font-size:32px; font-weight:700; margin:2px 0; letter-spacing:-.01em; }
+  .scl-kpi small { font-size:12.5px; color:var(--mut); }
+  .scl-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 34px 14px; }
+  .scl-kicker { font-size:12.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--pink); }
+  .scl-card h3 { font-size:19px; font-weight:600; margin:4px 0 12px; }
+  .scl-two { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:0 34px 14px; }
+  .scl-two .scl-card { margin:0; }
+  .scl-legend { display:flex; align-items:center; gap:16px; font-size:12px; color:var(--mut); margin-bottom:6px; }
+  .scl-legend b { margin-left:auto; color:var(--pink); font-weight:700; font-size:13px; }
+  .scl-legend i { display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+  .lg-bar, .lg-prev { background:var(--prev); } .lg-now { background:var(--mag); }
+  .lg-line { height:2px !important; width:16px !important; background:var(--red); vertical-align:3px !important; }
+  .scl-chart { width:100%; height:auto; display:block; }
+  .scl-chart .grid { stroke:#33262d; stroke-width:1; }
+  .scl-chart .axis { fill:#a8949f; font-size:11px; font-family:'DM Sans',sans-serif; }
+  .scl-chart .axis.red { fill:#ff6b7a; }
+  .scl-chart .bar { fill:#5c4351; } .scl-chart .bar.prev { fill:#c49ab0; } .scl-chart .bar.now { fill:#a3197e; }
+  .scl-chart .line { fill:none; stroke:#e30613; stroke-width:2.2; stroke-linejoin:round; }
+  .scl-chart .dot { fill:#e30613; stroke:#fff; stroke-width:1.5; }
+  .scl-brow { display:grid; grid-template-columns:150px 1fr 150px; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); }
+  .scl-brow:last-child { border-bottom:0; }
+  .scl-bname { display:flex; align-items:center; gap:10px; font-size:15px; }
+  .scl-bname small { display:block; color:var(--mut); font-size:11.5px; }
+  .rk { width:30px; height:30px; flex:none; border-radius:50%; display:grid; place-items:center; background:#33262d; font-size:12.5px; font-weight:700; }
+  .rk.av { background:var(--red); }
+  .scl-bbars > div { display:flex; align-items:center; gap:7px; height:19px; }
+  .scl-bbars i { display:block; height:15px; border-radius:2px; }
+  .scl-bbars em { font-style:normal; color:var(--mut); font-size:12px; white-space:nowrap; } .scl-bbars b { font-size:13px; white-space:nowrap; }
+  .b-prev { background:var(--prev); } .b-now { background:var(--mag); } .b-now.red { background:var(--red); } .b-now.green { background:var(--green); }
+  .scl-bside { text-align:right; font-size:12px; color:var(--mut); }
+  .scl-bside b { display:block; font-size:18px; color:var(--txt); }
+  .d-up { color:var(--green); font-weight:600; } .d-down { color:#ff5c6c; font-weight:600; } .d-flat { color:var(--mut); }
+  .t-red { color:#ff4d5e !important; } .t-green { color:var(--green) !important; }
+  .scl-stack { display:flex; height:30px; border-radius:7px; overflow:hidden; margin-bottom:12px; }
+  .scl-stack i { display:flex; align-items:center; padding-left:10px; font-style:normal; font-size:12.5px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; }
+  .scl-pcards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .scl-pcard { background:#271c22; border:1px solid var(--line); border-top:4px solid var(--mag); border-radius:9px; padding:12px 14px; display:flex; flex-direction:column; gap:2px; }
+  .scl-pcard span { font-size:14px; } .scl-pcard > b { font-size:28px; font-weight:700; }
+  .scl-pcard small { color:var(--mut); font-size:12px; } .scl-pcard .lbl { margin-top:6px; } .scl-pcard em { font-style:normal; font-size:15px; }
+  .scl-pcard .det { font-size:11px; margin-top:4px; }
+  .scl-salmon { display:grid; grid-template-columns:repeat(7,1fr); gap:9px; }
+  .scl-scard { background:#271c22; border:1px solid var(--line); border-radius:9px; padding:10px 11px; display:flex; flex-direction:column; gap:2px; }
+  .scl-scard > b { font-size:15px; } .scl-scard small { color:var(--mut); font-size:11.5px; } .scl-scard em { font-style:normal; font-size:13.5px; }
+  .scl-vbars { height:62px; display:flex; align-items:flex-end; gap:6px; margin:8px 0 6px; border-bottom:1px solid var(--line); }
+  .scl-vbars i { width:30px; border-radius:2px 2px 0 0; }
+  .scl-three { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+  .scl-three h4 { font-size:15px; font-weight:600; } .scl-three .sub { display:block; color:var(--mut); font-size:11.5px; margin-bottom:8px; }
+  .scl-lrow { display:grid; grid-template-columns:118px 1fr 52px 54px; gap:8px; align-items:center; padding:5px 0; border-bottom:1px solid var(--line); font-size:13px; white-space:nowrap; }
+  .scl-three.mk .scl-lrow { grid-template-columns:112px 1fr 50px 80px; }
+  .scl-lrow span small { color:var(--mut); font-size:10.5px; }
+  .scl-lrow i { display:block; height:13px; border-radius:2px; background:var(--mag); }
+  .scl-lrow i.soft { background:#c49ab0; } .scl-lrow i.red { background:var(--red); } .scl-lrow i.green { background:var(--green); }
+  .scl-lrow b { font-size:12.5px; } .scl-lrow em { font-style:normal; text-align:right; color:var(--mut); font-size:12px; }
+  .scl-mkhead { display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .scl-mkhead h2 { font-size:28px; font-weight:700; } .scl-mkhead p { font-size:17px; font-weight:600; }
+  .scl-three.mk { margin-top:10px; }
+  .scl-mini { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; }
+  .scl-mini > div { background:#271c22; border:1px solid var(--line); border-radius:8px; padding:9px 10px; }
+  .scl-mini span { font-size:13px; color:var(--mut); } .scl-mini b { display:block; font-size:22px; font-weight:700; }
+  .scl-mini small { color:var(--mut); font-size:11px; white-space:nowrap; } .scl-mini i { font-style:normal; font-weight:600; }
+  .scl-three.mk { grid-template-columns:1.05fr 1fr 1fr; }
+  .scl-edit { outline:none; border-radius:4px; transition:background .15s; }
+  .scl-edit:hover, .scl-edit:focus { background:rgba(232,90,167,.16); box-shadow:0 0 0 3px rgba(232,90,167,.16); }
+  .scl-printing .scl-edit { background:none !important; box-shadow:none !important; }
   [hidden] { display:none !important; }
   @media (max-width:760px) {
     .header { grid-template-columns:1fr; }
@@ -237,6 +341,23 @@
   </div>
   <div id="report"></div>
 
+  <div class="av-tabs" id="avTabs" hidden>
+    <button type="button" data-mode="seguimiento" class="on">Seguimiento de Mercado</button>
+    <button type="button" data-mode="scl">Mercado SCL</button>
+  </div>
+  <div id="sclView" hidden>
+    <section class="panel">
+      <div class="scl-bar">
+        <div class="field"><label for="sclWeek">Week</label><select id="sclWeek"></select></div>
+        <div class="field grow"><label for="sclContext">National context (optional, e.g. "Contingencia nacional")</label><input type="text" id="sclContext" maxlength="200" placeholder="Leave empty if nothing special happened this week"></div>
+        <button class="tool-btn" id="sclSaveBtn" type="button">Save</button>
+        <button class="tool-btn" id="sclResetBtn" type="button">Reset headlines</button>
+        <button class="tool-btn primary" id="sclPdfBtn" type="button">Export PDF</button>
+      </div>
+      <div class="note" id="sclNote"></div>
+    </section>
+    <div class="scl-wrap"><div id="sclReport"></div></div>
+  </div>
   <div id="aviancaView" hidden>
     <section class="panel">
       <div class="av-bar">
@@ -958,6 +1079,282 @@ etEls.editor.addEventListener("click", e => {
 });
 
 // ---------------------------------------------------------------------------
+// Avianca: "Mercado SCL" weekly report (19 nov, cony). Same design as the PDF
+// sent to Avianca (SCL-MIA, then BOG / JFK / Asia), built from the Isidora
+// export data by the API. Every headline is written from the numbers; the
+// national context is typed in, and any headline can be edited before the PDF.
+// ---------------------------------------------------------------------------
+let scl = null;
+let sclSeq = 0;
+const sclEls = {
+  view: document.getElementById("sclView"),
+  week: document.getElementById("sclWeek"),
+  context: document.getElementById("sclContext"),
+  note: document.getElementById("sclNote"),
+  report: document.getElementById("sclReport"),
+};
+const SCL_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+function sclN(v, dec = 0) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "–";
+  return Number(v).toLocaleString("es-CL", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function sclT(v) { return `${sclN(v)} t`; }
+function sclPctTxt(v, dec = 1) { return v === null || v === undefined ? "–" : `${sclN(v, dec)}%`; }
+function sclChg(a, b) { return !b ? null : (a - b) / b * 100; }
+function sclSigned(v, dec = 0, suffix = "%") {
+  if (v === null || v === undefined) return "–";
+  return `${v > 0 ? "+" : v < 0 ? "−" : ""}${sclN(Math.abs(v), dec)}${suffix}`;
+}
+function sclDelta(now, before, wk) {
+  if (now === null || now === undefined || before === null || before === undefined) return `<span class="d-flat">– vs W${wk}</span>`;
+  const d = now - before;
+  if (Math.abs(d) < 0.05) return `<span class="d-flat">= 0,0 pp vs W${wk}</span>`;
+  return `<span class="${d > 0 ? "d-up" : "d-down"}">${d > 0 ? "▲" : "▼"} ${sclN(Math.abs(d), 1)} pp vs W${wk}</span>`;
+}
+function sclTitle(key) {
+  const t = (scl.titles_edited || {})[key] ?? scl.titles[key] ?? "";
+  return `<span class="scl-edit" contenteditable="true" spellcheck="false" data-title="${key}">${esc(t)}</span>`;
+}
+function sclDates() {
+  const a = parseDay(scl.start), b = parseDay(scl.end);
+  const same = a.getMonth() === b.getMonth();
+  return `${a.getDate()}${same ? "" : ` de ${SCL_MONTHS[a.getMonth()]}`} al ${b.getDate()} de ${SCL_MONTHS[b.getMonth()]} de ${b.getFullYear()} · vs W${scl.prev_week}`;
+}
+function sclHeader(title) {
+  return `<header class="scl-head"><div><h1>${esc(title)}</h1><p>${esc(sclDates())}</p></div>
+    <div class="scl-logos"><img src="img/avianca-cargo.png" alt="Avianca Cargo"><span></span><img src="img/gsa-force.png" alt="GSA Force"></div></header>`;
+}
+
+// Weekly bars (market tons) with the Avianca share line, like the PDF.
+function sclChart(series, opts = {}) {
+  const W = 1100, H = opts.height || 230, L = 52, R = opts.share === false ? 20 : 56, T = 34, B = 30;
+  if (!series.length) return "";
+  const week = scl.week;
+  const maxT = Math.max(1, ...series.map(s => s.tons));
+  const step = (W - L - R) / series.length, bw = Math.max(3, step * 0.62);
+  const tickT = sclNiceTicks(maxT);
+  const yT = v => T + (H - T - B) * (1 - v / tickT[tickT.length - 1]);
+  const shares = series.map(s => s.share).filter(v => v !== null && v !== undefined);
+  const maxS = opts.share === false ? 1 : Math.max(1, ...shares);
+  const tickS = sclNiceTicks(maxS);
+  const yS = v => T + (H - T - B) * (1 - v / tickS[tickS.length - 1]);
+  let g = tickT.map(v => `<line x1="${L}" x2="${W - R}" y1="${yT(v)}" y2="${yT(v)}" class="grid"/><text x="${L - 8}" y="${yT(v) + 4}" class="axis" text-anchor="end">${sclN(v)}</text>`).join("");
+  if (opts.share !== false) g += tickS.slice(1).map(v => `<text x="${W - R + 8}" y="${yS(v) + 4}" class="axis red">${sclN(v)}%</text>`).join("");
+  series.forEach((s, i) => {
+    const x = L + i * step + (step - bw) / 2;
+    const cls = s.week === week ? "bar now" : s.week === week - 1 ? "bar prev" : "bar";
+    g += `<rect x="${x}" y="${yT(s.tons)}" width="${bw}" height="${Math.max(0, H - B - yT(s.tons))}" rx="2" class="${cls}"/>`;
+    g += `<text x="${x + bw / 2}" y="${H - B + 16}" class="axis" text-anchor="middle" transform="rotate(-45 ${x + bw / 2} ${H - B + 16})">${s.week}</text>`;
+  });
+  if (opts.share !== false) {
+    const pts = series.map((s, i) => s.share === null || s.share === undefined ? null : [L + i * step + step / 2, yS(s.share)]).filter(Boolean);
+    g += `<polyline points="${pts.map(p => p.join(",")).join(" ")}" class="line"/>`;
+    pts.slice(-2).forEach(p => { g += `<circle cx="${p[0]}" cy="${p[1]}" r="5" class="dot"/>`; });
+  }
+  const last = series[series.length - 1];
+  const lab = `W${week}: ${sclT(last.tons)}${opts.share === false ? "" : ` · ${sclPctTxt(last.share)}`}`;
+  return `<div class="scl-legend"><span><i class="lg-bar"></i>Toneladas mercado</span>${opts.share === false ? "" : '<span><i class="lg-line"></i>Share Avianca</span>'}<b>${esc(lab)}</b></div>
+    <svg viewBox="0 0 ${W} ${H}" class="scl-chart">${g}</svg>`;
+}
+function sclNiceTicks(max) {
+  const raw = max / 3, mag = 10 ** Math.floor(Math.log10(raw)), n = raw / mag;
+  const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+  const out = [];
+  for (let v = 0; v <= max + step * 0.999; v += step) out.push(Math.round(v * 100) / 100);
+  if (out[out.length - 1] < max) out.push(out[out.length - 1] + step);
+  return out;
+}
+function sclBars(rows, maxV) {
+  return rows.map(r => {
+    const wPrev = Math.max(0.6, r.prev / maxV * 78), wNow = Math.max(0.6, r.now / maxV * 78);
+    return `<div class="scl-brow">
+      <div class="scl-bname">${r.name}</div>
+      <div class="scl-bbars"><div><i class="b-prev" style="width:${wPrev}%"></i><em>${sclT(r.prev)}</em></div>
+        <div><i class="b-now ${r.cls || ""}" style="width:${wNow}%"></i><b>${sclT(r.now)}</b></div></div>
+      <div class="scl-bside">${r.side}</div></div>`;
+  }).join("");
+}
+
+function sclPage1() {
+  const m = scl.mia, pw = scl.prev_week, W = scl.week;
+  const chgM = sclChg(m.market, m.market_prev), chgA = sclChg(m.avianca, m.avianca_prev);
+  const air = m.airlines, maxAir = Math.max(...air.map(a => Math.max(a.tons, a.tons_prev)));
+  const airRows = air.map(a => ({
+    name: `<span class="rk ${a.name === "Avianca" ? "av" : ""}">${a.rank}°</span><span><b class="${a.name === "Avianca" ? "t-red" : ""}">${esc(a.name)}</b><small>prefijo ${String(a.prefix ?? "").padStart(3, "0")}</small></span>`,
+    prev: a.tons_prev, now: a.tons, cls: a.name === "Avianca" ? "red" : "",
+    side: `<b>${sclPctTxt(a.share)}</b>${sclDelta(a.share, a.share_prev, pw)}`,
+  }));
+  const ag = m.agencies, maxAg = Math.max(1, ...ag.map(a => Math.max(a.tons, a.tons_prev)));
+  const bestAg = ag.length ? ag.reduce((x, y) => (y.tons > x.tons ? y : x)) : null;
+  const agRows = ag.map(a => ({
+    name: `<b class="${a === bestAg ? "t-green" : ""}">${esc(a.name)}</b>`, prev: a.tons_prev, now: a.tons, cls: a === bestAg ? "green" : "",
+    side: `<small>share con Avianca</small><b>${sclPctTxt(a.share)}</b>${sclDelta(a.share, a.share_prev, pw)}`,
+  }));
+  const prods = m.products, totalP = prods.reduce((s, p) => s + p.tons, 0) || 1;
+  const pColors = { "Salmón": "#7c1d3c", "Fruta": "#a3197e", "Carga seca": "#cf6fae", "Flores": "#e7a6cf" };
+  const sal = m.salmon.exporters, maxSal = Math.max(1, ...sal.map(s => Math.max(s.tons, s.tons_prev)));
+  const fr = m.fruit;
+  const maxFa = Math.max(1, ...fr.airlines.map(a => a.tons)), maxFg = Math.max(1, ...fr.agents.map(a => a.tons)), maxFv = Math.max(1, ...fr.avianca_agents.map(a => a.tons));
+  return `<section class="scl-page">${sclHeader(`Mercado SCL–MIA · Semana ${W}`)}
+    <h2 class="scl-main">${sclTitle("main")}</h2>
+    <div class="scl-kpis">
+      <div class="scl-kpi"><span>Mercado SCL–MIA</span><b>${sclT(m.market)}</b><small class="${chgM < 0 ? "t-red" : "t-green"}">${sclSigned(chgM)} vs W${pw}</small></div>
+      <div class="scl-kpi"><span>Avianca (729)</span><b>${sclT(m.avianca)}</b><small class="${chgA < 0 ? "t-red" : "t-green"}">${sclSigned(chgA)} vs W${pw} (${sclT(m.avianca_prev)})</small></div>
+      <div class="scl-kpi"><span>Market share</span><b>${sclPctTxt(m.share)}</b><small class="${m.share < m.share_prev ? "t-red" : "t-green"}">${sclSigned(m.share - m.share_prev, 1, " pp")} · promedio ${scl.year}: ${sclPctTxt(m.avg_share_year)}</small></div>
+      <div class="scl-kpi"><span>Ranking</span><b>${m.rank ?? "–"}.°</b><small>${esc(m.rank_note || "")}</small></div>
+    </div>
+    <div class="scl-card"><div class="scl-kicker">${sclTitle("why_head")}</div><h3>${sclTitle("why")}</h3>${sclChart(m.series)}</div>
+    <div class="scl-two">
+      <div class="scl-card"><div class="scl-kicker">Posición competitiva por aerolínea (prefijo)</div><h3>${sclTitle("position")}</h3>
+        <div class="scl-legend"><span><i class="lg-prev"></i>W${pw}</span><span><i class="lg-now"></i>W${W}</span></div>${sclBars(airRows, maxAir)}</div>
+      <div class="scl-card"><div class="scl-kicker">Desempeño por agencia con Avianca</div><h3>${sclTitle("agencies")}</h3>
+        <div class="scl-legend"><span><i class="lg-prev"></i>W${pw}</span><span><i class="lg-now"></i>W${W} · toneladas con Avianca</span></div>${sclBars(agRows, maxAg)}</div>
+    </div>
+    <div class="scl-card"><div class="scl-kicker">Mercado a MIA por producto</div><h3>${sclTitle("products")}</h3>
+      <div class="scl-stack">${prods.map(p => `<i style="width:${p.tons / totalP * 100}%;background:${pColors[p.name] || "#cf6fae"}"><span>${p.tons / totalP > 0.06 ? esc(p.name) : ""}</span></i>`).join("")}</div>
+      <div class="scl-pcards">${prods.map(p => `<div class="scl-pcard" style="border-top-color:${pColors[p.name] || "#cf6fae"}"><span>${esc(p.name)}</span><b>${sclT(p.tons)}</b>
+        <small>${sclPctTxt(p.share)} del mercado a MIA</small><small class="lbl">Avianca</small><em><b class="t-red">${sclPctTxt(p.avianca_share)}</b> · ${sclT(p.avianca)}</em>
+        ${p.detail && p.detail.length ? `<small class="det">${p.detail.map(d => `${esc(d.name)} ${sclN(d.tons)}`).join(" · ")}</small>` : ""}</div>`).join("")}</div></div>
+    <div class="scl-card"><div class="scl-kicker">¿Cómo se movieron las 7 grandes salmoneras?</div><h3>${sclTitle("salmon")}</h3>
+      <div class="scl-legend"><span><i class="lg-prev"></i>Volumen W${pw}</span><span><i class="lg-now"></i>Volumen W${W}</span></div>
+      <div class="scl-salmon">${sal.map(s => {
+        const c = sclChg(s.tons, s.tons_prev), up = (s.share ?? 0) > (s.share_prev ?? 0);
+        return `<div class="scl-scard"><b>${esc(s.name)}</b><small>${sclN(s.tons_prev)} → ${sclN(s.tons)} t (${sclSigned(c)})</small>
+          <div class="scl-vbars"><i class="b-prev" style="height:${s.tons_prev / maxSal * 100}%"></i><i class="b-now" style="height:${s.tons / maxSal * 100}%"></i></div>
+          <small class="lbl">Share Avianca</small><em>${sclPctTxt(s.share_prev)} → <b class="${up ? "t-green" : "t-red"}">${sclPctTxt(s.share)} ${up ? "▲" : "▼"}</b></em></div>`;
+      }).join("")}</div></div>
+    <div class="scl-card"><div class="scl-kicker">Fruta a MIA</div><h3>${sclTitle("fruit")}</h3>
+      <div class="scl-three">
+        <div><h4>Aerolíneas (prefijo)</h4><small class="sub">Toneladas · % de la fruta a MIA</small>${fr.airlines.map(a => `<div class="scl-lrow"><span class="${a.name === "Avianca" ? "t-red" : ""}">${esc(a.name)} <small>${String(a.prefix ?? "").padStart(3, "0")}</small></span><i style="width:${a.tons / maxFa * 100}%" class="${a.name === "Avianca" ? "red" : ""}"></i><b>${sclT(a.tons)}</b><em>${sclPctTxt(a.share)}</em></div>`).join("")}</div>
+        <div><h4>Agencias</h4><small class="sub">Toneladas de fruta · share Avianca</small>${fr.agents.map(a => `<div class="scl-lrow"><span>${esc(a.name)}</span><i class="soft" style="width:${a.tons / maxFg * 100}%"></i><b>${sclT(a.tons)}</b><em class="${a.avianca_share ? "t-red" : ""}">${a.avianca_share ? sclPctTxt(a.avianca_share) : "0%"}</em></div>`).join("")}</div>
+        <div><h4>Avianca: fruta por agencia</h4><small class="sub">Toneladas con Avianca · % de su fruta que va con Avianca</small>${fr.avianca_agents.map((a, i) => `<div class="scl-lrow"><span class="${i === 0 ? "t-green" : ""}">${esc(a.name)}</span><i style="width:${a.tons / maxFv * 100}%" class="${i === 0 ? "green" : "red"}"></i><b>${sclT(a.tons)}</b><em class="${i === 0 ? "t-green" : "t-red"}">${sclPctTxt(a.pct)}</em></div>`).join("")}</div>
+      </div></div>
+  </section>`;
+}
+
+function sclMarket(key, label) {
+  const m = scl[key], pw = scl.prev_week;
+  const c = sclChg(m.market, m.market_prev);
+  const hasAv = key !== "asia";
+  const head = hasAv
+    ? `Mercado ${sclSigned(c)} (${sclN(m.market_prev)} → ${sclN(m.market)} t) · Avianca ${sclN(m.avianca_prev)} → ${sclN(m.avianca)} t, share ${sclPctTxt(m.share_prev)} → <b class="t-red">${sclPctTxt(m.share)}</b>`
+    : `Mercado ${sclSigned(c)} (${sclN(m.market_prev)} → ${sclN(m.market)} t)${m.products[0] ? ` impulsado por ${{ Pescado: "el salmón", Fruta: "la fruta", Otros: "la carga seca" }[m.products[0].name]}` : ""}`;
+  const maxS = Math.max(1, ...m.airlines.map(a => a.share || 0)), maxA = Math.max(1, ...m.agents.map(a => a.tons));
+  return `<div class="scl-card scl-mk"><div class="scl-mkhead"><h2>${label}</h2><p>${head}</p></div>
+    ${sclChart(m.series, { height: 200, share: hasAv })}
+    <div class="scl-three mk">
+      <div><div class="scl-kicker">Productos</div><div class="scl-mini">${m.products.map(p => { const pc = sclChg(p.tons, p.tons_prev); return `<div><span>${esc(p.name)}</span><b>${sclT(p.tons)}</b><small>W${pw}: ${sclT(p.tons_prev)} · <i class="${pc < 0 ? "t-red" : "t-green"}">${sclSigned(pc)}</i></small></div>`; }).join("")}</div></div>
+      <div><div class="scl-kicker">Aerolíneas · market share</div>${m.airlines.map(a => `<div class="scl-lrow"><span class="${a.name === "Avianca" ? "t-red" : ""}">${esc(a.name)} <small>${String(a.prefix ?? "").padStart(3, "0")}</small></span><i class="${a.name === "Avianca" ? "red" : "soft"}" style="width:${(a.share || 0) / maxS * 100}%"></i><b>${sclPctTxt(a.share)}</b><em>W${pw}: ${a.share_prev ? sclPctTxt(a.share_prev) : "–"}</em></div>`).join("")}</div>
+      <div><div class="scl-kicker">Agentes · toneladas</div>${m.agents.map(a => `<div class="scl-lrow"><span>${esc(a.name)}</span><i style="width:${a.tons / maxA * 100}%"></i><b>${sclT(a.tons)}</b><em>W${pw}: ${a.tons_prev ? sclT(a.tons_prev) : "–"}</em></div>`).join("")}</div>
+    </div></div>`;
+}
+
+function sclPage2() {
+  return `<section class="scl-page">${sclHeader(`Otros mercados · Semana ${scl.week}`)}
+    <h2 class="scl-main">${sclTitle("others")}</h2>
+    ${sclMarket("bog", "SCL–BOG")}${sclMarket("jfk", "SCL–JFK")}${sclMarket("asia", "SCL–ASIA")}
+  </section>`;
+}
+
+function renderScl() {
+  if (!scl) { sclEls.report.innerHTML = ""; return; }
+  sclEls.report.innerHTML = sclPage1() + sclPage2();
+}
+
+async function loadScl(year, week) {
+  const seq = ++sclSeq;
+  sclEls.note.textContent = "Loading the Isidora data…";
+  els.status.textContent = "Loading";
+  try {
+    const params = new URLSearchParams({ email: user().email || "" });
+    if (year && week) { params.set("year", year); params.set("week", week); }
+    const response = await fetch(`${API_BASE}/api/airline_reports/avianca_scl?${params}`, { headers: { "x-api-key": API_KEY } });
+    const body = await response.json();
+    if (seq !== sclSeq) return;
+    if (!response.ok) throw new Error(body.detail || "Could not load the report");
+    scl = body;
+    sclEls.context.value = scl.context || "";
+    const wk = (scl.weeks || []).map(x => { const d = parseDay(x.start); return { value: `${x.year}-${x.week}`, label: `W${x.week} ${x.year} · ${d.getDate()} ${SCL_MONTHS[d.getMonth()].slice(0, 3)}` }; });
+    if (!wk.some(o => o.value === `${scl.year}-${scl.week}`)) wk.unshift({ value: `${scl.year}-${scl.week}`, label: `W${scl.week} ${scl.year}` });
+    fillSelect(sclEls.week, wk, `${scl.year}-${scl.week}`);
+    sclEls.note.textContent = "Isidora export, Chile origin, Monday to Sunday, tons. Headlines are written from the data: click any of them to edit it before exporting.";
+    renderScl();
+    els.status.textContent = "Live";
+  } catch (error) {
+    if (seq !== sclSeq) return;
+    scl = null;
+    renderScl();
+    sclEls.note.textContent = error.message;
+    els.status.textContent = "Error";
+  }
+}
+
+async function saveSclNotes(resetTitles = false) {
+  if (!scl) return;
+  if (resetTitles) scl.titles_edited = {};
+  try {
+    const response = await fetch(`${API_BASE}/api/airline_reports/avianca_scl/notes?email=${encodeURIComponent(user().email || "")}`, {
+      method: "POST", headers: { "x-api-key": API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ year: scl.year, week: scl.week, context: sclEls.context.value, titles: scl.titles_edited || {} }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || "Could not save");
+    await loadScl(scl.year, scl.week);
+    sclEls.note.textContent = resetTitles ? "Headlines back to the ones written from the data." : "Saved: context and headlines are kept for this week.";
+  } catch (error) {
+    sclEls.note.textContent = error.message;
+  }
+}
+
+async function exportSclPdf() {
+  if (!scl || !window.jspdf || !window.html2canvas) return;
+  sclEls.note.textContent = "Building the PDF…";
+  const pages = [...sclEls.report.querySelectorAll(".scl-page")];
+  sclEls.report.classList.add("scl-printing");
+  try {
+    let doc = null;
+    for (const page of pages) {
+      const canvas = await html2canvas(page, { backgroundColor: "#140d11", scale: 2, useCORS: true, windowWidth: 1240 });
+      const w = canvas.width / 2, h = canvas.height / 2;
+      if (!doc) doc = new window.jspdf.jsPDF({ orientation: "portrait", unit: "px", format: [w, h], hotfixes: ["px_scaling"] });
+      else doc.addPage([w, h], "portrait");
+      doc.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, w, h);
+    }
+    doc.save(`Mercado_SCL_W${scl.week}.pdf`);
+    sclEls.note.textContent = "PDF ready.";
+  } finally {
+    sclEls.report.classList.remove("scl-printing");
+  }
+}
+
+sclEls.week.addEventListener("change", () => { const [y, w] = sclEls.week.value.split("-").map(Number); loadScl(y, w); });
+document.getElementById("sclSaveBtn").addEventListener("click", () => saveSclNotes(false));
+document.getElementById("sclResetBtn").addEventListener("click", () => saveSclNotes(true));
+document.getElementById("sclPdfBtn").addEventListener("click", exportSclPdf);
+sclEls.report.addEventListener("input", e => {
+  const t = e.target.closest("[data-title]");
+  if (t && scl) { scl.titles_edited = { ...(scl.titles_edited || {}), [t.dataset.title]: t.textContent.trim() }; sclEls.note.textContent = "Headline edited: click Save to keep it for this week."; }
+});
+sclEls.report.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.closest("[data-title]")) { e.preventDefault(); e.target.blur(); } });
+
+function setAvMode(mode) {
+  document.querySelectorAll("#avTabs button").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+  const isScl = mode === "scl";
+  avEls.view.hidden = isScl;
+  sclEls.view.hidden = !isScl;
+  document.getElementById("reportTitle").textContent = isScl ? "Avianca: Mercado SCL" : "Avianca: Seguimiento de Mercado";
+  if (isScl && !scl) loadScl();
+  if (!isScl && !av) loadAvianca();
+}
+document.getElementById("avTabs").addEventListener("click", e => {
+  const b = e.target.closest("button[data-mode]");
+  if (!b) return;
+  history.replaceState(null, "", b.dataset.mode === "scl" ? "#AV/SCL" : "#AV");
+  setAvMode(b.dataset.mode);
+});
+
+// ---------------------------------------------------------------------------
 // Avianca: Seguimiento de Mercado (19 nov, cony). The weekly report that is
 // sent to Avianca, with the same content as the Excel/PDF built by hand: one
 // table per year (lines x weeks) and the "GRAFICOS" part. It is a report, not
@@ -995,7 +1392,20 @@ function avWeeks() {
 }
 
 function avFmt(v) {
-  return v === null ? "" : Math.round(v).toLocaleString("en-US");
+  return v === null ? "" : Math.round(v).toLocaleString("es-CL");
+}
+
+// A number cell: blank shows "–", the report week is highlighted.
+function avCell(v, week) {
+  const cls = [week === avReportWeek() ? "now" : "", v === null ? "nil" : ""].filter(Boolean).join(" ");
+  return `<td${cls ? ` class="${cls}"` : ""}>${v === null ? "–" : avFmt(v)}</td>`;
+}
+
+const AV_SECTIONS = { 1: ["Mercado", "#a3197e"], 2: ["Aerolíneas y MIA", "#d0123c"], 3: ["Asia", "#7c3a8f"], 4: ["Tel Aviv y carga general", "#b4547f"] };
+
+function avDocHead(subtitle) {
+  return `<header class="avdoc-head"><div><h2>Seguimiento de Mercado · W${avReportWeek()} ${av.year}</h2><p>${esc(subtitle)}</p></div>
+    <div class="logos"><img src="img/avianca-cargo.png" alt="Avianca Cargo"><span></span><img src="img/gsa-force.png" alt="GSA Force"></div></header>`;
 }
 
 // 19 nov, cony: only the report week is typed in; the weeks before show what
@@ -1005,28 +1415,43 @@ function avManualInput(key, year, week, value, label) {
   return `<input type="number" min="0" step="1" data-line="${esc(key)}" data-year="${year}" data-week="${week}" value="${value === null ? "" : value}" aria-label="${esc(label)} week ${week}">`;
 }
 
-// One table per year, the same rows and order as the Excel.
+// One table per year, the same rows and order as the Excel, with named sections.
 function avYearTable(year) {
   const weeks = avWeeks();
   const lastWeek = weeks[weeks.length - 1];
   const cols = weeks.length + 3;
+  const head = `<thead><tr><th class="yr">Year</th><th class="lbl">Item</th>${weeks.map(w => `<th class="${w === lastWeek ? "now" : ""}">${w}</th>`).join("")}<th class="fl">${year === av.year ? `Vuelos W${lastWeek}` : ""}</th></tr></thead>`;
   let body = "", section = 0;
-  const blank = `<tr class="blank"><td colspan="${cols}"></td></tr>`;
+  const sec = n => { const [name, color] = AV_SECTIONS[n] || ["", "#a3197e"]; return `<tr class="sec" style="--sec:${color}"><td class="yr"></td><td class="lbl">${esc(name)}</td><td colspan="${cols - 2}"></td></tr>`; };
   av.lines.forEach(line => {
-    if (section && line.section !== section) body += blank;
-    section = line.section;
-    const flights = year === av.year && av.flight_lines.includes(line.key)
-      ? avManualInput(`flights_${line.key}`, year, lastWeek, avValue(av.manual[`flights_${line.key}`], year, lastWeek), `${line.label} flights`) + " vuelos"
-      : "";
-    body += `<tr><td class="yr">${year}</td><td class="lbl">${esc(line.label)}</td>${weeks.map(w => `<td>${avFmt(avValue(line.values, year, w))}</td>`).join("")}<td class="fl">${flights}</td></tr>`;
+    if (line.section !== section) { section = line.section; body += sec(section); }
+    const color = (AV_SECTIONS[line.section] || [])[1] || "#a3197e";
+    let flights = "";
+    if (year === av.year && av.flight_lines.includes(line.key)) {
+      const v = avValue(av.manual[`flights_${line.key}`], year, lastWeek);
+      const input = avManualInput(`flights_${line.key}`, year, lastWeek, v, `${line.label} flights`);
+      flights = input.startsWith("<input") ? `${input} vuelos` : (v === null ? "" : `<span class="chip">${String(v).padStart(2, "0")} vuelos</span>`);
+    }
+    body += `<tr class="row" style="--sec:${color}"><td class="yr">${year}</td><td class="lbl">${esc(line.label)}</td>${weeks.map(w => avCell(avValue(line.values, year, w), w)).join("")}<td class="fl">${flights}</td></tr>`;
     if (line.key === "tlv") {
-      body += `<tr><td class="yr">${year}</td><td class="lbl">Carga General</td>${weeks.map(w => `<td>${avManualInput("carga_general", year, w, avValue(av.manual.carga_general, year, w), "Carga General")}</td>`).join("")}<td class="fl"></td></tr>`;
+      body += `<tr class="row" style="--sec:${color}"><td class="yr">${year}</td><td class="lbl">Carga General</td>${weeks.map(w => {
+        const v = avValue(av.manual.carga_general, year, w);
+        const html = avManualInput("carga_general", year, w, v, "Carga General");
+        return html.startsWith("<input") ? `<td class="now">${html}</td>` : avCell(v, w);
+      }).join("")}<td class="fl"></td></tr>`;
     }
   });
-  if (year === av.year) body += blank + `<tr class="qt"><td class="yr"></td><td class="lbl">QT (ALL)</td>${weeks.map(w => `<td>${avManualInput("qt", year, w, avValue(av.manual.qt, year, w), "QT (ALL)")}</td>`).join("")}<td class="fl"></td></tr>`;
-  return `<section class="panel"><div class="av-scroll"><table class="av-table">
-    <thead><tr><th class="yr">Year</th><th class="lbl">Item</th>${weeks.map(w => `<th>${w}</th>`).join("")}<th class="fl"></th></tr></thead>
-    <tbody>${body}</tbody></table></div></section>`;
+  if (year === av.year) {
+    body += `<tr class="sec" style="--sec:#2a1620"><td class="yr"></td><td class="lbl">QT</td><td colspan="${cols - 2}"></td></tr>`;
+    body += `<tr class="row qt" style="--sec:#2a1620"><td class="yr"></td><td class="lbl">QT (ALL)</td>${weeks.map(w => {
+      const v = avValue(av.manual.qt, year, w);
+      const html = avManualInput("qt", year, w, v, "QT (ALL)");
+      return html.startsWith("<input") ? `<td class="now">${html}</td>` : avCell(v, w);
+    }).join("")}<td class="fl"></td></tr>`;
+  }
+  const isCur = year === av.year;
+  return `<section class="avdoc-sec"><div class="avdoc-title"><h3>${year}</h3><span>Toneladas por semana · weeks 1 to ${lastWeek}</span>${isCur ? `<span class="tag">W${lastWeek} highlighted</span>` : ""}</div>
+    <div class="av-scroll"><table class="av-table">${head}<tbody>${body}</tbody></table></div></section>`;
 }
 
 function avProductRows(year) {
@@ -1043,37 +1468,41 @@ function avSalmonChart() {
   const salmon = avLine("salmon");
   const cur = weeks.map(w => avValue(salmon.values, av.year, w)), prev = weeks.map(w => avValue(salmon.values, av.previous_year, w));
   const max = Math.max(1, ...cur.concat(prev).map(v => v || 0));
-  const W = 1100, H = 260, L = 46, B = 26, T = 12, step = (W - L - 8) / Math.max(1, weeks.length), bw = Math.max(2, step / 2 - 1.5);
-  const y = v => T + (H - T - B) * (1 - (v || 0) / max);
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => Math.round(max * f / 100) * 100);
-  let svg = ticks.map(t => `<line x1="${L}" x2="${W - 4}" y1="${y(t)}" y2="${y(t)}" stroke="#eef1f6"/><text x="${L - 6}" y="${y(t) + 3}" font-size="10" text-anchor="end" fill="#8391a8">${t.toLocaleString("en-US")}</text>`).join("");
+  const top = Math.ceil(max / 1000) * 1000;
+  const W = 1100, H = 280, L = 52, B = 30, T = 16, step = (W - L - 8) / Math.max(1, weeks.length), bw = Math.max(2, step / 2 - 2);
+  const y = v => T + (H - T - B) * (1 - (v || 0) / top);
+  let svg = "";
+  for (let t = 0; t <= top; t += 1000) svg += `<line x1="${L}" x2="${W - 4}" y1="${y(t)}" y2="${y(t)}" stroke="#f1e7ec" ${t ? 'stroke-dasharray="3 4"' : ""}/><text x="${L - 8}" y="${y(t) + 4}" font-size="11" text-anchor="end" fill="#9b8590" font-family="DM Sans,sans-serif">${t.toLocaleString("es-CL")}</text>`;
   weeks.forEach((w, i) => {
     const x = L + 4 + i * step;
-    if (prev[i] !== null) svg += `<rect x="${x}" y="${y(prev[i])}" width="${bw}" height="${H - B - y(prev[i])}" fill="#9ca3af" rx="1.5"><title>Salmon ${av.previous_year} W${w}: ${avFmt(prev[i])}</title></rect>`;
-    if (cur[i] !== null) svg += `<rect x="${x + bw + 1}" y="${y(cur[i])}" width="${bw}" height="${H - B - y(cur[i])}" fill="${AV_RED}" rx="1.5"><title>Salmon ${av.year} W${w}: ${avFmt(cur[i])}</title></rect>`;
-    if (weeks.length <= 26 || w % 2 === 1) svg += `<text x="${x + bw}" y="${H - 8}" font-size="9" text-anchor="middle" fill="#8391a8">${w}</text>`;
+    if (prev[i] !== null) svg += `<rect x="${x}" y="${y(prev[i])}" width="${bw}" height="${H - B - y(prev[i])}" fill="#dcc3cf" rx="2"><title>Salmon ${av.previous_year} W${w}: ${avFmt(prev[i])} t</title></rect>`;
+    if (cur[i] !== null) svg += `<rect x="${x + bw + 1.5}" y="${y(cur[i])}" width="${bw}" height="${H - B - y(cur[i])}" fill="${w === avReportWeek() ? "#e30613" : "#a3197e"}" rx="2"><title>Salmon ${av.year} W${w}: ${avFmt(cur[i])} t</title></rect>`;
+    if (weeks.length <= 26 || w % 2 === 1 || w === avReportWeek()) svg += `<text x="${x + bw}" y="${H - 10}" font-size="10" text-anchor="middle" fill="${w === avReportWeek() ? "#a3197e" : "#9b8590"}" font-weight="${w === avReportWeek() ? 700 : 400}" font-family="DM Sans,sans-serif">${w}</text>`;
   });
-  return `<div class="av-legend"><span><i style="background:#9ca3af"></i>Salmon ${av.previous_year}</span><span><i style="background:${AV_RED}"></i>Salmon ${av.year}</span></div>
+  const last = cur[cur.length - 1];
+  return `<div class="av-legend"><span><i style="background:#dcc3cf"></i>Salmon ${av.previous_year}</span><span><i style="background:#a3197e"></i>Salmon ${av.year}</span>${last !== null ? `<span style="margin-left:auto;color:#a3197e;font-weight:700">W${avReportWeek()}: ${avFmt(last)} t</span>` : ""}</div>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Salmon per week">${svg}</svg>`;
 }
 
 // "GRAFICOS": total market per year, the products and the salmon chart.
 function avGraficos() {
   const weeks = avWeeks();
+  const lastWeek = weeks[weeks.length - 1];
   const total = avLine("total");
-  const head = first => `<thead><tr><th class="yr">Year</th><th class="lbl">${first}</th>${weeks.map(w => `<th>${w}</th>`).join("")}</tr></thead>`;
-  const totals = [av.year, av.previous_year].map(y => `<tr><td class="yr">${y}</td><td class="lbl">Total Mercado</td>${weeks.map(w => `<td>${avFmt(avValue(total.values, y, w))}</td>`).join("")}</tr>`).join("");
+  const head = first => `<thead><tr><th class="yr">Year</th><th class="lbl">${first}</th>${weeks.map(w => `<th class="${w === lastWeek ? "now" : ""}">${w}</th>`).join("")}</tr></thead>`;
+  const colors = { Salmon: "#a3197e", Fruit: "#d0123c", Otros: "#7c3a8f" };
+  const totals = [av.year, av.previous_year].map(y => `<tr class="row" style="--sec:${y === av.year ? "#a3197e" : "#dcc3cf"}"><td class="yr">${y}</td><td class="lbl">Total Mercado</td>${weeks.map(w => avCell(avValue(total.values, y, w), w)).join("")}</tr>`).join("");
   const products = [av.year, av.previous_year].map(y => avProductRows(y).map(([name, get]) =>
-    `<tr><td class="yr">${y}</td><td class="lbl">${name}</td>${weeks.map(w => `<td>${avFmt(get(w))}</td>`).join("")}</tr>`).join("")).join("");
-  return `<section class="panel"><div class="block-title av-red">GRAFICOS ${av.previous_year}-${av.year}</div>
+    `<tr class="row" style="--sec:${colors[name]}"><td class="yr">${y}</td><td class="lbl">${name}</td>${weeks.map(w => avCell(get(w), w)).join("")}</tr>`).join("")).join("");
+  return `<section class="avdoc-sec"><div class="avdoc-title"><h3>Gráficos ${av.previous_year}–${av.year}</h3><span>Total del mercado y productos por semana</span></div>
     <div class="av-scroll"><table class="av-table">${head("Item")}<tbody>${totals}</tbody></table></div>
-    <div class="av-scroll" style="margin-top:10px"><table class="av-table">${head("Product")}<tbody>${products}</tbody></table></div>
-    <div class="av-chart" style="margin-top:14px">${avSalmonChart()}</div></section>`;
+    <div class="av-scroll" style="margin-top:12px"><table class="av-table">${head("Product")}<tbody>${products}</tbody></table></div>
+    <div class="av-chart" style="margin:18px 0 10px">${avSalmonChart()}</div></section>`;
 }
 
 function renderAvianca() {
   if (!av) { avEls.report.innerHTML = ""; return; }
-  avEls.report.innerHTML = avYearTable(av.year) + avYearTable(av.previous_year) + avGraficos();
+  avEls.report.innerHTML = `<div class="avdoc">${avDocHead("Mercado de exportación Chile · toneladas por semana · Isidora")}${avYearTable(av.year)}${avYearTable(av.previous_year)}${avGraficos()}</div>`;
   // Open the tables on the latest weeks, the ones people look at.
   avEls.report.querySelectorAll(".av-scroll").forEach(el => { el.scrollLeft = el.scrollWidth; });
 }
@@ -1189,63 +1618,119 @@ function avPdfYearRows(year) {
   const rows = [];
   let section = 0;
   av.lines.forEach(line => {
-    if (section && line.section !== section) rows.push({ blank: true });
-    section = line.section;
+    if (line.section !== section) { section = line.section; rows.push({ section: (AV_SECTIONS[section] || [""])[0], color: (AV_SECTIONS[section] || [])[1] }); }
     const flights = year === av.year && av.flight_lines.includes(line.key) ? avValue(av.manual[`flights_${line.key}`], year, lastWeek) : null;
-    rows.push({ cells: [String(year), line.label, ...weeks.map(w => avFmt(avValue(line.values, year, w))), flights === null ? "" : `${String(flights).padStart(2, "0")} vuelos`] });
-    if (line.key === "tlv") rows.push({ cells: [String(year), "Carga General", ...weeks.map(w => avFmt(avValue(av.manual.carga_general, year, w))), ""] });
+    rows.push({ color: (AV_SECTIONS[line.section] || [])[1], cells: [String(year), line.label, ...weeks.map(w => avPdfNum(avValue(line.values, year, w))), flights === null ? "" : `${String(flights).padStart(2, "0")} vuelos`] });
+    if (line.key === "tlv") rows.push({ color: (AV_SECTIONS[line.section] || [])[1], cells: [String(year), "Carga General", ...weeks.map(w => avPdfNum(avValue(av.manual.carga_general, year, w))), ""] });
   });
   if (year === av.year) {
-    rows.push({ blank: true });
-    rows.push({ bold: true, cells: ["", "QT (ALL)", ...weeks.map(w => avFmt(avValue(av.manual.qt, year, w))), ""] });
+    rows.push({ section: "QT", color: "#2a1620" });
+    rows.push({ bold: true, color: "#2a1620", cells: ["", "QT (ALL)", ...weeks.map(w => avPdfNum(avValue(av.manual.qt, year, w))), ""] });
   }
   return rows;
 }
 
+function avPdfNum(v) { return v === null ? "–" : avFmt(v); }
+function avRgb(hex) { const n = parseInt(hex.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+
 function avPdfTable(doc, startY, head, rows, withFlights) {
   const weeks = avWeeks();
+  const nowCol = weeks.length + 1;  // the report week column
   const pageWidth = doc.internal.pageSize.getWidth();
-  const usable = pageWidth - 20 - 12 - 34 - (withFlights ? 18 : 0);
+  const usable = pageWidth - 20 - 11 - 33 - (withFlights ? 17 : 0);
   const weekWidth = usable / Math.max(1, weeks.length);
-  const columnStyles = { 0: { cellWidth: 12, halign: "left", textColor: [100, 116, 139] }, 1: { cellWidth: 34, halign: "left", fontStyle: "bold" } };
+  const columnStyles = { 0: { cellWidth: 11, halign: "left", textColor: [155, 133, 144] }, 1: { cellWidth: 33, halign: "left", fontStyle: "bold" } };
   weeks.forEach((_, i) => { columnStyles[i + 2] = { cellWidth: weekWidth, halign: "right" }; });
-  if (withFlights) columnStyles[weeks.length + 2] = { cellWidth: 18, halign: "left", textColor: [65, 83, 108] };
+  if (withFlights) columnStyles[weeks.length + 2] = { cellWidth: 17, halign: "left", textColor: [163, 25, 126], fontStyle: "bold" };
+  let zebra = 0;
   doc.autoTable({
     startY,
     head: [head],
-    body: rows.map(r => r.blank ? head.map(() => "") : r.cells),
+    body: rows.map(r => r.section !== undefined ? [r.section, ...head.slice(1).map(() => "")] : r.cells),
     margin: { left: 10, right: 10 },
     theme: "plain",
-    styles: { font: "helvetica", fontSize: weeks.length > 40 ? 6.8 : 7.6, cellPadding: { top: 2.3, bottom: 2.3, left: 0.8, right: 0.8 }, textColor: [15, 23, 42], lineColor: [246, 227, 225], lineWidth: { bottom: 0.15 } },
-    headStyles: { fillColor: [218, 41, 28], textColor: 255, fontStyle: "bold", halign: "right" },
+    styles: { font: "helvetica", fontSize: weeks.length > 40 ? 6.8 : 7.6, cellPadding: { top: 2.1, bottom: 2.1, left: 0.8, right: 0.8 }, textColor: [43, 32, 38], lineColor: [244, 236, 240], lineWidth: { bottom: 0.15 } },
+    headStyles: { fillColor: [42, 22, 32], textColor: [243, 230, 236], fontStyle: "bold", halign: "right" },
     columnStyles,
     didParseCell: data => {
-      if (data.section === "head" && data.column.index < 2) data.cell.styles.halign = "left";
-      if (data.section !== "body") return;
+      if (data.section === "head") {
+        if (data.column.index < 2) data.cell.styles.halign = "left";
+        if (data.column.index === nowCol) data.cell.styles.fillColor = [163, 25, 126];
+        return;
+      }
       const row = rows[data.row.index];
-      if (row.blank) { data.cell.styles.minCellHeight = 3; data.cell.styles.cellPadding = 0; data.cell.styles.lineWidth = 0; data.cell.text = [""]; return; }
+      if (row.section !== undefined) {
+        data.cell.styles.fillColor = [253, 246, 249];
+        data.cell.styles.textColor = avRgb(row.color || "#a3197e");
+        data.cell.styles.fontStyle = "bold";
+        data.cell.styles.fontSize = 6.6;
+        if (data.column.index === 0) { data.cell.colSpan = head.length; data.cell.text = [String(row.section).toUpperCase()]; }
+        return;
+      }
+      if (data.column.index === 0) zebra = data.row.index;
       if (row.bold) data.cell.styles.fontStyle = "bold";
-      if (data.row.index % 2 === 1) data.cell.styles.fillColor = [253, 245, 244];
+      if (data.cell.raw === "–") data.cell.styles.textColor = [203, 188, 196];
+      if (data.column.index === nowCol) { data.cell.styles.fillColor = [251, 238, 245]; data.cell.styles.textColor = [122, 18, 82]; data.cell.styles.fontStyle = "bold"; }
+      else if (data.row.index % 2 === 1) data.cell.styles.fillColor = [252, 249, 251];
+    },
+    didDrawCell: data => {
+      const row = rows[data.row.index];
+      if (data.section === "body" && data.column.index === 1 && row && row.section === undefined) {
+        doc.setFillColor(...avRgb(row.color || "#a3197e"));
+        doc.rect(data.cell.x, data.cell.y + 0.6, 0.8, data.cell.height - 1.2, "F");
+      }
     },
   });
   return doc.lastAutoTable.finalY;
 }
 
+const avPdfImages = {};
+async function avPdfLoadImages() {
+  for (const [key, src] of [["av", "img/avianca-cargo.png"], ["gsa", "img/gsa-force.png"]]) {
+    if (avPdfImages[key]) continue;
+    try {
+      const blob = await (await fetch(src)).blob();
+      if (!blob.type.startsWith("image/")) throw new Error("not an image");
+      avPdfImages[key] = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+    } catch (_) { avPdfImages[key] = null; }
+  }
+}
+
 function avPdfHeader(doc, subtitle) {
   const w = doc.internal.pageSize.getWidth();
-  doc.setFillColor(218, 41, 28);
-  doc.rect(0, 0, w, 16, "F");
+  // red -> magenta band, like the Avianca reports
+  const from = [227, 6, 19], to = [163, 25, 126], steps = 60;
+  for (let i = 0; i < steps; i++) {
+    const t = i / (steps - 1);
+    doc.setFillColor(...from.map((c, k) => Math.round(c + (to[k] - c) * t)));
+    doc.rect(w * i / steps, 0, w / steps + 0.4, 22, "F");
+  }
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("SEGUIMIENTO DE MERCADO", 10, 10.5);
+  doc.setFontSize(17);
+  doc.text(`Seguimiento de Mercado · W${avReportWeek()} ${av.year}`, 12, 11.5);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text(`Avianca  ·  W${avReportWeek()} ${av.year}`, w - 10, 10.5, { align: "right" });
-  doc.setTextColor(65, 83, 108);
-  doc.setFontSize(9);
-  doc.text(subtitle, 10, 23);
-  return 27;
+  doc.setFontSize(9.5);
+  doc.text(subtitle, 12, 17.5);
+  if (avPdfImages.av) doc.addImage(avPdfImages.av, "PNG", w - 66, 3.5, 22.5, 15.3);
+  if (avPdfImages.gsa) doc.addImage(avPdfImages.gsa, "PNG", w - 34, 4, 22, 14.6);
+  doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.2); doc.line(w - 39, 5, w - 39, 17);
+  return 30;
+}
+
+function avPdfSectionTitle(doc, y, title, sub) {
+  doc.setTextColor(29, 20, 24);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text(title, 10, y);
+  if (sub) {
+    const x = 10 + doc.getTextWidth(title) + 4;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(138, 116, 128);
+    doc.text(sub, x, y);
+  }
+  return y + 4;
 }
 
 function avPdfSalmonChart(doc, x, y, width, height) {
@@ -1263,7 +1748,7 @@ function avPdfSalmonChart(doc, x, y, width, height) {
   doc.text("Salmon per week (tons)", x, y + 3);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
-  [[av.previous_year, [156, 163, 175]], [av.year, [218, 41, 28]]].forEach(([label, color], i) => {
+  [[av.previous_year, [220, 195, 207]], [av.year, [163, 25, 126]]].forEach(([label, color], i) => {
     const lx = x + width - 46 + i * 23;
     doc.setFillColor(...color);
     doc.rect(lx, y, 3, 3, "F");
@@ -1282,8 +1767,8 @@ function avPdfSalmonChart(doc, x, y, width, height) {
   const bw = Math.max(0.6, step / 2 - 0.5);
   weeks.forEach((w, i) => {
     const bx = x + L + i * step + 0.4;
-    if (prev[i] !== null) { doc.setFillColor(156, 163, 175); doc.rect(bx, yOf(prev[i]), bw, yOf(0) - yOf(prev[i]), "F"); }
-    if (cur[i] !== null) { doc.setFillColor(218, 41, 28); doc.rect(bx + bw + 0.3, yOf(cur[i]), bw, yOf(0) - yOf(cur[i]), "F"); }
+    if (prev[i] !== null) { doc.setFillColor(220, 195, 207); doc.rect(bx, yOf(prev[i]), bw, yOf(0) - yOf(prev[i]), "F"); }
+    if (cur[i] !== null) { doc.setFillColor(...(w === avReportWeek() ? [227, 6, 19] : [163, 25, 126])); doc.rect(bx + bw + 0.3, yOf(cur[i]), bw, yOf(0) - yOf(cur[i]), "F"); }
     doc.setTextColor(131, 145, 168);
     doc.setFontSize(6);
     doc.text(String(w), bx + bw, yOf(0) + 4, { align: "center" });
@@ -1306,26 +1791,32 @@ function avPdfFooters(doc) {
 
 async function exportAviancaPdf() {
   if (!av || !window.jspdf) return;
+  await avPdfLoadImages();
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a3" });
   const weeks = avWeeks();
+  const lastWeek = avReportWeek();
   const head = (first, second) => [first, second, ...weeks.map(String)];
+  const subtitle = "Mercado de exportación Chile · toneladas por semana · Isidora";
   // Page 1 and 2: one table per year
   [av.year, av.previous_year].forEach((year, i) => {
     if (i) doc.addPage();
-    const y = avPdfHeader(doc, `Chile export market, weeks 1 to ${avReportWeek()}  ·  ${year}`);
-    avPdfTable(doc, y, [...head("Year", "Item"), year === av.year ? "" : ""], avPdfYearRows(year), true);
+    let y = avPdfHeader(doc, subtitle);
+    y = avPdfSectionTitle(doc, y + 3, String(year), `Toneladas por semana · weeks 1 to ${lastWeek}${year === av.year ? ` · W${lastWeek} highlighted` : ""}`);
+    avPdfTable(doc, y, [...head("Year", "Item"), year === av.year ? `Vuelos W${lastWeek}` : ""], avPdfYearRows(year), true);
   });
   // Page 3: GRAFICOS
   doc.addPage();
-  let y = avPdfHeader(doc, `GRAFICOS ${av.previous_year}-${av.year}`);
+  let y = avPdfHeader(doc, subtitle);
+  y = avPdfSectionTitle(doc, y + 3, `Gráficos ${av.previous_year}–${av.year}`, "Total del mercado y productos por semana");
   const total = avLine("total");
-  const totalRows = [av.year, av.previous_year].map(yr => ({ cells: [String(yr), "Total Mercado", ...weeks.map(w => avFmt(avValue(total.values, yr, w)))] }));
+  const colors = { Salmon: "#a3197e", Fruit: "#d0123c", Otros: "#7c3a8f" };
+  const totalRows = [av.year, av.previous_year].map(yr => ({ color: yr === av.year ? "#a3197e" : "#dcc3cf", cells: [String(yr), "Total Mercado", ...weeks.map(w => avPdfNum(avValue(total.values, yr, w)))] }));
   y = avPdfTable(doc, y, head("Year", "Item"), totalRows, false) + 6;
-  const productRows = [av.year, av.previous_year].flatMap(yr => avProductRows(yr).map(([name, get]) => ({ cells: [String(yr), name, ...weeks.map(w => avFmt(get(w)))] })));
+  const productRows = [av.year, av.previous_year].flatMap(yr => avProductRows(yr).map(([name, get]) => ({ color: colors[name], cells: [String(yr), name, ...weeks.map(w => avPdfNum(get(w)))] })));
   y = avPdfTable(doc, y, head("Year", "Product"), productRows, false) + 8;
   const pageH = doc.internal.pageSize.getHeight(), pageW = doc.internal.pageSize.getWidth();
-  avPdfSalmonChart(doc, 10, y, pageW - 20, Math.min(110, pageH - y - 14));
+  avPdfSalmonChart(doc, 10, y, pageW - 20, Math.min(120, pageH - y - 14));
   avPdfFooters(doc);
   doc.save(aviancaExportName("pdf"));
 }
@@ -1367,10 +1858,11 @@ function showView() {
   document.querySelector("#reportView > .panel").hidden = isAvianca;
   els.report.hidden = isAvianca;
   avEls.view.hidden = !isAvianca;
+  document.getElementById("avTabs").hidden = !isAvianca;
+  sclEls.view.hidden = true;
   if (isAvianca) {
-    document.getElementById("reportTitle").textContent = "Avianca: Seguimiento de Mercado";
     requestSeq++;
-    loadAvianca();
+    setAvMode(mode === "SCL" ? "scl" : "seguimiento");
     return;
   }
   els.day.value = "ALL";
