@@ -574,7 +574,10 @@ function avFmt(v) {
   return v === null ? "" : Math.round(v).toLocaleString("en-US");
 }
 
+// 19 nov, cony: only the report week is typed in; the weeks before show what
+// was already entered (the history came from the W45 PDF).
 function avManualInput(key, year, week, value, label) {
+  if (year !== av.year || week !== avReportWeek()) return avFmt(value);
   return `<input type="number" min="0" step="1" data-line="${esc(key)}" data-year="${year}" data-week="${week}" value="${value === null ? "" : value}" aria-label="${esc(label)} week ${week}">`;
 }
 
