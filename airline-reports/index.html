@@ -81,19 +81,22 @@
   .av-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
   .av-chart svg { width:100%; height:auto; display:block; }
   .av-scroll { overflow-x:auto; border:1px solid #f1c4c0; border-radius:6px; }
-  .av-print .av-scroll { overflow:visible; }
-  .av-table { border-collapse:separate; border-spacing:0; width:max-content; min-width:100%; }
+  .av-table { border-collapse:separate; border-spacing:0; width:max-content; table-layout:fixed; font-variant-numeric:tabular-nums; }
+  .av-table th, .av-table td { width:54px; min-width:54px; max-width:54px; height:24px; box-sizing:border-box; overflow:hidden; }
   .av-table th { background:#da291c; color:#fff; font-size:10px; font-weight:600; padding:6px 6px; text-align:right; }
-  .av-table td { padding:4px 6px; border-bottom:1px solid #f6e3e1; text-align:right; font-size:11px; background:#fff; }
+  .av-table td { padding:0 8px; border-bottom:1px solid #f6e3e1; text-align:right; font-size:11px; line-height:24px; background:#fff; white-space:nowrap; }
   .av-table tbody tr:nth-child(even) td { background:#fdf5f4; }
-  .av-table .yr { position:sticky; left:0; z-index:1; width:44px; min-width:44px; text-align:left; color:var(--text2); }
-  .av-table .lbl { position:sticky; left:44px; z-index:1; min-width:150px; text-align:left; font-weight:500; border-right:1px solid #f1c4c0; }
+  .av-table .yr { position:sticky; left:0; z-index:1; width:44px; min-width:44px; max-width:44px; text-align:left; color:var(--text2); }
+  .av-table th.yr { color:#fff; }
+  .av-table .lbl { position:sticky; left:44px; z-index:1; width:150px; min-width:150px; max-width:150px; text-align:left; font-weight:500; border-right:1px solid #f1c4c0; }
   .av-table th.yr, .av-table th.lbl { z-index:2; text-align:left; }
-  .av-table .fl { text-align:left; min-width:96px; color:var(--text2); }
-  .av-table tr.blank td { background:#fff !important; height:10px; padding:0; border-bottom:0; }
+  .av-table .fl { text-align:left; width:96px; min-width:96px; max-width:96px; color:var(--text2); }
+  .av-table tr.blank td { background:#fff !important; height:10px; line-height:10px; padding:0; border-bottom:0; }
   .av-table tr.qt td { font-weight:600; }
-  .av-table input { width:54px; height:22px; border:1px solid #ecc9c5; border-radius:4px; text-align:right; padding:0 4px; font-size:11px; background:#fffaf0; }
-  .av-table td.fl input { width:38px; }
+  .av-table input { width:100%; height:18px; margin:0; border:1px solid #ecc9c5; border-radius:3px; text-align:right; padding:0 3px; font-size:11px; line-height:16px; background:#fffaf0; vertical-align:middle; font-variant-numeric:tabular-nums; -moz-appearance:textfield; }
+  .av-table input::-webkit-outer-spin-button, .av-table input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .av-table td.fl input { width:34px; margin-right:4px; }
+  .av-table td:has(input) { padding:0 3px; }
   .av-table input.saving { border-color:#f59e0b; } .av-table input.saved { border-color:#16a34a; } .av-table input.err { border-color:#dc2626; background:#fef2f2; }
   [hidden] { display:none !important; }
   @media (max-width:760px) {
@@ -108,6 +111,8 @@
 <script src="../dataforce-shell.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -160,7 +165,7 @@
         <div class="field"><label for="avWeek">Report week</label><select id="avWeek"></select></div>
         <span class="spacer"></span>
         <button class="tool-btn primary" id="avExcelBtn" type="button">Export Excel</button>
-        <button class="tool-btn" id="avImageBtn" type="button">Export image</button>
+        <button class="tool-btn" id="avPdfBtn" type="button">Export PDF</button>
       </div>
       <div class="note" id="avNote"></div>
     </section>
@@ -637,12 +642,12 @@ function avSalmonChart() {
 function avGraficos() {
   const weeks = avWeeks();
   const total = avLine("total");
-  const head = first => `<thead><tr><th class="yr">Year</th>${first ? `<th class="lbl">${first}</th>` : ""}${weeks.map(w => `<th>${w}</th>`).join("")}</tr></thead>`;
-  const totals = [av.year, av.previous_year].map(y => `<tr><td class="yr">${y}</td>${weeks.map(w => `<td>${avFmt(avValue(total.values, y, w))}</td>`).join("")}</tr>`).join("");
+  const head = first => `<thead><tr><th class="yr">Year</th><th class="lbl">${first}</th>${weeks.map(w => `<th>${w}</th>`).join("")}</tr></thead>`;
+  const totals = [av.year, av.previous_year].map(y => `<tr><td class="yr">${y}</td><td class="lbl">Total Mercado</td>${weeks.map(w => `<td>${avFmt(avValue(total.values, y, w))}</td>`).join("")}</tr>`).join("");
   const products = [av.year, av.previous_year].map(y => avProductRows(y).map(([name, get]) =>
     `<tr><td class="yr">${y}</td><td class="lbl">${name}</td>${weeks.map(w => `<td>${avFmt(get(w))}</td>`).join("")}</tr>`).join("")).join("");
   return `<section class="panel"><div class="block-title av-red">GRAFICOS ${av.previous_year}-${av.year}</div>
-    <div class="av-scroll"><table class="av-table">${head("")}<tbody>${totals}</tbody></table></div>
+    <div class="av-scroll"><table class="av-table">${head("Item")}<tbody>${totals}</tbody></table></div>
     <div class="av-scroll" style="margin-top:10px"><table class="av-table">${head("Product")}<tbody>${products}</tbody></table></div>
     <div class="av-chart" style="margin-top:14px">${avSalmonChart()}</div></section>`;
 }
@@ -756,23 +761,161 @@ async function exportAviancaExcel() {
   downloadBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), aviancaExportName("xlsx"));
 }
 
-async function exportAviancaImage() {
-  if (!av || !window.html2canvas) return;
-  // The image shows every week, not only the part visible on screen.
-  avEls.report.classList.add("av-print");
-  try {
-    const canvas = await html2canvas(avEls.report, { backgroundColor: "#ffffff", scale: 2 });
-    canvas.toBlob(blob => downloadBlob(blob, aviancaExportName("png")), "image/png");
-  } finally {
-    avEls.report.classList.remove("av-print");
+// 19 nov, cony: "Export PDF" instead of the screenshot. The PDF is built as a
+// report (A3 landscape, one table per page, red headers, the salmon chart
+// drawn in the PDF), with the same content as the Excel/PDF sent to Avianca.
+function avPdfYearRows(year) {
+  const weeks = avWeeks();
+  const lastWeek = weeks[weeks.length - 1];
+  const rows = [];
+  let section = 0;
+  av.lines.forEach(line => {
+    if (section && line.section !== section) rows.push({ blank: true });
+    section = line.section;
+    const flights = year === av.year && av.flight_lines.includes(line.key) ? avValue(av.manual[`flights_${line.key}`], year, lastWeek) : null;
+    rows.push({ cells: [String(year), line.label, ...weeks.map(w => avFmt(avValue(line.values, year, w))), flights === null ? "" : `${String(flights).padStart(2, "0")} vuelos`] });
+    if (line.key === "tlv") rows.push({ cells: [String(year), "Carga General", ...weeks.map(w => avFmt(avValue(av.manual.carga_general, year, w))), ""] });
+  });
+  if (year === av.year) {
+    rows.push({ blank: true });
+    rows.push({ bold: true, cells: ["", "QT (ALL)", ...weeks.map(w => avFmt(avValue(av.manual.qt, year, w))), ""] });
   }
+  return rows;
+}
+
+function avPdfTable(doc, startY, head, rows, withFlights) {
+  const weeks = avWeeks();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const usable = pageWidth - 20 - 12 - 34 - (withFlights ? 18 : 0);
+  const weekWidth = usable / Math.max(1, weeks.length);
+  const columnStyles = { 0: { cellWidth: 12, halign: "left", textColor: [100, 116, 139] }, 1: { cellWidth: 34, halign: "left", fontStyle: "bold" } };
+  weeks.forEach((_, i) => { columnStyles[i + 2] = { cellWidth: weekWidth, halign: "right" }; });
+  if (withFlights) columnStyles[weeks.length + 2] = { cellWidth: 18, halign: "left", textColor: [65, 83, 108] };
+  doc.autoTable({
+    startY,
+    head: [head],
+    body: rows.map(r => r.blank ? head.map(() => "") : r.cells),
+    margin: { left: 10, right: 10 },
+    theme: "plain",
+    styles: { font: "helvetica", fontSize: weeks.length > 40 ? 6.8 : 7.6, cellPadding: { top: 2.3, bottom: 2.3, left: 0.8, right: 0.8 }, textColor: [15, 23, 42], lineColor: [246, 227, 225], lineWidth: { bottom: 0.15 } },
+    headStyles: { fillColor: [218, 41, 28], textColor: 255, fontStyle: "bold", halign: "right" },
+    columnStyles,
+    didParseCell: data => {
+      if (data.section === "head" && data.column.index < 2) data.cell.styles.halign = "left";
+      if (data.section !== "body") return;
+      const row = rows[data.row.index];
+      if (row.blank) { data.cell.styles.minCellHeight = 3; data.cell.styles.cellPadding = 0; data.cell.styles.lineWidth = 0; data.cell.text = [""]; return; }
+      if (row.bold) data.cell.styles.fontStyle = "bold";
+      if (data.row.index % 2 === 1) data.cell.styles.fillColor = [253, 245, 244];
+    },
+  });
+  return doc.lastAutoTable.finalY;
+}
+
+function avPdfHeader(doc, subtitle) {
+  const w = doc.internal.pageSize.getWidth();
+  doc.setFillColor(218, 41, 28);
+  doc.rect(0, 0, w, 16, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("SEGUIMIENTO DE MERCADO", 10, 10.5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Avianca  ·  W${avReportWeek()} ${av.year}`, w - 10, 10.5, { align: "right" });
+  doc.setTextColor(65, 83, 108);
+  doc.setFontSize(9);
+  doc.text(subtitle, 10, 23);
+  return 27;
+}
+
+function avPdfSalmonChart(doc, x, y, width, height) {
+  const weeks = avWeeks();
+  const salmon = avLine("salmon");
+  const cur = weeks.map(w => avValue(salmon.values, av.year, w)), prev = weeks.map(w => avValue(salmon.values, av.previous_year, w));
+  const max = Math.max(1, ...cur.concat(prev).map(v => v || 0));
+  const top = Math.ceil(max / 1000) * 1000;
+  const L = 14, B = 8;
+  const plotW = width - L, plotH = height - B - 8;
+  const yOf = v => y + 8 + plotH * (1 - (v || 0) / top);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Salmon per week (tons)", x, y + 3);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  [[av.previous_year, [156, 163, 175]], [av.year, [218, 41, 28]]].forEach(([label, color], i) => {
+    const lx = x + width - 46 + i * 23;
+    doc.setFillColor(...color);
+    doc.rect(lx, y, 3, 3, "F");
+    doc.setTextColor(65, 83, 108);
+    doc.text(`Salmon ${label}`, lx + 4.5, y + 2.6);
+  });
+  for (let t = 0; t <= top; t += 1000) {
+    doc.setDrawColor(238, 241, 246);
+    doc.setLineWidth(0.2);
+    doc.line(x + L, yOf(t), x + width, yOf(t));
+    doc.setTextColor(131, 145, 168);
+    doc.setFontSize(6.5);
+    doc.text(t.toLocaleString("en-US"), x + L - 2, yOf(t) + 1, { align: "right" });
+  }
+  const step = plotW / Math.max(1, weeks.length);
+  const bw = Math.max(0.6, step / 2 - 0.5);
+  weeks.forEach((w, i) => {
+    const bx = x + L + i * step + 0.4;
+    if (prev[i] !== null) { doc.setFillColor(156, 163, 175); doc.rect(bx, yOf(prev[i]), bw, yOf(0) - yOf(prev[i]), "F"); }
+    if (cur[i] !== null) { doc.setFillColor(218, 41, 28); doc.rect(bx + bw + 0.3, yOf(cur[i]), bw, yOf(0) - yOf(cur[i]), "F"); }
+    doc.setTextColor(131, 145, 168);
+    doc.setFontSize(6);
+    doc.text(String(w), bx + bw, yOf(0) + 4, { align: "center" });
+  });
+}
+
+function avPdfFooters(doc) {
+  const pages = doc.getNumberOfPages();
+  const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
+  const made = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(131, 145, 168);
+    doc.text(`Source: Isidora, Chile origin, weeks Monday to Sunday, tons. QT (ALL), Carga General and flights from another report.  ·  DATAFORCE · ${made}`, 10, h - 6);
+    doc.text(`${p} / ${pages}`, w - 10, h - 6, { align: "right" });
+  }
+}
+
+async function exportAviancaPdf() {
+  if (!av || !window.jspdf) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a3" });
+  const weeks = avWeeks();
+  const head = (first, second) => [first, second, ...weeks.map(String)];
+  // Page 1 and 2: one table per year
+  [av.year, av.previous_year].forEach((year, i) => {
+    if (i) doc.addPage();
+    const y = avPdfHeader(doc, `Chile export market, weeks 1 to ${avReportWeek()}  ·  ${year}`);
+    avPdfTable(doc, y, [...head("Year", "Item"), year === av.year ? "" : ""], avPdfYearRows(year), true);
+  });
+  // Page 3: GRAFICOS
+  doc.addPage();
+  let y = avPdfHeader(doc, `GRAFICOS ${av.previous_year}-${av.year}`);
+  const total = avLine("total");
+  const totalRows = [av.year, av.previous_year].map(yr => ({ cells: [String(yr), "Total Mercado", ...weeks.map(w => avFmt(avValue(total.values, yr, w)))] }));
+  y = avPdfTable(doc, y, head("Year", "Item"), totalRows, false) + 6;
+  const productRows = [av.year, av.previous_year].flatMap(yr => avProductRows(yr).map(([name, get]) => ({ cells: [String(yr), name, ...weeks.map(w => avFmt(get(w)))] })));
+  y = avPdfTable(doc, y, head("Year", "Product"), productRows, false) + 8;
+  const pageH = doc.internal.pageSize.getHeight(), pageW = doc.internal.pageSize.getWidth();
+  avPdfSalmonChart(doc, 10, y, pageW - 20, Math.min(110, pageH - y - 14));
+  avPdfFooters(doc);
+  doc.save(aviancaExportName("pdf"));
 }
 
 avEls.year.addEventListener("change", () => { avEls.week.value = ""; loadAvianca(); });
 avEls.week.addEventListener("change", renderAvianca);
 avEls.report.addEventListener("change", event => { if (event.target.matches("input[data-line]")) saveAviancaManual(event.target); });
 document.getElementById("avExcelBtn").addEventListener("click", exportAviancaExcel);
-document.getElementById("avImageBtn").addEventListener("click", exportAviancaImage);
+document.getElementById("avPdfBtn").addEventListener("click", exportAviancaPdf);
 
 function renderAirlines() {
   document.getElementById("airlines").innerHTML = AIRLINES.map(a => `<button class="airline ${a.ready ? "" : "pending"}" type="button" data-airline="${esc(a.code)}">
