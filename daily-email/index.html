@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAFORCE - Daily email</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#e8eaee; --surface:#fff; --border:#d8dde8; --navy:#0d1f3c; --text1:#0d1f3c; --text2:#41536c; --text3:#8391a8; --blue:#1a56db; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; background:var(--bg); color:var(--text1); font-family:'Inter',sans-serif; font-size:13px; }
+  .wrap { width:min(1180px,100%); margin:0 auto; padding:14px 10px 30px; }
+  h1 { font-size:20px; font-weight:600; margin:6px 0 2px; }
+  .lead { color:var(--text2); margin-bottom:12px; line-height:1.5; }
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field label { color:var(--text3); font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+  .field select, .field input { height:32px; border:1px solid var(--border); border-radius:5px; padding:0 9px; background:#fff; font:inherit; min-width:240px; }
+  .btn { height:32px; border:1px solid var(--border); border-radius:5px; padding:0 14px; background:#fff; color:var(--text2); cursor:pointer; font:inherit; }
+  .btn.primary { background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .note { margin-top:10px; color:var(--text2); line-height:1.5; min-height:18px; }
+  .counts { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .counts span { background:#f1f5f9; border:1px solid var(--border); border-radius:20px; padding:3px 10px; font-size:12px; }
+  .counts b { font-weight:700; }
+  .preview { background:#f1f5f9; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .preview .bar { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--border); font-size:12px; color:var(--text2); }
+  .preview .bar b { color:var(--text1); }
+  iframe { width:100%; height:900px; border:0; display:block; background:#f1f5f9; }
+  .empty { padding:40px; text-align:center; color:var(--text3); }
+</style>
+<link rel="stylesheet" href="../dataforce-shell.css">
+<script>window.DATAFORCE_SHELL = {"title":"Daily email","userNameId":"userLabel"};</script>
+<script src="../dataforce-shell.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <h1>Daily email to sales people</h1>
+  <p class="lead">Each sales person (Users with a Sales Person) gets what is still pending for them in COD, Pending Spots, Check Rates and AWB Recovery: the same AWBs each module shows them, without the ones marked OK. Choose a sales person to see their email and send a test.</p>
+  <section class="panel">
+    <div class="row">
+      <div class="field"><label for="person">Sales person</label><select id="person"><option value="">Loading…</option></select></div>
+      <button class="btn" id="refreshBtn" type="button">Refresh</button>
+      <div class="field" style="flex:1"><label for="to">Send a test to (company emails, separated by commas)</label><input id="to" type="text" placeholder="name@gsaforce.com"></div>
+      <button class="btn primary" id="sendBtn" type="button" disabled>Send test</button>
+      <button class="btn" id="copyBtn" type="button" disabled>Copy for Gmail</button>
+    </div>
+    <div class="counts" id="counts"></div>
+    <div class="note" id="note"></div>
+  </section>
+  <section class="preview">
+    <div class="bar"><span>Subject: <b id="subject">–</b></span><span id="who"></span></div>
+    <div id="frameWrap"><div class="empty">Choose a sales person.</div></div>
+  </section>
+</div>
+
+<script src="../permission-guard.js"></script>
+<script>
+const API_BASE = "https://dataforce-api-test-911713216717.us-east1.run.app";
+const API_KEY = "We1ykcoHgFV16LPduzqw7qGJlMBPGE06U5L7y5Hg_6I";
+const $ = id => document.getElementById(id);
+let current = null;
+let seq = 0;
+
+function me() { const u = getDataforceUser() || {}; return u.email || ""; }
+function esc(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+async function api(path, options = {}) {
+  const sep = path.includes("?") ? "&" : "?";
+  const response = await fetch(`${API_BASE}${path}${sep}email=${encodeURIComponent(me())}`, { ...options, headers: { "x-api-key": API_KEY, ...(options.headers || {}) } });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.detail || "Request failed");
+  return body;
+}
+
+async function loadPeople() {
+  try {
+    const people = (await api("/api/daily_email/salespeople")).people || [];
+    $("person").innerHTML = '<option value="">Choose…</option>' + people.map(p => `<option value="${esc(p.email)}">${esc(p.name || p.email)} · ${esc(p.sales_person)}</option>`).join("");
+    if (!people.length) $("note").textContent = "No user has a Sales Person in Users yet.";
+  } catch (e) {
+    $("note").textContent = e.message;
+  }
+}
+
+async function loadPreview() {
+  const email = $("person").value;
+  current = null;
+  $("sendBtn").disabled = $("copyBtn").disabled = true;
+  $("counts").innerHTML = "";
+  $("subject").textContent = "–";
+  $("who").textContent = "";
+  if (!email) { $("frameWrap").innerHTML = '<div class="empty">Choose a sales person.</div>'; return; }
+  const mine = ++seq;
+  $("note").textContent = "Building the email with their pending AWBs…";
+  $("frameWrap").innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const data = await api(`/api/daily_email/preview?for_email=${encodeURIComponent(email)}`);
+    if (mine !== seq) return;
+    current = data;
+    const names = { cod: "COD", spots: "Pending Spots", rates: "Check Rates", recovery: "AWB Recovery" };
+    $("counts").innerHTML = Object.entries(data.counts).map(([k, v]) => `<span>${names[k]}: <b>${v === null ? "no access" : v}</b></span>`).join("");
+    $("subject").textContent = data.subject;
+    $("who").textContent = `${data.vendor.name || ""} · ${data.vendor.email} · ${data.vendor.sales_person || ""}`;
+    const frame = document.createElement("iframe");
+    frame.title = "Email preview";
+    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">${data.html}</body></html>`;
+    $("frameWrap").innerHTML = "";
+    $("frameWrap").appendChild(frame);
+    $("sendBtn").disabled = $("copyBtn").disabled = false;
+    $("note").textContent = "This is exactly what the email looks like. The AWBs and the Open buttons link to each module in Dataforce.";
+  } catch (e) {
+    if (mine !== seq) return;
+    $("frameWrap").innerHTML = '<div class="empty">Could not build the email.</div>';
+    $("note").textContent = e.message;
+  }
+}
+
+async function sendTest() {
+  if (!current) return;
+  const to = $("to").value.split(/[,;\s]+/).map(v => v.trim()).filter(Boolean);
+  if (!to.length) { $("note").textContent = "Write at least one email to send the test to."; return; }
+  $("sendBtn").disabled = true;
+  $("note").textContent = "Sending…";
+  try {
+    const r = await api("/api/daily_email/send_test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ for_email: $("person").value, to }) });
+    $("note").textContent = `Test sent to ${r.to.join(", ")} · "${r.subject}"`;
+  } catch (e) {
+    $("note").textContent = e.message;
+  } finally {
+    $("sendBtn").disabled = false;
+  }
+}
+
+async function copyForGmail() {
+  if (!current) return;
+  try {
+    const holder = document.createElement("div");
+    holder.innerHTML = current.html;
+    await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([current.html], { type: "text/html" }), "text/plain": new Blob([holder.innerText], { type: "text/plain" }) })]);
+    $("note").textContent = "Copied. In Gmail: new email → click in the body → Ctrl+V.";
+  } catch (e) {
+    $("note").textContent = "The browser did not allow copying: use Send test instead.";
+  }
+}
+
+$("person").addEventListener("change", loadPreview);
+$("refreshBtn").addEventListener("click", loadPreview);
+$("sendBtn").addEventListener("click", sendTest);
+$("copyBtn").addEventListener("click", copyForGmail);
+checkModuleAccess("admin", loadPeople);
+</script>
+</body>
+</html>
