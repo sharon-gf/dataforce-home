@@ -389,7 +389,6 @@
   .cx-arow .n, .cx-drow .n { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .cx-abar { position:relative; height:13px; }
   .cx-abar i { display:block; height:100%; background:#c3d0d2; border-radius:3px; }
-  .cx-abar s { position:absolute; top:-3px; width:2px; height:19px; background:#1b2a2e; opacity:.55; text-decoration:none; }
   .cx-arow b { text-align:right; font-variant-numeric:tabular-nums; } .cx-arow small { color:var(--mut); text-align:right; font-variant-numeric:tabular-nums; }
   .cx-arow.cx { background:var(--jadel); margin:0 -8px; padding:4.5px 8px; border-radius:6px; font-weight:700; color:var(--jade); }
   .cx-arow.cx .cx-abar i { background:var(--jade); }
@@ -398,10 +397,33 @@
   .cx-dbar { height:13px; } .cx-dbar i { border-radius:3px; background:#d3dfe0; }
   .cx-drow .v { text-align:right; font-variant-numeric:tabular-nums; color:var(--mut); }
   .cx-drow .c { font-weight:700; color:var(--jade); font-variant-numeric:tabular-nums; } .cx-drow .c.nil { color:#b0bcbe; font-weight:500; }
-  .cx-regs { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
-  .cx-reg { background:var(--bg); border-radius:8px; padding:9px 14px; font-size:13px; color:var(--mut); }
-  .cx-reg strong { color:var(--jade); font-size:15px; margin-right:8px; } .cx-reg b { color:var(--jade); }
-  .cx-reg small { display:block; font-size:11px; }
+  .cx-regs { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .cx-rg { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 20px; }
+  .cx-rg .rh { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px; }
+  .cx-rg h4 { font-size:24px; font-weight:800; color:var(--jade); margin:0; }
+  .cx-rg h4 span { font-size:12px; font-weight:600; color:var(--jade2); letter-spacing:.02em; margin-left:6px; }
+  .cx-rg p { font-size:13px; color:var(--mut); margin:2px 0 0; }
+  .cx-rg .big { text-align:right; } .cx-rg .big b { display:block; font-size:34px; font-weight:800; color:var(--jade); line-height:1; }
+  .cx-rg .big small { font-size:12.5px; font-weight:600; color:var(--jade2); }
+  .cx-rg h5 { font-size:14px; font-weight:700; color:var(--jade); margin:0 0 6px; }
+  .cx-rrow { display:grid; grid-template-columns:96px 1fr 104px 42px 62px; gap:8px; align-items:center; padding:3.5px 0; font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .cx-rrow.hd { font-size:11px; color:var(--mut); padding-bottom:4px; }
+  .cx-rrow.hd span:last-child { text-align:right; }
+  .cx-rrow.hd i { display:inline-block; width:9px; height:9px; background:var(--jade); border-radius:2px; margin-right:5px; vertical-align:-1px; }
+  .cx-rrow .n { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cx-rrow .bar { display:flex; align-items:center; gap:6px; }
+  .cx-rrow .bar i { display:block; height:13px; background:#bfdcd9; border-radius:3px; overflow:hidden; min-width:3px; }
+  .cx-rrow .bar u { display:block; height:100%; background:var(--jade); }
+  .cx-rrow .bar b { font-size:12px; white-space:nowrap; }
+  .cx-rrow .air { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .cx-rrow .air.cx { color:var(--jade); font-weight:700; }
+  .cx-rrow .v { text-align:right; color:var(--mut); }
+  .cx-rrow .sh { text-align:right; font-weight:700; color:var(--jade); } .cx-rrow .sh.z { color:#b0bcbe; font-weight:500; }
+  .cx-det td { vertical-align:middle; }
+  .cx-det td.air { white-space:nowrap; }
+  .cx-det .tag { display:inline-block; margin-right:10px; color:var(--mut); }
+  .cx-det .tag b { color:var(--ink); font-weight:700; }
+  .cx-det .tag.cx { background:var(--jadel); color:var(--jade); font-weight:700; border-radius:4px; padding:1px 6px; }
+  .cx-det .more { color:var(--mut); font-size:11.5px; }
   .cx-t { width:100%; border-collapse:collapse; font-size:12.5px; font-variant-numeric:tabular-nums; }
   .cx-t th { background:var(--jade); color:#e6f3f2; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:7px 9px; text-align:right; white-space:nowrap; }
   .cx-t th:first-child { border-radius:6px 0 0 0; } .cx-t th:last-child { border-radius:0 6px 0 0; }
@@ -413,10 +435,7 @@
   .cx-pill { display:inline-block; background:var(--jade); color:#fff; border-radius:20px; padding:1px 9px; font-weight:700; font-size:11.5px; }
   .cx-page .nil { color:#b8c3c5; }
   .cx-sh { font-weight:700; color:var(--jade); font-size:11.5px; } .cx-sh.z { color:#b0bcbe; font-weight:500; }
-  .cx-t td.air { width:230px; }
-  .cx-mix { display:flex; height:9px; border-radius:3px; overflow:hidden; margin-top:4px; width:210px; }
-  .cx-mix i { display:block; height:100%; border-right:1px solid #fff; }
-  .cx-t td.dst { color:var(--mut); font-size:11.5px; white-space:normal; max-width:220px; }
+  .cx-t td.dst { color:var(--mut); font-size:12px; white-space:normal; }
   .cx-empty { padding:18px; text-align:center; color:var(--mut); font-size:13px; }
   .cx-ft { display:flex; justify-content:space-between; padding:9px 34px; font-size:11px; color:var(--mut); background:#fff; border-top:1px solid var(--line); }
 </style>
@@ -2321,7 +2340,6 @@ const cxEls = {
   report: document.getElementById("cxReport"),
 };
 const CX_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-const CX_GREYS = ["#7a8a93", "#9aa8b0", "#b6c1c7", "#cdd5da", "#dfe5e8"];
 
 function cxN(v, dec = 0) {
   if (v === null || v === undefined || Number.isNaN(v)) return "–";
@@ -2399,12 +2417,12 @@ function cxProducts() {
 
 function cxAirlines() {
   if (!cx.airlines.length) return `<div class="cx-empty">Sin fruta a Asia esta semana</div>`;
-  const fm = cx.fruit_tons, fp = cx.fruit_tons_prev;
+  const fm = cx.fruit_tons;
   const max = cxPct(cx.airlines[0].tons, fm) * 1.05;
   return cx.airlines.map((a, i) => {
-    const sh = cxPct(a.tons, fm), shP = cxPct(a.tons_prev, fp);
+    const sh = cxPct(a.tons, fm);
     return `<div class="cx-arow${a.name === "Cathay" ? " cx" : ""}"><span class="n">${i + 1}. ${esc(a.name)}</span>
-      <div class="cx-abar"><i style="width:${sh / max * 100}%"></i>${shP !== null ? `<s style="left:${Math.min(shP / max * 100, 100)}%" title="semana anterior ${cxN(shP, 1)}%"></s>` : ""}</div>
+      <div class="cx-abar"><i style="width:${sh / max * 100}%"></i></div>
       <b>${cxN(sh, 1)}%</b><small>${cxN(a.tons)} t</small></div>`;
   }).join("");
 }
@@ -2418,37 +2436,44 @@ function cxDests() {
     <span class="c${d.cx >= 0.5 ? "" : " nil"}">${d.cx >= 0.5 ? `${cxN(d.cx)} t · ${cxN(cxPct(d.cx, d.tons))}%` : "sin Cathay"}</span></div>`).join("");
 }
 
+// China / Resto de Asia, like the original report: the region's share, its 10
+// main agencies with the Cathay part, their main airline and their Cathay share.
 function cxRegion(name, r) {
-  const codes = r.codes.slice(0, 8).join(" · ") + (r.codes.length > 8 ? ` +${r.codes.length - 8}` : "");
-  return `<div class="cx-reg"><strong>${name}</strong>${cxN(r.tons)} t · Cathay ${cxN(r.cx)} t · <b>${cxN(cxPct(r.cx, r.tons), 1)}%</b><small>${esc(codes || "–")}</small></div>`;
-}
-
-function cxPart(p) {
-  if (!p || p.tons < 0.5) return `<td class="nil">–</td>`;
-  return `<td><b>${cxN(p.tons)} t</b> <span class="cx-sh${p.cx < 0.5 ? " z" : ""}">${cxN(cxPct(p.cx, p.tons))}% CX</span>
-    <small>principal: ${esc(p.top)}${p.top === "Cathay" ? "" : ` ${cxN(p.top_tons)} t`}</small></td>`;
-}
-
-function cxMix(a) {
-  let g = 0;
-  const segs = a.airlines.map(x => {
-    const col = x.name === "Cathay" ? "var(--jade)" : CX_GREYS[Math.min(g++, 4)];
-    return `<i style="width:${x.tons / a.tons * 100}%;background:${col}" title="${esc(x.name)} ${cxN(x.tons)} t"></i>`;
+  const codes = r.codes.slice(0, 7).join(" · ") + (r.codes.length > 7 ? ` +${r.codes.length - 7}` : "");
+  const max = Math.max(...r.agents.map(a => a.tons), 1);
+  const rows = r.agents.map(a => {
+    const sh = cxPct(a.cx, a.tons);
+    return `<div class="cx-rrow"><span class="n">${esc(a.name)}</span>
+      <span class="bar"><i style="width:${a.tons / max * 80}%"><u style="width:${sh || 0}%"></u></i><b>${cxN(a.tons)} t</b></span>
+      <span class="air${a.top === "Cathay" ? " cx" : ""}">${esc(a.top)}</span><span class="v">${cxN(a.top_tons)} t</span>
+      <span class="sh${a.cx >= 0.5 ? "" : " z"}">${cxN(sh)}% CX</span></div>`;
   }).join("");
-  const lab = a.airlines.slice(0, 4).map(x => x.name === "Cathay" ? `<b>CX ${cxN(x.tons)}</b>` : `${esc(x.name)} ${cxN(x.tons)}`).join(" · ")
-    + (a.airlines.length > 4 ? ` +${a.airlines.length - 4}` : "");
-  return `<div class="cx-mix">${segs}</div><small>${lab}</small>`;
+  return `<div class="cx-rg"><div class="rh"><div><h4>${name} <span>${esc(codes || "–")}</span></h4>
+      <p>${cxN(r.tons)} t · ${cxN(cxPct(r.tons, cx.fruit_tons))}% de la fruta a Asia</p></div>
+      <div class="big"><b>${cxN(cxPct(r.cx, r.tons), 1)}%</b><small>share Cathay · ${cxN(r.cx)} t</small></div></div>
+    <h5>Agencias principales</h5>
+    <div class="cx-rrow hd"><span></span><span><i></i>parte Cathay</span><span>Principal aerolínea</span><span></span><span>Share CX</span></div>
+    ${rows || `<div class="cx-empty">Sin fruta esta semana</div>`}</div>`;
+}
+
+// Airlines of one agent, Cathay first (CX 62 · ET 207 · 5Y 145 …), like the original.
+function cxAirTags(a) {
+  const list = [...a.airlines.filter(x => x.name === "Cathay"), ...a.airlines.filter(x => x.name !== "Cathay")];
+  return list.slice(0, 6).map(x => x.name === "Cathay"
+      ? `<span class="tag cx">CX ${cxN(x.tons)}</span>`
+      : `<span class="tag" title="${esc(x.name)}"><b>${esc(x.code || x.name)}</b> ${cxN(x.tons)}</span>`).join("")
+    + (list.length > 6 ? `<span class="more">+${list.length - 6}</span>` : "");
 }
 
 function cxAgents() {
   if (!cx.agents.length) return `<div class="cx-empty">Sin fruta a Asia esta semana</div>`;
   const rows = cx.agents.map(a => {
     const pill = a.cx >= 0.5 ? `<span class="cx-pill">${cxN(a.cx)} t · ${cxN(cxPct(a.cx, a.tons))}%</span>` : `<span class="nil">–</span>`;
-    const dests = a.dests.slice(0, 5).map(d => `${esc(d.code)} ${cxN(d.tons)}`).join(" · ") + (a.dests.length > 5 ? ` +${a.dests.length - 5}` : "");
-    return `<tr><td class="l"><b>${esc(a.name)}</b></td><td class="tot">${cxN(a.tons)} t</td><td>${pill}</td>${cxPart(a.china)}${cxPart(a.rest)}
-      <td class="l air">${cxMix(a)}</td><td class="l dst">${dests}</td></tr>`;
+    const dests = a.dests.slice(0, 6).map(d => `${esc(d.code)} ${cxN(d.tons)}`).join(" · ") + (a.dests.length > 6 ? ` +${a.dests.length - 6}` : "");
+    return `<tr><td class="l"><b>${esc(a.name)}</b></td><td class="tot">${cxN(a.tons)} t</td><td class="l">${pill}</td>
+      <td class="l dst">${dests}</td><td class="l air">${cxAirTags(a)}</td></tr>`;
   }).join("");
-  return `<table class="cx-t"><thead><tr><th class="l">Agente</th><th>Total</th><th>Cathay</th><th>China</th><th>Resto de Asia</th><th class="l">Aerolíneas (verde = Cathay)</th><th class="l">Destinos principales</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="cx-t cx-det"><thead><tr><th class="l">Agente</th><th>Total</th><th class="l">Cathay</th><th class="l">Destinos principales</th><th class="l">Aerolíneas</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function renderCx() {
@@ -2465,11 +2490,11 @@ function renderCx() {
         <div class="cx-card"><h3>Share Cathay por producto <small>barra = toneladas a Asia · verde = parte Cathay</small></h3>${cxProducts()}</div>
       </div>
       <div class="cx-two">
-        <div class="cx-card"><h3>Fruta · share por aerolínea <small>top 10 · línea = semana anterior</small></h3>${cxAirlines()}</div>
+        <div class="cx-card"><h3>Fruta · share por aerolínea <small>fruta a Asia · top 10</small></h3>${cxAirlines()}</div>
         <div class="cx-card"><h3>Fruta · destinos <small>top 12 por toneladas · verde = Cathay</small></h3>${cxDests()}</div>
       </div>
-      <div class="cx-card"><h3>Fruta · agentes <small>top ${cx.agents.length} por toneladas de fruta · ${cxN(cx.fruit_tons)} t de fruta a Asia</small></h3>
-        <div class="cx-regs">${cxRegion("China", cx.regions.china)}${cxRegion("Resto de Asia", cx.regions.rest)}</div>
+      <div class="cx-regs">${cxRegion("China", cx.regions.china)}${cxRegion("Resto de Asia", cx.regions.rest)}</div>
+      <div class="cx-card"><h3>Fruta · detalle por agente <small>top ${cx.agents.length} agentes de fruta a Asia · toneladas de fruta</small></h3>
         ${cxAgents()}</div>
     </div>
     <div class="cx-ft"><span>Fuente: Isidora · exportaciones desde Chile a Asia · toneladas por peso parcial · Cathay = prefijo 160</span><span>GSAFORCE · Dataforce</span></div>
@@ -2544,9 +2569,12 @@ async function exportCxExcel() {
     cx.airlines.map(x => ({ ...x, sh: x.tons / cx.fruit_tons, shp: cx.fruit_tons_prev ? x.tons_prev / cx.fruit_tons_prev : null })));
   sheet("Fruta destinos", [{ h: "Destino", k: "code", w: 9 }, { h: "Ciudad", k: "city", w: 16 }, { h: "Toneladas", k: "tons", fmt: t }, { h: "Cathay (t)", k: "cx", fmt: t }, { h: "Share Cathay", k: "sh", fmt: p }],
     cx.dests.map(x => ({ ...x, sh: x.tons ? x.cx / x.tons : null })));
-  sheet("Fruta agentes", [{ h: "Agente", k: "name", w: 18 }, { h: "Total (t)", k: "tons", fmt: t }, { h: "Cathay (t)", k: "cx", fmt: t }, { h: "China (t)", k: "ch", fmt: t }, { h: "China Cathay (t)", k: "chx", fmt: t }, { h: "Resto Asia (t)", k: "rs", fmt: t }, { h: "Resto Cathay (t)", k: "rsx", fmt: t }, { h: "Aerolíneas", k: "air", w: 60 }, { h: "Destinos", k: "des", w: 50 }],
-    cx.agents.map(a => ({ name: a.name, tons: a.tons, cx: a.cx, ch: a.china ? a.china.tons : 0, chx: a.china ? a.china.cx : 0, rs: a.rest ? a.rest.tons : 0, rsx: a.rest ? a.rest.cx : 0,
-      air: a.airlines.map(x => `${x.name} ${cxN(x.tons)}`).join(" · "), des: a.dests.map(x => `${x.code} ${cxN(x.tons)}`).join(" · ") })));
+  sheet("Fruta agentes", [{ h: "Agente", k: "name", w: 18 }, { h: "Total (t)", k: "tons", fmt: t }, { h: "Cathay (t)", k: "cx", fmt: t }, { h: "Share Cathay", k: "sh", fmt: p }, { h: "Destinos", k: "des", w: 60 }, { h: "Aerolíneas", k: "air", w: 60 }],
+    cx.agents.map(a => ({ name: a.name, tons: a.tons, cx: a.cx, sh: a.tons ? a.cx / a.tons : null,
+      des: a.dests.map(x => `${x.code} ${cxN(x.tons)}`).join(" · "), air: a.airlines.map(x => `${x.code || x.name} ${cxN(x.tons)}`).join(" · ") })));
+  [["China", cx.regions.china], ["Resto de Asia", cx.regions.rest]].forEach(([name, r]) =>
+    sheet(`${name} agencias`, [{ h: "Agencia", k: "name", w: 18 }, { h: "Toneladas", k: "tons", fmt: t }, { h: "Cathay (t)", k: "cx", fmt: t }, { h: "Share CX", k: "sh", fmt: p }, { h: "Principal aerolínea", k: "top", w: 20 }, { h: "Toneladas principal", k: "top_tons", fmt: t }],
+      r.agents.map(a => ({ ...a, sh: a.tons ? a.cx / a.tons : null }))));
   sheet("Tendencia", [{ h: "Año", k: "year", w: 7 }, { h: "Semana", k: "week", w: 8 }, { h: "Mercado (t)", k: "tons", fmt: t }, { h: "Share Cathay", k: "s", fmt: p }, { h: "Share Cathay fruta", k: "f", fmt: p }],
     cx.trend.map(x => ({ ...x, s: x.share === null ? null : x.share / 100, f: x.fruit_share === null ? null : x.fruit_share / 100 })));
   const buffer = await book.xlsx.writeBuffer();
