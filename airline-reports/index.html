@@ -337,6 +337,86 @@
   .ups-rank b { text-align:right; font-variant-numeric:tabular-nums; }
   .ups-empty { padding:18px; text-align:center; color:var(--mut); font-size:13px; }
   .ups-foot { display:flex; justify-content:space-between; padding:9px 34px; font-size:11px; color:var(--mut); background:#fff; border-top:1px solid var(--line); }
+  /* Cathay "Reporte Semanal SCL - Asia" (23 nov, cony): from Isidora, the mockup she approved, Cathay jade. */
+  .cx-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+  .cx-bar .spacer { flex:1; }
+  .cx-wrap { overflow-x:auto; padding-bottom:6px; }
+  .cx-page { --jade:#006564; --jade2:#00857d; --jadel:#d7ecea; --ink:#1b2a2e; --mut:#6d7c80; --line:#e2e9e9; --bg:#f5f8f8; --up:#15803d; --down:#b91c1c;
+    width:1240px; margin:0 auto 18px; background:#fff; color:var(--ink); font-family:'DM Sans',Inter,sans-serif; border-radius:14px; overflow:hidden; box-shadow:0 1px 4px rgba(0,60,60,.12); }
+  .cx-printing .cx-page { box-shadow:none; border-radius:0; margin:0; }
+  .cx-page * { box-sizing:border-box; }
+  .cx-hd { display:flex; justify-content:space-between; align-items:center; padding:20px 34px; background:linear-gradient(100deg,#004f4f,#006564 60%,#00857d); color:#fff; }
+  .cx-hd h1 { font-size:27px; font-weight:700; margin:0; }
+  .cx-hd p { font-size:14px; opacity:.8; margin:3px 0 0; }
+  .cx-hd .lg { display:flex; gap:16px; align-items:center; font-weight:800; letter-spacing:.04em; font-size:15px; }
+  .cx-hd .lg i { width:1px; height:36px; background:rgba(255,255,255,.4); }
+  .cx-bd { padding:20px 34px 24px; background:var(--bg); }
+  .cx-kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:14px; }
+  .cx-kpi { background:#fff; border:1px solid var(--line); border-top:4px solid var(--jade2); border-radius:10px; padding:12px 16px; }
+  .cx-kpi.hi { background:var(--jade); border-color:var(--jade); color:#fff; }
+  .cx-kpi > span { font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--mut); }
+  .cx-kpi.hi > span, .cx-kpi.hi small { color:#bfe0dd; }
+  .cx-kpi b { display:block; font-size:30px; font-weight:700; margin:2px 0 0; font-variant-numeric:tabular-nums; }
+  .cx-kpi .d { font-size:12.5px; font-weight:600; min-height:17px; }
+  .cx-kpi small { font-size:12px; color:var(--mut); }
+  .cx-page em { font-style:normal; font-weight:600; }
+  .cx-page .up { color:var(--up); } .cx-page .down { color:var(--down); }
+  .cx-kpi.hi .up { color:#86efac; } .cx-kpi.hi .down { color:#fca5a5; }
+  .cx-card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 20px; }
+  .cx-card h3 { font-size:16px; font-weight:700; color:var(--jade); display:flex; align-items:baseline; gap:10px; margin:0 0 10px; }
+  .cx-card h3 small { font-size:12px; font-weight:500; color:var(--mut); }
+  .cx-two { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .cx-lgd { display:flex; gap:16px; font-size:12px; color:var(--mut); margin:-4px 0 4px; }
+  .cx-lgd i { display:inline-block; width:16px; height:3px; border-radius:2px; margin-right:6px; vertical-align:3px; }
+  .cx-lgd i.b { height:10px; width:10px; vertical-align:-1px; }
+  .cx-ch { width:100%; display:block; }
+  .cx-ch .gr { stroke:#edf1f1; } .cx-ch .ax { fill:#7d8b8f; font-size:11px; font-family:'DM Sans',sans-serif; }
+  .cx-ch .vol { fill:#e3ebeb; } .cx-ch .lt { fill:none; stroke:#006564; stroke-width:3; stroke-linejoin:round; }
+  .cx-ch .lf { fill:none; stroke:#5fb8b0; stroke-width:2; stroke-dasharray:5 4; stroke-linejoin:round; }
+  .cx-ch .dt { fill:#006564; stroke:#fff; stroke-width:2; } .cx-ch .lb { fill:#006564; font-weight:700; font-size:13px; font-family:'DM Sans',sans-serif; }
+  .cx-ch .lb2 { fill:#3e9a92; font-weight:600; font-size:11.5px; font-family:'DM Sans',sans-serif; }
+  .cx-prow { display:grid; grid-template-columns:160px 1fr 130px; gap:14px; align-items:center; padding:11px 0; border-bottom:1px solid #eef2f2; }
+  .cx-prow:last-child { border-bottom:0; }
+  .cx-prow .pn b { display:block; font-size:15px; } .cx-prow small { font-size:11.5px; color:var(--mut); display:block; }
+  .cx-pbar { height:22px; background:#f2f5f5; border-radius:4px; }
+  .cx-pbar i, .cx-dbar i { display:block; height:100%; background:#cfdcdc; border-radius:4px; overflow:hidden; min-width:3px; }
+  .cx-pbar u, .cx-dbar u { display:block; height:100%; background:var(--jade); }
+  .cx-prow .pv { text-align:right; } .cx-prow .pv b { font-size:20px; color:var(--jade); margin-right:6px; } .cx-prow .pv em { font-size:11.5px; }
+  .cx-arow, .cx-drow { display:grid; align-items:center; gap:10px; padding:4.5px 0; font-size:12.5px; }
+  .cx-arow { grid-template-columns:120px 1fr 52px 50px; }
+  .cx-arow .n, .cx-drow .n { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cx-abar { position:relative; height:13px; }
+  .cx-abar i { display:block; height:100%; background:#c3d0d2; border-radius:3px; }
+  .cx-abar s { position:absolute; top:-3px; width:2px; height:19px; background:#1b2a2e; opacity:.55; text-decoration:none; }
+  .cx-arow b { text-align:right; font-variant-numeric:tabular-nums; } .cx-arow small { color:var(--mut); text-align:right; font-variant-numeric:tabular-nums; }
+  .cx-arow.cx { background:var(--jadel); margin:0 -8px; padding:4.5px 8px; border-radius:6px; font-weight:700; color:var(--jade); }
+  .cx-arow.cx .cx-abar i { background:var(--jade); }
+  .cx-drow { grid-template-columns:140px 1fr 56px 104px; }
+  .cx-drow .n { color:var(--mut); } .cx-drow .n b { color:var(--ink); margin-right:3px; }
+  .cx-dbar { height:13px; } .cx-dbar i { border-radius:3px; background:#d3dfe0; }
+  .cx-drow .v { text-align:right; font-variant-numeric:tabular-nums; color:var(--mut); }
+  .cx-drow .c { font-weight:700; color:var(--jade); font-variant-numeric:tabular-nums; } .cx-drow .c.nil { color:#b0bcbe; font-weight:500; }
+  .cx-regs { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .cx-reg { background:var(--bg); border-radius:8px; padding:9px 14px; font-size:13px; color:var(--mut); }
+  .cx-reg strong { color:var(--jade); font-size:15px; margin-right:8px; } .cx-reg b { color:var(--jade); }
+  .cx-reg small { display:block; font-size:11px; }
+  .cx-t { width:100%; border-collapse:collapse; font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .cx-t th { background:var(--jade); color:#e6f3f2; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:7px 9px; text-align:right; white-space:nowrap; }
+  .cx-t th:first-child { border-radius:6px 0 0 0; } .cx-t th:last-child { border-radius:0 6px 0 0; }
+  .cx-t th.l, .cx-t td.l { text-align:left; }
+  .cx-t td { padding:7px 9px; border-bottom:1px solid #edf2f2; text-align:right; vertical-align:top; white-space:nowrap; }
+  .cx-t tbody tr:nth-child(even) td { background:#fafcfc; }
+  .cx-t td small { display:block; font-size:11px; color:var(--mut); margin-top:1px; }
+  .cx-t td.tot { font-weight:700; }
+  .cx-pill { display:inline-block; background:var(--jade); color:#fff; border-radius:20px; padding:1px 9px; font-weight:700; font-size:11.5px; }
+  .cx-page .nil { color:#b8c3c5; }
+  .cx-sh { font-weight:700; color:var(--jade); font-size:11.5px; } .cx-sh.z { color:#b0bcbe; font-weight:500; }
+  .cx-t td.air { width:230px; }
+  .cx-mix { display:flex; height:9px; border-radius:3px; overflow:hidden; margin-top:4px; width:210px; }
+  .cx-mix i { display:block; height:100%; border-right:1px solid #fff; }
+  .cx-t td.dst { color:var(--mut); font-size:11.5px; white-space:normal; max-width:220px; }
+  .cx-empty { padding:18px; text-align:center; color:var(--mut); font-size:13px; }
+  .cx-ft { display:flex; justify-content:space-between; padding:9px 34px; font-size:11px; color:var(--mut); background:#fff; border-top:1px solid var(--line); }
 </style>
 <script>window.DATAFORCE_SHELL = {"title":"Airline Reports","userNameId":"userLabel"};</script>
 <link rel="stylesheet" href="../dataforce-shell.css">
@@ -456,6 +536,18 @@
     </section>
     <div class="ups-wrap"><div id="upsReport"></div></div>
   </div>
+  <div id="cxView" hidden>
+    <section class="panel">
+      <div class="cx-bar">
+        <div class="field"><label for="cxWeek">Report week</label><select id="cxWeek"></select></div>
+        <span class="spacer"></span>
+        <button class="tool-btn primary" id="cxPdfBtn" type="button">Export PDF</button>
+        <button class="tool-btn" id="cxExcelBtn" type="button">Export Excel</button>
+      </div>
+      <div class="note" id="cxNote"></div>
+    </section>
+    <div class="cx-wrap"><div id="cxReport"></div></div>
+  </div>
   </div>
 </div>
 
@@ -478,7 +570,7 @@ const UNCHECKED_STATIONS = { ET: ["LGG"] };
 const AIRLINES = [
   { code: "ET", name: "Ethiopian", ready: true },
   { code: "LY", name: "El Al", ready: true },
-  { code: "CX", name: "Cathay" },
+  { code: "CX", name: "Cathay", ready: true },
   { code: "5X", name: "UPS", ready: true },
   { code: "AV", name: "Avianca", ready: true },
   { code: "4X", name: "Mercury" },
@@ -2213,6 +2305,256 @@ upsEls.week.addEventListener("change", () => { const [y, w] = upsEls.week.value.
 document.getElementById("upsPdfBtn").addEventListener("click", exportUpsPdf);
 document.getElementById("upsExcelBtn").addEventListener("click", exportUpsExcel);
 
+// ---------------------------------------------------------------------------
+// Cathay: "Reporte Semanal SCL - Asia" (23 nov, cony). The API computes every
+// number from Isidora (Chile to Asia, Cathay = prefix 160, ISO weeks); this
+// draws the one-page report she approved and exports it to PDF and Excel.
+// ---------------------------------------------------------------------------
+let cx = null;
+let cxSeq = 0;
+const cxEls = {
+  view: document.getElementById("cxView"),
+  week: document.getElementById("cxWeek"),
+  note: document.getElementById("cxNote"),
+  report: document.getElementById("cxReport"),
+};
+const CX_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const CX_GREYS = ["#7a8a93", "#9aa8b0", "#b6c1c7", "#cdd5da", "#dfe5e8"];
+
+function cxN(v, dec = 0) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "–";
+  return Number(v).toLocaleString("es-CL", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function cxPct(part, total) { return total ? part / total * 100 : null; }
+function cxDelta(now, before) {
+  if (!before) return "";
+  const v = (now - before) / before * 100;
+  return `<em class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "▲" : "▼"} ${cxN(Math.abs(v))}% vs sem. ant.</em>`;
+}
+function cxPp(now, before) {
+  if (now === null || before === null) return "";
+  const d = now - before;
+  return `<em class="${d >= 0 ? "up" : "down"}">${d >= 0 ? "▲" : "▼"} ${cxN(Math.abs(d), 1)} pp</em>`;
+}
+function cxRange(start, end) {
+  const a = parseDay(start), b = parseDay(end);
+  const left = a.getMonth() === b.getMonth() ? `${a.getDate()}` : `${a.getDate()} de ${CX_MONTHS[a.getMonth()]}`;
+  return `${left} al ${b.getDate()} de ${CX_MONTHS[b.getMonth()]} de ${b.getFullYear()}`;
+}
+
+function cxKpis() {
+  const k = cx.kpi;
+  const share = cxPct(k.cx, k.market), shareP = cxPct(k.cx_prev, k.market_prev);
+  const rank = k.rank ? `#${k.rank}` : "–";
+  const rankD = k.rank && k.rank_prev
+    ? `<em class="${k.rank <= k.rank_prev ? "up" : "down"}">${k.rank === k.rank_prev ? "=" : (k.rank < k.rank_prev ? "▲" : "▼")} sem. ant. #${k.rank_prev}</em>` : "";
+  const cards = [
+    ["Mercado Asia", `${cxN(k.market)} t`, cxDelta(k.market, k.market_prev), `${k.dests} destinos`],
+    ["Volumen Cathay", `${cxN(k.cx)} t`, cxDelta(k.cx, k.cx_prev), `${k.dests_cx} destinos con Cathay`],
+    ["Share Cathay", `${cxN(share, 1)}%`, cxPp(share, shareP), "sobre el total a Asia"],
+    ["Ranking Cathay", rank, rankD, `de ${k.airlines} aerolíneas`],
+    ["Agentes con Cathay", `${k.agents_cx} de ${k.agents}`, `<em class="${k.agents_cx >= k.agents_cx_prev ? "up" : "down"}">sem. ant. ${k.agents_cx_prev}</em>`, "agentes activos a Asia"],
+  ];
+  return `<div class="cx-kpis">${cards.map(([a, b, c, d], i) => `<div class="cx-kpi${i === 2 ? " hi" : ""}"><span>${a}</span><b>${b}</b><div class="d">${c}</div><small>${d}</small></div>`).join("")}</div>`;
+}
+
+function cxTrend() {
+  const t = cx.trend.filter(x => x.share !== null);
+  if (t.length < 2) return `<div class="cx-empty">Sin semanas suficientes</div>`;
+  const W = 600, H = 230, L = 34, R = 44, T = 18, B = 26;
+  const vals = t.flatMap(x => [x.share, x.fruit_share]).filter(v => v !== null);
+  const mx = Math.max(5, Math.ceil(Math.max(...vals) * 1.15 / 5) * 5);
+  const X = i => L + i * (W - L - R) / (t.length - 1), Y = v => T + (1 - v / mx) * (H - T - B);
+  const vmax = Math.max(...t.map(x => x.tons)) || 1, bw = (W - L - R) / t.length * 0.46;
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="cx-ch">`;
+  for (let g = 0; g <= mx; g += 5) s += `<line x1="${L}" x2="${W - R}" y1="${Y(g)}" y2="${Y(g)}" class="gr"/><text x="${L - 6}" y="${Y(g) + 4}" class="ax" text-anchor="end">${g}%</text>`;
+  t.forEach((x, i) => {
+    const h = x.tons / vmax * (H - T - B) * 0.42;
+    s += `<rect x="${X(i) - bw / 2}" y="${H - B - h}" width="${bw}" height="${h}" rx="2" class="vol"><title>Mercado ${cxN(x.tons)} t</title></rect>`;
+    s += `<text x="${X(i)}" y="${H - 8}" class="ax" text-anchor="middle">S${x.week}</text>`;
+  });
+  const line = (key, cls) => `<polyline class="${cls}" points="${t.map((x, i) => x[key] === null ? "" : `${X(i)},${Y(x[key])}`).filter(Boolean).join(" ")}"/>`;
+  s += line("fruit_share", "lf") + line("share", "lt");
+  const i = t.length - 1, last = t[i];
+  s += `<circle cx="${X(i)}" cy="${Y(last.share)}" r="4.5" class="dt"/><text x="${X(i) + 8}" y="${Y(last.share) + 4}" class="lb">${cxN(last.share, 1)}%</text>`;
+  if (last.fruit_share !== null) {
+    let yf = Y(last.fruit_share) + 4;
+    if (Math.abs(yf - (Y(last.share) + 4)) < 14) yf = Y(last.share) + 4 + (last.fruit_share <= last.share ? 14 : -14);
+    s += `<text x="${X(i) + 8}" y="${yf}" class="lb2">${cxN(last.fruit_share, 1)}%</text>`;
+  }
+  return s + "</svg>";
+}
+
+function cxProducts() {
+  const k = cx.kpi, top = Math.max(...cx.products.map(p => p.tons)) || 1;
+  return cx.products.map(p => {
+    const sh = cxPct(p.cx, p.tons), shP = cxPct(p.cx_prev, p.tons_prev);
+    return `<div class="cx-prow"><div class="pn"><b>${p.name}</b><small>${cxN(p.tons)} t · ${cxN(cxPct(p.tons, k.market), 1)}% del mercado</small></div>
+      <div class="cx-pbar"><i style="width:${p.tons / top * 100}%"><u style="width:${sh || 0}%"></u></i></div>
+      <div class="pv"><b>${cxN(sh, 1)}%</b>${cxPp(sh, shP)}<small>${cxN(p.cx)} t Cathay</small></div></div>`;
+  }).join("");
+}
+
+function cxAirlines() {
+  if (!cx.airlines.length) return `<div class="cx-empty">Sin fruta a Asia esta semana</div>`;
+  const fm = cx.fruit_tons, fp = cx.fruit_tons_prev;
+  const max = cxPct(cx.airlines[0].tons, fm) * 1.05;
+  return cx.airlines.map((a, i) => {
+    const sh = cxPct(a.tons, fm), shP = cxPct(a.tons_prev, fp);
+    return `<div class="cx-arow${a.name === "Cathay" ? " cx" : ""}"><span class="n">${i + 1}. ${esc(a.name)}</span>
+      <div class="cx-abar"><i style="width:${sh / max * 100}%"></i>${shP !== null ? `<s style="left:${Math.min(shP / max * 100, 100)}%" title="semana anterior ${cxN(shP, 1)}%"></s>` : ""}</div>
+      <b>${cxN(sh, 1)}%</b><small>${cxN(a.tons)} t</small></div>`;
+  }).join("");
+}
+
+function cxDests() {
+  if (!cx.dests.length) return `<div class="cx-empty">Sin fruta a Asia esta semana</div>`;
+  const max = cx.dests[0].tons || 1;
+  return cx.dests.map(d => `<div class="cx-drow"><span class="n"><b>${esc(d.code)}</b> ${esc(d.city)}</span>
+    <div class="cx-dbar"><i style="width:${d.tons / max * 100}%"><u style="width:${cxPct(d.cx, d.tons) || 0}%"></u></i></div>
+    <span class="v">${cxN(d.tons)} t</span>
+    <span class="c${d.cx >= 0.5 ? "" : " nil"}">${d.cx >= 0.5 ? `${cxN(d.cx)} t · ${cxN(cxPct(d.cx, d.tons))}%` : "sin Cathay"}</span></div>`).join("");
+}
+
+function cxRegion(name, r) {
+  const codes = r.codes.slice(0, 8).join(" · ") + (r.codes.length > 8 ? ` +${r.codes.length - 8}` : "");
+  return `<div class="cx-reg"><strong>${name}</strong>${cxN(r.tons)} t · Cathay ${cxN(r.cx)} t · <b>${cxN(cxPct(r.cx, r.tons), 1)}%</b><small>${esc(codes || "–")}</small></div>`;
+}
+
+function cxPart(p) {
+  if (!p || p.tons < 0.5) return `<td class="nil">–</td>`;
+  return `<td><b>${cxN(p.tons)} t</b> <span class="cx-sh${p.cx < 0.5 ? " z" : ""}">${cxN(cxPct(p.cx, p.tons))}% CX</span>
+    <small>principal: ${esc(p.top)}${p.top === "Cathay" ? "" : ` ${cxN(p.top_tons)} t`}</small></td>`;
+}
+
+function cxMix(a) {
+  let g = 0;
+  const segs = a.airlines.map(x => {
+    const col = x.name === "Cathay" ? "var(--jade)" : CX_GREYS[Math.min(g++, 4)];
+    return `<i style="width:${x.tons / a.tons * 100}%;background:${col}" title="${esc(x.name)} ${cxN(x.tons)} t"></i>`;
+  }).join("");
+  const lab = a.airlines.slice(0, 4).map(x => x.name === "Cathay" ? `<b>CX ${cxN(x.tons)}</b>` : `${esc(x.name)} ${cxN(x.tons)}`).join(" · ")
+    + (a.airlines.length > 4 ? ` +${a.airlines.length - 4}` : "");
+  return `<div class="cx-mix">${segs}</div><small>${lab}</small>`;
+}
+
+function cxAgents() {
+  if (!cx.agents.length) return `<div class="cx-empty">Sin fruta a Asia esta semana</div>`;
+  const rows = cx.agents.map(a => {
+    const pill = a.cx >= 0.5 ? `<span class="cx-pill">${cxN(a.cx)} t · ${cxN(cxPct(a.cx, a.tons))}%</span>` : `<span class="nil">–</span>`;
+    const dests = a.dests.slice(0, 5).map(d => `${esc(d.code)} ${cxN(d.tons)}`).join(" · ") + (a.dests.length > 5 ? ` +${a.dests.length - 5}` : "");
+    return `<tr><td class="l"><b>${esc(a.name)}</b></td><td class="tot">${cxN(a.tons)} t</td><td>${pill}</td>${cxPart(a.china)}${cxPart(a.rest)}
+      <td class="l air">${cxMix(a)}</td><td class="l dst">${dests}</td></tr>`;
+  }).join("");
+  return `<table class="cx-t"><thead><tr><th class="l">Agente</th><th>Total</th><th>Cathay</th><th>China</th><th>Resto de Asia</th><th class="l">Aerolíneas (verde = Cathay)</th><th class="l">Destinos principales</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderCx() {
+  if (!cx) { cxEls.report.innerHTML = ""; return; }
+  cxEls.report.innerHTML = `<div class="cx-page">
+    <div class="cx-hd"><div><h1>Reporte Semanal SCL – Asia</h1><p>Cathay Cargo Chile · Semana ${cx.week} · ${cxRange(cx.start, cx.end)}</p></div>
+      <div class="lg">CATHAY CARGO<i></i>GSAFORCE</div></div>
+    <div class="cx-bd">
+      ${cxKpis()}
+      <div class="cx-two">
+        <div class="cx-card"><h3>Share Cathay · últimas ${cx.trend.length} semanas <small>a Asia</small></h3>
+          <div class="cx-lgd"><span><i style="background:#006564"></i>Total</span><span><i style="background:#5fb8b0"></i>Fruta</span><span><i class="b" style="background:#e3ebeb"></i>Toneladas del mercado</span></div>
+          ${cxTrend()}</div>
+        <div class="cx-card"><h3>Share Cathay por producto <small>barra = toneladas a Asia · verde = parte Cathay</small></h3>${cxProducts()}</div>
+      </div>
+      <div class="cx-two">
+        <div class="cx-card"><h3>Fruta · share por aerolínea <small>top 10 · línea = semana anterior</small></h3>${cxAirlines()}</div>
+        <div class="cx-card"><h3>Fruta · destinos <small>top 12 por toneladas · verde = Cathay</small></h3>${cxDests()}</div>
+      </div>
+      <div class="cx-card"><h3>Fruta · agentes <small>top ${cx.agents.length} por toneladas de fruta · ${cxN(cx.fruit_tons)} t de fruta a Asia</small></h3>
+        <div class="cx-regs">${cxRegion("China", cx.regions.china)}${cxRegion("Resto de Asia", cx.regions.rest)}</div>
+        ${cxAgents()}</div>
+    </div>
+    <div class="cx-ft"><span>Fuente: Isidora · exportaciones desde Chile a Asia · toneladas por peso parcial · Cathay = prefijo 160</span><span>GSAFORCE · Dataforce</span></div>
+  </div>`;
+}
+
+async function loadCx(year, week) {
+  const seq = ++cxSeq;
+  cxEls.note.textContent = "Loading the Isidora exports to Asia…";
+  els.status.textContent = "Loading";
+  try {
+    const params = new URLSearchParams({ email: user().email || "" });
+    if (year && week) { params.set("year", year); params.set("week", week); }
+    const response = await fetch(`${API_BASE}/api/airline_reports/cathay_scl?${params}`, { headers: { "x-api-key": API_KEY } });
+    const body = await response.json();
+    if (seq !== cxSeq) return;
+    if (!response.ok) throw new Error(body.detail || "Could not load the report");
+    cx = body;
+    const short = iso => { const d = parseDay(iso); return `${d.getDate()} ${CX_MONTHS[d.getMonth()].slice(0, 3)}`; };
+    const wk = (cx.weeks || []).map(x => ({ value: `${x.year}-${x.week}`, label: `W${x.week} ${x.year} · ${short(x.start)} – ${short(x.end)}` }));
+    if (!wk.some(o => o.value === `${cx.year}-${cx.week}`)) wk.unshift({ value: `${cx.year}-${cx.week}`, label: `W${cx.week} ${cx.year}` });
+    fillSelect(cxEls.week, wk, `${cx.year}-${cx.week}`);
+    cxEls.note.textContent = `Isidora: exports from Chile to Asia, Monday to Sunday, Cathay = prefix 160. ${cx.closed ? "" : "This week is not over yet: it only has the AWBs so far."}`;
+    renderCx();
+    els.status.textContent = "Live";
+  } catch (error) {
+    if (seq !== cxSeq) return;
+    cx = null;
+    renderCx();
+    cxEls.note.textContent = error.message;
+    els.status.textContent = "Error";
+  }
+}
+
+async function exportCxPdf() {
+  const page = cxEls.report.querySelector(".cx-page");
+  if (!cx || !page || !window.jspdf || !window.html2canvas) return;
+  cxEls.note.textContent = "Building the PDF…";
+  cxEls.report.classList.add("cx-printing");
+  try {
+    // Scale 1.5 and JPEG 0.85 keep one page near 1 MB and still sharp.
+    const canvas = await html2canvas(page, { backgroundColor: "#ffffff", scale: 1.5, useCORS: true, windowWidth: 1300 });
+    const w = canvas.width / 1.5, h = canvas.height / 1.5;
+    const doc = new window.jspdf.jsPDF({ orientation: h > w ? "portrait" : "landscape", unit: "px", format: [w, h], hotfixes: ["px_scaling"] });
+    doc.addImage(canvas.toDataURL("image/jpeg", 0.85), "JPEG", 0, 0, w, h);
+    doc.save(`Reporte_Semanal_Cathay_Cargo_Chile_W${cx.week}_${cx.year}.pdf`);
+    cxEls.note.textContent = "PDF ready.";
+  } finally {
+    cxEls.report.classList.remove("cx-printing");
+  }
+}
+
+async function exportCxExcel() {
+  if (!cx || !window.ExcelJS) return;
+  const book = new ExcelJS.Workbook();
+  const sheet = (name, cols, rows) => {
+    const s = book.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });
+    s.columns = cols.map(c => ({ header: c.h, key: c.k, width: c.w || 14, style: c.fmt ? { numFmt: c.fmt } : {} }));
+    rows.forEach(r => s.addRow(r));
+    s.getRow(1).eachCell(c => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF006564" } }; });
+  };
+  const t = "#,##0.0", p = "0.0%";
+  const k = cx.kpi;
+  sheet("Indicadores", [{ h: "Indicador", k: "a", w: 26 }, { h: `Semana ${cx.week}`, k: "b", w: 14 }, { h: "Semana anterior", k: "c", w: 16 }], [
+    { a: "Mercado Asia (t)", b: k.market, c: k.market_prev }, { a: "Volumen Cathay (t)", b: k.cx, c: k.cx_prev },
+    { a: "Share Cathay", b: k.market ? k.cx / k.market : null, c: k.market_prev ? k.cx_prev / k.market_prev : null },
+    { a: "Ranking Cathay", b: k.rank, c: k.rank_prev }, { a: "Aerolíneas", b: k.airlines }, { a: "Destinos", b: k.dests },
+    { a: "Destinos con Cathay", b: k.dests_cx }, { a: "Agentes", b: k.agents }, { a: "Agentes con Cathay", b: k.agents_cx, c: k.agents_cx_prev }]);
+  sheet("Productos", [{ h: "Producto", k: "name", w: 12 }, { h: "Toneladas", k: "tons", fmt: t }, { h: "Cathay (t)", k: "cx", fmt: t }, { h: "Share Cathay", k: "sh", fmt: p }, { h: "Share sem. ant.", k: "shp", fmt: p }],
+    cx.products.map(x => ({ ...x, sh: x.tons ? x.cx / x.tons : null, shp: x.tons_prev ? x.cx_prev / x.tons_prev : null })));
+  sheet("Fruta aerolíneas", [{ h: "Aerolínea", k: "name", w: 18 }, { h: "Toneladas", k: "tons", fmt: t }, { h: "Share", k: "sh", fmt: p }, { h: "Share sem. ant.", k: "shp", fmt: p }],
+    cx.airlines.map(x => ({ ...x, sh: x.tons / cx.fruit_tons, shp: cx.fruit_tons_prev ? x.tons_prev / cx.fruit_tons_prev : null })));
+  sheet("Fruta destinos", [{ h: "Destino", k: "code", w: 9 }, { h: "Ciudad", k: "city", w: 16 }, { h: "Toneladas", k: "tons", fmt: t }, { h: "Cathay (t)", k: "cx", fmt: t }, { h: "Share Cathay", k: "sh", fmt: p }],
+    cx.dests.map(x => ({ ...x, sh: x.tons ? x.cx / x.tons : null })));
+  sheet("Fruta agentes", [{ h: "Agente", k: "name", w: 18 }, { h: "Total (t)", k: "tons", fmt: t }, { h: "Cathay (t)", k: "cx", fmt: t }, { h: "China (t)", k: "ch", fmt: t }, { h: "China Cathay (t)", k: "chx", fmt: t }, { h: "Resto Asia (t)", k: "rs", fmt: t }, { h: "Resto Cathay (t)", k: "rsx", fmt: t }, { h: "Aerolíneas", k: "air", w: 60 }, { h: "Destinos", k: "des", w: 50 }],
+    cx.agents.map(a => ({ name: a.name, tons: a.tons, cx: a.cx, ch: a.china ? a.china.tons : 0, chx: a.china ? a.china.cx : 0, rs: a.rest ? a.rest.tons : 0, rsx: a.rest ? a.rest.cx : 0,
+      air: a.airlines.map(x => `${x.name} ${cxN(x.tons)}`).join(" · "), des: a.dests.map(x => `${x.code} ${cxN(x.tons)}`).join(" · ") })));
+  sheet("Tendencia", [{ h: "Año", k: "year", w: 7 }, { h: "Semana", k: "week", w: 8 }, { h: "Mercado (t)", k: "tons", fmt: t }, { h: "Share Cathay", k: "s", fmt: p }, { h: "Share Cathay fruta", k: "f", fmt: p }],
+    cx.trend.map(x => ({ ...x, s: x.share === null ? null : x.share / 100, f: x.fruit_share === null ? null : x.fruit_share / 100 })));
+  const buffer = await book.xlsx.writeBuffer();
+  downloadBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Reporte_Semanal_Cathay_Cargo_Chile_W${cx.week}_${cx.year}.xlsx`);
+}
+
+cxEls.week.addEventListener("change", () => { const [y, w] = cxEls.week.value.split("-").map(Number); loadCx(y, w); });
+document.getElementById("cxPdfBtn").addEventListener("click", exportCxPdf);
+document.getElementById("cxExcelBtn").addEventListener("click", exportCxExcel);
+
 function renderAirlines() {
   document.getElementById("airlines").innerHTML = AIRLINES.map(a => `<button class="airline ${a.ready ? "" : "pending"}" type="button" data-airline="${esc(a.code)}">
       <span class="airline-code">${esc(a.code)}</span>
@@ -2243,9 +2585,12 @@ function showView() {
   const isAvianca = carrier === "AV";
   // UPS has its own weekly report too (23 nov).
   const isUps = carrier === "5X";
-  document.querySelector("#reportView > .panel").hidden = isAvianca || isUps;
-  els.report.hidden = isAvianca || isUps;
+  // Cathay too: its weekly SCL - Asia report from Isidora (23 nov).
+  const isCathay = carrier === "CX";
+  document.querySelector("#reportView > .panel").hidden = isAvianca || isUps || isCathay;
+  els.report.hidden = isAvianca || isUps || isCathay;
   upsEls.view.hidden = !isUps;
+  cxEls.view.hidden = !isCathay;
   avEls.view.hidden = !isAvianca;
   document.getElementById("avTabs").hidden = !isAvianca;
   sclEls.view.hidden = true;
@@ -2258,6 +2603,12 @@ function showView() {
     requestSeq++;
     document.getElementById("reportTitle").textContent = "UPS Weekly Report";
     if (!ups) loadUps();
+    return;
+  }
+  if (isCathay) {
+    requestSeq++;
+    document.getElementById("reportTitle").textContent = "Cathay · Reporte Semanal SCL – Asia";
+    if (!cx) loadCx();
     return;
   }
   els.day.value = "ALL";
