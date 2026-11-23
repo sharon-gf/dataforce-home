@@ -353,7 +353,7 @@
         <div class="rp" id="flightRange"><label for="flightRangeBtn">Flight range</label></div>
         <div class="rp" id="bookingRange"><label for="bookingRangeBtn">Booking range</label></div>
       </div>
-      <div class="sel-bar" id="selBar" hidden><b id="selText">0 AWBs selected</b><button class="btn" id="selClear" type="button">Clear selection</button><button class="btn" id="selCopy" type="button">Copy AWB</button><button class="btn" id="selEmail" type="button">Write email</button><button class="btn primary" id="selRequest" type="button" hidden>Send request customer</button></div>
+      <div class="sel-bar" id="selBar" hidden><b id="selText">0 AWBs selected</b><button class="btn" id="selClear" type="button">Clear selection</button><button class="btn" id="selCopy" type="button">Copy AWB</button><button class="btn" id="selEmail" type="button" hidden>Write email</button><button class="btn primary" id="selRequest" type="button" hidden>Send request customer</button></div>
       <div class="table-wrap">
         <table id="groupTable" hidden>
           <thead><tr><th>GSA / Sales person / Customer / AWB</th><th class="num">AWBs</th><th class="num">Rows</th><th class="num">Over 30 d</th><th class="num">Sales USD</th></tr></thead>
@@ -758,6 +758,7 @@ async function load() {
     state.contactsAdmin = data.contacts_admin === true;
     $("adminActions").hidden = !state.contactsAdmin;
     if (state.contactsAdmin && !refresh.timer) loadRefreshInfo();
+    $("selEmail").hidden = !state.contactsAdmin;
     $("selRequest").hidden = !state.contactsAdmin;
     state.sender = data.sender || "awbrecovery@gsaforce.com";
     state.rows = data.rows.map(r => ({ ...r, sent_count: Number(r.sent_count || 0), flight: flightLabel(r), status: statusLabel(r), days: daysSince(r.flight_date), route: `${r.ori || ""} - ${r.des || ""}`, chw: Number(r.chw || 0), rev: Number(r.rev || 0), segments: Number(r.segments || 0) }));
@@ -794,7 +795,7 @@ function exportCsv() {
 // Email popup: the AWBs checked in the list, sent from the signed-in user's Gmail
 function selectedRows() { return state.rows.filter(r => state.selected.has(r.awb)); }
 function setMailMsg(text, kind) { const m = $("mailMsg"); m.textContent = text || ""; m.className = `msg ${kind || ""}`; }
-function openMail() {
+function openMail() { if (!state.contactsAdmin) return;
   const rows = selectedRows();
   if (!rows.length) return;
   $("mailSubject").value = mailSubject(rows);
