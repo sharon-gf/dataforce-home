@@ -278,6 +278,7 @@
   .ups-head .logos { display:flex; align-items:center; gap:16px; }
   .ups-head .badge { display:flex; align-items:center; justify-content:center; width:58px; height:58px; border-radius:12px; background:var(--gold); color:var(--brown); font-weight:800; font-size:21px; letter-spacing:.02em; }
   .ups-head .logos img { height:50px; }
+  .ups-head .logos img.ups-logo { height:64px; }
   .ups-head .logos i { width:1px; height:44px; background:rgba(255,255,255,.35); }
   .ups-body { padding:20px 34px 24px; background:var(--cream); }
   .ups-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
@@ -2108,7 +2109,7 @@ function upsHead(region, title) {
   const a = parseDay(ups.start), b = parseDay(ups.end);
   return `<header class="ups-head"><div><h1>UPS Weekly Report · <span>${esc(region)}</span></h1>
       <p>${esc(title)} · Week ${ups.week} · ${a.getDate()} ${UPS_MONTHS[a.getMonth()]} – ${b.getDate()} ${UPS_MONTHS[b.getMonth()]} ${b.getFullYear()}</p></div>
-    <div class="logos"><span class="badge">5X</span><i></i><img src="img/gsa-force.png" alt="GSA Force"></div></header>`;
+    <div class="logos"><img class="ups-logo" src="img/ups.png" alt="UPS"><i></i><img src="img/gsa-force.png" alt="GSA Force"></div></header>`;
 }
 function upsFoot(page) {
   return `<div class="ups-foot"><span>Source: CargoSystem · UPS (5X), AWB prefixes 406 and 805 · chargeable kg · sales = cost to UPS</span><span>${page}</span></div>`;
