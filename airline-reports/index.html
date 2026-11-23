@@ -264,6 +264,79 @@
     .header-right { justify-content:flex-start; }
     .table-wrap { overflow-x:auto; }
   }
+  /* UPS Weekly Report (23 nov, cony): same content as the Excel/PDF, new design in UPS brown and gold. */
+  .ups-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+  .ups-bar .spacer { flex:1; }
+  .ups-wrap { overflow-x:auto; padding-bottom:6px; }
+  .ups-page { --brown:#351c15; --brown2:#5a3a2e; --gold:#ffb500; --gold2:#f5a400; --cream:#fbf7f2; --line:#eadfd3; --txt:#2a1a14; --mut:#8a7468; --prev:#b9a79b; --up:#15803d; --down:#b91c1c;
+    width:1240px; margin:0 auto 18px; background:#fff; color:var(--txt); font-family:'DM Sans',Inter,sans-serif; border-radius:14px; overflow:hidden; box-shadow:0 1px 3px rgba(53,28,21,.12); }
+  .ups-printing .ups-page { box-shadow:none; border-radius:0; margin:0; }
+  .ups-head { display:flex; justify-content:space-between; align-items:center; padding:20px 34px; background:linear-gradient(100deg,#351c15 0%,#4b2a1f 62%,#5a3a2e 100%); border-bottom:5px solid var(--gold); color:#fff; }
+  .ups-head h1 { font-size:27px; font-weight:700; letter-spacing:-.01em; }
+  .ups-head h1 span { color:var(--gold); }
+  .ups-head p { font-size:14px; color:rgba(255,255,255,.78); margin-top:3px; }
+  .ups-head .logos { display:flex; align-items:center; gap:16px; }
+  .ups-head .badge { display:flex; align-items:center; justify-content:center; width:58px; height:58px; border-radius:12px; background:var(--gold); color:var(--brown); font-weight:800; font-size:21px; letter-spacing:.02em; }
+  .ups-head .logos img { height:50px; }
+  .ups-head .logos i { width:1px; height:44px; background:rgba(255,255,255,.35); }
+  .ups-body { padding:20px 34px 24px; background:var(--cream); }
+  .ups-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+  .ups-kpi { background:#fff; border:1px solid var(--line); border-top:4px solid var(--gold); border-radius:10px; padding:13px 17px; }
+  .ups-kpi.dark { background:var(--brown); border-color:var(--brown); border-top-color:var(--gold); color:#fff; }
+  .ups-kpi span { font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--mut); }
+  .ups-kpi.dark span, .ups-kpi.dark small { color:#d9c8bd; }
+  .ups-kpi b { display:block; font-size:30px; font-weight:700; letter-spacing:-.01em; margin:3px 0 1px; font-variant-numeric:tabular-nums; }
+  .ups-kpi small { font-size:12px; color:var(--mut); }
+  .ups-kpi .up { color:var(--up); } .ups-kpi .down { color:var(--down); }
+  .ups-kpi.dark .up { color:#6ee7a0; } .ups-kpi.dark .down { color:#fca5a5; }
+  .ups-oris { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+  .ups-ori { background:#fff; border:1px solid var(--line); border-radius:10px; padding:11px 15px; display:flex; justify-content:space-between; align-items:center; }
+  .ups-ori em { font-style:normal; font-size:19px; font-weight:700; color:var(--brown); }
+  .ups-ori em small { display:block; font-size:11px; font-weight:500; color:var(--mut); }
+  .ups-ori div { text-align:right; font-size:12px; color:var(--mut); }
+  .ups-ori div b { display:block; font-size:18px; color:var(--txt); font-variant-numeric:tabular-nums; }
+  .ups-card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin-bottom:14px; }
+  .ups-card:last-child { margin-bottom:0; }
+  .ups-card h3 { font-size:16px; font-weight:700; color:var(--brown); display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
+  .ups-card h3 small { font-size:12px; font-weight:500; color:var(--mut); }
+  .ups-two { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .ups-two .ups-card { margin:0; }
+  .ups-split { display:grid; grid-template-columns:360px 1fr; gap:14px; margin-bottom:14px; }
+  .ups-split .ups-card { margin:0; }
+  .ups-legend { display:flex; gap:16px; font-size:12px; color:var(--mut); margin:-4px 0 6px; }
+  .ups-legend i { display:inline-block; width:18px; height:3px; border-radius:2px; margin-right:6px; vertical-align:3px; }
+  .ups-chart { width:100%; height:auto; display:block; }
+  .ups-chart .grid { stroke:#efe6dc; stroke-width:1; }
+  .ups-chart .axis { fill:#8a7468; font-size:11px; font-family:'DM Sans',sans-serif; }
+  .ups-chart .l-prev { fill:none; stroke:#b9a79b; stroke-width:2.2; stroke-linejoin:round; }
+  .ups-chart .l-now { fill:none; stroke:#f5a400; stroke-width:2.8; stroke-linejoin:round; }
+  .ups-chart .a-now { fill:rgba(255,181,0,.12); }
+  .ups-chart .d-now { fill:#f5a400; stroke:#fff; stroke-width:1.5; }
+  .ups-chart .wk { stroke:#351c15; stroke-width:1; stroke-dasharray:3 3; }
+  .ups-chart .lab { fill:#351c15; font-size:12px; font-weight:700; font-family:'DM Sans',sans-serif; }
+  .ups-t { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:12.5px; }
+  .ups-t th { background:var(--brown); color:#f3e7dd; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:7px 9px; text-align:right; white-space:nowrap; }
+  .ups-t th:first-child { border-radius:6px 0 0 0; } .ups-t th:last-child { border-radius:0 6px 0 0; }
+  .ups-t th.l, .ups-t td.l { text-align:left; }
+  .ups-t td { padding:6px 9px; border-bottom:1px solid #f1e8df; text-align:right; white-space:nowrap; }
+  .ups-t tbody tr:nth-child(even) td { background:#fdfaf6; }
+  .ups-t td.nil { color:#cbbcb1; }
+  .ups-t td.name { max-width:250px; overflow:hidden; text-overflow:ellipsis; }
+  .ups-t tr.sub td { background:#fff4d6 !important; font-weight:700; color:var(--brown); border-bottom:1px solid #f3dfa6; }
+  .ups-t tr.tot td { background:var(--brown) !important; color:#fff; font-weight:700; }
+  .ups-t tr.tot td:first-child { border-radius:0 0 0 6px; } .ups-t tr.tot td:last-child { border-radius:0 0 6px 0; }
+  .ups-t td.ori { font-weight:700; color:var(--brown); }
+  .ups-t th.now, .ups-t td.now { background:#fff4d6 !important; color:var(--brown); font-weight:700; }
+  .ups-t th.now { background:var(--gold) !important; color:var(--brown); }
+  .ups-split .ups-rank { grid-template-columns:20px minmax(0,1fr) 70px 66px; }
+  .ups-rank { display:grid; grid-template-columns:22px minmax(0,1fr) 150px 74px; gap:8px; align-items:center; padding:5px 0; border-bottom:1px solid #f3ebe3; font-size:12.5px; }
+  .ups-rank:last-child { border-bottom:0; }
+  .ups-rank > span:first-child { color:var(--mut); font-size:11px; text-align:right; }
+  .ups-rank .n { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ups-rank i { display:block; height:11px; border-radius:2px; background:linear-gradient(90deg,#ffb500,#f5a400); }
+  .ups-rank b { text-align:right; font-variant-numeric:tabular-nums; }
+  .ups-empty { padding:18px; text-align:center; color:var(--mut); font-size:13px; }
+  .ups-foot { display:flex; justify-content:space-between; padding:9px 34px; font-size:11px; color:var(--mut); background:#fff; border-top:1px solid var(--line); }
 </style>
 <script>window.DATAFORCE_SHELL = {"title":"Airline Reports","userNameId":"userLabel"};</script>
 <link rel="stylesheet" href="../dataforce-shell.css">
@@ -371,6 +444,18 @@
     </section>
     <div id="avReport"></div>
   </div>
+  <div id="upsView" hidden>
+    <section class="panel">
+      <div class="ups-bar">
+        <div class="field"><label for="upsWeek">Report week</label><select id="upsWeek"></select></div>
+        <span class="spacer"></span>
+        <button class="tool-btn primary" id="upsPdfBtn" type="button">Export PDF</button>
+        <button class="tool-btn" id="upsExcelBtn" type="button">Export Excel</button>
+      </div>
+      <div class="note" id="upsNote"></div>
+    </section>
+    <div class="ups-wrap"><div id="upsReport"></div></div>
+  </div>
   </div>
 </div>
 
@@ -394,7 +479,7 @@ const AIRLINES = [
   { code: "ET", name: "Ethiopian", ready: true },
   { code: "LY", name: "El Al", ready: true },
   { code: "CX", name: "Cathay" },
-  { code: "5X", name: "UPS" },
+  { code: "5X", name: "UPS", ready: true },
   { code: "AV", name: "Avianca", ready: true },
   { code: "4X", name: "Mercury" },
 ];
@@ -1827,6 +1912,307 @@ avEls.report.addEventListener("change", event => { if (event.target.matches("inp
 document.getElementById("avExcelBtn").addEventListener("click", exportAviancaExcel);
 document.getElementById("avPdfBtn").addEventListener("click", exportAviancaPdf);
 
+// ---------------------------------------------------------------------------
+// UPS Weekly Report (23 nov, cony). The report that is sent every Monday or
+// Tuesday and used in the weekly meeting, with the same content as the Excel
+// it was made in (5X Mexico: GDL, NLU, MTY, QRO; 5X Puerto Rico: SJU), in a
+// new design. The API sends the AWB segments (no 502, ISO weeks, chargeable
+// kilos, segment cost as sales, customer short names); the tables are built
+// here.
+// ---------------------------------------------------------------------------
+let ups = null;
+let upsSeq = 0;
+const upsEls = {
+  view: document.getElementById("upsView"),
+  week: document.getElementById("upsWeek"),
+  note: document.getElementById("upsNote"),
+  report: document.getElementById("upsReport"),
+};
+const UPS_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function upsN(v, dec = 0) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "–";
+  return Number(v).toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function upsT(kg) { return upsN(kg / 1000, 2); }
+function upsMoney(v) { return `$${upsN(v)}`; }
+function upsPerKg(sales, kg) { return kg ? `$${upsN(sales / kg, 2)}` : "–"; }
+function upsSum(rows, f = "kg") { return rows.reduce((a, r) => a + (r[f] || 0), 0); }
+function upsAwbs(rows) { return new Set(rows.map(r => r.awb)).size; }
+function upsVar(now, before) {
+  if (!before) return "";
+  const v = (now - before) / before * 100;
+  return `<span class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "+" : "−"}${upsN(Math.abs(v))}%</span>`;
+}
+function upsDate(iso) { const d = parseDay(iso); return `${d.getDate()} ${UPS_MONTHS[d.getMonth()]}`; }
+function upsOriLabel(o) { return o === "NLU" ? "NLU (MEX)" : o; }
+
+// Rows of one year up to the report week (the "YTD" of the Excel).
+function upsYtd(year, filter = () => true) {
+  return ups.rows.filter(r => r.year === year && r.week <= ups.week && filter(r));
+}
+function upsWeekRows(filter = () => true) {
+  return ups.rows.filter(r => r.year === ups.year && r.week === ups.week && filter(r));
+}
+function upsGroup(rows, key, f = "kg") {
+  const m = new Map();
+  rows.forEach(r => m.set(r[key], (m.get(r[key]) || 0) + (r[f] || 0)));
+  return [...m.entries()].map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v);
+}
+function upsWeeksIn(year) { return new Date(Date.UTC(year, 11, 28)).getUTCDay() === 4 || new Date(Date.UTC(year, 0, 1)).getUTCDay() === 4 ? 53 : 52; }
+function upsSeries(year, filter, f = "kg", upTo = null) {
+  const n = upTo || upsWeeksIn(year), out = new Array(n).fill(0);
+  ups.rows.forEach(r => { if (r.year === year && r.week <= n && filter(r)) out[r.week - 1] += r[f] || 0; });
+  return out;
+}
+
+function upsHead(region, title) {
+  const a = parseDay(ups.start), b = parseDay(ups.end);
+  return `<header class="ups-head"><div><h1>UPS Weekly Report · <span>${esc(region)}</span></h1>
+      <p>${esc(title)} · Week ${ups.week} · ${a.getDate()} ${UPS_MONTHS[a.getMonth()]} – ${b.getDate()} ${UPS_MONTHS[b.getMonth()]} ${b.getFullYear()}</p></div>
+    <div class="logos"><span class="badge">5X</span><i></i><img src="img/gsa-force.png" alt="GSA Force"></div></header>`;
+}
+function upsFoot(page) {
+  return `<div class="ups-foot"><span>Source: CargoSystem · UPS (5X), AWB prefixes 406 and 805 · chargeable kg · sales = cost to UPS</span><span>${page}</span></div>`;
+}
+
+// Weekly line chart, last year against this year (this year up to the report week).
+function upsChart(filter, f = "kg", opts = {}) {
+  const W = opts.width || 1100, H = opts.height || 230, L = 56, R = 18, T = 26, B = 28;
+  const prev = upsSeries(ups.year - 1, filter, f), now = upsSeries(ups.year, filter, f, ups.week);
+  const n = Math.max(prev.length, upsWeeksIn(ups.year));
+  const scale = f === "kg" ? 1000 : 1;
+  const maxV = Math.max(1, ...prev, ...now) / scale;
+  const ticks = sclNiceTicks(maxV);
+  const top = ticks[ticks.length - 1];
+  const x = i => L + (W - L - R) * (i / (n - 1));
+  const y = v => T + (H - T - B) * (1 - v / scale / top);
+  let g = ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v * scale)}" y2="${y(v * scale)}" class="grid"/><text x="${L - 8}" y="${y(v * scale) + 4}" class="axis" text-anchor="end">${f === "kg" ? upsN(v, v < 10 && top < 10 ? 1 : 0) : "$" + upsN(v)}</text>`).join("");
+  for (let i = 0; i < n; i += 1) if ((i + 1) % 4 === 1 || i === n - 1) g += `<text x="${x(i)}" y="${H - B + 17}" class="axis" text-anchor="middle">${i + 1}</text>`;
+  const pts = s => s.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  g += `<polyline points="${pts(prev)}" class="l-prev"/>`;
+  if (now.length) {
+    g += `<polygon points="${x(0)},${y(0)} ${pts(now)} ${x(now.length - 1)},${y(0)}" class="a-now"/>`;
+    g += `<polyline points="${pts(now)}" class="l-now"/>`;
+    const li = now.length - 1;
+    g += `<line x1="${x(li)}" x2="${x(li)}" y1="${T - 6}" y2="${H - B}" class="wk"/>`;
+    g += `<circle cx="${x(li)}" cy="${y(now[li])}" r="5" class="d-now"/>`;
+    const lab = f === "kg" ? `W${ups.week}: ${upsT(now[li])} t` : `W${ups.week}: ${upsMoney(now[li])}`;
+    const lx = Math.min(x(li) + 8, W - R - 110);
+    g += `<text x="${lx}" y="${T + 6}" class="lab">${esc(lab)}</text>`;
+  }
+  return `<div class="ups-legend"><span><i style="background:#b9a79b"></i>${ups.year - 1}</span><span><i style="background:#f5a400"></i>${ups.year}</span><span>${f === "kg" ? "tons per week" : "sales (USD) per week"}</span></div>
+    <svg viewBox="0 0 ${W} ${H}" class="ups-chart">${g}</svg>`;
+}
+
+function upsRanking(items, fmt, limit = 10) {
+  const list = items.slice(0, limit);
+  if (!list.length) return `<div class="ups-empty">No shipments this year.</div>`;
+  const maxV = Math.max(...list.map(i => i.v), 1);
+  return list.map((it, i) => `<div class="ups-rank"><span>${i + 1}</span><span class="n" title="${esc(it.name)}">${esc(it.name)}</span>
+      <i style="width:${Math.max(2, it.v / maxV * 100)}%"></i><b>${fmt(it.v)}</b></div>`).join("");
+}
+
+// Last 5 weeks of this year for the top names of those weeks (tons), like the Excel.
+function upsLast5(filter, key) {
+  const weeks = [];
+  for (let w = Math.max(1, ups.week - 4); w <= ups.week; w += 1) weeks.push(w);
+  const rows = ups.rows.filter(r => r.year === ups.year && weeks.includes(r.week) && filter(r));
+  const names = upsGroup(rows, key).slice(0, 10);
+  if (!names.length) return `<div class="ups-empty">No shipments in weeks ${weeks[0]}–${ups.week}.</div>`;
+  const cell = (name, w) => upsSum(rows.filter(r => r[key] === name && r.week === w));
+  const head = `<tr><th class="l">${key === "customer" ? "Customer" : "Destination"}</th>${weeks.map(w => `<th class="${w === ups.week ? "now" : ""}">W${w}</th>`).join("")}<th>Total</th></tr>`;
+  const body = names.map(n => `<tr><td class="l name" title="${esc(n.name)}">${esc(n.name)}</td>${weeks.map(w => { const v = cell(n.name, w); return `<td class="${w === ups.week ? "now" : v ? "" : "nil"}">${v ? upsT(v) : "–"}</td>`; }).join("")}<td><b>${upsT(n.v)}</b></td></tr>`).join("");
+  return `<table class="ups-t"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+function upsDayTable(origins) {
+  const rows = upsWeekRows(r => origins.includes(r.ori));
+  const days = [...new Set(rows.map(r => r.date))].sort();
+  const cols = origins;
+  if (!days.length) return `<div class="ups-empty">No flights in week ${ups.week}.</div>`;
+  const head = `<tr><th class="l">Day</th>${cols.map(o => `<th>${esc(upsOriLabel(o))}</th>`).join("")}<th>Total</th></tr>`;
+  const body = days.map(d => {
+    const dr = rows.filter(r => r.date === d), dn = parseDay(d).toLocaleDateString("en-US", { weekday: "long" });
+    return `<tr><td class="l">${dn} <span style="color:#8a7468">${upsDate(d)}</span></td>${cols.map(o => { const v = upsSum(dr.filter(r => r.ori === o)); return `<td class="${v ? "" : "nil"}">${v ? upsT(v) : "–"}</td>`; }).join("")}<td><b>${upsT(upsSum(dr))}</b></td></tr>`;
+  }).join("");
+  const tot = `<tr class="tot"><td class="l">Total</td>${cols.map(o => `<td>${upsT(upsSum(rows.filter(r => r.ori === o)))}</td>`).join("")}<td>${upsT(upsSum(rows))}</td></tr>`;
+  return `<table class="ups-t"><thead>${head}</thead><tbody>${body}${tot}</tbody></table>`;
+}
+
+// Last week by origin > destination > customer (Mexico) or origin > customer > destination (Puerto Rico).
+function upsDetail(origins, order) {
+  const rows = upsWeekRows(r => origins.includes(r.ori));
+  if (!rows.length) return `<div class="ups-empty">No flights in week ${ups.week}.</div>`;
+  const [k1, k2] = order;
+  const line = (cells, rs, cls = "") => `<tr class="${cls}">${cells}<td>${upsN(upsSum(rs))}</td><td>${upsAwbs(rs)}</td><td>${upsMoney(upsSum(rs, "sales"))}</td><td>${upsPerKg(upsSum(rs, "sales"), upsSum(rs))}</td></tr>`;
+  let body = "";
+  origins.forEach(o => {
+    const ro = rows.filter(r => r.ori === o);
+    if (!ro.length) return;
+    let first = true;
+    upsGroup(ro, k1).forEach(g1 => {
+      const r1 = ro.filter(r => r[k1] === g1.name);
+      const subs = upsGroup(r1, k2);
+      subs.forEach((g2, i) => {
+        const r2 = r1.filter(r => r[k2] === g2.name);
+        body += line(`<td class="l ori">${first ? esc(upsOriLabel(o)) : ""}</td><td class="l name">${i === 0 ? esc(g1.name) : ""}</td><td class="l name">${esc(g2.name)}</td>`, r2);
+        first = false;
+      });
+      if (k1 === "customer" && subs.length > 1) body += line(`<td></td><td class="l" colspan="2">Total ${esc(g1.name)}</td>`, r1, "sub");
+    });
+    body += line(`<td class="l" colspan="3">Total ${esc(upsOriLabel(o))}</td>`, ro, "sub");
+  });
+  body += line(`<td class="l" colspan="3">Total week ${ups.week}</td>`, rows, "tot");
+  const names = { des: "Destination", customer: "Customer" };
+  return `<table class="ups-t"><thead><tr><th class="l">Origin</th><th class="l">${names[k1]}</th><th class="l">${names[k2]}</th><th>CHW (kg)</th><th>AWB #</th><th>Sales</th><th>Sales/kg</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function upsOverview(region, origins, page) {
+  const f = r => origins.includes(r.ori);
+  const now = upsSum(upsYtd(ups.year, f)), before = upsSum(upsYtd(ups.year - 1, f));
+  const wk = upsSum(upsWeekRows(f)), prevWk = upsSum(ups.rows.filter(r => r.year === ups.year && r.week === ups.week - 1 && f(r)));
+  const oris = origins.length > 1 ? `<div class="ups-oris">${origins.map(o => {
+    const y = upsSum(upsYtd(ups.year, r => r.ori === o)), w = upsSum(upsWeekRows(r => r.ori === o));
+    return `<div class="ups-ori"><em>${esc(o)}<small>${o === "NLU" ? "MEX" : "YTD tons"}</small></em><div>YTD ${ups.year}<b>${upsT(y)} t</b>W${ups.week}: ${upsT(w)} t</div></div>`;
+  }).join("")}</div>` : "";
+  return `<section class="ups-page">${upsHead(region, "Tons moved by week")}<div class="ups-body">
+    <div class="ups-kpis">
+      <div class="ups-kpi dark"><span>YTD ${ups.year}</span><b>${upsT(now)} t</b><small>weeks 1–${ups.week}</small></div>
+      <div class="ups-kpi"><span>YTD ${ups.year - 1}</span><b>${upsT(before)} t</b><small>same weeks</small></div>
+      <div class="ups-kpi"><span>% Var</span><b>${upsVar(now, before) || "–"}</b><small>${ups.year} vs ${ups.year - 1}</small></div>
+      <div class="ups-kpi"><span>Flown week ${ups.week}</span><b>${upsT(wk)} t</b><small>W${ups.week - 1}: ${upsT(prevWk)} t</small></div>
+    </div>${oris}
+    <div class="ups-card"><h3>Tons moved by week <small>${esc(origins.map(upsOriLabel).join(" · "))}</small></h3>${upsChart(f)}</div>
+    <div class="ups-card"><h3>Tons flown last week <small>week ${ups.week}, by flight day</small></h3>${upsDayTable(origins)}</div>
+  </div>${upsFoot(page)}</section>`;
+}
+
+function upsOriginPage(o, page) {
+  const f = r => r.ori === o;
+  const ytd = upsYtd(ups.year, f);
+  return `<section class="ups-page">${upsHead("5X Mexico", `From ${upsOriLabel(o)}`)}<div class="ups-body">
+    <div class="ups-split"><div class="ups-card"><h3>YTD top 10 customers <small>tons ${ups.year}</small></h3>${upsRanking(upsGroup(ytd, "customer"), v => `${upsT(v)} t`)}</div>
+      <div class="ups-card"><h3>Customers · last 5 weeks <small>tons</small></h3>${upsLast5(f, "customer")}</div></div>
+    <div class="ups-split"><div class="ups-card"><h3>YTD top 10 destinations <small>tons ${ups.year}</small></h3>${upsRanking(upsGroup(ytd, "des"), v => `${upsT(v)} t`)}</div>
+      <div class="ups-card"><h3>Destinations · last 5 weeks <small>tons</small></h3>${upsLast5(f, "des")}</div></div>
+    <div class="ups-card"><h3>Tons by week from ${esc(upsOriLabel(o))}</h3>${upsChart(f, "kg", { height: 190 })}</div>
+  </div>${upsFoot(page)}</section>`;
+}
+
+function upsDetailPage(region, origins, order, page) {
+  const f = r => origins.includes(r.ori);
+  const ytd = upsYtd(ups.year, f);
+  return `<section class="ups-page">${upsHead(region, "Last week detail")}<div class="ups-body">
+    <div class="ups-card"><h3>Week ${ups.week} <small>chargeable kg, AWBs, sales and sales per kg</small></h3>${upsDetail(origins, order)}</div>
+    <div class="ups-two"><div class="ups-card"><h3>Top 10 customers YTD <small>CHW kg ${ups.year}</small></h3>${upsRanking(upsGroup(ytd, "customer"), v => upsN(v))}</div>
+      <div class="ups-card"><h3>Top 10 customers YTD <small>sales ${ups.year}</small></h3>${upsRanking(upsGroup(ytd, "customer", "sales"), upsMoney)}</div></div>
+    <div class="ups-card"><h3>Sales by week <small>${ups.year} vs ${ups.year - 1}</small></h3>${upsChart(f, "sales", { height: 190 })}</div>
+  </div>${upsFoot(page)}</section>`;
+}
+
+function renderUps() {
+  if (!ups) { upsEls.report.innerHTML = ""; return; }
+  const mx = ups.mexico, pr = ups.puerto_rico;
+  // An origin with no flights this year or last year gets no page (QRO today).
+  const oris = ["NLU", "GDL", "MTY", "QRO"].filter(o => mx.includes(o) && ups.rows.some(r => r.ori === o && r.week <= ups.week));
+  const pages = [
+    p => upsOverview("5X Mexico", mx, p),
+    ...oris.map(o => p => upsOriginPage(o, p)),
+    p => upsDetailPage("5X Mexico", mx, ["des", "customer"], p),
+    p => upsOverview("5X Puerto Rico", pr, p),
+    p => upsDetailPage("5X Puerto Rico", pr, ["customer", "des"], p),
+  ];
+  upsEls.report.innerHTML = pages.map((fn, i) => fn(`Page ${i + 1} of ${pages.length}`)).join("");
+}
+
+async function loadUps(year, week) {
+  const seq = ++upsSeq;
+  upsEls.note.textContent = "Loading the UPS flights from CargoSystem…";
+  els.status.textContent = "Loading";
+  try {
+    const params = new URLSearchParams({ email: user().email || "" });
+    if (year && week) { params.set("year", year); params.set("week", week); }
+    const response = await fetch(`${API_BASE}/api/airline_reports/ups?${params}`, { headers: { "x-api-key": API_KEY } });
+    const body = await response.json();
+    if (seq !== upsSeq) return;
+    if (!response.ok) throw new Error(body.detail || "Could not load the report");
+    ups = body;
+    const wk = (ups.weeks || []).map(x => ({ value: `${x.year}-${x.week}`, label: `W${x.week} ${x.year} · ${upsDate(x.start)} – ${upsDate(x.end)}` }));
+    if (!wk.some(o => o.value === `${ups.year}-${ups.week}`)) wk.unshift({ value: `${ups.year}-${ups.week}`, label: `W${ups.week} ${ups.year}` });
+    fillSelect(upsEls.week, wk, `${ups.year}-${ups.week}`);
+    upsEls.note.textContent = `UPS (5X), prefixes 406 and 805 (502 left out), Monday to Sunday by flight date. ${ups.closed ? "" : "This week is not over yet: it only has the flights so far."}`;
+    renderUps();
+    els.status.textContent = "Live";
+  } catch (error) {
+    if (seq !== upsSeq) return;
+    ups = null;
+    renderUps();
+    upsEls.note.textContent = error.message;
+    els.status.textContent = "Error";
+  }
+}
+
+async function exportUpsPdf() {
+  if (!ups || !window.jspdf || !window.html2canvas) return;
+  upsEls.note.textContent = "Building the PDF…";
+  const pages = [...upsEls.report.querySelectorAll(".ups-page")];
+  upsEls.report.classList.add("ups-printing");
+  try {
+    let doc = null;
+    for (const page of pages) {
+      const canvas = await html2canvas(page, { backgroundColor: "#ffffff", scale: 2, useCORS: true, windowWidth: 1300 });
+      const w = canvas.width / 2, h = canvas.height / 2;
+      if (!doc) doc = new window.jspdf.jsPDF({ orientation: "landscape", unit: "px", format: [w, h], hotfixes: ["px_scaling"] });
+      else doc.addPage([w, h], "landscape");
+      doc.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, w, h);
+    }
+    doc.save(`UPS_Weekly_Report_W${ups.week}_${ups.year}.pdf`);
+    upsEls.note.textContent = "PDF ready.";
+  } finally {
+    upsEls.report.classList.remove("ups-printing");
+  }
+}
+
+async function exportUpsExcel() {
+  if (!ups || !window.ExcelJS) return;
+  const book = new ExcelJS.Workbook();
+  const brown = "FF351C15", gold = "FFFFB500";
+  const sheet = (name, cols, rows) => {
+    const s = book.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });
+    s.columns = cols.map(c => ({ header: c.h, key: c.k, width: c.w || 14, style: c.fmt ? { numFmt: c.fmt } : {} }));
+    rows.forEach(r => s.addRow(r));
+    s.getRow(1).eachCell(c => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: brown } }; });
+    return s;
+  };
+  const regions = [["Mexico", ups.mexico], ["Puerto Rico", ups.puerto_rico]];
+  regions.forEach(([name, origins]) => {
+    const f = r => origins.includes(r.ori);
+    const prev = upsSeries(ups.year - 1, f), now = upsSeries(ups.year, f, "kg", ups.week);
+    const ps = upsSeries(ups.year - 1, f, "sales"), ns = upsSeries(ups.year, f, "sales", ups.week);
+    sheet(`${name} by week`, [{ h: "Week", k: "w", w: 8 }, { h: `Kg ${ups.year - 1}`, k: "a", fmt: "#,##0" }, { h: `Kg ${ups.year}`, k: "b", fmt: "#,##0" }, { h: `Sales ${ups.year - 1}`, k: "c", fmt: "$#,##0" }, { h: `Sales ${ups.year}`, k: "d", fmt: "$#,##0" }],
+      prev.map((v, i) => ({ w: i + 1, a: v, b: i < now.length ? now[i] : null, c: ps[i], d: i < ns.length ? ns[i] : null })));
+    const wk = upsWeekRows(f);
+    const groups = new Map();
+    wk.forEach(r => { const k = `${r.ori}|${r.des}|${r.customer}`; const g = groups.get(k) || { ori: r.ori, des: r.des, customer: r.customer, kg: 0, sales: 0, awbs: new Set() }; g.kg += r.kg; g.sales += r.sales; g.awbs.add(r.awb); groups.set(k, g); });
+    sheet(`${name} W${ups.week}`, [{ h: "Origin", k: "ori", w: 9 }, { h: "Destination", k: "des", w: 12 }, { h: "Customer", k: "customer", w: 40 }, { h: "CHW (kg)", k: "kg", fmt: "#,##0" }, { h: "AWB #", k: "n", w: 8 }, { h: "Sales", k: "sales", fmt: "$#,##0" }, { h: "Sales/kg", k: "pk", fmt: "$0.00" }],
+      [...groups.values()].sort((a, b) => a.ori.localeCompare(b.ori) || b.kg - a.kg).map(g => ({ ...g, n: g.awbs.size, pk: g.kg ? g.sales / g.kg : null })));
+    const ytd = upsYtd(ups.year, f);
+    const kg = upsGroup(ytd, "customer"), sales = new Map(upsGroup(ytd, "customer", "sales").map(x => [x.name, x.v]));
+    sheet(`${name} customers YTD`, [{ h: "Customer", k: "name", w: 40 }, { h: `CHW ${ups.year} (kg)`, k: "kg", fmt: "#,##0" }, { h: "Sales", k: "s", fmt: "$#,##0" }, { h: "Sales/kg", k: "pk", fmt: "$0.00" }],
+      kg.map(x => ({ name: x.name, kg: x.v, s: sales.get(x.name) || 0, pk: x.v ? (sales.get(x.name) || 0) / x.v : null })));
+  });
+  sheet("AWBs", [{ h: "AWB", k: "awb", w: 14 }, { h: "Flight date", k: "date", w: 12 }, { h: "Year", k: "year", w: 7 }, { h: "Week", k: "week", w: 7 }, { h: "Origin", k: "ori", w: 8 }, { h: "Destination", k: "des", w: 11 }, { h: "Customer", k: "customer", w: 40 }, { h: "CHW (kg)", k: "kg", fmt: "#,##0.0" }, { h: "Sales", k: "sales", fmt: "$#,##0.00" }, { h: "Status", k: "status", w: 10 }],
+    ups.rows.filter(r => r.year === ups.year));
+  book.worksheets.forEach(s => s.getRow(1).eachCell(c => { c.border = { bottom: { style: "medium", color: { argb: gold } } }; }));
+  const buffer = await book.xlsx.writeBuffer();
+  downloadBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `UPS_Weekly_Report_W${ups.week}_${ups.year}.xlsx`);
+}
+
+upsEls.week.addEventListener("change", () => { const [y, w] = upsEls.week.value.split("-").map(Number); loadUps(y, w); });
+document.getElementById("upsPdfBtn").addEventListener("click", exportUpsPdf);
+document.getElementById("upsExcelBtn").addEventListener("click", exportUpsExcel);
+
 function renderAirlines() {
   document.getElementById("airlines").innerHTML = AIRLINES.map(a => `<button class="airline ${a.ready ? "" : "pending"}" type="button" data-airline="${esc(a.code)}">
       <span class="airline-code">${esc(a.code)}</span>
@@ -1855,14 +2241,23 @@ function showView() {
   etEls.view.hidden = true;
   // Avianca has its own report (Seguimiento de Mercado), not the flights one.
   const isAvianca = carrier === "AV";
-  document.querySelector("#reportView > .panel").hidden = isAvianca;
-  els.report.hidden = isAvianca;
+  // UPS has its own weekly report too (23 nov).
+  const isUps = carrier === "5X";
+  document.querySelector("#reportView > .panel").hidden = isAvianca || isUps;
+  els.report.hidden = isAvianca || isUps;
+  upsEls.view.hidden = !isUps;
   avEls.view.hidden = !isAvianca;
   document.getElementById("avTabs").hidden = !isAvianca;
   sclEls.view.hidden = true;
   if (isAvianca) {
     requestSeq++;
     setAvMode(mode === "SCL" ? "scl" : "seguimiento");
+    return;
+  }
+  if (isUps) {
+    requestSeq++;
+    document.getElementById("reportTitle").textContent = "UPS Weekly Report";
+    if (!ups) loadUps();
     return;
   }
   els.day.value = "ALL";
