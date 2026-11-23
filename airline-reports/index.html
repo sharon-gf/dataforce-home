@@ -288,6 +288,8 @@
   .ups-kpi b { display:block; font-size:30px; font-weight:700; letter-spacing:-.01em; margin:3px 0 1px; font-variant-numeric:tabular-nums; }
   .ups-kpi small { font-size:12px; color:var(--mut); }
   .ups-kpi .up { color:var(--up); } .ups-kpi .down { color:var(--down); }
+  .ups-kpi b span { font-size:inherit; font-weight:inherit; letter-spacing:inherit; text-transform:none; }
+  .ups-kpi small span { font-size:inherit; font-weight:700; letter-spacing:0; text-transform:none; }
   .ups-kpi.dark .up { color:#6ee7a0; } .ups-kpi.dark .down { color:#fca5a5; }
   .ups-oris { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
   .ups-ori { background:#fff; border:1px solid var(--line); border-radius:10px; padding:11px 15px; display:flex; justify-content:space-between; align-items:center; }
@@ -2081,7 +2083,7 @@ function upsVar(now, before) {
   return `<span class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "+" : "−"}${upsN(Math.abs(v))}%</span>`;
 }
 function upsDate(iso) { const d = parseDay(iso); return `${d.getDate()} ${UPS_MONTHS[d.getMonth()]}`; }
-function upsOriLabel(o) { return o === "NLU" ? "NLU (MEX)" : o; }
+function upsOriLabel(o) { return o; }
 
 // Rows of one year up to the report week (the "YTD" of the Excel).
 function upsYtd(year, filter = () => true) {
@@ -2210,14 +2212,14 @@ function upsOverview(region, origins, page) {
   const wk = upsSum(upsWeekRows(f)), prevWk = upsSum(ups.rows.filter(r => r.year === ups.year && r.week === ups.week - 1 && f(r)));
   const oris = origins.length > 1 ? `<div class="ups-oris">${origins.map(o => {
     const y = upsSum(upsYtd(ups.year, r => r.ori === o)), w = upsSum(upsWeekRows(r => r.ori === o));
-    return `<div class="ups-ori"><em>${esc(o)}<small>${o === "NLU" ? "MEX" : "YTD tons"}</small></em><div>YTD ${ups.year}<b>${upsT(y)} t</b>W${ups.week}: ${upsT(w)} t</div></div>`;
+    return `<div class="ups-ori"><em>${esc(o)}</em><div>YTD ${ups.year}<b>${upsT(y)} t</b>W${ups.week}: ${upsT(w)} t</div></div>`;
   }).join("")}</div>` : "";
   return `<section class="ups-page">${upsHead(region, "Tons moved by week")}<div class="ups-body">
     <div class="ups-kpis">
       <div class="ups-kpi dark"><span>YTD ${ups.year}</span><b>${upsT(now)} t</b><small>weeks 1–${ups.week}</small></div>
       <div class="ups-kpi"><span>YTD ${ups.year - 1}</span><b>${upsT(before)} t</b><small>same weeks</small></div>
       <div class="ups-kpi"><span>% Var</span><b>${upsVar(now, before) || "–"}</b><small>${ups.year} vs ${ups.year - 1}</small></div>
-      <div class="ups-kpi"><span>Flown week ${ups.week}</span><b>${upsT(wk)} t</b><small>W${ups.week - 1}: ${upsT(prevWk)} t</small></div>
+      <div class="ups-kpi"><span>Flown week ${ups.week}</span><b>${upsT(wk)} t</b><small>W${ups.week - 1}: ${upsT(prevWk)} t${prevWk ? ` (${upsVar(wk, prevWk)})` : ""}</small></div>
     </div>${oris}
     <div class="ups-card"><h3>Tons moved by week <small>${esc(origins.map(upsOriLabel).join(" · "))}</small></h3>${upsChart(f)}</div>
     <div class="ups-card"><h3>Tons flown last week <small>week ${ups.week}, by flight day</small></h3>${upsDayTable(origins)}</div>
@@ -2227,7 +2229,7 @@ function upsOverview(region, origins, page) {
 function upsOriginPage(o, page) {
   const f = r => r.ori === o;
   const ytd = upsYtd(ups.year, f);
-  return `<section class="ups-page">${upsHead("5X Mexico", `From ${upsOriLabel(o)}`)}<div class="ups-body">
+  return `<section class="ups-page">${upsHead(`5X Mexico (ex ${o})`, "Customers and destinations")}<div class="ups-body">
     <div class="ups-split"><div class="ups-card"><h3>YTD top 10 customers <small>tons ${ups.year}</small></h3>${upsRanking(upsGroup(ytd, "customer"), v => `${upsT(v)} t`)}</div>
       <div class="ups-card"><h3>Customers · last 5 weeks <small>tons</small></h3>${upsLast5(f, "customer")}</div></div>
     <div class="ups-split"><div class="ups-card"><h3>YTD top 10 destinations <small>tons ${ups.year}</small></h3>${upsRanking(upsGroup(ytd, "des"), v => `${upsT(v)} t`)}</div>
