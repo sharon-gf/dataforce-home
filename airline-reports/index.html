@@ -349,7 +349,9 @@
   .cx-hd h1 { font-size:27px; font-weight:700; margin:0; }
   .cx-hd p { font-size:14px; opacity:.8; margin:3px 0 0; }
   .cx-hd .lg { display:flex; gap:16px; align-items:center; font-weight:800; letter-spacing:.04em; font-size:15px; }
-  .cx-hd .lg i { width:1px; height:36px; background:rgba(255,255,255,.4); }
+  .cx-hd .lg i { width:1px; height:44px; background:rgba(255,255,255,.4); }
+  .cx-hd .lg img.cxl { height:30px; }
+  .cx-hd .lg img.gsa { height:50px; }
   .cx-bd { padding:20px 34px 24px; background:var(--bg); }
   .cx-kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:14px; }
   .cx-kpi { background:#fff; border:1px solid var(--line); border-top:4px solid var(--jade2); border-radius:10px; padding:12px 16px; }
@@ -2453,7 +2455,7 @@ function renderCx() {
   if (!cx) { cxEls.report.innerHTML = ""; return; }
   cxEls.report.innerHTML = `<div class="cx-page">
     <div class="cx-hd"><div><h1>Reporte Semanal SCL – Asia</h1><p>Cathay Cargo Chile · Semana ${cx.week} · ${cxRange(cx.start, cx.end)}</p></div>
-      <div class="lg">CATHAY CARGO<i></i>GSAFORCE</div></div>
+      <div class="lg"><img class="cxl" src="img/cathay-cargo-white.png" alt="Cathay Cargo"><i></i><img class="gsa" src="img/gsa-force.png" alt="GSA Force"></div></div>
     <div class="cx-bd">
       ${cxKpis()}
       <div class="cx-two">
