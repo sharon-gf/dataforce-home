@@ -580,7 +580,7 @@
       <div class="ups-bar">
         <div class="field"><label for="upsWeek">Report week</label><select id="upsWeek"></select></div>
         <div class="field"><label>Region</label><div class="ups-regions" id="upsRegions">
-          <button type="button" data-region="ALL" class="on">All</button><button type="button" data-region="MX">Mexico</button><button type="button" data-region="PR">Puerto Rico</button><button type="button" data-region="CL">Chile</button>
+          <button type="button" data-region="ALL" class="on">Mexico + PR</button><button type="button" data-region="MX">Mexico</button><button type="button" data-region="PR">Puerto Rico</button><button type="button" data-region="CL">Chile</button>
         </div></div>
         <span class="spacer"></span>
         <button class="tool-btn primary" id="upsPdfBtn" type="button">Export PDF</button>
@@ -2067,15 +2067,16 @@ document.getElementById("avPdfBtn").addEventListener("click", exportAviancaPdf);
 // here.
 // ---------------------------------------------------------------------------
 let ups = null;
-// 24 nov, cony: a selector to see Mexico, Puerto Rico or Chile (or all). The
-// PDF and the Excel export what is on screen.
+// 24 nov, cony: a selector to see Mexico + PR (the weekly report), Mexico,
+// Puerto Rico or Chile. The PDF and the Excel export what is on screen.
 const UPS_REGIONS = [
   { key: "MX", label: "Mexico", name: "5X Mexico", origins: () => ups.mexico || [], order: ["des", "customer"], perOrigin: true },
   { key: "PR", label: "Puerto Rico", name: "5X Puerto Rico", origins: () => ups.puerto_rico || [], order: ["customer", "des"], perOrigin: false },
   { key: "CL", label: "Chile", name: "5X Chile", origins: () => ups.chile || [], order: ["des", "customer"], perOrigin: true },
 ];
 let upsRegion = "ALL";
-function upsShownRegions() { return UPS_REGIONS.filter(r => upsRegion === "ALL" || r.key === upsRegion); }
+// "Mexico + PR" is the weekly report as it always was; Chile is only seen on its own.
+function upsShownRegions() { return UPS_REGIONS.filter(r => upsRegion === "ALL" ? r.key !== "CL" : r.key === upsRegion); }
 function upsFileName(ext) {
   const reg = upsRegion === "ALL" ? "" : `_${UPS_REGIONS.find(r => r.key === upsRegion).label.replace(/ /g, "_")}`;
   return `UPS_Weekly_Report${reg}_W${ups.week}_${ups.year}.${ext}`;
