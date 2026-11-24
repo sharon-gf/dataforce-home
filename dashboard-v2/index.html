@@ -345,8 +345,20 @@ main { overflow-y:auto; }
 .pk-leg { display:flex; gap:12px; font-size:9.5px; color:var(--text2); }
 .pk-leg span { display:flex; align-items:center; gap:4px; } .pk-leg b { width:9px; height:9px; border-radius:2px; display:inline-block; }
 .pk-tops { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
-.pk-tops table { width:100%; border-collapse:collapse; font-size:9.5px; font-variant-numeric:tabular-nums; }
-.pk-tops td { padding:1.5px 2px; border-bottom:1px solid #f0f2f6; } .pk-tops td.t { text-align:right; color:var(--text1); }
+.pk-tops table { width:100%; border-collapse:collapse; font-size:11px; font-variant-numeric:tabular-nums; }
+.pk-tops td { padding:3px 2px; border-bottom:1px solid #f0f2f6; } .pk-tops td.t { text-align:right; color:var(--text1); font-weight:600; }
+/* 24 nov (Sharon): tarjetas tipo "opción B" con números más gruesos */
+.pk-tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:4px 10px 8px; }
+.pk-tile { border:1px solid var(--border); border-radius:6px; padding:9px 11px; background:#fff; }
+.pk-tile.verde { border-top:3px solid #16a34a; }
+.pk-tile .l { font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:var(--text3); }
+.pk-tile .v { font-size:28px; font-weight:700; color:var(--navy-hdr); margin:3px 0 2px; font-variant-numeric:tabular-nums; line-height:1.1; }
+.pk-tile .v small { font-size:12px; font-weight:500; color:var(--text3); }
+.pk-tile .d { font-size:10.5px; color:var(--text2); }
+.pk-pills { display:flex; gap:5px; margin-top:7px; }
+.pk-pill { flex:1; border-radius:5px; padding:5px 7px; font-size:9.5px; color:var(--text2); background:#f4f6fa; min-width:0; }
+.pk-pill b { display:block; font-size:16px; font-weight:700; color:var(--navy-hdr); font-variant-numeric:tabular-nums; }
+.pk-pill.fruta { background:#ecfdf3; } .pk-pill.pez { background:#eff5ff; }
 .v2-left, .v2-right { min-width:0; display:flex; flex-direction:column; }
 .v2-left .bottom-row { margin-bottom:0; flex:1; }
 .v2-right > .card { flex:1; display:flex; flex-direction:column; }
@@ -2174,10 +2186,10 @@ async function loadMarketPais(seq) {
     const mesTxt = mesLabel(cass.ultimo_mes);
     html += `<div class="pk-sec"><div class="pk-h">CASS · ${h(mesTxt)}</div>
       <div class="pk-hs">${h(pais)} to Cathay destinations · Cathay CASS South America</div></div>
-      <div class="mk-big">
-        <div><div class="l">Market tons · ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${t(cass.mes.ton_mercado)}</div></div>
-        <div><div class="l">Cathay share · ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${ms(cass.mes.market_share_pct)}</div><div class="d">${t(cass.mes.ton_propias)} t Cathay</div></div>
-        <div><div class="l">YTD to ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${t(cass.ytd.ton_mercado)} <small>t</small></div><div class="d">Cathay share ${ms(cass.ytd.market_share_pct)}</div></div>
+      <div class="pk-tiles">
+        <div class="pk-tile verde"><div class="l">Tons to Cathay destinations · ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${t(cass.mes.ton_mercado)}</div></div>
+        <div class="pk-tile"><div class="l">Cathay share · ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${ms(cass.mes.market_share_pct)}</div><div class="d">${t(cass.mes.ton_propias)} t Cathay</div></div>
+        <div class="pk-tile"><div class="l">YTD to ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${t(cass.ytd.ton_mercado)} <small>t</small></div><div class="d">Cathay share ${ms(cass.ytd.market_share_pct)}</div></div>
       </div>`;
   }
   if (sem.error) {
@@ -2190,18 +2202,20 @@ async function loadMarketPais(seq) {
     const top = (lista) => (lista || []).length ? `<table>${lista.map(r => `<tr><td>${h(r.cliente)}</td><td class="t">${t(r.ton)} t</td></tr>`).join('')}</table>` : '<div class="pk-hs">—</div>';
     html += `<div class="pk-sec"><div class="pk-h">Last week · ${h(dia(sem.desde))} – ${h(dia(sem.hasta))}</div>
       <div class="pk-hs">Isidora Export · exports from ${h(pais)}</div></div>
-      <div class="mk-big">
-        <div><div class="l">Total tons from ${h(pais)}</div><div class="v">${t(sem.ton_total)}</div></div>
-        <div><div class="l">To Cathay destinations</div><div class="v">${t(sem.destinos.ton_mercado)}</div></div>
-        <div><div class="l">Cathay share</div><div class="v">${ms(sem.destinos.market_share_pct)}</div><div class="d">${t(sem.destinos.ton_propias)} t Cathay</div></div>
+      <div class="pk-tiles">
+        <div class="pk-tile"><div class="l">Total tons from ${h(pais)}</div><div class="v">${t(sem.ton_total)}</div></div>
+        <div class="pk-tile verde"><div class="l">To Cathay destinations</div><div class="v">${t(sem.destinos.ton_mercado)}</div>
+          <div class="pk-pills">
+            <div class="pk-pill fruta"><b>${t(p.fruta)}</b>Fruit · ${Math.round(w(p.fruta))}%</div>
+            <div class="pk-pill pez"><b>${t(p.pescado)}</b>Fish · ${Math.round(w(p.pescado))}%</div>
+            <div class="pk-pill"><b>${t(p.otros)}</b>Other</div>
+          </div></div>
+        <div class="pk-tile"><div class="l">Cathay share</div><div class="v">${ms(sem.destinos.market_share_pct)}</div><div class="d">${t(sem.destinos.ton_propias)} t Cathay</div></div>
       </div>
       <div class="pk-sec">
-        <div class="pk-hs" style="margin:0">Tons to Cathay destinations by product</div>
-        <div class="pk-bar"><i style="width:${w(p.fruta)}%;background:#16a34a"></i><i style="width:${w(p.pescado)}%;background:#1a56db"></i><i style="width:${w(p.otros)}%;background:#c9d6ea"></i></div>
-        <div class="pk-leg"><span><b style="background:#16a34a"></b>Fruit ${t(p.fruta)} t</span><span><b style="background:#1a56db"></b>Fish ${t(p.pescado)} t</span><span><b style="background:#c9d6ea"></b>Other ${t(p.otros)} t</span></div>
         <div class="pk-tops">
-          <div><div class="pk-h" style="font-size:9px">Top clients · fruit</div>${top(sem.top_fruta)}</div>
-          <div><div class="pk-h" style="font-size:9px">Top clients · fish</div>${top(sem.top_pescado)}</div>
+          <div><div class="pk-h" style="font-size:10px">Top clients · fruit</div>${top(sem.top_fruta)}</div>
+          <div><div class="pk-h" style="font-size:10px">Top clients · fish</div>${top(sem.top_pescado)}</div>
         </div>
       </div>`;
   }
