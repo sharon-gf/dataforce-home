@@ -327,7 +327,7 @@ main {
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
-<script>window.DATAFORCE_SHELL = {"title":"Dashboard","controls":["#bizSelect","#gsaSelect","#salesSelect","#toggle-805",".date-toggle"],"meta":["#weekLabel","#datesLabel"],"statusText":"Ready"};</script>
+<script>window.DATAFORCE_SHELL = {"title":"Dashboard","controls":["#bizSelect","#gsaSelect","#toggle-805",".date-toggle"],"meta":["#weekLabel","#datesLabel"],"statusText":"Ready"};</script>
 <script src="../dataforce-auth.js?v=session-compat-20261110"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
@@ -362,9 +362,6 @@ main {
     </select>
     <select class="hdr-select" id="gsaSelect" aria-label="GSA" onchange="loadData()">
       <option value="">All GSAs</option>
-    </select>
-    <select class="hdr-select" id="salesSelect" aria-label="Sales Person" onchange="loadData()" style="display:none">
-      <option value="">All Sales Persons</option>
     </select>
     <div class="date-toggle" id="toggle-805" style="margin-right:4px;">
       <button id="btn-pure" class="active" onclick="set805Mode(false)">Pure</button>
@@ -1137,59 +1134,44 @@ function set805Mode(is805) {
   if (!canUseVariant) return;
   IS_805 = is805;
   loadGsaOptions();
-  loadSalesOptions();
   document.getElementById('btn-pure').classList.toggle('active', !is805);
   document.getElementById('btn-w805').classList.toggle('active', is805);
   loadData();
 }
 
-function getSelectedGsa() {
-  return document.getElementById('gsaSelect').value;
-}
-
-// Sales Person selector (cony, 24 nov): only for Mercury — Local; hidden for every other business.
+// With Mercury — Local the GSA selector lists the sales people instead of the GSAs
+// (there is only MA there), cony, 24 nov. data-mode says which list it holds.
 const SALES_FILTER_BIZ = new Set(['MERC_LOCAL']);
-function getSelectedSales() {
-  const select = document.getElementById('salesSelect');
-  return select.style.display === 'none' ? '' : select.value;
+function getSelectedGsa() {
+  const select = document.getElementById('gsaSelect');
+  return select.dataset.mode === 'sales' ? '' : select.value;
 }
 
-let salesOptionsVersion = 0;
-async function loadSalesOptions() {
-  const version = ++salesOptionsVersion;
-  const select = document.getElementById('salesSelect');
-  const biz = getEffectiveBiz();
-  select.replaceChildren(new Option('All Sales Persons', ''));
-  select.style.display = SALES_FILTER_BIZ.has(biz) ? '' : 'none';
-  if (!SALES_FILTER_BIZ.has(biz) || !API_BASE) return;
-  select.disabled = true;
-  try {
-    const response = await fetchWithTimeout(`${API_BASE}/api/dashboard_salespeople?biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(getUserEmail())}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    if (version !== salesOptionsVersion) return;
-    for (const name of data.salespeople || []) select.add(new Option(name, name));
-    select.disabled = false;
-    select.title = '';
-  } catch (error) {
-    if (version !== salesOptionsVersion) return;
-    select.title = 'Unable to load Sales Persons. Change Business to retry.';
-  }
+function getSelectedSales() {
+  const select = document.getElementById('gsaSelect');
+  return select.dataset.mode === 'sales' ? select.value : '';
 }
 
 let gsaOptionsVersion = 0;
 async function loadGsaOptions() {
   const version = ++gsaOptionsVersion;
   const select = document.getElementById('gsaSelect');
-  select.replaceChildren(new Option('All GSAs', ''));
+  const biz = getEffectiveBiz();
+  const bySales = SALES_FILTER_BIZ.has(biz);
+  select.dataset.mode = bySales ? 'sales' : 'gsa';
+  select.setAttribute('aria-label', bySales ? 'Sales Person' : 'GSA');
+  select.replaceChildren(new Option(bySales ? 'All Sales Persons' : 'All GSAs', ''));
   select.disabled = true;
   if (!API_BASE) return;
   try {
-    const response = await fetchWithTimeout(`${API_BASE}/api/dashboard_gsas?biz=${encodeURIComponent(getEffectiveBiz())}&email=${encodeURIComponent(getUserEmail())}`);
+    const url = bySales
+      ? `${API_BASE}/api/dashboard_salespeople?biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(getUserEmail())}`
+      : `${API_BASE}/api/dashboard_gsas?biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(getUserEmail())}`;
+    const response = await fetchWithTimeout(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (version !== gsaOptionsVersion) return;
-    for (const gsa of data.gsas) select.add(new Option(gsa, gsa));
+    for (const name of (bySales ? data.salespeople : data.gsas) || []) select.add(new Option(name, name));
     select.disabled = false;
     select.title = '';
   } catch (error) {
@@ -1256,7 +1238,6 @@ async function initDashboard(){
   applyReportParams();
   updateBusinessControls(false);
   loadGsaOptions();
-  loadSalesOptions();
   await loadData(); // load current business first, before warming the rest
   if (!REPORT_PARAMS.get('report')) setTimeout(warmCache, 0);
 }
@@ -1335,8 +1316,6 @@ function updateBusinessControls(shouldLoad=true){
 
 function onBizChange(){
   document.getElementById('gsaSelect').value = '';
-  document.getElementById('salesSelect').value = '';
-  loadSalesOptions();
   updateBusinessControls(true);
   loadGsaOptions();
 }
