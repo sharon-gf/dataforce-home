@@ -327,7 +327,7 @@ main {
 </style>
 
 <link rel="stylesheet" href="../dataforce-shell.css">
-<script>window.DATAFORCE_SHELL = {"title":"Dashboard","controls":["#bizSelect","#gsaSelect","#toggle-805",".date-toggle"],"meta":["#weekLabel","#datesLabel"],"statusText":"Ready"};</script>
+<script>window.DATAFORCE_SHELL = {"title":"Dashboard","controls":["#bizSelect","#gsaSelect","#salesSelect","#toggle-805",".date-toggle"],"meta":["#weekLabel","#datesLabel"],"statusText":"Ready"};</script>
 <script src="../dataforce-auth.js?v=session-compat-20261110"></script>
 <script src="../dataforce-shell.js"></script>
 </head>
@@ -362,6 +362,9 @@ main {
     </select>
     <select class="hdr-select" id="gsaSelect" aria-label="GSA" onchange="loadData()">
       <option value="">All GSAs</option>
+    </select>
+    <select class="hdr-select" id="salesSelect" aria-label="Sales Person" onchange="loadData()" style="display:none">
+      <option value="">All Sales Persons</option>
     </select>
     <div class="date-toggle" id="toggle-805" style="margin-right:4px;">
       <button id="btn-pure" class="active" onclick="set805Mode(false)">Pure</button>
@@ -702,7 +705,7 @@ async function showWeekDetail(week, year) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}`;
+    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}&sales=${encodeURIComponent(getSelectedSales())}`;
     const r = await fetchWithTimeout(url);
     const data = await r.json();
     const rows = data.rows || [];
@@ -992,7 +995,8 @@ async function loadData(){
   const biz = getEffectiveBiz();
   const dateCol = DATE_COL;
   const gsa = getSelectedGsa();
-  const cacheBiz = gsa ? JSON.stringify([biz, gsa]) : biz;
+  const sales = getSelectedSales();
+  const cacheBiz = dashboardCacheKey(biz, gsa, sales);
   const userEmail = getUserEmail();
   console.log('User email:', userEmail);
   const connLbl = document.getElementById('connLabel');
@@ -1010,13 +1014,13 @@ async function loadData(){
   connDot.classList.remove('live');
   connLbl.textContent = 'Loading...';
   try{
-    const data = await getBusinessData(biz, dateCol, gsa);
-    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa()) return;
+    const data = await getBusinessData(biz, dateCol, gsa, sales);
+    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa() || sales !== getSelectedSales()) return;
     applyData(data);
     connDot.classList.add('live');
     connLbl.textContent = 'Ready';
   }catch(e){
-    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa()) return;
+    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa() || sales !== getSelectedSales()) return;
     connDot.classList.remove('live');
     connLbl.textContent = 'Unable to load — please retry';
   }
@@ -1133,6 +1137,7 @@ function set805Mode(is805) {
   if (!canUseVariant) return;
   IS_805 = is805;
   loadGsaOptions();
+  loadSalesOptions();
   document.getElementById('btn-pure').classList.toggle('active', !is805);
   document.getElementById('btn-w805').classList.toggle('active', is805);
   loadData();
@@ -1140,6 +1145,36 @@ function set805Mode(is805) {
 
 function getSelectedGsa() {
   return document.getElementById('gsaSelect').value;
+}
+
+// Sales Person selector (cony, 24 nov): only for Mercury — Local; hidden for every other business.
+const SALES_FILTER_BIZ = new Set(['MERC_LOCAL']);
+function getSelectedSales() {
+  const select = document.getElementById('salesSelect');
+  return select.style.display === 'none' ? '' : select.value;
+}
+
+let salesOptionsVersion = 0;
+async function loadSalesOptions() {
+  const version = ++salesOptionsVersion;
+  const select = document.getElementById('salesSelect');
+  const biz = getEffectiveBiz();
+  select.replaceChildren(new Option('All Sales Persons', ''));
+  select.style.display = SALES_FILTER_BIZ.has(biz) ? '' : 'none';
+  if (!SALES_FILTER_BIZ.has(biz) || !API_BASE) return;
+  select.disabled = true;
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/api/dashboard_salespeople?biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(getUserEmail())}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (version !== salesOptionsVersion) return;
+    for (const name of data.salespeople || []) select.add(new Option(name, name));
+    select.disabled = false;
+    select.title = '';
+  } catch (error) {
+    if (version !== salesOptionsVersion) return;
+    select.title = 'Unable to load Sales Persons. Change Business to retry.';
+  }
 }
 
 let gsaOptionsVersion = 0;
@@ -1165,14 +1200,19 @@ async function loadGsaOptions() {
 
 const BUSINESS_REQUESTS = new Map();
 
-function getBusinessData(biz, dateCol, gsa = '') {
-  const cacheBiz = gsa ? JSON.stringify([biz, gsa]) : biz;
+function dashboardCacheKey(biz, gsa = '', sales = '') {
+  if (sales) return JSON.stringify([biz, gsa, sales]);
+  return gsa ? JSON.stringify([biz, gsa]) : biz;
+}
+
+function getBusinessData(biz, dateCol, gsa = '', sales = '') {
+  const cacheBiz = dashboardCacheKey(biz, gsa, sales);
   if (ALL_DATA[dateCol]?.[cacheBiz]) return Promise.resolve(ALL_DATA[dateCol][cacheBiz]);
   const key = `${dateCol}:${cacheBiz}`;
   if (BUSINESS_REQUESTS.has(key)) return BUSINESS_REQUESTS.get(key);
   const request = (async () => {
     const r = await fetchWithTimeout(
-      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard&gsa=${encodeURIComponent(gsa)}`,
+      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard&gsa=${encodeURIComponent(gsa)}&sales=${encodeURIComponent(sales)}`,
       {}, 60000
     );
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -1216,6 +1256,7 @@ async function initDashboard(){
   applyReportParams();
   updateBusinessControls(false);
   loadGsaOptions();
+  loadSalesOptions();
   await loadData(); // load current business first, before warming the rest
   if (!REPORT_PARAMS.get('report')) setTimeout(warmCache, 0);
 }
@@ -1294,6 +1335,8 @@ function updateBusinessControls(shouldLoad=true){
 
 function onBizChange(){
   document.getElementById('gsaSelect').value = '';
+  document.getElementById('salesSelect').value = '';
+  loadSalesOptions();
   updateBusinessControls(true);
   loadGsaOptions();
 }
@@ -1396,7 +1439,7 @@ async function showAwbDetail(groupCol, groupVal, label) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}`;
+    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}&sales=${encodeURIComponent(getSelectedSales())}`;
     const r = await fetchWithTimeout(url);
     const data = await r.json();
     const rows = data.rows || [];
