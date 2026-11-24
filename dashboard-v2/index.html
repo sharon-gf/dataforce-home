@@ -333,6 +333,20 @@ main {
    MINUTA de la reunión (notas por negocio, guardadas en la nube). */
 main { overflow-y:auto; }
 .v2-cols { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(360px,1fr); gap:10px; align-items:stretch; flex-shrink:0; margin-bottom:10px; }
+/* 24 nov (Sharon): con Mercury no va el panel de mercado del lado */
+.v2-cols.sin-mercado { grid-template-columns:minmax(0,1fr); }
+.v2-cols.sin-mercado .v2-right { display:none; }
+/* KPIs de un país (CX-SUD → Chile) */
+.pk-sec { padding:8px 10px 2px; }
+.pk-h { font-size:10px; font-weight:600; color:var(--text1); text-transform:uppercase; letter-spacing:.05em; }
+.pk-hs { font-size:9.5px; color:var(--text3); margin:1px 0 5px; }
+.pk-bar { display:flex; height:10px; border-radius:3px; overflow:hidden; margin:5px 0 3px; background:#eef1f6; }
+.pk-bar i { display:block; height:100%; }
+.pk-leg { display:flex; gap:12px; font-size:9.5px; color:var(--text2); }
+.pk-leg span { display:flex; align-items:center; gap:4px; } .pk-leg b { width:9px; height:9px; border-radius:2px; display:inline-block; }
+.pk-tops { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+.pk-tops table { width:100%; border-collapse:collapse; font-size:9.5px; font-variant-numeric:tabular-nums; }
+.pk-tops td { padding:1.5px 2px; border-bottom:1px solid #f0f2f6; } .pk-tops td.t { text-align:right; color:var(--text1); }
 .v2-left, .v2-right { min-width:0; display:flex; flex-direction:column; }
 .v2-left .bottom-row { margin-bottom:0; flex:1; }
 .v2-right > .card { flex:1; display:flex; flex-direction:column; }
@@ -471,7 +485,7 @@ main { overflow-y:auto; }
       <option value="10_VIRGIN">VIRGIN</option>
       <option value="11_ULTRACN">ULTRA CN</option>
     </select>
-    <select class="hdr-select" id="gsaSelect" aria-label="GSA" onchange="loadData()">
+    <select class="hdr-select" id="gsaSelect" aria-label="GSA" onchange="onGsaChange()">
       <option value="">All GSAs</option>
     </select>
     <div class="date-toggle" id="toggle-805" style="margin-right:4px;">
@@ -850,7 +864,7 @@ async function showWeekDetail(week, year) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}`;
+    const url = `${API_BASE}/api/week_detail?biz=${biz}&date_col=${DATE_COL}&week=${week}&year=${year}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}&sales=${encodeURIComponent(getSelectedSales())}`;
     const r = await fetchWithTimeout(url);
     const data = await r.json();
     const rows = data.rows || [];
@@ -1140,7 +1154,8 @@ async function loadData(){
   const biz = getEffectiveBiz();
   const dateCol = DATE_COL;
   const gsa = getSelectedGsa();
-  const cacheBiz = gsa ? JSON.stringify([biz, gsa]) : biz;
+  const sales = getSelectedSales();
+  const cacheBiz = dashboardCacheKey(biz, gsa, sales);
   const userEmail = getUserEmail();
   console.log('User email:', userEmail);
   const connLbl = document.getElementById('connLabel');
@@ -1158,13 +1173,13 @@ async function loadData(){
   connDot.classList.remove('live');
   connLbl.textContent = 'Loading...';
   try{
-    const data = await getBusinessData(biz, dateCol, gsa);
-    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa()) return;
+    const data = await getBusinessData(biz, dateCol, gsa, sales);
+    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa() || sales !== getSelectedSales()) return;
     applyData(data);
     connDot.classList.add('live');
     connLbl.textContent = 'Ready';
   }catch(e){
-    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa()) return;
+    if (biz !== getEffectiveBiz() || dateCol !== DATE_COL || gsa !== getSelectedGsa() || sales !== getSelectedSales()) return;
     connDot.classList.remove('live');
     connLbl.textContent = 'Unable to load — please retry';
   }
@@ -1286,23 +1301,40 @@ function set805Mode(is805) {
   loadData();
 }
 
+// 24 nov (reunión con Sharon): con Mercury — Local el selector de GSA muestra
+// los Sales Person en vez de los GSA (igual que el Dashboard original);
+// data-mode dice qué lista tiene.
+const SALES_FILTER_BIZ = new Set(['MERC_LOCAL']);
 function getSelectedGsa() {
-  return document.getElementById('gsaSelect').value;
+  const select = document.getElementById('gsaSelect');
+  return select.dataset.mode === 'sales' ? '' : select.value;
+}
+
+function getSelectedSales() {
+  const select = document.getElementById('gsaSelect');
+  return select.dataset.mode === 'sales' ? select.value : '';
 }
 
 let gsaOptionsVersion = 0;
 async function loadGsaOptions() {
   const version = ++gsaOptionsVersion;
   const select = document.getElementById('gsaSelect');
-  select.replaceChildren(new Option('All GSAs', ''));
+  const biz = getEffectiveBiz();
+  const bySales = SALES_FILTER_BIZ.has(biz);
+  select.dataset.mode = bySales ? 'sales' : 'gsa';
+  select.setAttribute('aria-label', bySales ? 'Sales Person' : 'GSA');
+  select.replaceChildren(new Option(bySales ? 'All Sales Persons' : 'All GSAs', ''));
   select.disabled = true;
   if (!API_BASE) return;
   try {
-    const response = await fetchWithTimeout(`${API_BASE}/api/dashboard_gsas?biz=${encodeURIComponent(getEffectiveBiz())}&email=${encodeURIComponent(getUserEmail())}`);
+    const url = bySales
+      ? `${API_BASE}/api/dashboard_salespeople?biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(getUserEmail())}`
+      : `${API_BASE}/api/dashboard_gsas?biz=${encodeURIComponent(biz)}&email=${encodeURIComponent(getUserEmail())}`;
+    const response = await fetchWithTimeout(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (version !== gsaOptionsVersion) return;
-    for (const gsa of data.gsas) select.add(new Option(gsa, gsa));
+    for (const name of (bySales ? data.salespeople : data.gsas) || []) select.add(new Option(name, name));
     select.disabled = false;
     select.title = '';
   } catch (error) {
@@ -1313,14 +1345,19 @@ async function loadGsaOptions() {
 
 const BUSINESS_REQUESTS = new Map();
 
-function getBusinessData(biz, dateCol, gsa = '') {
-  const cacheBiz = gsa ? JSON.stringify([biz, gsa]) : biz;
+function dashboardCacheKey(biz, gsa = '', sales = '') {
+  if (sales) return JSON.stringify([biz, gsa, sales]);
+  return gsa ? JSON.stringify([biz, gsa]) : biz;
+}
+
+function getBusinessData(biz, dateCol, gsa = '', sales = '') {
+  const cacheBiz = dashboardCacheKey(biz, gsa, sales);
   if (ALL_DATA[dateCol]?.[cacheBiz]) return Promise.resolve(ALL_DATA[dateCol][cacheBiz]);
   const key = `${dateCol}:${cacheBiz}`;
   if (BUSINESS_REQUESTS.has(key)) return BUSINESS_REQUESTS.get(key);
   const request = (async () => {
     const r = await fetchWithTimeout(
-      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard&gsa=${encodeURIComponent(gsa)}`,
+      `${API_BASE}/api/dashboard?biz=${biz}&date_col=${dateCol}&email=${encodeURIComponent(getUserEmail())}&module=dashboard&gsa=${encodeURIComponent(gsa)}&sales=${encodeURIComponent(sales)}`,
       {}, 60000
     );
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -1612,6 +1649,22 @@ function refrescarMercado() {
   loadMarket();
   loadNotes();
 }
+
+// 24 nov (reunión con Sharon):
+// - Mercury: sin panel de mercado al lado.
+// - Negocios por región (CX-SUD): el panel queda en blanco hasta elegir un
+//   país en el selector de GSA, y ahí muestra los KPIs de ESE país (sin
+//   elegir base). Por ahora solo Chile; los demás países se definen después.
+const BIZ_POR_PAIS = { '01_CXSUD': { 'CX-CHILE': 'Chile' } };
+function ajustarPanelMercado() {
+  const biz = negocioActual();
+  document.querySelector('.v2-cols').classList.toggle('sin-mercado', MERCURY_BIZ.has(biz));
+  document.getElementById('mkSource').style.display = BIZ_POR_PAIS[biz] ? 'none' : '';
+}
+function onGsaChange() {
+  loadData();
+  if (BIZ_POR_PAIS[negocioActual()]) loadMarket();
+}
 function onMarketSourceChange() {
   try { localStorage.setItem('dfv2_mk_' + negocioActual(), document.getElementById('mkSource').value); } catch (e) {}
   MK.filtro = { origen: null, destino: null }; MK.hist = [];
@@ -1653,6 +1706,9 @@ async function loadMarket() {
   const opcion = document.getElementById('mkSource').value;
   const body = document.getElementById('mkBody');
   destruirGraficos();
+  ajustarPanelMercado();
+  if (MERCURY_BIZ.has(negocioActual())) return;
+  if (BIZ_POR_PAIS[negocioActual()]) return loadMarketPais(seq);
   if (!opcion) {
     document.getElementById('mkTitle').textContent = 'Market';
     body.innerHTML = `<div class="mk-msg">There is no market database for <b>${h(document.getElementById('bizSelect').selectedOptions[0]?.textContent || negocioActual())}</b> yet. You can still pick any database from the list to look at that market.</div>`;
@@ -2092,6 +2148,66 @@ function fechaHoy() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// KPIs de un país: hoy solo Chile (CX-SUD). Dos partes, cada una con su base:
+//  a) el último mes de la CASS de Cathay de Sudamérica (la que manda Camilo),
+//     SOLO si está al día (trae el mes pasado); si no, no se muestra.
+//  b) la semana pasada en Isidora Export (vista Cathay).
+async function loadMarketPais(seq) {
+  const biz = negocioActual();
+  const body = document.getElementById('mkBody');
+  const gsa = document.getElementById('gsaSelect').value;
+  const pais = (BIZ_POR_PAIS[biz] || {})[gsa];
+  const nombreBiz = document.getElementById('bizSelect').selectedOptions[0]?.textContent || biz;
+  document.getElementById('mkTitle').textContent = pais ? `Market · ${pais} → Cathay destinations` : 'Market';
+  if (!gsa) { body.innerHTML = `<div class="mk-msg">Pick a country in the GSA selector to see its market numbers.</div>`; return; }
+  if (!pais) { body.innerHTML = `<div class="mk-msg">The market numbers for <b>${h(gsa)}</b> are not defined yet.</div>`; return; }
+  body.innerHTML = '<div class="mk-msg">Loading market data… (the first time it can take a minute)</div>';
+  const pedir = (parte, base) => md(`/api/reunion/kpis-pais?pais=${encodeURIComponent(pais)}&parte=${parte}&aerolinea_destino=CX`, base)
+    .catch(e => ({ error: e.message }));
+  const [cass, sem] = await Promise.all([pedir('cass', 'cathay_sam'), pedir('semana', 'chi_isidora_exp|CATHAY')]);
+  if (seq !== MK.seq) return;
+  const t = v => v == null ? '—' : Number(v).toLocaleString('en-US', { maximumFractionDigits: v < 100 ? 1 : 0 });
+  const ms = v => v == null ? '—' : Number(v).toFixed(1) + '%';
+  const dia = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  let html = '';
+  if (cass.disponible) {
+    const mesTxt = mesLabel(cass.ultimo_mes);
+    html += `<div class="pk-sec"><div class="pk-h">CASS · ${h(mesTxt)}</div>
+      <div class="pk-hs">${h(pais)} to Cathay destinations · Cathay CASS South America</div></div>
+      <div class="mk-big">
+        <div><div class="l">Market tons · ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${t(cass.mes.ton_mercado)}</div></div>
+        <div><div class="l">Cathay share · ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${ms(cass.mes.market_share_pct)}</div><div class="d">${t(cass.mes.ton_propias)} t Cathay</div></div>
+        <div><div class="l">YTD to ${h(mesLabel(cass.ultimo_mes, true))}</div><div class="v">${t(cass.ytd.ton_mercado)} <small>t</small></div><div class="d">Cathay share ${ms(cass.ytd.market_share_pct)}</div></div>
+      </div>`;
+  }
+  if (sem.error) {
+    html += `<div class="mk-msg">Could not load Isidora: ${h(sem.error)}</div>`;
+  } else if (!sem.disponible) {
+    html += `<div class="mk-msg">Isidora has no data for last week yet.</div>`;
+  } else {
+    const p = sem.por_producto || {}, totP = (p.fruta || 0) + (p.pescado || 0) + (p.otros || 0);
+    const w = v => totP ? (v / totP * 100).toFixed(1) : 0;
+    const top = (lista) => (lista || []).length ? `<table>${lista.map(r => `<tr><td>${h(r.cliente)}</td><td class="t">${t(r.ton)} t</td></tr>`).join('')}</table>` : '<div class="pk-hs">—</div>';
+    html += `<div class="pk-sec"><div class="pk-h">Last week · ${h(dia(sem.desde))} – ${h(dia(sem.hasta))}</div>
+      <div class="pk-hs">Isidora Export · exports from ${h(pais)}</div></div>
+      <div class="mk-big">
+        <div><div class="l">Total tons from ${h(pais)}</div><div class="v">${t(sem.ton_total)}</div></div>
+        <div><div class="l">To Cathay destinations</div><div class="v">${t(sem.destinos.ton_mercado)}</div></div>
+        <div><div class="l">Cathay share</div><div class="v">${ms(sem.destinos.market_share_pct)}</div><div class="d">${t(sem.destinos.ton_propias)} t Cathay</div></div>
+      </div>
+      <div class="pk-sec">
+        <div class="pk-hs" style="margin:0">Tons to Cathay destinations by product</div>
+        <div class="pk-bar"><i style="width:${w(p.fruta)}%;background:#16a34a"></i><i style="width:${w(p.pescado)}%;background:#1a56db"></i><i style="width:${w(p.otros)}%;background:#c9d6ea"></i></div>
+        <div class="pk-leg"><span><b style="background:#16a34a"></b>Fruit ${t(p.fruta)} t</span><span><b style="background:#1a56db"></b>Fish ${t(p.pescado)} t</span><span><b style="background:#c9d6ea"></b>Other ${t(p.otros)} t</span></div>
+        <div class="pk-tops">
+          <div><div class="pk-h" style="font-size:9px">Top clients · fruit</div>${top(sem.top_fruta)}</div>
+          <div><div class="pk-h" style="font-size:9px">Top clients · fish</div>${top(sem.top_pescado)}</div>
+        </div>
+      </div>`;
+  }
+  body.innerHTML = html || '<div class="mk-msg">No market data for this country.</div>';
+}
+
 async function loadNotes() {
   document.getElementById('ntDue').value = fechaHoy();
   const seq = ++MK.notasSeq;
@@ -2106,18 +2222,19 @@ async function loadNotes() {
   const abiertas = vivas.filter(n => (n.estado || 'open') === 'open').length;
   document.getElementById('ntCount').textContent = `${abiertas} open · ${vivas.length - abiertas} closed`;
   if (!notas.length) { lista.innerHTML = '<div class="mk-msg">No actions yet for this business. What you add stays here for the next meeting until you discard it.</div>'; return; }
-  // abiertas primero, después por número (más reciente arriba)
-  const orden = [...notas].sort((a, b) => ((a.estado || 'open') === 'closed') - ((b.estado || 'open') === 'closed') || (b.num || 0) - (a.num || 0) || (b.creada_en || '').localeCompare(a.creada_en || ''));
-  const fecha = f => new Date(f + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
-  lista.innerHTML = `<table class="mk-tbl"><tr><th>#</th><th class="l">Action</th><th class="l">Owner</th><th>Date</th><th>Status</th><th></th></tr>
+  // abiertas primero, después la más reciente arriba
+  const orden = [...notas].sort((a, b) => ((a.estado || 'open') === 'closed') - ((b.estado || 'open') === 'closed') || (b.creada_en || '').localeCompare(a.creada_en || ''));
+  // 24 nov (Sharon): la fecha en que se agregó, en vez del número
+  const fecha = n => n.creada_en ? new Date(n.creada_en).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
+    : (n.fecha_limite ? new Date(n.fecha_limite + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: '2-digit' }) : '—');
+  lista.innerHTML = `<table class="mk-tbl"><tr><th>Date</th><th class="l">Action</th><th class="l">Owner</th><th>Status</th><th></th></tr>
     ${orden.map(n => {
       const off = !!n.desechada_en, cerrada = (n.estado || 'open') === 'closed';
       const creada = new Date(n.creada_en).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       return `<tr class="${off ? 'off' : ''}" title="Added by ${h(n.autor_nombre || n.autor)} on ${h(creada)}${off ? ' · discarded' : ''}">
-        <td>${n.num ? String(n.num).padStart(2, '0') : '—'}</td>
+        <td style="white-space:nowrap">${h(fecha(n))}</td>
         <td class="l txt">${h(n.texto)}</td>
         <td class="l">${h(n.responsable || '—')}</td>
-        <td>${n.fecha_limite ? h(fecha(n.fecha_limite)) : '—'}</td>
         <td><span class="flag ${cerrada ? 'cl' : 'op'}" style="cursor:pointer" onclick="setNoteStatus('${h(n.id)}', '${cerrada ? 'open' : 'closed'}')">${cerrada ? 'Closed' : 'Open'}</span></td>
         <td><button class="nt-x" title="${off ? 'Restore' : 'Discard (stays saved in the cloud)'}" onclick="discardNote('${h(n.id)}', ${off})">${off ? '↺' : '✕'}</button></td></tr>`;
     }).join('')}</table>`;
@@ -2215,7 +2332,7 @@ async function showAwbDetail(groupCol, groupVal, label) {
 
   try {
     const userEmail = getUserEmail();
-    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}`;
+    const url = `${API_BASE}/api/awb_detail?biz=${biz}&date_col=${DATE_COL}&group_col=${groupCol}&group_val=${encodeURIComponent(groupVal)}&email=${encodeURIComponent(userEmail)}&module=dashboard&gsa=${encodeURIComponent(getSelectedGsa())}&sales=${encodeURIComponent(getSelectedSales())}`;
     const r = await fetchWithTimeout(url);
     const data = await r.json();
     const rows = data.rows || [];
