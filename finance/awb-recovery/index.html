@@ -207,6 +207,8 @@
   .mb-cs { margin-left:6px; color:var(--indigo); font-weight:600; text-decoration:none; white-space:nowrap; }
   .mb-cs:hover { text-decoration:underline; }
   .mb-cs-none { display:block; color:var(--text3); font-size:11.5px; margin-top:4px; }
+  .mb-cs-st { display:block; margin-top:3px; font-size:11.5px; font-weight:600; }
+  .mb-cs-st.marked { color:var(--teal); } .mb-cs-st.error { color:#c81e1e; } .mb-cs-st.waiting, .mb-cs-st.test { color:var(--amber); }
   .mb-row { cursor:pointer; }
   .mb-row:hover td { background:#f6f8fb; }
   .mb-row.open td { background:#eef3fd; }
@@ -446,7 +448,7 @@
     <h2 id="mbTitle">AWB mailbox</h2>
     <div class="muted" style="margin-bottom:10px" id="mbLead">The three AWB labels of the robot's Gmail, without going into Gmail.</div>
     <div class="mb-head"><div class="mb-tabs" id="mbTabs"><button type="button" data-l="input" class="on">AWB Input <span data-c="input"></span></button><button type="button" data-l="processed" class="t-ok">AWB Processed <span data-c="processed"></span></button><button type="button" data-l="error" class="t-err">AWB Error <span data-c="error"></span></button></div><span class="grow"></span><button class="btn primary" id="robotBtn" type="button">Run process</button></div>
-    <div class="mb-views" id="mbViews" hidden><button type="button" class="v on" data-v="new">New <span data-c="processed"></span></button><button type="button" class="v" data-v="history">History <span data-c="history"></span></button><span class="grow"></span><button class="btn" id="mbMarkSel" type="button" hidden disabled title="Coming soon: it needs the Cargo System API to mark the AWBs">Mark selected in Cargo System</button><button class="btn" id="mbDismissSel" type="button" hidden>Dismiss selected</button></div>
+    <div class="mb-views" id="mbViews" hidden><button type="button" class="v on" data-v="new">New <span data-c="processed"></span></button><button type="button" class="v" data-v="history">History <span data-c="history"></span></button><span class="grow"></span><button class="btn" id="mbMarkSel" type="button" hidden disabled title="Marks the AWBs of the selected emails as recovered in Cargo System. It cannot be undone.">Mark selected in Cargo System</button><button class="btn" id="mbDismissSel" type="button" hidden>Dismiss selected</button></div>
     <div class="c-wrap"><table class="c-table"><thead><tr><th id="mbSelHead" style="width:34px" hidden><input type="checkbox" id="mbSelAll" aria-label="Select all"></th><th style="width:120px">Date</th><th style="width:210px">From</th><th>Subject</th><th>Files</th><th>Robot</th><th id="mbActHead" style="width:90px" hidden></th></tr></thead><tbody id="mbBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="mbMsg"></span><button class="btn" id="mbMore" type="button" hidden>Load more</button><button class="btn" id="mbReload" type="button">Reload</button><button class="btn" id="mbClose" type="button">Close</button></div>
   </div>
@@ -1059,7 +1061,7 @@ async function loadMailbox(more) {
   $("mbMore").hidden = true;
   try {
     const data = await apiCall("/mailbox", {}, { label: mb.label, ...(mb.label === "processed" ? { view: mb.view } : {}), ...(more && mb.next ? { page_token: mb.next } : {}) });
-    mb.rows = mb.rows.concat(data.rows || []); mb.next = data.next_page_token || null; mb.bookingUrl = data.booking_url || mb.bookingUrl;
+    mb.rows = mb.rows.concat(data.rows || []); mb.next = data.next_page_token || null; mb.bookingUrl = data.booking_url || mb.bookingUrl; mb.csGate = data.cs_gate || ""; mb.csTest = !!data.cs_test;
     Object.entries(data.counts || {}).forEach(([k, v]) => document.querySelectorAll(`#mbBack [data-c="${k}"]`).forEach(el => { el.textContent = v == null ? "" : `(${fmt(v)})`; }));
     $("mbLead").textContent = `The three AWB labels in the Gmail of ${data.reader || "the reader"}, without going into Gmail.`;
     setMbMsg("");
@@ -1074,7 +1076,8 @@ function mbCargoLinks(r) {
     if (!ids.length) return `<span class="mb-cs" title="No Cargo System ID yet (press Refresh)" style="color:var(--text3)">${esc(awb)}</span>`;
     return ids.map(id => `<a class="mb-cs" href="${esc(mb.bookingUrl + id)}" target="_blank" rel="noopener" title="Open booking ${id} in Cargo System">${esc(awb)} ↗</a>`).join("");
   }).join("");
-  return `<div class="mb-awbs">Cargo System:${links}</div>`;
+  const answers = r.found.map(awb => (r.cs || {})[awb] ? `<span class="mb-cs-st ${esc(r.cs[awb].state)}" title="${esc(r.cs[awb].status || "")}${r.cs[awb].at ? ` · ${esc(mbDate(Date.parse(r.cs[awb].at)))} by ${esc(String(r.cs[awb].by || "").split("@")[0])}` : ""}">${esc(awb)}: ${esc(r.cs[awb].text)}${mb.csTest ? " (test Cargo System)" : ""}</span>` : "").join("");
+  return `<div class="mb-awbs">Cargo System:${links}</div>${answers}`;
 }
 function mbResult(r) {
   if (r.error) return `<span class="mb-res err" title="${esc(r.error)}">${esc(r.error)}</span>`;
@@ -1090,7 +1093,9 @@ function renderMailbox() {
   $("mbViews").hidden = mb.label !== "processed";
   $("mbSelHead").hidden = !canDismiss; $("mbActHead").hidden = !canDismiss;
   $("mbDismissSel").hidden = !canDismiss || !mb.sel.size;
-  $("mbMarkSel").hidden = !canDismiss;
+  $("mbMarkSel").hidden = !canDismiss || !mb.csGate;
+  $("mbMarkSel").disabled = !mb.sel.size || mb.marking;
+  $("mbMarkSel").textContent = mb.marking ? "Marking in Cargo System…" : `Mark selected in Cargo System${mb.sel.size ? ` (${fmt(mb.sel.size)})` : ""}${mb.csTest ? " · test" : ""}`;
   $("mbDismissSel").textContent = `Dismiss selected (${fmt(mb.sel.size)})`;
   $("mbSelAll").checked = canDismiss && mb.rows.length > 0 && mb.rows.every(r => mb.sel.has(r.id));
   const dismissedBy = r => history && r.dismissed_at ? `<span class="mb-by">Dismissed ${esc(mbDate(Date.parse(r.dismissed_at)))} by ${esc(String(r.dismissed_by || "").split("@")[0])}</span>` : "";
@@ -1099,6 +1104,27 @@ function renderMailbox() {
     <td class="mb-files">${mbFiles(r)}</td><td>${mbResult(r)}${dismissedBy(r)}</td>${canDismiss ? `<td><button type="button" class="mb-dismiss" data-dismiss="${esc(r.id)}">Dismiss</button></td>` : ""}</tr>${mb.open && mb.open.id === r.id ? `<tr class="mb-detail"><td colspan="${cols}"><b>To:</b> ${esc(mb.open.to || "")}<div class="mb-text">${esc(mb.open.text || "Loading…")}</div></td></tr>` : ""}`).join("")
     || `<tr><td colspan="${cols}" class="empty">${history ? "Nothing dismissed yet." : "No emails in this label."}</td></tr>`;
   $("mbMore").hidden = !mb.next;
+}
+async function markInCargoSystem(ids) {
+  const rows = mb.rows.filter(r => ids.includes(r.id));
+  const awbs = [...new Set(rows.flatMap(r => r.found || []))].sort();
+  if (!awbs.length) { setMbMsg("The selected emails have no AWB found by the robot.", "err"); return; }
+  const where = mb.csTest ? "the TEST Cargo System (beta)" : "Cargo System";
+  if (!confirm(`Mark ${awbs.length} AWB${awbs.length === 1 ? "" : "s"} as recovered in ${where}?\n\n${awbs.join("\n")}\n\nThis cannot be undone.`)) return;
+  mb.marking = true; renderMailbox();
+  setMbMsg(`Marking ${fmt(awbs.length)} AWB${awbs.length === 1 ? "" : "s"} in ${where}…`);
+  try {
+    const data = await apiCall("/mailbox/mark_cs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids }) });
+    const res = data.results || [];
+    const n = state => res.filter(x => x.state === state).length;
+    const parts = [`${fmt(n("marked"))} marked`];
+    if (n("waiting")) parts.push(`${fmt(n("waiting"))} still waiting for Cargo System (press the button again later)`);
+    if (n("test")) parts.push(`${fmt(n("test"))} in test mode (nothing written)`);
+    if (n("error")) parts.push(`${fmt(n("error"))} not marked: ${res.filter(x => x.state === "error").map(x => `${x.awb} (${x.text})`).join("; ")}`);
+    const msg = `${where}: ${parts.join(" · ")}`;
+    mb.marking = false;
+    loadMailbox(false).then(() => setMbMsg(msg, n("error") ? "err" : "ok"));
+  } catch (e) { mb.marking = false; renderMailbox(); setMbMsg(`Could not mark: ${e.message}`, "err"); }
 }
 async function dismissMail(ids) {
   if (!ids.length) return;
@@ -1676,6 +1702,7 @@ function initAwbRecovery() {
     loadMailbox(false);
   });
   $("mbDismissSel").addEventListener("click", () => dismissMail([...mb.sel]));
+  $("mbMarkSel").addEventListener("click", () => markInCargoSystem([...mb.sel]));
   $("mbSelAll").addEventListener("change", e => { mb.rows.forEach(r => e.target.checked ? mb.sel.add(r.id) : mb.sel.delete(r.id)); renderMailbox(); });
   $("mbTabs").addEventListener("click", e => {
     const b = e.target.closest("[data-l]"); if (!b || b.dataset.l === mb.label) return;
