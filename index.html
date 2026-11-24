@@ -315,30 +315,12 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#b91c1c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
       </a>
 
-      <a class="card card-upload" href="https://dataforce.gsaforce.com/upload-data/">
-        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#6d3fc7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
-        <div><div class="card-name">Upload Data</div><div class="card-desc">Manual data upload and database refresh tools</div></div>
-        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#6d3fc7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
-      </a>
-
       <a class="card card-customers" href="https://dataforce.gsaforce.com/customers/" style="--card-accent:#0c9080; --card-icon-bg:#e8f7f5;">
         <div class="card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="#0c9080" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
         </div>
         <div><div class="card-name">Customers</div><div class="card-desc">Manage customers names and groups</div></div>
         <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#0c9080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
-      </a>
-
-      <a class="card card-admin" id="users-admin-card" href="https://dataforce.gsaforce.com/users/" style="display: none;">
-        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
-        <div><div class="card-name">Users</div><div class="card-desc">Manage user access, roles and permissions</div></div>
-        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
-      </a>
-
-      <a class="card card-mkt-data-review" href="https://dataforce.gsaforce.com/mkt-data-review/" style="--card-accent:#0f766e; --card-icon-bg:#e6f5f3;">
-        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18M5 15V9m5 6V5m5 10v-4"/><circle cx="18" cy="6" r="3"/><path d="m20 8 2 2"/></svg></div>
-        <div><div class="card-name">MKT DATA REVIEW</div><div class="card-desc">Monthly market trends, data quality alerts and duplicate checks</div></div>
-        <div class="card-arrow">→</div>
       </a>
 
       <a class="card card-market-data" href="https://dataforce.gsaforce.com/market-data/">
@@ -371,6 +353,12 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
       })();
       </script>
 
+      <a class="card card-mkt-data-review" href="https://dataforce.gsaforce.com/mkt-data-review/" style="--card-accent:#0f766e; --card-icon-bg:#e6f5f3;">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18M5 15V9m5 6V5m5 10v-4"/><circle cx="18" cy="6" r="3"/><path d="m20 8 2 2"/></svg></div>
+        <div><div class="card-name">MKT DATA REVIEW</div><div class="card-desc">Monthly market trends, data quality alerts and duplicate checks</div></div>
+        <div class="card-arrow">→</div>
+      </a>
+
       <!-- 5 oct, cony: módulo Forwarding Automático (CargoSystem -> Nodes).
            Mismo ingreso que Market Data: se pasa el correo de quien ya
            inició sesión en Dataforce. -->
@@ -400,6 +388,18 @@ main { display:flex; flex-direction:column; align-items:center; justify-content:
         });
       })();
       </script>
+
+      <a class="card card-upload" href="https://dataforce.gsaforce.com/upload-data/">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#6d3fc7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div><div class="card-name">Upload Data</div><div class="card-desc">Manual data upload and database refresh tools</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#6d3fc7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
+
+      <a class="card card-admin" id="users-admin-card" href="https://dataforce.gsaforce.com/users/" style="display: none;">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+        <div><div class="card-name">Users</div><div class="card-desc">Manage user access, roles and permissions</div></div>
+        <div class="card-arrow"><svg viewBox="0 0 10 10" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"/></svg></div>
+      </a>
 </div>
     <div class="hub-footer"><span></span>DATAFORCE · GSA Cargo Intelligence Platform<span></span></div>
   </main>
