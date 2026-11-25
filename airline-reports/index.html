@@ -425,7 +425,7 @@
   .cxo-prev-title { display:flex; align-items:baseline; gap:10px; margin:18px 0 8px; }
   .cxo-prev-title b { font-size:15px; color:#006564; } .cxo-prev-title span { font-size:12.5px; color:var(--text2); }
   .cxo-mail td, .cxo-mail th { text-align:left; white-space:normal; }
-  .cxo-mail { width:940px; margin:0 auto 18px; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,60,60,.14); overflow:hidden; }
+  .cxo-mail { width:1120px; max-width:100%; margin:0 auto 18px; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,60,60,.14); overflow:hidden; }
   .cxo-hist table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; font-variant-numeric:tabular-nums; }
   .cxo-hist th { text-align:left; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--text2); padding:6px 8px; border-bottom:2px solid #e2e9e9; }
   .cxo-hist td { text-align:left; padding:6px 8px; border-bottom:1px solid #eef2f2; }
@@ -2754,6 +2754,7 @@ const cxoEls = {
   dialog: document.getElementById("cxoDialog"),
 };
 const CXO_LOGO = "https://dataforce.gsaforce.com/airline-reports/img/cathay-cargo-white.png";
+const CXO_GSA_LOGO = "https://dataforce.gsaforce.com/airline-reports/img/gsa-force.png";
 let cxo = null;
 let cxoSeq = 0;
 let cxoEdits = {};
@@ -2879,18 +2880,16 @@ function cxoEmailHtml(rows) {
   const spots = rows.filter(r => r.spot === "Y").length;
   const contract = rows.filter(r => r.spot === "N").length;
   const truck = rows.filter(r => r.truck === "Y").length;
-  const pcs = cxo.pcs_available;
   const font = "font-family:Arial,Helvetica,sans-serif;";
-  const kpi = (label, value, sub) => `<td style="${font}text-align:left;background:#ffffff;border:1px solid #dfe8e7;border-top:4px solid #00857d;border-radius:8px;padding:10px 14px;width:25%;vertical-align:top;">
+  const kpi = (label, value, sub) => `<td style="${font}text-align:left;background:#ffffff;border:1px solid #dfe8e7;border-top:4px solid #00857d;border-radius:8px;padding:10px 14px;width:20%;vertical-align:top;">
       <div style="font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#6d7c80;">${label}</div>
       <div style="font-size:24px;font-weight:bold;color:#1b2a2e;margin-top:2px;">${value}</div>
       <div style="font-size:11px;color:#6d7c80;">${sub}</div></td>`;
   const th = (t, right) => `<th style="${font}background:#006564;color:#ffffff;font-size:10px;font-weight:bold;letter-spacing:.5px;text-transform:uppercase;padding:7px 7px;text-align:${right ? "right" : "left"};white-space:nowrap;">${t}</th>`;
-  const td = (t, i, extra = "") => `<td style="${font}font-size:12px;color:#1b2a2e;text-align:left;padding:6px 7px;border-bottom:1px solid #e2e9e9;white-space:nowrap;${i % 2 ? "background:#f5f9f9;" : ""}${extra}">${t}</td>`;
+  const td = (t, i, extra = "") => `<td style="${font}font-size:12.5px;color:#1b2a2e;text-align:left;padding:11px 8px;height:22px;border-bottom:1px solid #e2e9e9;white-space:nowrap;${i % 2 ? "background:#f5f9f9;" : ""}${extra}">${t}</td>`;
   const yn = v => v === "Y" ? `<b style="color:#006564;">Y</b>` : esc(v || "");
   const body = rows.map((r, i) => `<tr>${[
-    td(`<b>${esc(r.awb)}</b>`, i), td(esc(cxoCustomer(r.customer)), i, "white-space:normal;min-width:120px;"),
-    ...(pcs ? [td(r.pcs ?? "", i, "text-align:right;")] : []),
+    td(`<b>${esc(r.awb)}</b>`, i), td(esc(cxoCustomer(r.customer)), i, "min-width:260px;"),
     td(cxoN(r.chw, 1), i, "text-align:right;"), td(`${esc(r.bkg_ori)} → ${esc(r.bkg_des)}`, i), td(`<b>${esc(r.cx_ori)}</b>`, i),
     td(esc(cxoDate(r.date)), i), td(r.week, i, "text-align:right;"), td(yn(r.truck), i), td(yn(r.spot), i), td(esc(r.cost), i), td(esc(r.remarks), i),
   ].join("")}</tr>`).join("");
@@ -2898,29 +2897,30 @@ function cxoEmailHtml(rows) {
     <tr><td style="background:#006564;padding:18px 26px;border-bottom:4px solid #00857d;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="${font}color:#ffffff;text-align:left;"><div style="font-size:22px;font-weight:bold;">CX-OFF weekly report · ${cxoWeekName()}</div>
-          <div style="font-size:13px;color:#cfe7e4;margin-top:3px;">Lane/Region: CX-Offline · Week ${cxoWeekName()} · Kilos: ${cxoN(kg, 1)} kg</div></td>
-        <td align="right" style="vertical-align:middle;"><img src="${CXO_LOGO}" alt="Cathay Cargo" height="28" style="display:block;border:0;"></td>
+          <div style="font-size:13px;color:#cfe7e4;margin-top:3px;">Lane/Region: CX-Offline · Week ${cxoWeekName()}</div></td>
+        <td align="right" style="vertical-align:middle;white-space:nowrap;"><img src="${CXO_LOGO}" alt="Cathay Cargo" height="28" style="display:inline-block;vertical-align:middle;border:0;"><span style="display:inline-block;vertical-align:middle;width:1px;height:30px;background:#7fb8b4;margin:0 14px;"></span><img src="${CXO_GSA_LOGO}" alt="GSA Force" height="34" style="display:inline-block;vertical-align:middle;border:0;"></td>
       </tr></table></td></tr>
     <tr><td style="padding:16px 26px 4px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="8" style="border-collapse:separate;"><tr>
-        ${kpi("AWBs flown", rows.length, `${cxoN(kg / 1000, 1)} tons chargeable`)}
+        ${kpi("Total tons", cxoN(kg / 1000, 1), `${cxoN(kg, 1)} kg chargeable`)}
+        ${kpi("AWBs flown", rows.length, "CX-OFF AWBs of the week")}
         ${kpi("Spots requested", spots, `${rows.length ? cxoN(spots / rows.length * 100) : 0}% of the AWBs`)}
         ${kpi("Contract rate", contract, "Cathay has the rates")}
         ${kpi("Trucked to gateway", truck, "Truck GSAF = Y")}
       </tr></table></td></tr>
     <tr><td style="padding:6px 26px 22px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#ffffff;">
-        <tr>${th("AWB")}${th("Customer")}${pcs ? th("Pcs", true) : ""}${th("CHW", true)}${th("Booking")}${th("CX Ori")}${th("CX flight")}${th("Week", true)}${th("Truck GSAF")}${th("Spot")}${th("Cost")}${th("Remarks")}</tr>
+        <tr>${th("AWB")}${th("Customer")}${th("CHW", true)}${th("Booking")}${th("CX Ori")}${th("CX flight")}${th("Week", true)}${th("Truck GSAF")}${th("Spot")}${th("Cost")}${th("Remarks")}</tr>
         ${body}
-        <tr><td colspan="${pcs ? 3 : 2}" style="${font}font-size:12px;font-weight:bold;color:#ffffff;background:#006564;padding:7px 8px;">Total · ${rows.length} AWBs</td>
-          <td style="${font}font-size:12px;font-weight:bold;color:#ffffff;background:#006564;padding:7px 8px;text-align:right;">${cxoN(kg, 1)}</td>
+        <tr><td colspan="2" style="${font}font-size:12.5px;font-weight:bold;color:#ffffff;background:#006564;padding:10px 8px;">Total · ${rows.length} AWBs</td>
+          <td style="${font}font-size:12.5px;font-weight:bold;color:#ffffff;background:#006564;padding:10px 8px;text-align:right;">${cxoN(kg, 1)}</td>
           <td colspan="8" style="background:#006564;"></td></tr>
       </table>
       <div style="${font}font-size:11px;color:#6d7c80;margin-top:10px;white-space:normal;">Spot Y = spot requested for the AWB (attachment in CargoSystem). Spot N = contract rate. Cost "all in" includes all charges; "+++" = plus surcharges. Truck GSAF = Y when the cargo was trucked to the Cathay origin. Pre scr = pre-screened cargo.</div>
     </td></tr></table>`;
 }
 function cxoEmailText(rows) {
-  const lines = rows.map(r => [r.awb, cxoCustomer(r.customer), cxo.pcs_available ? r.pcs ?? "" : null, cxoN(r.chw, 1), r.bkg_ori, r.bkg_des, r.cx_ori, cxoDate(r.date), r.week, r.truck, r.spot, r.cost, r.remarks].filter(v => v !== null).join(" | "));
+  const lines = rows.map(r => [r.awb, cxoCustomer(r.customer), cxoN(r.chw, 1), r.bkg_ori, r.bkg_des, r.cx_ori, cxoDate(r.date), r.week, r.truck, r.spot, r.cost, r.remarks].filter(v => v !== null).join(" | "));
   return `Lane/Region: CX-Offline\nWeek: ${cxoWeekName()}\nKilos: ${cxoN(rows.reduce((s, r) => s + r.chw, 0), 1)} kg\n\n${lines.join("\n")}\n`;
 }
 
@@ -3038,9 +3038,9 @@ async function exportCxoExcel() {
   const rows = cxoRows();
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(cxoWeekName());
-  const head = ["Send", "Bkg_Pfx", "Bkg_AWBNmr", "Cust_Name", ...(cxo.pcs_available ? ["Bkg_pcs"] : []), "AWB_CHW", "Bkg_Ori", "Bkg_Des", "CX_Ori", "CX_FlightDate", "Seg_St", "WEEK", "TRUCK GSAF", "SPOT", "COST", "REMARKS", "CS Sales", "CS Cost", "Spot"];
+  const head = ["Send", "Bkg_Pfx", "Bkg_AWBNmr", "Cust_Name", "AWB_CHW", "Bkg_Ori", "Bkg_Des", "CX_Ori", "CX_FlightDate", "Seg_St", "WEEK", "TRUCK GSAF", "SPOT", "COST", "REMARKS", "CS Sales", "CS Cost", "Spot"];
   ws.addRow(head);
-  rows.forEach(r => ws.addRow([r.include ? "Y" : "N", r.pfx, r.number, cxoCustomer(r.customer), ...(cxo.pcs_available ? [r.pcs] : []), r.chw, r.bkg_ori, r.bkg_des, r.cx_ori, parseDay(r.date), r.status, r.week, r.truck, r.spot, r.cost, r.remarks, r.cs_sales, r.cs_cost, r.ref]));
+  rows.forEach(r => ws.addRow([r.include ? "Y" : "N", r.pfx, r.number, cxoCustomer(r.customer), r.chw, r.bkg_ori, r.bkg_des, r.cx_ori, parseDay(r.date), r.status, r.week, r.truck, r.spot, r.cost, r.remarks, r.cs_sales, r.cs_cost, r.ref]));
   ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
   ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF006564" } };
   ws.columns.forEach((c, i) => { c.width = [6, 8, 12, 30][i] || 12; });
