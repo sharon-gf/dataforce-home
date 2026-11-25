@@ -395,6 +395,50 @@
   .cx-ch .gr { stroke:#edf1f1; } .cx-ch .ax { fill:#7d8b8f; font-size:11px; font-family:'DM Sans',sans-serif; }
   .cx-ch .vol { fill:#e3ebeb; } .cx-ch .lt { fill:none; stroke:#006564; stroke-width:3; stroke-linejoin:round; }
   .cx-ch .lf { fill:none; stroke:#5fb8b0; stroke-width:2; stroke-dasharray:5 4; stroke-linejoin:round; }
+  /* Cathay CX Offline weekly report (25 nov, cony): check, fix and send the CX-OFF AWBs to Cathay. */
+  .cx-tabs button.on { background:#006564; border-color:#006564; color:#fff; }
+  .cxo-blockers { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .cxo-blockers div { border-radius:6px; padding:8px 12px; font-size:13px; }
+  .cxo-blockers .bad { background:#fdecec; color:#9b1c1c; border:1px solid #f6c9c9; }
+  .cxo-blockers .warn { background:#fff6e0; color:#8a5300; border:1px solid #f3dfa6; }
+  .cxo-blockers .ok { background:#e6f4f1; color:#00564f; border:1px solid #bfe0dd; }
+  .cxo-check h3, .cxo-hist h3 { font-size:15px; font-weight:700; color:#006564; margin:0 0 4px; display:flex; gap:10px; align-items:baseline; }
+  .cxo-check h3 small, .cxo-hist h3 small { font-size:12px; font-weight:500; color:var(--text2); }
+  .cxo-tw { overflow-x:auto; margin-top:10px; }
+  .cxo-t { width:100%; border-collapse:collapse; font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .cxo-t th { background:#006564; color:#e3f2f0; font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; padding:7px 8px; text-align:left; white-space:nowrap; }
+  .cxo-t th.r, .cxo-t td.r { text-align:right; }
+  .cxo-t th.ours { background:#5b6b70; }
+  .cxo-t td { text-align:left; padding:5px 8px; border-bottom:1px solid #e2e9e9; white-space:nowrap; vertical-align:middle; }
+  .cxo-t tr.off td { opacity:.45; }
+  .cxo-t tr.booked td:first-child { box-shadow:inset 4px 0 0 #dc2626; }
+  .cxo-t tr.fix td:first-child { box-shadow:inset 4px 0 0 #f59e0b; }
+  .cxo-t td.name { max-width:230px; overflow:hidden; text-overflow:ellipsis; }
+  .cxo-t td.ref { max-width:260px; overflow:hidden; text-overflow:ellipsis; color:var(--text2); }
+  .cxo-t td.ours { background:#f4f6f7; }
+  .cxo-t input[type=text], .cxo-t select { height:26px; border:1px solid #cdd8d9; border-radius:4px; padding:0 6px; font:inherit; background:#fff; }
+  .cxo-t input.cost { width:120px; } .cxo-t input.rem { width:90px; }
+  .cxo-t .need { border-color:#f59e0b !important; background:#fff8e6 !important; }
+  .cxo-pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; }
+  .cxo-pill.flown { background:#e6f4f1; color:#00564f; } .cxo-pill.route { background:#e8f0fe; color:#1d4ed8; }
+  .cxo-pill.booked { background:#fdecec; color:#b91c1c; } .cxo-pill.late { background:#fff1d6; color:#8a5300; margin-left:6px; }
+  .cxo-prev-title { display:flex; align-items:baseline; gap:10px; margin:18px 0 8px; }
+  .cxo-prev-title b { font-size:15px; color:#006564; } .cxo-prev-title span { font-size:12.5px; color:var(--text2); }
+  .cxo-mail td, .cxo-mail th { text-align:left; white-space:normal; }
+  .cxo-mail { width:940px; margin:0 auto 18px; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,60,60,.14); overflow:hidden; }
+  .cxo-hist table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; font-variant-numeric:tabular-nums; }
+  .cxo-hist th { text-align:left; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--text2); padding:6px 8px; border-bottom:2px solid #e2e9e9; }
+  .cxo-hist td { text-align:left; padding:6px 8px; border-bottom:1px solid #eef2f2; }
+  .cxo-dialog { margin:auto; border:0; border-radius:12px; padding:0; width:min(620px,94vw); box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  .cxo-dialog::backdrop { background:rgba(15,30,30,.45); }
+  .cxo-dialog .hd { background:#006564; color:#fff; padding:14px 20px; font-weight:700; font-size:16px; }
+  .cxo-dialog .bd { padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
+  .cxo-dialog label { font-size:12px; font-weight:600; color:var(--text2); display:block; margin-bottom:3px; }
+  .cxo-dialog input { width:100%; height:32px; border:1px solid #cdd8d9; border-radius:5px; padding:0 8px; font:inherit; box-sizing:border-box; }
+  .cxo-dialog .sum { font-size:13px; background:#f2f7f7; border-radius:6px; padding:9px 12px; }
+  .cxo-dialog .ft { display:flex; justify-content:flex-end; gap:8px; padding:0 20px 16px; }
+  .cxo-dialog .msg { font-size:13px; min-height:18px; }
+  .cxo-dialog .msg.err { color:#b91c1c; } .cxo-dialog .msg.ok { color:#00564f; }
   .cx-ch .dt { fill:#006564; stroke:#fff; stroke-width:2; } .cx-ch .lb { fill:#006564; font-weight:700; font-size:13px; font-family:'DM Sans',sans-serif; }
   .cx-ch .lb2 { fill:#3e9a92; font-weight:600; font-size:11.5px; font-family:'DM Sans',sans-serif; }
   .cx-prow { display:grid; grid-template-columns:160px 1fr 130px; gap:14px; align-items:center; padding:11px 0; border-bottom:1px solid #eef2f2; }
@@ -472,6 +516,7 @@
 <script>window.DATAFORCE_SHELL = {"title":"Airline Reports","userNameId":"userLabel"};</script>
 <link rel="stylesheet" href="../dataforce-shell.css">
 <script src="../dataforce-shell.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -590,6 +635,10 @@
     </section>
     <div class="ups-wrap"><div id="upsReport"></div></div>
   </div>
+  <div class="av-tabs cx-tabs" id="cxTabs" hidden>
+    <button type="button" data-mode="scl" class="on">SCL – Asia</button>
+    <button type="button" data-mode="off">CX Offline</button>
+  </div>
   <div id="cxView" hidden>
     <section class="panel">
       <div class="cx-bar">
@@ -601,6 +650,32 @@
       <div class="note" id="cxNote"></div>
     </section>
     <div class="cx-wrap"><div id="cxReport"></div></div>
+  </div>
+  <div id="cxoView" hidden>
+    <section class="panel">
+      <div class="cx-bar">
+        <div class="field"><label for="cxoWeek">Report week</label><select id="cxoWeek"></select></div>
+        <button class="tool-btn" id="cxoRefreshBtn" type="button">Refresh</button>
+        <span class="spacer"></span>
+        <button class="tool-btn primary" id="cxoSendBtn" type="button" disabled>Send report</button>
+        <button class="tool-btn" id="cxoExcelBtn" type="button">Export Excel</button>
+      </div>
+      <div class="note" id="cxoNote"></div>
+    </section>
+    <section class="panel cxo-check" id="cxoCheck"></section>
+    <div class="cx-wrap"><div id="cxoPreview"></div></div>
+    <section class="panel cxo-hist" id="cxoHistory"></section>
+    <dialog class="cxo-dialog" id="cxoDialog">
+      <div class="hd">Send the CX-OFF report to Cathay</div>
+      <div class="bd">
+        <div class="sum" id="cxoSum"></div>
+        <div><label for="cxoTo">To</label><input type="text" id="cxoTo"></div>
+        <div><label for="cxoCc">Cc</label><input type="text" id="cxoCc"></div>
+        <div><label for="cxoSubject">Subject</label><input type="text" id="cxoSubject" maxlength="200"></div>
+        <div class="msg" id="cxoMailMsg"></div>
+      </div>
+      <div class="ft"><button class="tool-btn" id="cxoMailCancel" type="button">Cancel</button><button class="tool-btn primary" id="cxoMailSend" type="button">Send from my Gmail</button></div>
+    </dialog>
   </div>
   </div>
 </div>
@@ -2659,6 +2734,322 @@ function renderAirlines() {
     </button>`).join("");
 }
 
+// ---------------------------------------------------------------------------
+// Cathay CX Offline weekly report (25 nov, cony; rules from Sharon's sheet
+// "CX-OFF Report"). Every CX-OFF AWB that flew on Cathay and was not sent yet
+// shows up here, also from earlier weeks, so none is skipped. SPOT, COST and
+// REMARKS come filled from the spot reference and can be fixed before sending.
+// AWBs still BOOKED cannot go: they are fixed in CargoSystem or left out.
+// The email leaves from the Gmail of the user who sends it, and the API keeps
+// which AWBs went in which report.
+// ---------------------------------------------------------------------------
+const cxoEls = {
+  view: document.getElementById("cxoView"),
+  week: document.getElementById("cxoWeek"),
+  note: document.getElementById("cxoNote"),
+  check: document.getElementById("cxoCheck"),
+  preview: document.getElementById("cxoPreview"),
+  history: document.getElementById("cxoHistory"),
+  send: document.getElementById("cxoSendBtn"),
+  dialog: document.getElementById("cxoDialog"),
+};
+const CXO_LOGO = "https://dataforce.gsaforce.com/airline-reports/img/cathay-cargo-white.png";
+let cxo = null;
+let cxoSeq = 0;
+let cxoEdits = {};
+
+function setCxMode(mode) {
+  document.querySelectorAll("#cxTabs button").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+  const off = mode === "off";
+  cxEls.view.hidden = off;
+  cxoEls.view.hidden = !off;
+  document.getElementById("reportTitle").textContent = off ? "Cathay · CX Offline weekly report" : "Cathay · Reporte Semanal SCL – Asia";
+  if (off && !cxo) loadCxo();
+  if (!off && !cx) loadCx();
+}
+document.getElementById("cxTabs").addEventListener("click", e => {
+  const b = e.target.closest("button[data-mode]");
+  if (!b) return;
+  history.replaceState(null, "", b.dataset.mode === "off" ? "#CX/OFF" : "#CX");
+  setCxMode(b.dataset.mode);
+});
+
+// "BOXER FREIGHT 0014 CXOFF" -> "BOXER FREIGHT"; "CUSTOMER TEMPORAL - GFCXOFF *COD*" -> "CUSTOMER TEMPORAL"
+function cxoCustomer(name) {
+  let n = String(name || "").toUpperCase().replace(/\*+\s*COD\s*\*+/g, " ");
+  for (let i = 0; i < 3; i++) n = n.replace(/[\s\-\/.,]+(GF-?CX-?OFF|CX-?OFF|\d{2,5})\s*$/g, "").trim();
+  return n.replace(/[\s\-]+$/, "") || String(name || "");
+}
+const cxoN = (v, dec = 0) => v === null || v === undefined || Number.isNaN(v) ? "–" : Number(v).toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const cxoWeekName = () => `W${cxo.week}-${cxo.year}`;
+function cxoDate(iso) {
+  const d = parseDay(iso);
+  return `${String(d.getDate()).padStart(2, "0")}-${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()]}-${String(d.getFullYear()).slice(2)}`;
+}
+function cxoRow(r) {
+  const e = cxoEdits[r.awb] || {};
+  return { ...r, include: e.include !== false, spot: e.spot ?? r.spot, cost: e.cost ?? r.cost, remarks: e.remarks ?? r.remarks };
+}
+const cxoRows = () => (cxo ? cxo.rows.map(cxoRow) : []);
+const cxoIncluded = () => cxoRows().filter(r => r.include);
+const cxoNeedsFix = r => !r.spot || !r.cost;
+
+function cxoProblems() {
+  const inc = cxoIncluded();
+  const booked = inc.filter(r => r.status === "BOOKED");
+  const fix = inc.filter(cxoNeedsFix);
+  return { inc, booked, fix, blocked: !inc.length || booked.length > 0 || fix.length > 0 };
+}
+
+async function loadCxo(year, week) {
+  const seq = ++cxoSeq;
+  cxoEls.note.textContent = "Loading the CX-OFF AWBs from CargoSystem…";
+  els.status.textContent = "Loading";
+  try {
+    const params = new URLSearchParams({ email: user().email || "" });
+    if (year && week) { params.set("year", year); params.set("week", week); }
+    const response = await fetch(`${API_BASE}/api/airline_reports/cx_offline?${params}`, { headers: { "x-api-key": API_KEY } });
+    const body = await response.json();
+    if (seq !== cxoSeq) return;
+    if (!response.ok) throw new Error(body.detail || "Could not load the report");
+    cxo = body;
+    cxoEdits = {};
+    const short = iso => { const d = parseDay(iso); return `${d.getDate()} ${CX_MONTHS[d.getMonth()].slice(0, 3)}`; };
+    fillSelect(cxoEls.week, (cxo.weeks || []).map(x => ({ value: `${x.year}-${x.week}`, label: `W${x.week} ${x.year} · ${short(x.start)} – ${short(x.end)}` })), `${cxo.year}-${cxo.week}`);
+    cxoEls.note.textContent = `CargoSystem, GSA GF-CXOFF, prefix 160, first Cathay segment. Every AWB that flew up to ${cxoWeekName()} and was not sent to Cathay yet.${cxo.closed ? "" : " This week is not over yet."}`;
+    renderCxo();
+    els.status.textContent = "Live";
+  } catch (error) {
+    if (seq !== cxoSeq) return;
+    cxo = null;
+    renderCxo();
+    cxoEls.note.textContent = error.message;
+    els.status.textContent = "Error";
+  }
+}
+
+function renderCxo() {
+  if (!cxo) { cxoEls.check.innerHTML = ""; cxoEls.preview.innerHTML = ""; cxoEls.history.innerHTML = ""; cxoEls.send.disabled = true; return; }
+  const rows = cxoRows();
+  const p = cxoProblems();
+  const notes = [];
+  if (!rows.length) notes.push(`<div class="ok">Nothing pending: every CX-OFF AWB up to ${cxoWeekName()} was already sent to Cathay.</div>`);
+  if (p.booked.length) notes.push(`<div class="bad"><b>${p.booked.length} AWB${p.booked.length > 1 ? "s are" : " is"} still BOOKED</b> (${p.booked.map(r => r.awb).join(", ")}). Update the flight in CargoSystem or cancel the AWB, then press Refresh. You can also untick it: it stays pending for the next report.</div>`);
+  if (p.fix.length) notes.push(`<div class="warn"><b>${p.fix.length} AWB${p.fix.length > 1 ? "s" : ""} without SPOT or COST</b>: the spot reference is not written as "ATTACHED …" or "CONTRACT RATE …". Fill them in the table.</div>`);
+  if (rows.length && !p.blocked) notes.push(`<div class="ok">Ready to send: ${p.inc.length} AWB${p.inc.length > 1 ? "s" : ""}, ${cxoN(p.inc.reduce((s, r) => s + r.chw, 0), 1)} kg.</div>`);
+  const late = r => r.year * 100 + r.week < cxo.year * 100 + cxo.week;
+  const pill = s => `<span class="cxo-pill ${s === "FLOWN" ? "flown" : s === "BOOKED" ? "booked" : "route"}">${esc(s || "–")}</span>`;
+  const body = rows.map(r => `<tr class="${r.include ? "" : "off"} ${r.include && r.status === "BOOKED" ? "booked" : r.include && cxoNeedsFix(r) ? "fix" : ""}" data-awb="${esc(r.awb)}">
+      <td><input type="checkbox" data-f="include" ${r.include ? "checked" : ""} aria-label="Send ${esc(r.awb)}"></td>
+      <td><b>${esc(r.awb)}</b>${late(r) ? `<span class="cxo-pill late">W${r.week} not sent</span>` : ""}</td>
+      <td class="name" title="${esc(r.customer)}">${esc(cxoCustomer(r.customer))}</td>
+      <td class="r">${cxoN(r.chw, 1)}</td>
+      <td>${esc(r.bkg_ori)} → ${esc(r.bkg_des)}</td>
+      <td>${esc(r.cx_ori)} · ${esc(cxoDate(r.date))}</td>
+      <td>${pill(r.status)}</td>
+      <td>${esc(r.truck)}</td>
+      <td><select data-f="spot" class="${r.spot ? "" : "need"}"><option value=""></option><option ${r.spot === "Y" ? "selected" : ""}>Y</option><option ${r.spot === "N" ? "selected" : ""}>N</option></select></td>
+      <td><input type="text" class="cost ${r.cost ? "" : "need"}" data-f="cost" value="${esc(r.cost)}" maxlength="60"></td>
+      <td><input type="text" class="rem" data-f="remarks" value="${esc(r.remarks)}" maxlength="120"></td>
+      <td class="ref ours" title="${esc(r.ref)}">${esc(r.ref || "–")}</td>
+      <td class="r ours">${cxoN(r.cs_sales, 2)}</td>
+      <td class="r ours">${cxoN(r.cs_cost, 2)}</td>
+    </tr>`).join("");
+  cxoEls.check.innerHTML = `<h3>Check before sending <small>Status, reference, sales and cost are only for us: they are not in the email.</small></h3>
+    <div class="cxo-blockers">${notes.join("")}</div>
+    ${rows.length ? `<div class="cxo-tw"><table class="cxo-t"><thead><tr>
+      <th></th><th>AWB</th><th>Customer</th><th class="r">CHW</th><th>Booking</th><th>CX origin · flight</th><th>Seg status</th><th>Truck GSAF</th>
+      <th>Spot</th><th>Cost</th><th>Remarks</th><th class="ours">Spot reference</th><th class="ours r">CS sales</th><th class="ours r">CS cost</th>
+    </tr></thead><tbody>${body}</tbody></table></div>` : ""}`;
+  cxoEls.send.disabled = p.blocked;
+  cxoEls.send.title = p.blocked ? (p.booked.length ? "Some AWBs are still BOOKED" : p.fix.length ? "Fill SPOT and COST" : "Nothing to send") : "";
+  cxoEls.preview.innerHTML = p.inc.length ? `<div class="cxo-prev-title"><b>Email preview</b><span>This is what Cathay receives.</span></div><div class="cxo-mail">${cxoEmailHtml(p.inc)}</div>` : "";
+  const reps = cxo.reports || [];
+  cxoEls.history.innerHTML = `<h3>Reports sent <small>The AWBs of a sent report do not show up again.</small></h3>
+    ${reps.length ? `<table><thead><tr><th>Week</th><th>Sent</th><th>By</th><th>AWBs</th><th>Kilos</th><th>To</th></tr></thead><tbody>${reps.map(r => {
+      const at = new Date(r.at);
+      return `<tr><td><b>W${r.week}-${r.year}</b></td><td>${esc(at.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }))}</td>
+        <td>${esc(r.by || "")}</td><td>${r.count}</td><td>${cxoN(r.kg, 1)}</td><td>${esc((r.to || []).join(", "))}</td></tr>`;
+    }).join("")}</tbody></table>` : `<p class="note">No report sent from Dataforce yet. AWBs that flew up to W46 2026 were sent by Sharon from her sheet.</p>`}`;
+}
+
+// The email: inline styles only, so Outlook and Gmail show it the same way.
+function cxoEmailHtml(rows) {
+  const kg = rows.reduce((s, r) => s + r.chw, 0);
+  const spots = rows.filter(r => r.spot === "Y").length;
+  const contract = rows.filter(r => r.spot === "N").length;
+  const truck = rows.filter(r => r.truck === "Y").length;
+  const pcs = cxo.pcs_available;
+  const font = "font-family:Arial,Helvetica,sans-serif;";
+  const kpi = (label, value, sub) => `<td style="${font}text-align:left;background:#ffffff;border:1px solid #dfe8e7;border-top:4px solid #00857d;border-radius:8px;padding:10px 14px;width:25%;vertical-align:top;">
+      <div style="font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#6d7c80;">${label}</div>
+      <div style="font-size:24px;font-weight:bold;color:#1b2a2e;margin-top:2px;">${value}</div>
+      <div style="font-size:11px;color:#6d7c80;">${sub}</div></td>`;
+  const th = (t, right) => `<th style="${font}background:#006564;color:#ffffff;font-size:10px;font-weight:bold;letter-spacing:.5px;text-transform:uppercase;padding:7px 7px;text-align:${right ? "right" : "left"};white-space:nowrap;">${t}</th>`;
+  const td = (t, i, extra = "") => `<td style="${font}font-size:12px;color:#1b2a2e;text-align:left;padding:6px 7px;border-bottom:1px solid #e2e9e9;white-space:nowrap;${i % 2 ? "background:#f5f9f9;" : ""}${extra}">${t}</td>`;
+  const yn = v => v === "Y" ? `<b style="color:#006564;">Y</b>` : esc(v || "");
+  const body = rows.map((r, i) => `<tr>${[
+    td(`<b>${esc(r.awb)}</b>`, i), td(esc(cxoCustomer(r.customer)), i, "white-space:normal;min-width:120px;"),
+    ...(pcs ? [td(r.pcs ?? "", i, "text-align:right;")] : []),
+    td(cxoN(r.chw, 1), i, "text-align:right;"), td(`${esc(r.bkg_ori)} → ${esc(r.bkg_des)}`, i), td(`<b>${esc(r.cx_ori)}</b>`, i),
+    td(esc(cxoDate(r.date)), i), td(r.week, i, "text-align:right;"), td(yn(r.truck), i), td(yn(r.spot), i), td(esc(r.cost), i), td(esc(r.remarks), i),
+  ].join("")}</tr>`).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f8f8;border-collapse:collapse;">
+    <tr><td style="background:#006564;padding:18px 26px;border-bottom:4px solid #00857d;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="${font}color:#ffffff;text-align:left;"><div style="font-size:22px;font-weight:bold;">CX-OFF weekly report · ${cxoWeekName()}</div>
+          <div style="font-size:13px;color:#cfe7e4;margin-top:3px;">Lane/Region: CX-Offline · Week ${cxoWeekName()} · Kilos: ${cxoN(kg, 1)} kg</div></td>
+        <td align="right" style="vertical-align:middle;"><img src="${CXO_LOGO}" alt="Cathay Cargo" height="28" style="display:block;border:0;"></td>
+      </tr></table></td></tr>
+    <tr><td style="padding:16px 26px 4px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="8" style="border-collapse:separate;"><tr>
+        ${kpi("AWBs flown", rows.length, `${cxoN(kg / 1000, 1)} tons chargeable`)}
+        ${kpi("Spots requested", spots, `${rows.length ? cxoN(spots / rows.length * 100) : 0}% of the AWBs`)}
+        ${kpi("Contract rate", contract, "Cathay has the rates")}
+        ${kpi("Trucked to gateway", truck, "Truck GSAF = Y")}
+      </tr></table></td></tr>
+    <tr><td style="padding:6px 26px 22px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#ffffff;">
+        <tr>${th("AWB")}${th("Customer")}${pcs ? th("Pcs", true) : ""}${th("CHW", true)}${th("Booking")}${th("CX Ori")}${th("CX flight")}${th("Week", true)}${th("Truck GSAF")}${th("Spot")}${th("Cost")}${th("Remarks")}</tr>
+        ${body}
+        <tr><td colspan="${pcs ? 3 : 2}" style="${font}font-size:12px;font-weight:bold;color:#ffffff;background:#006564;padding:7px 8px;">Total · ${rows.length} AWBs</td>
+          <td style="${font}font-size:12px;font-weight:bold;color:#ffffff;background:#006564;padding:7px 8px;text-align:right;">${cxoN(kg, 1)}</td>
+          <td colspan="8" style="background:#006564;"></td></tr>
+      </table>
+      <div style="${font}font-size:11px;color:#6d7c80;margin-top:10px;white-space:normal;">Spot Y = spot requested for the AWB (attachment in CargoSystem). Spot N = contract rate. Cost "all in" includes all charges; "+++" = plus surcharges. Truck GSAF = Y when the cargo was trucked to the Cathay origin. Pre scr = pre-screened cargo.</div>
+    </td></tr></table>`;
+}
+function cxoEmailText(rows) {
+  const lines = rows.map(r => [r.awb, cxoCustomer(r.customer), cxo.pcs_available ? r.pcs ?? "" : null, cxoN(r.chw, 1), r.bkg_ori, r.bkg_des, r.cx_ori, cxoDate(r.date), r.week, r.truck, r.spot, r.cost, r.remarks].filter(v => v !== null).join(" | "));
+  return `Lane/Region: CX-Offline\nWeek: ${cxoWeekName()}\nKilos: ${cxoN(rows.reduce((s, r) => s + r.chw, 0), 1)} kg\n\n${lines.join("\n")}\n`;
+}
+
+cxoEls.check.addEventListener("input", e => {
+  const tr = e.target.closest("tr[data-awb]");
+  const f = e.target.dataset.f;
+  if (!tr || !f) return;
+  const edit = cxoEdits[tr.dataset.awb] || (cxoEdits[tr.dataset.awb] = {});
+  edit[f] = f === "include" ? e.target.checked : e.target.value;
+  if (f === "include" || f === "spot") renderCxo();
+  else {
+    e.target.classList.toggle("need", !e.target.value && f === "cost");
+    const p = cxoProblems();
+    cxoEls.send.disabled = p.blocked;
+    cxoEls.preview.innerHTML = p.inc.length ? `<div class="cxo-prev-title"><b>Email preview</b><span>This is what Cathay receives.</span></div><div class="cxo-mail">${cxoEmailHtml(p.inc)}</div>` : "";
+  }
+});
+cxoEls.check.addEventListener("change", e => { if (e.target.dataset.f === "cost") renderCxo(); });
+cxoEls.week.addEventListener("change", () => { const [y, w] = cxoEls.week.value.split("-").map(Number); loadCxo(y, w); });
+document.getElementById("cxoRefreshBtn").addEventListener("click", () => loadCxo(cxo && cxo.year, cxo && cxo.week));
+
+// Gmail of the signed-in user (same as AWB Recovery): Google asks once for permission to send.
+const CXO_CLIENT_ID = "911713216717-0434lgkd25hk5jf62jam67go19h78vsg.apps.googleusercontent.com";
+const CXO_SCOPE = "https://www.googleapis.com/auth/gmail.send";
+let cxoToken = null;
+function cxoGmailAccess() {
+  if (cxoToken && cxoToken.expires > Date.now() + 60000) return Promise.resolve(cxoToken.value);
+  return new Promise((resolve, reject) => {
+    if (!window.google || !google.accounts || !google.accounts.oauth2) { reject(new Error("Google sign-in did not load; reload the page")); return; }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: CXO_CLIENT_ID, scope: CXO_SCOPE, hint: user().email,
+      callback: r => {
+        if (r.error || !r.access_token) { reject(new Error(r.error_description || r.error || "Permission was not given")); return; }
+        if (!google.accounts.oauth2.hasGrantedAllScopes(r, CXO_SCOPE)) { reject(new Error("Permission to send email was not given")); return; }
+        cxoToken = { value: r.access_token, expires: Date.now() + (Number(r.expires_in) || 3600) * 1000 };
+        resolve(cxoToken.value);
+      },
+      error_callback: e => reject(new Error(e && e.type === "popup_closed" ? "The Google window was closed" : "Google did not open the permission window (check pop-ups)"))
+    });
+    client.requestAccessToken({ prompt: "" });
+  });
+}
+function cxoB64(text) {
+  const bytes = new TextEncoder().encode(text);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function cxoMime(to, cc, subject, html, text) {
+  const boundary = "df" + Math.random().toString(36).slice(2);
+  const wrap = v => cxoB64(v).replace(/.{1,76}/g, "$&\r\n");
+  return [`To: ${to.join(", ")}`, cc.length ? `Cc: ${cc.join(", ")}` : null, `Subject: =?UTF-8?B?${cxoB64(subject)}?=`, "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`, "",
+    `--${boundary}`, "Content-Type: text/plain; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap(text),
+    `--${boundary}`, "Content-Type: text/html; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap(html),
+    `--${boundary}--`, ""].filter(v => v !== null).join("\r\n");
+}
+const cxoAddresses = v => [...new Set(String(v || "").replace(/"[^"]*"/g, " ").split(/[,;\s]+/).map(x => x.replace(/^[<(\[]+|[>)\].:]+$/g, "").trim().toLowerCase()).filter(Boolean))];
+const cxoGoodAddress = a => /^[^@\s<>"(),;:]+@[^@\s<>"(),;:]+\.[a-z]{2,}$/i.test(a);
+function cxoMsg(text, kind = "") { const m = document.getElementById("cxoMailMsg"); m.textContent = text; m.className = `msg ${kind}`; }
+
+cxoEls.send.addEventListener("click", () => {
+  const p = cxoProblems();
+  if (p.blocked) return;
+  document.getElementById("cxoTo").value = (cxo.to || []).join(", ");
+  document.getElementById("cxoCc").value = (cxo.cc || []).join(", ");
+  document.getElementById("cxoSubject").value = `${cxoWeekName()} report CX-OFF`;
+  document.getElementById("cxoSum").innerHTML = `<b>${p.inc.length} AWB${p.inc.length > 1 ? "s" : ""}</b> · ${cxoN(p.inc.reduce((s, r) => s + r.chw, 0), 1)} kg · from <b>${esc(user().email || "")}</b>. After sending, these AWBs are marked as sent and do not show up again.`;
+  cxoMsg("");
+  document.getElementById("cxoMailSend").disabled = false;
+  cxoEls.dialog.showModal();
+});
+document.getElementById("cxoMailCancel").addEventListener("click", () => cxoEls.dialog.close());
+document.getElementById("cxoMailSend").addEventListener("click", async () => {
+  const to = cxoAddresses(document.getElementById("cxoTo").value);
+  const cc = cxoAddresses(document.getElementById("cxoCc").value).filter(a => !to.includes(a));
+  const subject = document.getElementById("cxoSubject").value.replace(/[\r\n]+/g, " ").trim();
+  const p = cxoProblems();
+  if (!to.length) { cxoMsg("Add at least one recipient in To.", "err"); return; }
+  const bad = [...to, ...cc].filter(a => !cxoGoodAddress(a));
+  if (bad.length) { cxoMsg(`Check these addresses: ${bad.join(", ")}`, "err"); return; }
+  if (!subject) { cxoMsg("The subject is empty.", "err"); return; }
+  if (p.blocked) { cxoMsg("Some AWBs are still BOOKED or without SPOT/COST.", "err"); return; }
+  const btn = document.getElementById("cxoMailSend");
+  btn.disabled = true;
+  cxoMsg("Waiting for Google…");
+  try {
+    const token = await cxoGmailAccess();
+    cxoMsg("Sending…");
+    const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1b2a2e;margin-bottom:12px;">Dear team,<br><br>Please find below the CX-OFF report for week ${cxoWeekName()}.</div><div style="max-width:940px;">${cxoEmailHtml(p.inc)}</div>`;
+    const raw = cxoB64(cxoMime(to, cc, subject, html, `Dear team,\n\nPlease find below the CX-OFF report for week ${cxoWeekName()}.\n\n${cxoEmailText(p.inc)}`)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ raw })
+    });
+    const sent = await response.json().catch(() => ({}));
+    if (response.status === 401) { cxoToken = null; throw new Error("The Google permission expired. Press Send again."); }
+    if (!response.ok) throw new Error((sent.error && sent.error.message) || `Gmail answered with an error (${response.status})`);
+    cxoMsg("Sent. Saving which AWBs went…");
+    const rec = await fetch(`${API_BASE}/api/airline_reports/cx_offline/sent?email=${encodeURIComponent(user().email || "")}`, {
+      method: "POST", headers: { "x-api-key": API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ year: cxo.year, week: cxo.week, subject, to, cc, rows: p.inc.map(r => ({ awb: r.awb, spot: r.spot, cost: r.cost, remarks: r.remarks })) })
+    });
+    const recBody = await rec.json().catch(() => ({}));
+    if (!rec.ok) { cxoMsg(`The email was sent, but the AWBs could not be marked as sent (${recBody.detail || rec.status}). Tell an admin before sending again.`, "err"); return; }
+    cxoMsg(`Sent from ${user().email} to ${to.join(", ")}.`, "ok");
+    setTimeout(() => { cxoEls.dialog.close(); loadCxo(cxo.year, cxo.week); }, 1400);
+  } catch (error) {
+    cxoMsg(error.message, "err");
+    btn.disabled = false;
+  }
+});
+
+async function exportCxoExcel() {
+  if (!cxo || !window.ExcelJS) return;
+  const rows = cxoRows();
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(cxoWeekName());
+  const head = ["Send", "Bkg_Pfx", "Bkg_AWBNmr", "Cust_Name", ...(cxo.pcs_available ? ["Bkg_pcs"] : []), "AWB_CHW", "Bkg_Ori", "Bkg_Des", "CX_Ori", "CX_FlightDate", "Seg_St", "WEEK", "TRUCK GSAF", "SPOT", "COST", "REMARKS", "CS Sales", "CS Cost", "Spot"];
+  ws.addRow(head);
+  rows.forEach(r => ws.addRow([r.include ? "Y" : "N", r.pfx, r.number, cxoCustomer(r.customer), ...(cxo.pcs_available ? [r.pcs] : []), r.chw, r.bkg_ori, r.bkg_des, r.cx_ori, parseDay(r.date), r.status, r.week, r.truck, r.spot, r.cost, r.remarks, r.cs_sales, r.cs_cost, r.ref]));
+  ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+  ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF006564" } };
+  ws.columns.forEach((c, i) => { c.width = [6, 8, 12, 30][i] || 12; });
+  ws.getColumn(head.indexOf("CX_FlightDate") + 1).numFmt = "dd-mmm-yy";
+  ws.views = [{ state: "frozen", ySplit: 1 }];
+  downloadBlob(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `CX-OFF_Report_${cxoWeekName()}.xlsx`);
+}
+document.getElementById("cxoExcelBtn").addEventListener("click", exportCxoExcel);
+
 // The chosen airline lives in the address (#ET), so the browser's back button works.
 function showView() {
   const [code, mode] = window.location.hash.slice(1).split("/");
@@ -2687,6 +3078,8 @@ function showView() {
   els.report.hidden = isAvianca || isUps || isCathay;
   upsEls.view.hidden = !isUps;
   cxEls.view.hidden = !isCathay;
+  document.getElementById("cxTabs").hidden = !isCathay;
+  cxoEls.view.hidden = true;
   avEls.view.hidden = !isAvianca;
   document.getElementById("avTabs").hidden = !isAvianca;
   sclEls.view.hidden = true;
@@ -2703,8 +3096,7 @@ function showView() {
   }
   if (isCathay) {
     requestSeq++;
-    document.getElementById("reportTitle").textContent = "Cathay · Reporte Semanal SCL – Asia";
-    if (!cx) loadCx();
+    setCxMode(mode === "OFF" ? "off" : "scl");
     return;
   }
   els.day.value = "ALL";
