@@ -2198,6 +2198,8 @@ async function loadMarketPais(seq) {
     html += `<div class="mk-msg">Isidora has no data for last week yet.</div>`;
   } else {
     const p = sem.por_producto || {}, totP = (p.fruta || 0) + (p.pescado || 0) + (p.otros || 0);
+    // 25 nov (Sharon): share de Cathay por producto, mismos colores que al lado
+    const sp = sem.share_por_producto || {};
     const w = v => totP ? (v / totP * 100).toFixed(1) : 0;
     const top = (lista) => (lista || []).length ? `<table>${lista.map(r => `<tr><td>${h(r.cliente)}</td><td class="t">${t(r.ton)} t</td></tr>`).join('')}</table>` : '<div class="pk-hs">—</div>';
     html += `<div class="pk-sec"><div class="pk-h">Last week · ${h(dia(sem.desde))} – ${h(dia(sem.hasta))}</div>
@@ -2210,7 +2212,12 @@ async function loadMarketPais(seq) {
             <div class="pk-pill pez"><b>${t(p.pescado)}</b>Fish · ${Math.round(w(p.pescado))}%</div>
             <div class="pk-pill"><b>${t(p.otros)}</b>Other</div>
           </div></div>
-        <div class="pk-tile"><div class="l">Cathay share</div><div class="v">${ms(sem.destinos.market_share_pct)}</div><div class="d">${t(sem.destinos.ton_propias)} t Cathay</div></div>
+        <div class="pk-tile"><div class="l">Cathay share</div><div class="v">${ms(sem.destinos.market_share_pct)}</div><div class="d">${t(sem.destinos.ton_propias)} t Cathay</div>
+          ${sem.share_por_producto ? `<div class="pk-pills">
+            <div class="pk-pill fruta" title="Cathay ${t(sp.fruta.ton_propias)} t of ${t(sp.fruta.ton_mercado)} t fruit"><b>${ms(sp.fruta.market_share_pct)}</b>Fruit</div>
+            <div class="pk-pill pez" title="Cathay ${t(sp.pescado.ton_propias)} t of ${t(sp.pescado.ton_mercado)} t fish"><b>${ms(sp.pescado.market_share_pct)}</b>Fish</div>
+            <div class="pk-pill" title="Cathay ${t(sp.otros.ton_propias)} t of ${t(sp.otros.ton_mercado)} t other"><b>${ms(sp.otros.market_share_pct)}</b>Other</div>
+          </div>` : ''}</div>
       </div>
       <div class="pk-sec">
         <div class="pk-tops">
