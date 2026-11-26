@@ -1767,8 +1767,17 @@ function initAwbRecovery() {
     mb.label = b.dataset.l; mb.search = ""; $("mbSearch").value = "";
     loadMailbox(false);
   });
-  $("mbSearchForm").addEventListener("submit", e => { e.preventDefault(); mb.search = $("mbSearch").value.trim(); loadMailbox(false); });
-  $("mbSearch").addEventListener("search", () => { if (!$("mbSearch").value.trim() && mb.search) { mb.search = ""; loadMailbox(false); } });
+  // Searches while typing (from 3 characters, a moment after the last key); empty goes back to the tab
+  const mbSearchNow = () => {
+    clearTimeout(mb.searchTimer);
+    const text = $("mbSearch").value.trim();
+    const next = text.length >= 3 ? text : "";
+    if (next === mb.search) return;
+    mb.search = next;
+    loadMailbox(false);
+  };
+  $("mbSearchForm").addEventListener("submit", e => { e.preventDefault(); mbSearchNow(); });
+  $("mbSearch").addEventListener("input", () => { clearTimeout(mb.searchTimer); mb.searchTimer = setTimeout(mbSearchNow, 400); });
   $("mbBody").addEventListener("click", e => {
     const f = e.target.closest("[data-mid]"); if (f) { e.stopPropagation(); openMailboxFile(f.dataset.mid, f.dataset.n); return; }
     const c = e.target.closest("[data-sel]"); if (c) { e.stopPropagation(); c.checked ? mb.sel.add(c.dataset.sel) : mb.sel.delete(c.dataset.sel); renderMailbox(); return; }
