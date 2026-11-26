@@ -395,6 +395,46 @@
   .cx-ch .gr { stroke:#edf1f1; } .cx-ch .ax { fill:#7d8b8f; font-size:11px; font-family:'DM Sans',sans-serif; }
   .cx-ch .vol { fill:#e3ebeb; } .cx-ch .lt { fill:none; stroke:#006564; stroke-width:3; stroke-linejoin:round; }
   .cx-ch .lf { fill:none; stroke:#5fb8b0; stroke-width:2; stroke-dasharray:5 4; stroke-linejoin:round; }
+  /* Cathay Mexico weekly insights (26 nov, cony): from CargoSystem CX-MEX, same jade page as SCL - Asia. */
+  .cxm-warn { display:inline-block; margin-top:6px; padding:5px 10px; border-radius:6px; background:#fff6e0; color:#8a5300; border:1px solid #f3dfa6; }
+  .cxm-st { display:grid; grid-template-columns:repeat(auto-fit,minmax(0,1fr)); gap:14px; margin-bottom:14px; }
+  .cxm-stc { background:#fff; border:1px solid var(--line); border-top:5px solid var(--jade); border-radius:12px; padding:14px 18px; }
+  .cxm-stc .h { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .cxm-stc .h b { font-size:18px; color:var(--ink); } .cxm-stc .h span { font-size:12.5px; color:var(--mut); }
+  .cxm-stc .v { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .cxm-stc .v small { display:block; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--mut); font-weight:600; }
+  .cxm-stc .v b { display:block; font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; margin:1px 0; }
+  .cxm-stc .v em, .cxm-t em { font-size:12px; }
+  .cx-page em.flat { color:var(--mut); font-weight:500; }
+  .cx-ch .cxm-bl { font-size:11px; font-weight:700; fill:var(--ink); font-family:'DM Sans',sans-serif; }
+  .cxm-lanes { display:grid; grid-template-columns:1fr; gap:14px; }
+  .cxm-t { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+  .cxm-t th { background:none; text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--mut); font-weight:700; padding:6px 8px; border-bottom:2px solid var(--line); white-space:nowrap; }
+  .cxm-t td { text-align:left; white-space:nowrap; padding:8px 8px; border-bottom:1px solid #edf2f2; vertical-align:middle; }
+  .cxm-t tr:last-child td { border-bottom:0; }
+  .cxm-t th.r, .cxm-t td.r { text-align:right; white-space:nowrap; }
+  .cxm-t td b { font-weight:700; } .cxm-t td small { display:block; font-size:11px; color:var(--mut); }
+  .cxm-t td.r em { margin-left:6px; }
+  .cxm-t td.neg { color:var(--down); font-weight:700; }
+  .cxm-t td.mut { color:var(--mut); } .cxm-t td.hl { white-space:normal; font-size:12.5px; color:#3c4b4f; line-height:1.35; min-width:380px; }
+  .cxm-t .dom { color:#b45309; font-weight:700; }
+  .cxm-split { display:flex; width:110px; height:9px; border-radius:5px; overflow:hidden; background:#edf2f2; }
+  .cxm-split i { display:block; height:100%; }
+  .cxm-gone { margin-top:10px; font-size:12.5px; color:#8a5300; background:#fff6e0; border-radius:6px; padding:7px 10px; }
+  .cxm-focus { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .cxm-fc { background:#fff; border:1px solid var(--line); border-left:5px solid var(--jade); border-radius:10px; padding:12px 15px; }
+  .cxm-fc.fill { border-left-color:#5fb8b0; } .cxm-fc.warn { border-left-color:#f59e0b; }
+  .cxm-fc > span { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--mut); }
+  .cxm-fc > b { display:block; font-size:22px; margin:3px 0 4px; color:var(--jade); } .cxm-fc > b small { font-size:13px; color:var(--mut); font-weight:500; }
+  .cxm-fc p { font-size:12.5px; line-height:1.4; margin:4px 0 0; color:#3c4b4f; }
+  .cxm-fb { display:grid; grid-template-columns:repeat(auto-fit,minmax(0,1fr)); gap:12px; }
+  .cxm-fb p { font-size:13px; line-height:1.45; margin:0; }
+  .cxm-notes h3 { font-size:15px; font-weight:700; color:#006564; margin:0 0 4px; }
+  .cxm-notes .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:8px; }
+  .cxm-notes label { display:block; font-size:12px; font-weight:600; color:var(--text2); margin-bottom:3px; }
+  .cxm-notes textarea { width:100%; min-height:90px; box-sizing:border-box; border:1px solid #cdd8d9; border-radius:6px; padding:8px; font:inherit; font-size:13px; resize:vertical; }
+  .cxm-notes .ft { display:flex; align-items:center; gap:12px; margin-top:10px; }
+  .cxm-notes .ft span { font-size:12.5px; color:var(--text2); }
   /* Cathay CX Offline weekly report (25 nov, cony): check, fix and send the CX-OFF AWBs to Cathay. */
   .cx-tabs button.on { background:#006564; border-color:#006564; color:#fff; }
   .cxo-blockers { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
@@ -638,6 +678,7 @@
   <div class="av-tabs cx-tabs" id="cxTabs" hidden>
     <button type="button" data-mode="scl" class="on">SCL – Asia</button>
     <button type="button" data-mode="off">CX Offline</button>
+    <button type="button" data-mode="mx">Mexico</button>
   </div>
   <div id="cxView" hidden>
     <section class="panel">
@@ -676,6 +717,28 @@
       </div>
       <div class="ft"><button class="tool-btn" id="cxoMailCancel" type="button">Cancel</button><button class="tool-btn primary" id="cxoMailSend" type="button">Send from my Gmail</button></div>
     </dialog>
+  </div>
+  <div id="cxmView" hidden>
+    <section class="panel">
+      <div class="cx-bar">
+        <div class="field"><label for="cxmWeek">Report week</label><select id="cxmWeek"></select></div>
+        <span class="spacer"></span>
+        <button class="tool-btn primary" id="cxmPdfBtn" type="button">Export PDF</button>
+        <button class="tool-btn" id="cxmExcelBtn" type="button">Export Excel</button>
+      </div>
+      <div class="note" id="cxmNote"></div>
+    </section>
+    <div class="cx-wrap"><div id="cxmReport"></div></div>
+    <section class="panel cxm-notes" id="cxmNotes" hidden>
+      <h3>Team feedback for this week</h3>
+      <div class="note">What the Mexico team wants Cathay to know. It is saved for the week and goes at the end of the report.</div>
+      <div class="grid">
+        <div><label for="cxmNote_market">Market related</label><textarea id="cxmNote_market" maxlength="2000"></textarea></div>
+        <div><label for="cxmNote_sales">Sales</label><textarea id="cxmNote_sales" maxlength="2000"></textarea></div>
+        <div><label for="cxmNote_operation">Operation</label><textarea id="cxmNote_operation" maxlength="2000"></textarea></div>
+      </div>
+      <div class="ft"><button class="tool-btn primary" id="cxmNotesSave" type="button">Save feedback</button><span id="cxmNotesMsg"></span></div>
+    </section>
   </div>
   </div>
 </div>
@@ -2761,17 +2824,19 @@ let cxoEdits = {};
 
 function setCxMode(mode) {
   document.querySelectorAll("#cxTabs button").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
-  const off = mode === "off";
-  cxEls.view.hidden = off;
+  const off = mode === "off", mx = mode === "mx";
+  cxEls.view.hidden = off || mx;
   cxoEls.view.hidden = !off;
-  document.getElementById("reportTitle").textContent = off ? "Cathay · CX Offline weekly report" : "Cathay · Reporte Semanal SCL – Asia";
+  cxmEls.view.hidden = !mx;
+  document.getElementById("reportTitle").textContent = off ? "Cathay · CX Offline weekly report" : mx ? "Cathay · Mexico weekly insights" : "Cathay · Reporte Semanal SCL – Asia";
   if (off && !cxo) loadCxo();
-  if (!off && !cx) loadCx();
+  if (mx && !cxm) loadCxm();
+  if (!off && !mx && !cx) loadCx();
 }
 document.getElementById("cxTabs").addEventListener("click", e => {
   const b = e.target.closest("button[data-mode]");
   if (!b) return;
-  history.replaceState(null, "", b.dataset.mode === "off" ? "#CX/OFF" : "#CX");
+  history.replaceState(null, "", b.dataset.mode === "off" ? "#CX/OFF" : b.dataset.mode === "mx" ? "#CX/MX" : "#CX");
   setCxMode(b.dataset.mode);
 });
 
@@ -3050,6 +3115,296 @@ async function exportCxoExcel() {
 }
 document.getElementById("cxoExcelBtn").addEventListener("click", exportCxoExcel);
 
+// ---------------------------------------------------------------------------
+// Cathay Mexico weekly insights (26 nov, cony). The Wednesday report the
+// Mexico team sends to Cathay (Hector Mosquera) about the week before. They
+// made it by hand from their Google Sheet and ChatGPT; here it comes from
+// CargoSystem (GSA CX-MEX, loaded every Monday): weeks Monday to Sunday,
+// stations GDL and MTY + NLU, net = revenue minus the operating cost per kg
+// of the destination (1.00 / 1.40 / 2.00 USD), a customer with more than 40%
+// of a destination dominates it. The team's feedback is typed in below the
+// report and saved for the week.
+// ---------------------------------------------------------------------------
+const cxmEls = {
+  view: document.getElementById("cxmView"),
+  week: document.getElementById("cxmWeek"),
+  note: document.getElementById("cxmNote"),
+  report: document.getElementById("cxmReport"),
+  notes: document.getElementById("cxmNotes"),
+};
+let cxm = null;
+let cxmSeq = 0;
+const CXM_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const CXM_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const CXM_COLORS = { GDL: "#006564", MTYNLU: "#5fb8b0", OTH: "#b9c6c8" };
+const CXM_NOTE_FIELDS = [["market", "Market related"], ["sales", "Sales"], ["operation", "Operation"]];
+
+const cxmN = (v, dec = 0) => v === null || v === undefined || Number.isNaN(v) ? "–" : Number(v).toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const cxmT = kg => cxmN((kg || 0) / 1000, 1);
+const cxmUsd = v => `USD ${Math.abs(v) >= 100000 ? `${cxmN(v / 1000, 0)}k` : Math.abs(v) >= 10000 ? `${cxmN(v / 1000, 1)}k` : cxmN(v, 0)}`;
+const cxmPct = v => `${cxmN(v * 100, 0)}%`;
+function cxmDelta(now, before, label = "vs last week") {
+  if (!before) return "";
+  const v = (now - before) / before * 100;
+  return `<em class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "▲" : "▼"} ${cxmN(Math.abs(v))}% ${label}</em>`;
+}
+function cxmMove(now, before) {
+  if (!before) return now ? `<em class="up">new</em>` : "";
+  const v = (now - before) / before * 100;
+  if (Math.abs(v) < 0.5) return `<em class="flat">=</em>`;
+  return `<em class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "▲" : "▼"}${cxmN(Math.abs(v))}%</em>`;
+}
+function cxmDay(iso) { const d = parseDay(iso); return `${d.getDate()} ${CXM_MONTHS[d.getMonth()]}`; }
+function cxmRange(a, b) { const x = parseDay(a), y = parseDay(b); return `${x.getDate()}${x.getMonth() === y.getMonth() ? "" : ` ${CXM_MONTHS[x.getMonth()]}`} – ${y.getDate()} ${CXM_MONTHS[y.getMonth()]} ${y.getFullYear()}`; }
+const cxmName = n => String(n || "").replace(/\b(S\.?\s?A\.?|S\.?\s?DE\s?R\.?L\.?|DE\s+C\.?V\.?|SA\s+DE\s+CV|S\s+DE\s+RL\s+DE\s+CV|S\.A\.\s+DE\s+C\.V)\b.*$/i, "").replace(/[\s,.\-]+$/, "").trim() || n;
+
+function cxmKpis() {
+  const t = cxm.total, p = t.prev;
+  const netKg = t.kg ? t.net / t.kg : null, prevRate = p.kg ? p.sales / p.kg : null;
+  const cards = [
+    ["Total tons", cxmT(t.kg), cxmDelta(t.kg, p.kg), `${cxmN(t.kg, 0)} kg chargeable`, "hi"],
+    ["Revenue", cxmUsd(t.sales), cxmDelta(t.sales, p.sales), "all in, CargoSystem", ""],
+    ["Avg all-in rate", t.rate === null ? "–" : `${cxmN(t.rate, 2)}`, prevRate ? `<em class="${t.rate >= prevRate ? "up" : "down"}">last week ${cxmN(prevRate, 2)}</em>` : "", "USD per kg", ""],
+    ["Net yield", netKg === null ? "–" : `${cxmN(netKg, 2)}`, "", "USD per kg after operating cost", ""],
+    ["AWBs", cxmN(t.awbs), cxmDelta(t.awbs, p.awbs), `${cxm.destinations.ALL.length} destinations · ${cxm.customers.filter(c => c.kg).length} customers`, ""],
+  ];
+  return `<div class="cx-kpis">${cards.map(([a, b, c, d, cls]) => `<div class="cx-kpi ${cls}"><span>${a}</span><b>${b}</b><div class="d">${c}</div><small>${d}</small></div>`).join("")}</div>`;
+}
+
+function cxmStations() {
+  return `<div class="cxm-st">${cxm.stations.map(s => {
+    const netKg = s.kg ? s.net / s.kg : null, share = cxm.total.kg ? s.kg / cxm.total.kg : 0;
+    return `<div class="cxm-stc" style="border-top-color:${CXM_COLORS[s.key]}"><div class="h"><b>${esc(s.label)}</b><span>${cxmPct(share)} of the week</span></div>
+      <div class="v"><div><small>Tons</small><b>${cxmT(s.kg)}</b>${cxmDelta(s.kg, s.prev.kg, "")}</div>
+      <div><small>Revenue</small><b>${cxmUsd(s.sales)}</b>${cxmDelta(s.sales, s.prev.sales, "")}</div>
+      <div><small>All in / kg</small><b>${cxmN(s.rate, 2)}</b><em class="flat">last wk ${s.prev.rate === null ? "–" : cxmN(s.prev.rate, 2)}</em></div>
+      <div><small>Net / kg</small><b>${cxmN(netKg, 2)}</b><em class="flat">${cxmN(s.awbs)} AWBs</em></div></div></div>`;
+  }).join("")}</div>`;
+}
+
+function cxmStack(items, keys, labelOf, { W = 560, H = 210, total = true } = {}) {
+  const L = 8, R = 8, T = 22, B = 26, n = items.length;
+  const mx = Math.max(1, ...items.map(x => keys.reduce((s, k) => s + (x[k] || 0), 0)));
+  const slot = (W - L - R) / n, bw = Math.min(46, slot * 0.62);
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="cx-ch">`;
+  items.forEach((x, i) => {
+    let y = H - B;
+    const cx0 = L + slot * i + slot / 2;
+    keys.forEach(k => {
+      const h = (x[k] || 0) / mx * (H - T - B);
+      if (h > 0) { y -= h; s += `<rect x="${cx0 - bw / 2}" y="${y}" width="${bw}" height="${h}" fill="${CXM_COLORS[k]}"><title>${cxmN(x[k])} kg</title></rect>`; }
+    });
+    const sum = keys.reduce((a, k) => a + (x[k] || 0), 0);
+    if (total && sum) s += `<text x="${cx0}" y="${y - 5}" class="cxm-bl" text-anchor="middle">${cxmT(sum)}</text>`;
+    s += `<text x="${cx0}" y="${H - 8}" class="ax" text-anchor="middle">${labelOf(x, i)}</text>`;
+  });
+  return s + "</svg>";
+}
+function cxmLegend() {
+  return `<div class="cx-lgd">${cxm.stations.map(s => `<span><i class="b" style="background:${CXM_COLORS[s.key]}"></i>${esc(s.label)}</span>`).join("")}<span>tons on top of each bar</span></div>`;
+}
+
+function cxmLaneNote(d, i, station) {
+  const top = d.customers[0];
+  const bits = [];
+  if (i === 0) bits.push(`<b>Highest revenue of ${esc(station)}.</b>`);
+  if (!top) return bits.join(" ");
+  if (d.n_customers === 1) bits.push(`Single customer: ${esc(cxmName(top.name))}.`);
+  else if (d.dominant) bits.push(`<span class="dom">${esc(cxmName(top.name))} dominates with ${cxmPct(top.share)}</span> of the lane.`);
+  else bits.push(`Diversified: ${d.n_customers} customers, ${d.customers.slice(0, 2).map(c => `${esc(cxmName(c.name))} ${cxmPct(c.share)}`).join(", ")}.`);
+  if (d.kg_prev) {
+    const v = (d.kg - d.kg_prev) / d.kg_prev * 100;
+    if (Math.abs(v) >= 25) bits.push(`${v > 0 ? "Up" : "Down"} ${cxmN(Math.abs(v))}% in tons vs last week.`);
+  } else bits.push("No volume last week.");
+  return bits.join(" ");
+}
+function cxmLanes(key, label) {
+  const rows = (cxm.destinations[key] || []).slice(0, 7);
+  if (!rows.length) return `<div class="cx-card"><h3>${esc(label)}</h3><div class="ups-empty">No AWBs with detail this week</div></div>`;
+  const totalSales = (cxm.destinations[key] || []).reduce((s, d) => s + d.sales, 0);
+  return `<div class="cx-card"><h3>${esc(label)} <small>Top 7 destinations by revenue · ${cxmPct(rows.reduce((s, d) => s + d.sales, 0) / (totalSales || 1))} of the station's revenue</small></h3>
+    <table class="cxm-t"><thead><tr><th>Destination</th><th class="r">Tons</th><th class="r">Revenue</th><th class="r">All in/kg</th><th class="r">Net/kg</th><th>Highlight</th></tr></thead><tbody>
+    ${rows.map((d, i) => `<tr><td><b>${esc(d.des)}</b><small>${esc(d.city || d.country || "")}</small></td>
+      <td class="r">${cxmT(d.kg)}${cxmMove(d.kg, d.kg_prev)}</td><td class="r">${cxmUsd(d.sales)}</td>
+      <td class="r">${cxmN(d.rate, 2)}</td><td class="r ${d.net_kg < 0 ? "neg" : ""}">${cxmN(d.net_kg, 2)}</td>
+      <td class="hl">${cxmLaneNote(d, i, label)}</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+
+function cxmCustomers() {
+  const rows = cxm.customers.filter(c => c.kg).slice(0, 12);
+  const gone = cxm.customers.filter(c => !c.kg && c.kg_prev >= 1000).slice(0, 4);
+  return `<div class="cx-card"><h3>Top customers <small>by tons this week · split by station · main destinations</small></h3>
+    <table class="cxm-t"><thead><tr><th>#</th><th>Customer</th><th class="r">Tons</th><th class="r">Last week</th><th class="r">Revenue</th><th class="r">All in/kg</th><th>GDL / MTY + NLU</th><th>Main destinations</th></tr></thead><tbody>
+    ${rows.map((c, i) => {
+      const g = c.kg ? c.GDL / c.kg * 100 : 0;
+      return `<tr><td class="mut">${i + 1}</td><td><b>${esc(cxmName(c.name))}</b></td><td class="r">${cxmT(c.kg)}</td>
+        <td class="r">${cxmT(c.kg_prev)} ${cxmMove(c.kg, c.kg_prev)}</td><td class="r">${cxmUsd(c.sales)}</td><td class="r">${cxmN(c.rate, 2)}</td>
+        <td><div class="cxm-split"><i style="width:${g}%;background:${CXM_COLORS.GDL}"></i><i style="width:${100 - g}%;background:${CXM_COLORS.MTYNLU}"></i></div></td>
+        <td class="mut">${c.dests.map(esc).join(" · ")}</td></tr>`;
+    }).join("")}</tbody></table>
+    ${gone.length ? `<div class="cxm-gone">No volume this week (had more than 1 t last week): ${gone.map(c => `<b>${esc(cxmName(c.name))}</b> ${cxmT(c.kg_prev)} t`).join(" · ")}</div>` : ""}</div>`;
+}
+
+// Where to focus: computed with the same rules the team gave ChatGPT.
+function cxmFocus() {
+  const all = cxm.destinations.ALL.filter(d => d.kg > 0);
+  if (!all.length) return "";
+  const totalKg = all.reduce((s, d) => s + d.kg, 0);
+  const avgNet = all.reduce((s, d) => s + d.net, 0) / totalKg;
+  const profit = [...all].sort((a, b) => b.net - a.net)[0];
+  const big = all.filter(d => d.kg >= Math.max(1000, totalKg * 0.02));
+  const efficient = [...(big.length ? big : all)].sort((a, b) => b.net_kg - a.net_kg)[0];
+  const byKg = [...all].sort((a, b) => b.kg - a.kg);
+  const filler = byKg.slice(0, 5).filter(d => d.net_kg < avgNet).sort((a, b) => b.kg - a.kg)[0] || byKg[0];
+  const dominated = all.filter(d => d.dominant && d.kg >= 1000).sort((a, b) => b.kg - a.kg).slice(0, 3);
+  const card = (cls, title, d, text) => `<div class="cxm-fc ${cls}"><span>${title}</span><b>${esc(d.des)} <small>${esc(d.city || "")}</small></b><p>${text}</p></div>`;
+  return `<div class="cxm-focus">
+    ${card("", "Most profitable destination", profit, `${cxmUsd(profit.net)} net after operating cost · ${cxmT(profit.kg)} t at ${cxmN(profit.rate, 2)} all in (${cxmN(profit.net_kg, 2)} net/kg).`)}
+    ${card("", "Most efficient lane", efficient, `Best net per kg: <b>${cxmN(efficient.net_kg, 2)}</b> (all in ${cxmN(efficient.rate, 2)} − cost ${cxmN(efficient.cost_kg, 2)}) on ${cxmT(efficient.kg)} t.`)}
+    ${card("fill", "Volume filler", filler, `${cxmT(filler.kg)} t (${cxmPct(filler.kg / totalKg)} of the week) at ${cxmN(filler.net_kg, 2)} net/kg, below the average of ${cxmN(avgNet, 2)}. Keeps the flights full; room to push the rate.`)}
+    <div class="cxm-fc warn"><span>Lanes depending on one customer</span>${dominated.length ? dominated.map(d => `<p><b>${esc(d.des)}</b> ${esc(cxmName(d.customers[0].name))} ${cxmPct(d.customers[0].share)} of ${cxmT(d.kg)} t</p>`).join("") : "<p>No lane over 1 t has a customer above 40%.</p>"}</div>
+  </div>`;
+}
+
+function cxmFeedback() {
+  const n = cxm.notes || {};
+  const has = CXM_NOTE_FIELDS.some(([k]) => (n[k] || "").trim());
+  if (!has) return "";
+  return `<div class="cx-sec"><span>Team feedback</span><small>Mexico team</small></div>
+    <div class="cxm-fb">${CXM_NOTE_FIELDS.filter(([k]) => (n[k] || "").trim()).map(([k, l]) => `<div class="cx-card"><h3>${l}</h3><p>${esc(n[k]).replace(/\n/g, "<br>")}</p></div>`).join("")}</div>`;
+}
+
+function renderCxm() {
+  if (!cxm) { cxmEls.report.innerHTML = ""; cxmEls.notes.hidden = true; return; }
+  const lanes = cxm.stations.filter(s => s.key !== "OTH" || (cxm.destinations.OTH || []).length);
+  cxmEls.report.innerHTML = `<div class="cx-page">
+    <div class="cx-hd"><div><h1>CX Mexico · Weekly Insights</h1><p>Week ${cxm.week} · ${cxmRange(cxm.start, cxm.end)} · GDL, MTY and NLU</p></div>
+      <div class="lg"><img class="cxl" src="img/cathay-cargo-white.png" alt="Cathay Cargo"><i></i><img class="gsa" src="img/gsa-force.png" alt="GSA Force"></div></div>
+    <div class="cx-bd">
+      ${cxmKpis()}
+      <div class="cx-sec first"><span>Stations</span><small>W${cxm.week} vs W${cxm.prev.week}</small></div>
+      ${cxmStations()}
+      <div class="cx-two">
+        <div class="cx-card"><h3>Tons per day <small>${cxmRange(cxm.start, cxm.end)}</small></h3>${cxmLegend()}${cxmStack(cxm.daily, cxm.stations.map(s => s.key), (x, i) => `${CXM_DAYS[i]} ${parseDay(x.date).getDate()}`)}</div>
+        <div class="cx-card"><h3>Last ${cxm.trend.length} weeks <small>tons per week</small></h3>${cxmLegend()}${cxmStack(cxm.trend, cxm.stations.map(s => s.key), x => `W${x.week}`, { total: true })}</div>
+      </div>
+      <div class="cx-sec"><span>Top destinations</span><small>revenue all in · net = revenue − operating cost per kg (${cxmN(cxm.costs.low, 2)} HKG/CAN/SZX/MFM/ZTI/ZUH · ${cxmN(cxm.costs.mid, 2)} rest of Asia · ${cxmN(cxm.costs.high, 2)} Middle East, India, Africa, Oceania)</small></div>
+      <div class="cxm-lanes">${lanes.map(s => cxmLanes(s.key, s.label)).join("")}</div>
+      <div class="cx-sec"><span>Where to focus</span><small>all stations together</small></div>
+      ${cxmFocus()}
+      <div class="cx-sec"><span>Customers</span><small>W${cxm.week} vs W${cxm.prev.week}</small></div>
+      ${cxmCustomers()}
+      ${cxmFeedback()}
+    </div>
+    <div class="ups-foot"><span>Source: CargoSystem · GSA CX-MEX · Monday to Sunday · tons = chargeable weight</span><span>GSA Force · Cathay Cargo Mexico</span></div>
+  </div>`;
+  const n = cxm.notes || {};
+  cxmEls.notes.hidden = false;
+  CXM_NOTE_FIELDS.forEach(([k]) => { const el = document.getElementById(`cxmNote_${k}`); if (el) el.value = n[k] || ""; });
+  document.getElementById("cxmNotesMsg").textContent = n.at ? `Saved by ${n.by || "–"} on ${new Date(n.at).toLocaleString("en-US")}` : "Nothing saved for this week yet.";
+}
+
+async function loadCxm(start) {
+  const seq = ++cxmSeq;
+  cxmEls.note.textContent = "Loading the CX-MEX AWBs from CargoSystem…";
+  els.status.textContent = "Loading";
+  try {
+    const params = new URLSearchParams({ email: user().email || "" });
+    if (start) params.set("start", start);
+    const response = await fetch(`${API_BASE}/api/airline_reports/cx_mexico?${params}`, { headers: { "x-api-key": API_KEY } });
+    const body = await response.json();
+    if (seq !== cxmSeq) return;
+    if (!response.ok) throw new Error(body.detail || "Could not load the report");
+    cxm = body;
+    const opts = (cxm.weeks || []).map(x => ({ value: x.start, label: `W${x.week} ${x.year} · ${cxmDay(x.start)} – ${cxmDay(x.end)}` }));
+    if (!opts.some(o => o.value === cxm.start)) opts.unshift({ value: cxm.start, label: `W${cxm.week} ${cxm.year}` });
+    fillSelect(cxmEls.week, opts, cxm.start);
+    const warn = [];
+    if (!cxm.closed) warn.push("This week is not over yet.");
+    if (cxm.dummy && cxm.dummy.kg) warn.push(`${cxmN(cxm.dummy.kg)} kg of this week were loaded in CargoSystem as DUMMY totals (${cxm.dummy.lines} line${cxm.dummy.lines === 1 ? "" : "s"}): they count in the tons but have no customer or destination, so the destination and customer tables leave them out.`);
+    if (!cxm.total.kg) warn.push("CargoSystem has no CX-MEX AWBs for this week yet (they are loaded on Mondays).");
+    cxmEls.note.innerHTML = `CargoSystem, GSA CX-MEX, first segment, Monday to Sunday. ${warn.map(w => `<span class="cxm-warn">${esc(w)}</span>`).join(" ")}`;
+    renderCxm();
+    els.status.textContent = "Live";
+  } catch (error) {
+    if (seq !== cxmSeq) return;
+    cxm = null;
+    renderCxm();
+    cxmEls.note.textContent = error.message;
+    els.status.textContent = "Error";
+  }
+}
+
+async function saveCxmNotes() {
+  if (!cxm) return;
+  const msg = document.getElementById("cxmNotesMsg");
+  const payload = { start: cxm.start };
+  CXM_NOTE_FIELDS.forEach(([k]) => { payload[k] = document.getElementById(`cxmNote_${k}`).value; });
+  msg.textContent = "Saving…";
+  try {
+    const response = await fetch(`${API_BASE}/api/airline_reports/cx_mexico/notes?email=${encodeURIComponent(user().email || "")}`, {
+      method: "POST", headers: { "x-api-key": API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || "Could not save");
+    cxm.notes = body;
+    renderCxm();
+  } catch (error) {
+    msg.textContent = error.message;
+  }
+}
+
+async function exportCxmPdf() {
+  const page = cxmEls.report.querySelector(".cx-page");
+  if (!cxm || !page || !window.jspdf || !window.html2canvas) return;
+  const before = cxmEls.note.innerHTML;
+  cxmEls.note.textContent = "Building the PDF…";
+  cxmEls.report.classList.add("cx-printing");
+  try {
+    const canvas = await html2canvas(page, { backgroundColor: "#ffffff", scale: 1.5, useCORS: true, windowWidth: 1300 });
+    const w = canvas.width / 1.5, h = canvas.height / 1.5;
+    const doc = new window.jspdf.jsPDF({ orientation: h > w ? "portrait" : "landscape", unit: "px", format: [w, h], hotfixes: ["px_scaling"] });
+    doc.addImage(canvas.toDataURL("image/jpeg", 0.85), "JPEG", 0, 0, w, h);
+    doc.save(`CX_Mexico_Weekly_Insights_W${cxm.week}_${cxm.year}.pdf`);
+    cxmEls.note.innerHTML = before;
+  } finally {
+    cxmEls.report.classList.remove("cx-printing");
+  }
+}
+
+async function exportCxmExcel() {
+  if (!cxm || !window.ExcelJS) return;
+  const book = new ExcelJS.Workbook();
+  const sheet = (name, cols, rows) => {
+    const s = book.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });
+    s.columns = cols.map(c => ({ header: c.h, key: c.k, width: c.w || 13, style: c.fmt ? { numFmt: c.fmt } : {} }));
+    rows.forEach(r => s.addRow(r));
+    s.getRow(1).eachCell(c => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF006564" } }; });
+  };
+  const kg = "#,##0.0", usd = "#,##0.00", pct = "0.0%";
+  sheet("Stations", [{ h: "Station", k: "label", w: 14 }, { h: "Kg", k: "kg", fmt: kg }, { h: "Revenue USD", k: "sales", fmt: usd }, { h: "All in/kg", k: "rate", fmt: usd },
+    { h: "Net USD", k: "net", fmt: usd }, { h: "AWBs", k: "awbs" }, { h: "Kg last week", k: "kgp", fmt: kg }, { h: "Revenue last week", k: "salesp", fmt: usd }],
+    [...cxm.stations, { label: "Total", ...cxm.total }].map(s => ({ ...s, kgp: s.prev.kg, salesp: s.prev.sales })));
+  sheet("Daily", [{ h: "Date", k: "date", w: 12 }, { h: "GDL kg", k: "GDL", fmt: kg }, { h: "MTY + NLU kg", k: "MTYNLU", fmt: kg }, { h: "Other kg", k: "OTH", fmt: kg }, { h: "Total kg", k: "total", fmt: kg }], cxm.daily);
+  const st = Object.fromEntries(cxm.stations.map(s => [s.key, s.label]));
+  sheet("Destinations", [{ h: "Station", k: "st", w: 12 }, { h: "Destination", k: "des", w: 11 }, { h: "City", k: "city", w: 16 }, { h: "Kg", k: "kg", fmt: kg }, { h: "Kg last week", k: "kg_prev", fmt: kg },
+    { h: "Revenue USD", k: "sales", fmt: usd }, { h: "All in/kg", k: "rate", fmt: usd }, { h: "Cost/kg", k: "cost_kg", fmt: usd }, { h: "Net/kg", k: "net_kg", fmt: usd }, { h: "Net USD", k: "net", fmt: usd },
+    { h: "AWBs", k: "awbs" }, { h: "Customers", k: "n_customers" }, { h: "Top customer", k: "top", w: 30 }, { h: "Top share", k: "share", fmt: pct }],
+    ["GDL", "MTYNLU", "OTH"].flatMap(k => (cxm.destinations[k] || []).map(d => ({ ...d, st: st[k] || k, top: d.customers[0] ? d.customers[0].name : "", share: d.customers[0] ? d.customers[0].share : null }))));
+  sheet("Customers", [{ h: "Customer", k: "name", w: 36 }, { h: "Kg", k: "kg", fmt: kg }, { h: "Kg last week", k: "kg_prev", fmt: kg }, { h: "Revenue USD", k: "sales", fmt: usd },
+    { h: "All in/kg", k: "rate", fmt: usd }, { h: "GDL kg", k: "GDL", fmt: kg }, { h: "MTY + NLU kg", k: "MTYNLU", fmt: kg }, { h: "AWBs", k: "awbs" }, { h: "Main destinations", k: "d", w: 28 }],
+    cxm.customers.map(c => ({ ...c, d: c.dests.join(" ") })));
+  sheet("Trend", [{ h: "Year", k: "year", w: 7 }, { h: "Week", k: "week", w: 7 }, { h: "From", k: "start", w: 12 }, { h: "GDL kg", k: "GDL", fmt: kg }, { h: "MTY + NLU kg", k: "MTYNLU", fmt: kg },
+    { h: "Total kg", k: "kg", fmt: kg }, { h: "Revenue USD", k: "sales", fmt: usd }, { h: "Has DUMMY totals", k: "dm" }], cxm.trend.map(x => ({ ...x, dm: x.dummy ? "Y" : "" })));
+  const buffer = await book.xlsx.writeBuffer();
+  downloadBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `CX_Mexico_Weekly_Insights_W${cxm.week}_${cxm.year}.xlsx`);
+}
+
+cxmEls.week.addEventListener("change", () => loadCxm(cxmEls.week.value));
+document.getElementById("cxmPdfBtn").addEventListener("click", exportCxmPdf);
+document.getElementById("cxmExcelBtn").addEventListener("click", exportCxmExcel);
+document.getElementById("cxmNotesSave").addEventListener("click", saveCxmNotes);
+
 // The chosen airline lives in the address (#ET), so the browser's back button works.
 function showView() {
   const [code, mode] = window.location.hash.slice(1).split("/");
@@ -3080,6 +3435,7 @@ function showView() {
   cxEls.view.hidden = !isCathay;
   document.getElementById("cxTabs").hidden = !isCathay;
   cxoEls.view.hidden = true;
+  cxmEls.view.hidden = true;
   avEls.view.hidden = !isAvianca;
   document.getElementById("avTabs").hidden = !isAvianca;
   sclEls.view.hidden = true;
@@ -3096,7 +3452,7 @@ function showView() {
   }
   if (isCathay) {
     requestSeq++;
-    setCxMode(mode === "OFF" ? "off" : "scl");
+    setCxMode(mode === "OFF" ? "off" : mode === "MX" ? "mx" : "scl");
     return;
   }
   els.day.value = "ALL";
