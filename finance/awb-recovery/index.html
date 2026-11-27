@@ -218,9 +218,13 @@
   .mb-st.notp { background:#fdf6b2; color:#723b13; } .mb-st.err { background:#fde8e8; color:#9b1c1c; }
   .mb-panel-title { font-size:11.5px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
   .mb-err-text { color:#9b1c1c; font-size:12.5px; }
-  .mb-awb-table { border-collapse:collapse; font-size:12.5px; min-width:640px; }
-  .mb-awb-table th { text-align:left; font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.04em; padding:4px 14px 6px 0; background:none; border:0; }
-  .mb-awb-table td { padding:5px 14px 5px 0; border-top:1px solid var(--line2); background:none; vertical-align:middle; }
+  .mb-awb-table { border-collapse:collapse; font-size:12px; width:auto; }
+  .mb-awb-table th { text-align:left; font-size:10.5px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.03em; padding:3px 12px 4px 0; background:none; border:0; white-space:nowrap; }
+  .mb-awb-table td { padding:3px 12px 3px 0; border-top:1px solid var(--line2); background:none; vertical-align:middle; white-space:nowrap; }
+  .mb-awb-table .mb-page { display:inline-block; max-width:320px; overflow:hidden; text-overflow:ellipsis; vertical-align:bottom; }
+  .mb-st.wait { background:#e1effe; color:#1e429f; }
+  .mb-cs-note { white-space:normal; max-width:300px; font-size:11px; color:var(--amber); font-weight:600; margin-top:2px; }
+  .mb-cs-note.err { color:#c81e1e; }
   .mb-awb-table .awb { font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .mb-yes { color:#03543f; font-weight:700; } .mb-no { color:var(--text2); }
   .mb-page { color:var(--indigo); font-weight:700; cursor:pointer; white-space:nowrap; }
@@ -1140,14 +1144,18 @@ function mbRobotPanel(r) {
   const test = mb.csTest ? " (test)" : "";
   const line = x => {
     const cs = (r.cs || {})[x.awb];
-    const tag = mbToMark(x) ? ` <span class="mb-st ${cs && cs.state === "error" ? "err" : "mark"}" title="${esc(cs ? cs.text : "")}">To mark${cs && cs.state !== "marked" ? ` · ${esc(cs.text)}` : ""}</span>` : "";
-    const recovered = x.retrieved ? `<span class="mb-yes">✓ Yes</span>` : x.marked ? `<span class="mb-yes">✓ Marked by Dataforce${test}</span>` : `<span class="mb-no">No</span>`;
-    const page = x.file ? `<span class="mb-page" data-awbfile="${esc(x.awb)}" data-id="${esc(r.id)}" title="Open only the page of this AWB">📄 Open</span>` : `<span class="muted" title="The robot read this email before it kept every page">-</span>`;
-    if (x.in_cs === false) return `<tr><td class="awb">${esc(x.awb)}</td><td colspan="3"><span class="mb-st notp">Not found in Cargo System</span></td><td>${page}</td></tr>`;
-    return `<tr><td class="awb">${esc(x.awb)}${mbBookingLink(r, x.awb)}${tag}</td><td>${esc(x.gsa || "-")}</td><td>${esc(x.bill || "-")}</td><td>${recovered}</td><td>${page}</td></tr>`;
+    const csNote = mbToMark(x) && cs && cs.state !== "marked" ? `<div class="mb-cs-note ${cs.state === "error" ? "err" : ""}">${esc(cs.text)}</div>` : "";
+    const tag = mbToMark(x) ? ` <span class="mb-st ${cs && cs.state === "error" ? "err" : "mark"}" title="${esc(cs ? cs.text : "")}">To mark</span>${csNote}` : "";
+    const notFlown = x.in_cs !== false && x.flown === false && !x.retrieved;
+    const recovered = x.retrieved ? `<span class="mb-yes">✓ Yes</span>` : x.marked ? `<span class="mb-yes">✓ Marked by Dataforce${test}</span>`
+      : notFlown ? `<span class="mb-st wait" title="When it flies, the robot moves it to To mark and the email comes back to AWB Processed">Not flown yet · robot waits</span>` : `<span class="mb-no">No</span>`;
+    const fileName = x.file_name || "Open the page";
+    const page = x.file ? `<span class="mb-page" data-awbfile="${esc(x.awb)}" data-id="${esc(r.id)}" title="${esc(fileName)}: only the page of this AWB">📄 ${esc(fileName)}</span>` : `<span class="muted" title="The robot is keeping the pages of the emails it read before (a few every 10 minutes)">Getting the page…</span>`;
+    if (x.in_cs === false) return `<tr><td class="awb">${esc(x.awb)}</td><td colspan="4"><span class="mb-st notp">Not found in Cargo System</span></td><td>${page}</td></tr>`;
+    return `<tr><td class="awb">${esc(x.awb)}${mbBookingLink(r, x.awb)}${tag}</td><td>${esc(x.gsa || "-")}</td><td>${esc(x.bill || "-")}</td><td>${esc(x.seg || "-")}</td><td>${recovered}</td><td>${page}</td></tr>`;
   };
   const err = r.error ? `<div class="mb-err-text">${esc(r.error)}</div>` : "";
-  const table = awbs.length ? `<table class="mb-awb-table"><thead><tr><th>AWB</th><th>GSA</th><th>Billing status</th><th>Recovered</th><th>File</th></tr></thead><tbody>${awbs.map(line).join("")}</tbody></table>` : "";
+  const table = awbs.length ? `<table class="mb-awb-table"><thead><tr><th>AWB</th><th>GSA</th><th>Billing status</th><th>Segment status</th><th>Recovered</th><th>File</th></tr></thead><tbody>${awbs.map(line).join("")}</tbody></table>` : "";
   const empty = !awbs.length && !err ? `<div class="muted">${esc((r.folder || mb.label) === "input" ? "The robot has not read this email yet." : (r.note || "No AWB of your GSAs in this email."))}</div>` : "";
   return `<div class="mb-panel-title">What the robot read</div>${table}${err}${empty}`;
 }
