@@ -218,6 +218,13 @@
   .mb-st.notp { background:#fdf6b2; color:#723b13; } .mb-st.err { background:#fde8e8; color:#9b1c1c; }
   .mb-panel-title { font-size:11.5px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
   .mb-err-text { color:#9b1c1c; font-size:12.5px; }
+  .mb-awb-table { border-collapse:collapse; font-size:12.5px; min-width:640px; }
+  .mb-awb-table th { text-align:left; font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.04em; padding:4px 14px 6px 0; background:none; border:0; }
+  .mb-awb-table td { padding:5px 14px 5px 0; border-top:1px solid var(--line2); background:none; vertical-align:middle; }
+  .mb-awb-table .awb { font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .mb-yes { color:#03543f; font-weight:700; } .mb-no { color:var(--text2); }
+  .mb-page { color:var(--indigo); font-weight:700; cursor:pointer; white-space:nowrap; }
+  .mb-page:hover { text-decoration:underline; }
   .mb-files-btn { border:1px solid var(--line2); background:#fff; border-radius:8px; padding:3px 10px; font:inherit; font-size:12px; font-weight:700; color:var(--indigo); cursor:pointer; white-space:nowrap; }
   .mb-files-btn.on { background:var(--indigo); border-color:var(--indigo); color:#fff; }
   .mb-files-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px 18px; }
@@ -464,7 +471,7 @@
     <div class="muted" style="margin-bottom:10px" id="mbLead">The three AWB labels of the robot's Gmail, without going into Gmail.</div>
     <div class="mb-head"><div class="mb-tabs" id="mbTabs"><button type="button" data-l="input" class="on">AWB Input <span data-c="input"></span></button><button type="button" data-l="processed" class="t-ok">AWB Processed <span data-c="processed"></span></button><button type="button" data-l="error" class="t-err">AWB Error <span data-c="error"></span></button><button type="button" data-l="history" class="t-hist">History <span data-c="history"></span></button></div><span class="grow"></span><form class="mb-search" id="mbSearchForm"><input type="search" id="mbSearch" placeholder="Search an AWB in the mailbox" aria-label="Search an AWB in the mailbox"></form><button class="btn primary" id="robotBtn" type="button">Run process</button></div>
     <div class="mb-views" id="mbViews"><span class="muted" id="mbViewNote"></span><span class="grow"></span><button class="btn" id="mbMarkSel" type="button" hidden disabled title="Marks the AWBs of the selected emails as recovered in Cargo System. It cannot be undone.">Mark CS</button><button class="btn" id="mbDismissSel" type="button" hidden disabled title="Takes the selected emails out of the mailbox (to History). The emails stay in Gmail.">Dismiss</button></div>
-    <div class="c-wrap"><table class="c-table"><thead><tr><th id="mbSelHead" style="width:34px" hidden><input type="checkbox" id="mbSelAll" aria-label="Select all"></th><th style="width:44px" title="Robot">Robot</th><th style="width:120px">Date</th><th style="width:210px">From</th><th>Subject</th><th style="width:120px">Files</th><th id="mbFolderHead" style="width:170px" hidden>Folder</th></tr></thead><tbody id="mbBody"></tbody></table></div>
+    <div class="c-wrap"><table class="c-table"><thead><tr><th id="mbSelHead" style="width:34px" hidden><input type="checkbox" id="mbSelAll" aria-label="Select all"></th><th style="width:44px" title="Robot">Robot</th><th style="width:120px">Date</th><th style="width:210px">From</th><th>Subject</th><th id="mbFolderHead" style="width:170px" hidden>Folder</th></tr></thead><tbody id="mbBody"></tbody></table></div>
     <div class="m-foot"><span class="msg" id="mbMsg"></span><button class="btn" id="mbMore" type="button" hidden>Load more</button><button class="btn" id="mbReload" type="button">Reload</button><button class="btn" id="mbClose" type="button">Close</button></div>
   </div>
 </div>
@@ -1104,39 +1111,54 @@ async function loadMailbox(more) {
 }
 function mbDate(ms) { if (!ms) return ""; const d = new Date(ms); return `${isoDate(d)} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; }
 const mbMarked = (r, awb) => !!((r.cs || {})[awb] && r.cs[awb].state === "marked");
+// One line per AWB of the viewer's GSAs: what the robot read and what Cargo System says
+function mbAwbs(r) {
+  if (r.awbs) return r.awbs;
+  return (r.found || []).map(a => ({ awb: a, kind: "found", marked: mbMarked(r, a) }))
+    .concat((r.not_pending || []).map(a => ({ awb: a, kind: "not_pending" })));
+}
+const mbToMark = x => x.kind === "found" && !x.marked && !x.retrieved;
 // The robot's colour: green = AWBs to mark in CS, orange = AWBs read but none to mark,
-// red = error, grey with ✓ = all found AWBs already marked, no colour = not read yet
+// red = error, grey with ✓ = every AWB found already recovered, no colour = not read yet
 function mbRobot(r) {
   const folder = r.folder || mb.label;
   if (folder === "input") return { cls: "", tip: "The robot has not read this email yet" };
   if (r.label === "error" || r.error) return { cls: "red", tip: r.error || "The robot could not read an AWB" };
-  const found = r.found || [];
-  const toMark = found.filter(a => !mbMarked(r, a));
+  const awbs = mbAwbs(r);
+  const toMark = awbs.filter(mbToMark);
   if (toMark.length) return { cls: "green", tip: `${toMark.length} AWB${toMark.length === 1 ? "" : "s"} to mark in Cargo System` };
-  if (found.length) return { cls: "done", tip: "Every AWB found is already marked in Cargo System" };
-  if ((r.not_pending || []).length) return { cls: "orange", tip: "AWBs read, none to mark in Cargo System" };
+  if (awbs.some(x => x.kind === "found")) return { cls: "done", tip: "Every AWB found is already recovered in Cargo System" };
+  if (awbs.length) return { cls: "orange", tip: "AWBs read, none to mark in Cargo System" };
   return { cls: "", tip: r.note || "No AWB" };
 }
 function mbBookingLink(r, awb) {
   const ids = (r.bookings || {})[awb] || [];
   return mb.bookingUrl ? ids.map(id => ` <a class="mb-cs" href="${esc(mb.bookingUrl + id)}" target="_blank" rel="noopener" title="Open booking ${id} in Cargo System">↗</a>`).join("") : "";
 }
-// What the robot read, one AWB under the other: first the ones to mark
 function mbRobotPanel(r) {
+  const awbs = mbAwbs(r).slice().sort((a, b) => Number(mbToMark(b)) - Number(mbToMark(a)));
   const test = mb.csTest ? " (test)" : "";
-  const items = [];
-  (r.found || []).filter(a => !mbMarked(r, a)).forEach(a => {
-    const cs = (r.cs || {})[a];
-    items.push(`<span class="awb">${esc(a)}${mbBookingLink(r, a)}</span><span class="mb-st ${cs && cs.state === "error" ? "err" : "mark"}" title="${esc(cs ? cs.text : "")}">To mark in Cargo System${cs && cs.state !== "marked" ? ` · ${esc(cs.text)}` : ""}</span>`);
-  });
-  (r.found || []).filter(a => mbMarked(r, a)).forEach(a => items.push(`<span class="awb">${esc(a)}${mbBookingLink(r, a)}</span><span class="mb-st marked">✓ Marked in Cargo System${test}</span>`));
-  (r.not_pending || []).forEach(a => items.push(`<span class="awb">${esc(a)}</span><span class="mb-st notp">Already recovered or not pending</span>`));
+  const line = x => {
+    const cs = (r.cs || {})[x.awb];
+    const tag = mbToMark(x) ? ` <span class="mb-st ${cs && cs.state === "error" ? "err" : "mark"}" title="${esc(cs ? cs.text : "")}">To mark${cs && cs.state !== "marked" ? ` · ${esc(cs.text)}` : ""}</span>` : "";
+    const recovered = x.retrieved ? `<span class="mb-yes">✓ Yes</span>` : x.marked ? `<span class="mb-yes">✓ Marked by Dataforce${test}</span>` : `<span class="mb-no">No</span>`;
+    const page = x.file ? `<span class="mb-page" data-awbfile="${esc(x.awb)}" data-id="${esc(r.id)}" title="Open only the page of this AWB">📄 Open</span>` : `<span class="muted" title="The robot read this email before it kept every page">-</span>`;
+    if (x.in_cs === false) return `<tr><td class="awb">${esc(x.awb)}</td><td colspan="3"><span class="mb-st notp">Not found in Cargo System</span></td><td>${page}</td></tr>`;
+    return `<tr><td class="awb">${esc(x.awb)}${mbBookingLink(r, x.awb)}${tag}</td><td>${esc(x.gsa || "-")}</td><td>${esc(x.bill || "-")}</td><td>${recovered}</td><td>${page}</td></tr>`;
+  };
   const err = r.error ? `<div class="mb-err-text">${esc(r.error)}</div>` : "";
-  const empty = !items.length && !err ? `<div class="muted">${esc(r.note || ((r.folder || mb.label) === "input" ? "The robot has not read this email yet." : "No AWB read."))}</div>` : "";
-  return `<div class="mb-panel-title">What the robot read</div>${items.length ? `<div class="mb-awb-list">${items.join("")}</div>` : ""}${err}${empty}`;
+  const table = awbs.length ? `<table class="mb-awb-table"><thead><tr><th>AWB</th><th>GSA</th><th>Billing status</th><th>Recovered</th><th>File</th></tr></thead><tbody>${awbs.map(line).join("")}</tbody></table>` : "";
+  const empty = !awbs.length && !err ? `<div class="muted">${esc((r.folder || mb.label) === "input" ? "The robot has not read this email yet." : (r.note || "No AWB of your GSAs in this email."))}</div>` : "";
+  return `<div class="mb-panel-title">What the robot read</div>${table}${err}${empty}`;
 }
-function mbFilesPanel(r) {
-  return `<div class="mb-panel-title">Files in this email</div>${r.files.length ? `<div class="mb-files-grid">${r.files.map(f => `<span class="mb-file" data-mid="${esc(r.id)}" data-n="${f.n}" title="Open ${esc(f.name)}">${esc(f.name)}</span>`).join("")}</div>` : `<div class="muted">No files.</div>`}`;
+async function openAwbPage(id, awb) {
+  const win = window.open("", "_blank");
+  try {
+    const response = await fetch(`${API_BASE}/api/awb_recovery/mailbox/awb_file?${new URLSearchParams({ email: state.user.email, id, awb })}`);
+    if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || `The API answered ${response.status}`); }
+    const url = URL.createObjectURL(await response.blob());
+    if (win) win.location = url; else window.location = url;
+  } catch (e) { if (win) win.close(); setMbMsg(`Could not open the page of ${awb}: ${e.message}`, "err"); }
 }
 function mbFolderCell(r) {
   const folder = r.folder || mb.label;
@@ -1147,7 +1169,7 @@ function mbFolderCell(r) {
 function renderMailbox() {
   const canSelect = !mb.search && (mb.label === "processed" || mb.label === "error");
   const withFolder = !!mb.search || mb.label === "history";
-  const cols = 5 + (canSelect ? 1 : 0) + (withFolder ? 1 : 0);
+  const cols = 4 + (canSelect ? 1 : 0) + (withFolder ? 1 : 0);
   document.querySelectorAll("#mbTabs [data-l]").forEach(x => x.classList.toggle("on", !mb.search && x.dataset.l === mb.label));
   $("mbViewNote").textContent = mb.search ? `Search results in the whole mailbox` : mb.label === "history" ? "Emails taken out with Dismiss (they stay in Gmail)" : "";
   $("mbSelHead").hidden = !canSelect; $("mbFolderHead").hidden = !withFolder;
@@ -1163,9 +1185,8 @@ function renderMailbox() {
     const emailOpen = mb.open && mb.open.id === r.id;
     return `<tr class="mb-row ${emailOpen ? "open" : ""}" data-row="${esc(r.id)}">${canSelect ? `<td><input type="checkbox" data-sel="${esc(r.id)}" ${mb.sel.has(r.id) ? "checked" : ""} aria-label="Select"></td>` : ""}<td><button type="button" class="mb-bot ${bot.cls} ${panelOn("robot") ? "on" : ""}" data-panel="robot" data-id="${esc(r.id)}" title="${esc(bot.tip)}" aria-label="What the robot read">${MB_ROBOT}</button></td><td>${esc(mbDate(r.date))}</td><td><span class="c-used" title="${esc(r.from)}">${esc(r.from)}</span></td>
     <td><div class="mb-subj" title="${esc(r.subject)}">${esc(r.subject || "(no subject)")} <span class="mb-snip">${esc(r.snippet || "")}</span></div></td>
-    <td><button type="button" class="mb-files-btn ${panelOn("files") ? "on" : ""}" data-panel="files" data-id="${esc(r.id)}">View files (${fmt(r.files.length)})</button></td>${withFolder ? `<td>${mbFolderCell(r)}</td>` : ""}</tr>`
+    ${withFolder ? `<td>${mbFolderCell(r)}</td>` : ""}</tr>`
       + (panelOn("robot") ? `<tr class="mb-panel"><td colspan="${cols}">${mbRobotPanel(r)}</td></tr>` : "")
-      + (panelOn("files") ? `<tr class="mb-panel"><td colspan="${cols}">${mbFilesPanel(r)}</td></tr>` : "")
       + (emailOpen ? `<tr class="mb-detail"><td colspan="${cols}"><b>To:</b> ${esc(mb.open.to || "")}<div class="mb-text">${esc(mb.open.text || "Loading…")}</div></td></tr>` : "");
   }).join("")
     || `<tr><td colspan="${cols}" class="empty">${mb.search ? "Nothing found in the mailbox." : mb.label === "history" ? "Nothing dismissed yet." : "No emails in this label."}</td></tr>`;
@@ -1173,8 +1194,8 @@ function renderMailbox() {
 }
 async function markInCargoSystem(ids) {
   const rows = mb.rows.filter(r => ids.includes(r.id));
-  const awbs = [...new Set(rows.flatMap(r => r.found || []))].sort();
-  if (!awbs.length) { setMbMsg("The selected emails have no AWB found by the robot.", "err"); return; }
+  const awbs = [...new Set(rows.flatMap(r => mbAwbs(r).filter(x => x.kind === "found").map(x => x.awb)))].sort();
+  if (!awbs.length) { setMbMsg("The selected emails have no AWB to mark of your GSAs.", "err"); return; }
   const where = mb.csTest ? "the TEST Cargo System (beta)" : "Cargo System";
   if (!confirm(`Mark ${awbs.length} AWB${awbs.length === 1 ? "" : "s"} as recovered in ${where}?\n\n${awbs.join("\n")}\n\nThis cannot be undone.`)) return;
   mb.marking = true; renderMailbox();
@@ -1780,6 +1801,7 @@ function initAwbRecovery() {
   $("mbSearch").addEventListener("input", () => { clearTimeout(mb.searchTimer); mb.searchTimer = setTimeout(mbSearchNow, 400); });
   $("mbBody").addEventListener("click", e => {
     const f = e.target.closest("[data-mid]"); if (f) { e.stopPropagation(); openMailboxFile(f.dataset.mid, f.dataset.n); return; }
+    const g = e.target.closest("[data-awbfile]"); if (g) { e.stopPropagation(); openAwbPage(g.dataset.id, g.dataset.awbfile); return; }
     const c = e.target.closest("[data-sel]"); if (c) { e.stopPropagation(); c.checked ? mb.sel.add(c.dataset.sel) : mb.sel.delete(c.dataset.sel); renderMailbox(); return; }
     const p = e.target.closest("[data-panel]");
     if (p) { e.stopPropagation(); const same = mb.panel && mb.panel.id === p.dataset.id && mb.panel.kind === p.dataset.panel; mb.panel = same ? null : { id: p.dataset.id, kind: p.dataset.panel }; renderMailbox(); return; }
