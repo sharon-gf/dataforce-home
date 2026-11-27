@@ -1150,7 +1150,7 @@ function mbRobotPanel(r) {
     const recovered = x.retrieved ? `<span class="mb-yes">✓ Yes</span>` : x.marked ? `<span class="mb-yes">✓ Marked by Dataforce${test}</span>`
       : notFlown ? `<span class="mb-st wait" title="When it flies, the robot moves it to To mark and the email comes back to AWB Processed">Not flown yet · robot waits</span>` : `<span class="mb-no">No</span>`;
     const fileName = x.file_name || "Open the page";
-    const page = x.file ? `<span class="mb-page" data-awbfile="${esc(x.awb)}" data-id="${esc(r.id)}" title="${esc(fileName)}: only the page of this AWB">📄 ${esc(fileName)}</span>` : `<span class="muted" title="The robot is keeping the pages of the emails it read before (a few every 10 minutes)">Getting the page…</span>`;
+    const page = x.file ? `<span class="mb-page" data-awbfile="${esc(x.awb)}" data-id="${esc(r.id)}" title="${esc(fileName)}: only the page of this AWB">📄 ${esc(fileName)}</span>` : (r.pages_checked ? `<span class="muted" title="The robot read this email again and this AWB is not the copy of an AWB in any file (a phone, a manifest...)">Page not found</span>` : `<span class="muted" title="The robot is keeping the pages of the emails it read before">Getting the page…</span>`);
     if (x.in_cs === false) return `<tr><td class="awb">${esc(x.awb)}</td><td colspan="4"><span class="mb-st notp">Not found in Cargo System</span></td><td>${page}</td></tr>`;
     return `<tr><td class="awb">${esc(x.awb)}${mbBookingLink(r, x.awb)}${tag}</td><td>${esc(x.gsa || "-")}</td><td>${esc(x.bill || "-")}</td><td>${esc(x.seg || "-")}</td><td>${recovered}</td><td>${page}</td></tr>`;
   };
